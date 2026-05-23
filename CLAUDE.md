@@ -40,27 +40,57 @@ Story Arc is a SillyTavern extension that plans new story arcs for existing, lon
 
 ```
 StoryArc/
-+-- index.js                 # Entry point, UI setup, event wiring
-+-- style.css                # Import hub for CSS modules
-+-- manifest.json            # SillyTavern extension manifest
-+-- CLAUDE.md                # This file
-+-- ARCHITECTURE.md          # System design
-+-- CODEINDEX.md             # File index
-+-- ST-EXTENSION-PATTERNS.md # SillyTavern integration reference
-+-- data/                    # Static data files (loaded at runtime)
-+-- prompts/                 # LLM prompt templates
-+-- lib/
-    +-- core/                # Constants, settings, shared state
-    |   +-- index.js         # Re-exports public API
-    |   +-- constants.js     # MODULE_NAME, defaults
-    +-- context/             # Context harvesting (lorebook, chat, summaries)
-    |   +-- index.js         # Re-exports public API
-    +-- planning/            # Arc generation, validation, storage
-    |   +-- index.js         # Re-exports public API
-    +-- ui/                  # Settings panel, wizard, progress display
-    |   +-- index.js         # Re-exports public API
-    +-- css/                 # Stylesheets
-        +-- core.css         # Base styles
+├── index.js                    # Entry point, UI setup, event wiring
+├── style.css                   # CSS import hub
+├── manifest.json               # SillyTavern extension manifest
+├── prompts/
+│   ├── analyze-context.txt     # Phase 1: story state analysis
+│   ├── generate-arc.txt        # Phase 2: arc outline generation
+│   └── detail-pass.txt         # Phase 3: detail expansion
+├── lib/
+│   ├── core/
+│   │   ├── index.js            # Facade
+│   │   ├── constants.js        # MODULE_NAME, defaults, phases, schema
+│   │   └── settings.js         # Settings load/save, per-chat state
+│   ├── context/
+│   │   ├── index.js            # Facade
+│   │   ├── harvester.js        # Orchestrates context gathering
+│   │   ├── lorebook.js         # World info adapter
+│   │   ├── character.js        # Character card + persona
+│   │   └── chat-history.js     # Chat message extraction
+│   ├── planning/
+│   │   ├── index.js            # Facade
+│   │   ├── generator.js        # Multi-phase LLM generation
+│   │   ├── validation.js       # JSON parsing + schema validation
+│   │   ├── storage.js          # Arc CRUD on chat_metadata
+│   │   └── templates.js        # Prompt template loader
+│   ├── injection/
+│   │   ├── index.js            # Facade
+│   │   ├── builder.js          # Build injection text from arcs
+│   │   ├── pacing.js           # Phase calculation + directives
+│   │   └── signals.js          # ARC_SIGNAL parsing + processing
+│   ├── ui/
+│   │   ├── index.js            # Facade
+│   │   ├── settings-panel.js   # Extension drawer content
+│   │   ├── wizard.js           # Arc planning wizard popup
+│   │   ├── arc-manager.js      # Arc list + controls popup
+│   │   └── progress.js         # Compact progress display
+│   └── css/
+│       ├── core.css            # Variables, base styles
+│       ├── spoiler.css         # Spoiler toggle styles
+│       ├── wizard.css          # Wizard popup styles
+│       ├── arc-manager.css     # Arc manager styles
+│       └── progress.css        # Progress display styles
+├── tests/
+│   ├── run.sh                  # Node.js test runner
+│   ├── smoke.sh                # HTTP smoke tests
+│   ├── setup.js                # ESM loader registration
+│   ├── loader.js               # Custom loader for ST import mocking
+│   ├── mocks/
+│   │   └── st-mocks.js         # Mock SillyTavern globals
+│   └── test-*.js               # Test files
+└── docs/
+    └── goals/GOALS.md
 ```
 
 ## Code Patterns
