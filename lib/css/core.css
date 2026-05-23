@@ -38,18 +38,11 @@
 
 /* ─── Settings Panel ─────────────────────────────────────────────────────── */
 
-#story-arc-settings {
-    padding: 10px;
-}
-
-#story-arc-settings .inline-drawer-header {
-    cursor: pointer;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
+/* No extra padding/border on the wrapper or header — inherit ST defaults
+   so the drawer aligns with other extensions in #extensions_settings2 */
 
 #story-arc-settings .inline-drawer-content {
-    padding: 12px;
+    padding: 10px;
 }
 
 /* ─── Panel Layout ───────────────────────────────────────────────────────── */
