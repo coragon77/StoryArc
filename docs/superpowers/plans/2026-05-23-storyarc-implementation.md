@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JavaScript (ES6 modules), jQuery, SillyTavern Popup API, SillyTavern event system, CSS.
 
-**Testing:** This project has no test framework. SillyTavern extensions are browser-loaded JS with no build step. Verification is done by loading the extension in a running SillyTavern instance and checking console output / UI behavior. Each task notes what to verify manually.
+**Testing:** Three layers — (1) Node.js unit tests via `./tests/run.sh` for pure logic (validation, pacing, signals, templates), (2) HTTP smoke tests via `./tests/smoke.sh` against the live ST instance at port 8008 (extension discovery, file serving, syntax checks), (3) manual browser verification for UI/events. The test harness uses `node:test` with a custom ESM loader to mock SillyTavern imports.
 
 **Spec:** `docs/superpowers/specs/2026-05-23-storyarc-design.md`
 
@@ -1951,6 +1951,421 @@ git commit -m "docs: update architecture, code index, and CLAUDE.md for implemen
 
 ---
 
+## Task 15: Unit Tests for Pure Logic
+
+**Files:**
+- Modify: `tests/test-core.js`
+- Create: `tests/test-validation.js`
+- Create: `tests/test-pacing.js`
+- Create: `tests/test-signals.js`
+- Create: `tests/test-templates.js`
+- Create: `tests/test-lorebook.js`
+
+Write unit tests after each module is built. These run via `./tests/run.sh` using the Node test harness with mocked ST imports.
+
+- [ ] **Step 1: Expand test-core.js**
+
+Test `createDefaultArc()` returns a valid arc with all fields, UUID is generated, defaults are correct. Test `ARC_PHASES` has correct percentage ranges that cover 0-100% without gaps.
+
+- [ ] **Step 2: Create test-validation.js**
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { parseLlmJson, validateArcPlan } from '../lib/planning/validation.js';
+
+describe('parseLlmJson', () => {
+    it('parses clean JSON', () => {
+        const result = parseLlmJson('{"title": "Test"}');
+        assert.deepEqual(result, { title: 'Test' });
+    });
+
+    it('strips markdown code fences', () => {
+        const result = parseLlmJson('```json\n{"title": "Test"}\n```');
+        assert.deepEqual(result, { title: 'Test' });
+    });
+
+    it('extracts JSON from surrounding text', () => {
+        const result = parseLlmJson('Here is the plan:\n{"title": "Test"}\nEnd.');
+        assert.deepEqual(result, { title: 'Test' });
+    });
+
+    it('returns null for garbage', () => {
+        assert.equal(parseLlmJson('not json at all'), null);
+    });
+
+    it('returns null for empty input', () => {
+        assert.equal(parseLlmJson(''), null);
+        assert.equal(parseLlmJson(null), null);
+    });
+});
+
+describe('validateArcPlan', () => {
+    it('accepts a valid minimal plan', () => {
+        const { valid, arc, errors } = validateArcPlan({
+            title: 'Test Arc',
+            premise: 'Something happens',
+            beats: [{ intention: 'A thing occurs' }],
+        });
+        assert.equal(valid, true);
+        assert.equal(errors.length, 0);
+        assert.equal(arc.title, 'Test Arc');
+        assert.equal(arc.beats[0].id, 'beat_1');
+        assert.equal(arc.beats[0].status, 'active');
+    });
+
+    it('rejects missing title', () => {
+        const { valid, errors } = validateArcPlan({
+            premise: 'Something', beats: [{ intention: 'X' }],
+        });
+        assert.equal(valid, false);
+        assert.ok(errors.some(e => e.includes('title')));
+    });
+
+    it('rejects missing beats', () => {
+        const { valid, errors } = validateArcPlan({
+            title: 'Test', premise: 'Something', beats: [],
+        });
+        assert.equal(valid, false);
+        assert.ok(errors.some(e => e.includes('beats')));
+    });
+
+    it('normalizes snake_case fields from LLM output', () => {
+        const { arc } = validateArcPlan({
+            title: 'Test', premise: 'X',
+            anti_patterns: ['Do not rush'],
+            beats: [{ intention: 'Y', unlock_after: ['beat_0'] }],
+            estimated_length: 60,
+        });
+        assert.deepEqual(arc.antiPatterns, ['Do not rush']);
+        assert.deepEqual(arc.beats[0].unlockAfter, ['beat_0']);
+        assert.equal(arc.estimatedLength, 60);
+    });
+
+    it('sets first beat to active, rest to pending', () => {
+        const { arc } = validateArcPlan({
+            title: 'Test', premise: 'X',
+            beats: [
+                { intention: 'First' },
+                { intention: 'Second' },
+                { intention: 'Third' },
+            ],
+        });
+        assert.equal(arc.beats[0].status, 'active');
+        assert.equal(arc.beats[1].status, 'pending');
+        assert.equal(arc.beats[2].status, 'pending');
+    });
+});
+```
+
+- [ ] **Step 3: Create test-pacing.js**
+
+```javascript
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Both this file and pacing.js import chat from '/script.js', which the
+// ESM loader resolves to the same mock module — so they share the same array.
+import { chat } from '/script.js';
+import { calculatePhase } from '../lib/injection/pacing.js';
+import { createDefaultArc } from '../lib/core/constants.js';
+
+describe('calculatePhase', () => {
+    it('returns setup for a fresh arc with no completed beats', () => {
+        const arc = createDefaultArc({
+            messageStart: 0,
+            estimatedLength: 40,
+            beats: [
+                { id: 'b1', status: 'active', optional: false },
+                { id: 'b2', status: 'pending', optional: false },
+            ],
+        });
+        // chat.length is 0 from mock
+        const { phase } = calculatePhase(arc);
+        assert.equal(phase, 'setup');
+    });
+
+    it('returns resolution when all beats completed and messages exceeded', () => {
+        const arc = createDefaultArc({
+            messageStart: 0,
+            estimatedLength: 10,
+            beats: [
+                { id: 'b1', status: 'completed', optional: false },
+                { id: 'b2', status: 'completed', optional: false },
+            ],
+        });
+        // Need to simulate chat length > estimatedLength
+        // Since chat is a mock array, push enough messages
+        chat.length = 0;
+        for (let i = 0; i < 15; i++) chat.push({});
+        const { phase } = calculatePhase(arc);
+        assert.equal(phase, 'resolution');
+        chat.length = 0; // clean up
+    });
+
+    it('ignores optional beats in ratio calculation', () => {
+        const arc = createDefaultArc({
+            messageStart: 0,
+            estimatedLength: 100,
+            beats: [
+                { id: 'b1', status: 'completed', optional: false },
+                { id: 'b2', status: 'pending', optional: true },
+            ],
+        });
+        chat.length = 0;
+        for (let i = 0; i < 100; i++) chat.push({});
+        const { beatRatio } = calculatePhase(arc);
+        assert.equal(beatRatio, 1.0); // 1/1, ignoring the optional beat
+        chat.length = 0;
+    });
+
+    it('uses minimum of beat phase and message phase', () => {
+        const arc = createDefaultArc({
+            messageStart: 0,
+            estimatedLength: 100,
+            beats: [
+                { id: 'b1', status: 'completed', optional: false },
+                { id: 'b2', status: 'completed', optional: false },
+                { id: 'b3', status: 'pending', optional: false },
+            ],
+        });
+        // Beats: 2/3 = 0.67 -> escalation
+        // Messages: only 5/100 = 0.05 -> setup
+        // min(escalation, setup) = setup
+        chat.length = 0;
+        for (let i = 0; i < 5; i++) chat.push({});
+        const { phase } = calculatePhase(arc);
+        assert.equal(phase, 'setup');
+        chat.length = 0;
+    });
+});
+```
+
+- [ ] **Step 4: Create test-signals.js**
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { parseSignals } from '../lib/injection/signals.js';
+
+describe('parseSignals', () => {
+    it('parses a single signal', () => {
+        const signals = parseSignals('Story text here.\n[ARC_SIGNAL:abc123:beat_1:COMPLETE]');
+        assert.equal(signals.length, 1);
+        assert.equal(signals[0].arcId, 'abc123');
+        assert.equal(signals[0].beatId, 'beat_1');
+    });
+
+    it('parses multiple signals', () => {
+        const text = 'Text\n[ARC_SIGNAL:arc1:beat_1:COMPLETE]\n[ARC_SIGNAL:arc2:beat_2:COMPLETE]';
+        const signals = parseSignals(text);
+        assert.equal(signals.length, 2);
+    });
+
+    it('returns empty array for no signals', () => {
+        assert.deepEqual(parseSignals('Just regular story text'), []);
+    });
+
+    it('returns empty array for null/empty input', () => {
+        assert.deepEqual(parseSignals(null), []);
+        assert.deepEqual(parseSignals(''), []);
+    });
+
+    it('handles signals with underscores and hyphens in IDs', () => {
+        const signals = parseSignals('[ARC_SIGNAL:arc-1:valdris_dinner:COMPLETE]');
+        assert.equal(signals[0].arcId, 'arc-1');
+        assert.equal(signals[0].beatId, 'valdris_dinner');
+    });
+});
+```
+
+- [ ] **Step 5: Create test-templates.js**
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { fillTemplate } from '../lib/planning/templates.js';
+
+describe('fillTemplate', () => {
+    it('replaces single placeholder', () => {
+        assert.equal(fillTemplate('Hello {{NAME}}', { NAME: 'World' }), 'Hello World');
+    });
+
+    it('replaces multiple placeholders', () => {
+        const result = fillTemplate('{{A}} and {{B}}', { A: 'X', B: 'Y' });
+        assert.equal(result, 'X and Y');
+    });
+
+    it('replaces repeated placeholders', () => {
+        const result = fillTemplate('{{X}} is {{X}}', { X: 'same' });
+        assert.equal(result, 'same is same');
+    });
+
+    it('leaves unmatched placeholders intact', () => {
+        assert.equal(fillTemplate('Hello {{NAME}}', {}), 'Hello {{NAME}}');
+    });
+
+    it('only replaces placeholders present in variables', () => {
+        assert.equal(fillTemplate('{{A}} and {{B}}', { A: 'X' }), 'X and {{B}}');
+    });
+});
+```
+
+- [ ] **Step 6: Create test-lorebook.js**
+
+```javascript
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { categorizeEntries } from '../lib/context/lorebook.js';
+
+describe('categorizeEntries', () => {
+    it('categorizes constant entries', () => {
+        const entries = [
+            { comment: 'Facts', content: 'x', constant: true },
+            { comment: 'Party', content: 'y', constant: true },
+        ];
+        const { constants, arcSummaries, recent } = categorizeEntries(entries);
+        assert.equal(constants.length, 2);
+        assert.equal(arcSummaries.length, 0);
+        assert.equal(recent.length, 0);
+    });
+
+    it('categorizes arc summary entries', () => {
+        const entries = [
+            { comment: '[ARC 001] - First Arc', content: 'x', constant: false },
+            { comment: '[ARC 002] - Second Arc', content: 'y', constant: false },
+        ];
+        const { constants, arcSummaries, recent } = categorizeEntries(entries);
+        assert.equal(arcSummaries.length, 2);
+        assert.equal(constants.length, 0);
+    });
+
+    it('categorizes recent memories as default', () => {
+        const entries = [
+            { comment: '051 - Something Happened', content: 'x', constant: false },
+        ];
+        const { recent } = categorizeEntries(entries);
+        assert.equal(recent.length, 1);
+    });
+
+    it('handles mixed entries', () => {
+        const entries = [
+            { comment: 'Facts', content: 'a', constant: true },
+            { comment: '[ARC 001] - Start', content: 'b', constant: false },
+            { comment: '051 - Event', content: 'c', constant: false },
+        ];
+        const { constants, arcSummaries, recent } = categorizeEntries(entries);
+        assert.equal(constants.length, 1);
+        assert.equal(arcSummaries.length, 1);
+        assert.equal(recent.length, 1);
+    });
+});
+```
+
+- [ ] **Step 7: Run all tests**
+
+```bash
+./tests/run.sh
+```
+
+Expected: all tests pass.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add tests/
+git commit -m "test: add unit tests for validation, pacing, signals, templates, lorebook"
+```
+
+---
+
+## Task 16: HTTP Smoke Tests
+
+**Files:**
+- Create: `tests/smoke.sh`
+
+Automated checks against the live ST instance (port 8008) to verify the extension is discoverable and all files are served correctly.
+
+- [ ] **Step 1: Create smoke.sh**
+
+```bash
+#!/usr/bin/env bash
+# Smoke tests against a live SillyTavern instance
+# Usage: ./tests/smoke.sh [port]
+# Requires: curl, ST running with StoryArc extension
+
+set -euo pipefail
+
+PORT="${1:-8008}"
+BASE="http://localhost:$PORT"
+PASS=0
+FAIL=0
+
+check() {
+    local desc="$1" url="$2" expect="$3"
+    local body status
+    body=$(curl -sf "$url" 2>/dev/null) && status=0 || status=1
+
+    if [ $status -eq 0 ] && echo "$body" | grep -q "$expect"; then
+        echo "  PASS: $desc"
+        ((PASS++))
+    else
+        echo "  FAIL: $desc (expected '$expect' in response)"
+        ((FAIL++))
+    fi
+}
+
+echo "StoryArc smoke tests against $BASE"
+echo "---"
+
+# Extension discovery
+check "Extension discovered" \
+    "$BASE/api/extensions/discover" \
+    "StoryArc"
+
+# Manifest served
+check "manifest.json served" \
+    "$BASE/scripts/extensions/third-party/StoryArc/manifest.json" \
+    "Story Arc"
+
+# Entry point served (JS file returns 200, not error page)
+check "index.js served" \
+    "$BASE/scripts/extensions/third-party/StoryArc/index.js" \
+    "Story Arc Extension"
+
+# CSS served
+check "style.css served" \
+    "$BASE/scripts/extensions/third-party/StoryArc/style.css" \
+    "core.css"
+
+# Core module served
+check "core/constants.js served" \
+    "$BASE/scripts/extensions/third-party/StoryArc/lib/core/constants.js" \
+    "MODULE_NAME"
+
+echo "---"
+echo "Results: $PASS passed, $FAIL failed"
+[ $FAIL -eq 0 ] && exit 0 || exit 1
+```
+
+- [ ] **Step 2: Run smoke tests**
+
+```bash
+chmod +x tests/smoke.sh
+./tests/smoke.sh
+```
+
+Expected: all checks pass.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add tests/smoke.sh
+git commit -m "test: add HTTP smoke tests against live ST instance"
+```
+
+---
+
 ## Summary
 
 | Task | Module | Key Deliverable |
@@ -1969,3 +2384,5 @@ git commit -m "docs: update architecture, code index, and CLAUDE.md for implemen
 | 12 | ui | Arc manager popup |
 | 13 | integration | UI facade + index.js event wiring |
 | 14 | docs | CLAUDE.md, CODEINDEX.md, ARCHITECTURE.md updates |
+| 15 | testing | Unit tests for validation, pacing, signals, templates, lorebook |
+| 16 | testing | HTTP smoke tests against live ST instance |

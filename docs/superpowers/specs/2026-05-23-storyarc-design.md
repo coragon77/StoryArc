@@ -218,7 +218,8 @@ Templates are `.txt` files in `prompts/` with placeholder substitution:
 - `analyze-context.txt` -- Phase 1 analysis prompt
 - `generate-arc.txt` -- Phase 2 arc generation prompt
 - `detail-pass.txt` -- Phase 3 detail expansion prompt
-- `build-injection.txt` -- Template for runtime prompt injection
+
+Note: The runtime prompt injection is built programmatically in `lib/injection/builder.js` rather than via template substitution, because the injection logic requires conditional sections, beat gating, and phase-dependent content that static templates cannot express.
 
 Templates are loaded at runtime via `fetch()` relative to the extension's base URL (e.g., `fetch('/scripts/extensions/third-party/StoryArc/prompts/analyze-context.txt')`). The extension base path can be derived from `import.meta.url` or constructed from the known extension name.
 
@@ -479,8 +480,7 @@ StoryArc/
 ├── prompts/
 │   ├── analyze-context.txt     # Phase 1: story state analysis
 │   ├── generate-arc.txt        # Phase 2: arc outline generation
-│   ├── detail-pass.txt         # Phase 3: detail expansion
-│   └── build-injection.txt     # Runtime prompt injection template
+│   └── detail-pass.txt         # Phase 3: detail expansion
 ├── lib/
 │   ├── core/
 │   │   ├── index.js            # Facade: re-exports public API
@@ -610,7 +610,39 @@ The extension never modifies the user's lorebook, chat history, character cards,
 - Missing context sources: continue with available sources (graceful degradation)
 - Signal parse errors: log warning, ignore invalid signals silently
 
-### 9.6 Performance Considerations
+### 9.6 Testing Strategy
+
+Three layers of automated testing, no manual browser interaction required:
+
+**Layer 1: Node.js unit tests (pure logic)**
+
+A lightweight test harness using Node's built-in `node:test` runner with a custom ESM loader that intercepts SillyTavern imports and redirects them to mocks. Tests pure logic functions that have no real ST dependencies:
+- Arc validation and normalization (`parseLlmJson`, `validateArcPlan`)
+- Phase/pacing calculation (`calculatePhase`)
+- Signal parsing (`parseSignals`)
+- Lorebook categorization (`categorizeEntries`)
+- Template placeholder substitution (`fillTemplate`)
+- Token estimation (`estimateTokens`)
+- Beat gating and unlock logic
+- Injection builder output structure
+
+Run with: `./tests/run.sh`
+
+**Layer 2: HTTP smoke tests against a live SillyTavern instance**
+
+The extension is symlinked into ST's third-party extensions directory. Automated checks via `curl` against ST's HTTP API (port 8008):
+- Extension discovery: `GET /api/extensions/discover` — verify StoryArc appears in the list
+- File serving: `GET /scripts/extensions/third-party/StoryArc/manifest.json` — verify files are accessible
+- Prompt template loading: `GET /scripts/extensions/third-party/StoryArc/prompts/analyze-context.txt` — verify templates are served
+- JS syntax validation: fetch each `.js` file and verify it returns 200 (not a parse error page)
+
+Run with: `./tests/smoke.sh`
+
+**Layer 3: Manual browser verification**
+
+For UI rendering, event handler wiring, popup behavior, and actual LLM generation — requires a human to reload the ST page and verify. Each implementation task notes specific manual verification steps.
+
+### 9.7 Performance Considerations
 
 - Context harvesting fetches lorebooks via HTTP -- do this once at wizard start, not on every message
 - Prompt injection is rebuilt on every `GENERATION_STARTED` -- keep it fast (string concatenation from cached arc data, no async)
