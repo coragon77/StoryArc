@@ -2,5 +2,17 @@
    STORY ARC EXTENSION STYLES
    ============================================================================ */
 
-/* Core panel */
+/* Core: variables, layout, buttons, inputs */
 @import url('./lib/css/core.css');
+
+/* Spoiler toggle / collapsible secret sections */
+@import url('./lib/css/spoiler.css');
+
+/* Arc planning wizard (3-step popup) */
+@import url('./lib/css/wizard.css');
+
+/* Arc manager popup (list, actions, beat list) */
+@import url('./lib/css/arc-manager.css');
+
+/* Progress display (settings panel compact bars) */
+@import url('./lib/css/progress.css');

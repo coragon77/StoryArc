@@ -1,0 +1,142 @@
+/* ============================================================================
+   STORY ARC - PROGRESS DISPLAY STYLES
+   Compact progress bars and phase labels for the settings panel
+   ============================================================================ */
+
+/* ─── Progress Container ─────────────────────────────────────────────────── */
+
+#story-arc-progress-container {
+    margin-top: 10px;
+}
+
+/* ─── Progress Card (one per active arc) ─────────────────────────────────── */
+
+.story-arc-progress-card {
+    padding: 8px 10px;
+    background: var(--black10a, rgba(0,0,0,0.1));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: var(--sa-radius-sm);
+    margin-bottom: 6px;
+}
+
+.story-arc-progress-card:last-child {
+    margin-bottom: 0;
+}
+
+.story-arc-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.story-arc-progress-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--SmartThemeBodyColor);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.story-arc-progress-phase {
+    font-size: 0.68em;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.story-arc-progress-phase.phase-setup {
+    background: rgba(102, 187, 106, 0.15);
+    color: var(--sa-phase-setup);
+}
+
+.story-arc-progress-phase.phase-development {
+    background: rgba(66, 165, 245, 0.15);
+    color: var(--sa-phase-development);
+}
+
+.story-arc-progress-phase.phase-escalation {
+    background: rgba(255, 167, 38, 0.15);
+    color: var(--sa-phase-escalation);
+}
+
+.story-arc-progress-phase.phase-climax {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--sa-phase-climax);
+}
+
+.story-arc-progress-phase.phase-resolution {
+    background: rgba(171, 71, 188, 0.15);
+    color: var(--sa-phase-resolution);
+}
+
+/* ─── Progress Bar ───────────────────────────────────────────────────────── */
+
+.story-arc-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--black20a, rgba(0,0,0,0.2));
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.story-arc-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--sa-accent);
+    transition: width 0.4s ease;
+    min-width: 0;
+}
+
+.story-arc-progress-fill.phase-setup {
+    background: var(--sa-phase-setup);
+}
+
+.story-arc-progress-fill.phase-development {
+    background: var(--sa-phase-development);
+}
+
+.story-arc-progress-fill.phase-escalation {
+    background: var(--sa-phase-escalation);
+}
+
+.story-arc-progress-fill.phase-climax {
+    background: var(--sa-phase-climax);
+}
+
+.story-arc-progress-fill.phase-resolution {
+    background: var(--sa-phase-resolution);
+}
+
+/* ─── Progress Count ─────────────────────────────────────────────────────── */
+
+.story-arc-progress-count {
+    font-size: 0.68em;
+    color: var(--SmartThemeEmColor, #888);
+    margin-top: 3px;
+    text-align: right;
+}
+
+/* ─── Focus Indicator ────────────────────────────────────────────────────── */
+
+.story-arc-progress-focus {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.story-arc-progress-focus.foreground {
+    background: var(--sa-accent);
+    box-shadow: 0 0 4px var(--sa-accent-glow);
+}
+
+.story-arc-progress-focus.background {
+    background: var(--sa-status-pending);
+}

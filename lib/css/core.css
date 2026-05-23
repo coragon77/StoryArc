@@ -1,4 +1,42 @@
-/* Story Arc - Core styles */
+/* ============================================================================
+   STORY ARC - CORE STYLES
+   Base variables, layout, buttons, inputs
+   ============================================================================ */
+
+/* ─── CSS Variables ──────────────────────────────────────────────────────── */
+
+:root {
+    /* Accent — warm amber/compass gold */
+    --sa-accent: #d4a574;
+    --sa-accent-hover: #e0b88a;
+    --sa-accent-dark: #b8875a;
+    --sa-accent-glow: rgba(212, 165, 116, 0.25);
+    --sa-accent-subtle: rgba(212, 165, 116, 0.1);
+
+    /* Status colors */
+    --sa-status-active: #66bb6a;
+    --sa-status-completed: #42a5f5;
+    --sa-status-abandoned: #ef5350;
+    --sa-status-pending: #bdbdbd;
+
+    /* Phase colors */
+    --sa-phase-setup: #66bb6a;
+    --sa-phase-development: #42a5f5;
+    --sa-phase-escalation: #ffa726;
+    --sa-phase-climax: #ef5350;
+    --sa-phase-resolution: #ab47bc;
+
+    /* Layout */
+    --sa-radius-sm: 4px;
+    --sa-radius-md: 8px;
+    --sa-radius-lg: 12px;
+
+    /* Timing */
+    --sa-transition-fast: 0.15s ease;
+    --sa-transition: 0.25s ease;
+}
+
+/* ─── Settings Panel ─────────────────────────────────────────────────────── */
 
 #story-arc-settings {
     padding: 10px;
@@ -6,4 +44,254 @@
 
 #story-arc-settings .inline-drawer-header {
     cursor: pointer;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+#story-arc-settings .inline-drawer-content {
+    padding: 12px;
+}
+
+/* ─── Panel Layout ───────────────────────────────────────────────────────── */
+
+.story-arc-panel {
+    padding: 0;
+    margin-bottom: 0;
+}
+
+.story-arc-panel-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.story-arc-panel-row:last-child {
+    margin-bottom: 0;
+}
+
+/* ─── Enable Toggle ──────────────────────────────────────────────────────── */
+
+.story-arc-panel .checkbox_label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--sa-radius-sm);
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-panel .checkbox_label input[type="checkbox"] {
+    accent-color: var(--sa-accent);
+    width: 16px;
+    height: 16px;
+}
+
+.story-arc-panel .checkbox_label span {
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+
+.story-arc-btn {
+    padding: 6px 12px;
+    font-size: 0.82em;
+    border-radius: var(--sa-radius-sm);
+    background: var(--black30a, rgba(0,0,0,0.3));
+    border: 1px solid var(--SmartThemeBorderColor);
+    color: var(--SmartThemeBodyColor);
+    transition: var(--sa-transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.story-arc-btn:hover {
+    background: var(--sa-accent);
+    border-color: var(--sa-accent);
+    color: white;
+    box-shadow: 0 2px 8px var(--sa-accent-glow);
+}
+
+.story-arc-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.story-arc-btn-primary {
+    background: var(--sa-accent-dark);
+    border-color: var(--sa-accent-dark);
+    color: white;
+}
+
+.story-arc-btn-primary:hover {
+    background: var(--sa-accent);
+    border-color: var(--sa-accent);
+}
+
+.story-arc-btn-danger {
+    color: var(--sa-status-abandoned);
+}
+
+.story-arc-btn-danger:hover {
+    background: var(--sa-status-abandoned);
+    border-color: var(--sa-status-abandoned);
+    color: white;
+}
+
+.story-arc-btn-block {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 14px;
+}
+
+.story-arc-button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* ─── Inputs ─────────────────────────────────────────────────────────────── */
+
+.story-arc-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: var(--SmartThemeBodyColor);
+    background: var(--black30a, rgba(0,0,0,0.3));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: var(--sa-radius-md);
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color var(--sa-transition-fast);
+    box-sizing: border-box;
+}
+
+.story-arc-textarea:focus {
+    outline: none;
+    border-color: var(--sa-accent);
+}
+
+.story-arc-textarea::placeholder {
+    color: var(--SmartThemeEmColor, #888);
+    opacity: 0.7;
+}
+
+/* ─── Section Headers ────────────────────────────────────────────────────── */
+
+.story-arc-section-header {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--SmartThemeEmColor, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ─── Status Badge ───────────────────────────────────────────────────────── */
+
+.story-arc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72em;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.story-arc-badge-active {
+    background: rgba(102, 187, 106, 0.2);
+    color: var(--sa-status-active);
+}
+
+.story-arc-badge-completed {
+    background: rgba(66, 165, 245, 0.2);
+    color: var(--sa-status-completed);
+}
+
+.story-arc-badge-abandoned {
+    background: rgba(239, 83, 80, 0.2);
+    color: var(--sa-status-abandoned);
+}
+
+.story-arc-badge-foreground {
+    background: rgba(212, 165, 116, 0.2);
+    color: var(--sa-accent);
+}
+
+.story-arc-badge-background {
+    background: rgba(189, 189, 189, 0.15);
+    color: var(--sa-status-pending);
+}
+
+/* ─── Loading / Spinner ──────────────────────────────────────────────────── */
+
+.story-arc-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 12px;
+}
+
+.story-arc-loading-text {
+    font-size: 0.85em;
+    color: var(--SmartThemeEmColor, #888);
+    animation: story-arc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes story-arc-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+@keyframes story-arc-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.story-arc-spinner {
+    display: inline-block;
+    animation: story-arc-spin 1s linear infinite;
+}
+
+/* ─── Empty State ────────────────────────────────────────────────────────── */
+
+.story-arc-empty {
+    padding: 16px;
+    text-align: center;
+    font-size: 0.82em;
+    color: var(--SmartThemeEmColor, #888);
+    font-style: italic;
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────────── */
+
+.story-arc-muted {
+    color: var(--SmartThemeEmColor, #888);
+    font-size: 0.82em;
+}
+
+.story-arc-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 0.75em;
+    border-radius: var(--sa-radius-sm);
+    background: var(--black20a, rgba(0,0,0,0.2));
+    color: var(--SmartThemeBodyColor);
+    margin: 1px 2px;
 }

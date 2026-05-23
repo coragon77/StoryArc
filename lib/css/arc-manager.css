@@ -1,0 +1,246 @@
+/* ============================================================================
+   STORY ARC - ARC MANAGER STYLES
+   Popup for listing, toggling, and managing arcs
+   ============================================================================ */
+
+/* ─── Arc List ───────────────────────────────────────────────────────────── */
+
+.story-arc-manager-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+/* ─── Arc Row ────────────────────────────────────────────────────────────── */
+
+.story-arc-row {
+    padding: 10px 12px;
+    background: var(--black10a, rgba(0,0,0,0.1));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: var(--sa-radius-md);
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-row:hover {
+    border-color: var(--sa-accent-dark);
+}
+
+.story-arc-row-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.story-arc-row-title {
+    font-size: 0.88em;
+    font-weight: 600;
+    color: var(--SmartThemeBodyColor);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.story-arc-row-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.story-arc-row-phase {
+    font-size: 0.72em;
+    font-weight: 500;
+    color: var(--SmartThemeEmColor, #888);
+}
+
+/* ─── Arc Row Actions ────────────────────────────────────────────────────── */
+
+.story-arc-row-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.story-arc-row-actions .story-arc-btn {
+    font-size: 0.75em;
+    padding: 3px 8px;
+}
+
+/* ─── Focus Toggle ───────────────────────────────────────────────────────── */
+
+.story-arc-focus-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 0.72em;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--sa-transition-fast);
+    border: 1px solid transparent;
+}
+
+.story-arc-focus-toggle.foreground {
+    background: rgba(212, 165, 116, 0.15);
+    color: var(--sa-accent);
+    border-color: rgba(212, 165, 116, 0.3);
+}
+
+.story-arc-focus-toggle.background {
+    background: rgba(189, 189, 189, 0.1);
+    color: var(--sa-status-pending);
+    border-color: rgba(189, 189, 189, 0.2);
+}
+
+.story-arc-focus-toggle:hover {
+    background: var(--sa-accent-subtle);
+    color: var(--sa-accent-hover);
+    border-color: var(--sa-accent);
+}
+
+/* ─── Progress Bar (in arc rows) ─────────────────────────────────────────── */
+
+.story-arc-row-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.story-arc-row-progress-text {
+    font-size: 0.72em;
+    color: var(--SmartThemeEmColor, #888);
+    white-space: nowrap;
+}
+
+/* ─── Beat List ──────────────────────────────────────────────────────────── */
+
+.story-arc-beat-list {
+    margin-top: 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.story-arc-beat-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 0.78em;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-beat-item:last-child {
+    border-bottom: none;
+}
+
+.story-arc-beat-item:hover {
+    background: var(--black10a, rgba(0,0,0,0.1));
+}
+
+.story-arc-beat-status {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    cursor: pointer;
+    border-radius: 3px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    flex-shrink: 0;
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-beat-status:hover {
+    border-color: var(--sa-accent);
+}
+
+.story-arc-beat-status.completed {
+    background: var(--sa-status-active);
+    border-color: var(--sa-status-active);
+    color: white;
+}
+
+.story-arc-beat-status.active {
+    border-color: var(--sa-accent);
+    color: var(--sa-accent);
+}
+
+.story-arc-beat-status.pending {
+    color: var(--sa-status-pending);
+}
+
+.story-arc-beat-status.locked {
+    color: var(--SmartThemeBorderColor);
+    cursor: not-allowed;
+}
+
+.story-arc-beat-intention {
+    flex: 1;
+    line-height: 1.4;
+    color: var(--SmartThemeBodyColor);
+}
+
+.story-arc-beat-item.beat-completed .story-arc-beat-intention {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.story-arc-beat-optional-label {
+    font-size: 0.85em;
+    font-style: italic;
+    color: var(--SmartThemeEmColor, #888);
+}
+
+/* ─── Collapsed Section (completed/abandoned arcs) ───────────────────────── */
+
+.story-arc-collapsed-section {
+    margin-top: 12px;
+}
+
+.story-arc-collapsed-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-weight: 500;
+    color: var(--SmartThemeEmColor, #888);
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    transition: var(--sa-transition-fast);
+    user-select: none;
+}
+
+.story-arc-collapsed-header:hover {
+    color: var(--SmartThemeBodyColor);
+}
+
+.story-arc-collapsed-header .fa-chevron-right {
+    font-size: 0.7em;
+    transition: transform var(--sa-transition-fast);
+}
+
+.story-arc-collapsed-header.open .fa-chevron-right {
+    transform: rotate(90deg);
+}
+
+.story-arc-collapsed-body {
+    display: none;
+}
+
+.story-arc-collapsed-body.open {
+    display: block;
+}
+
+.story-arc-row.inactive {
+    opacity: 0.6;
+}

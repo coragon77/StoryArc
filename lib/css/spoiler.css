@@ -1,0 +1,120 @@
+/* ============================================================================
+   STORY ARC - SPOILER TOGGLE STYLES
+   Collapsible sections for hiding narrative secrets from the user
+   ============================================================================ */
+
+/* ─── Spoiler Toggle ─────────────────────────────────────────────────────── */
+
+.story-arc-spoiler-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.82em;
+    font-weight: 500;
+    color: var(--SmartThemeEmColor, #888);
+    background: var(--black10a, rgba(0,0,0,0.1));
+    border: 1px solid transparent;
+    border-radius: var(--sa-radius-sm);
+    transition: var(--sa-transition-fast);
+    user-select: none;
+}
+
+.story-arc-spoiler-toggle:hover {
+    color: var(--SmartThemeBodyColor);
+    background: var(--black20a, rgba(0,0,0,0.2));
+    border-color: var(--SmartThemeBorderColor);
+}
+
+.story-arc-spoiler-toggle .fa-chevron-right {
+    font-size: 0.7em;
+    transition: transform var(--sa-transition-fast);
+}
+
+.story-arc-spoiler-toggle.open .fa-chevron-right {
+    transform: rotate(90deg);
+}
+
+.story-arc-spoiler-toggle .story-arc-spoiler-label {
+    flex: 1;
+}
+
+.story-arc-spoiler-toggle .story-arc-spoiler-icon {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+
+/* ─── Spoiler Content ────────────────────────────────────────────────────── */
+
+.story-arc-spoiler-content {
+    display: none;
+    padding: 10px 12px;
+    margin-top: 4px;
+    background: var(--black10a, rgba(0,0,0,0.1));
+    border-left: 3px solid var(--sa-accent-dark);
+    border-radius: 0 var(--sa-radius-sm) var(--sa-radius-sm) 0;
+    font-size: 0.82em;
+    line-height: 1.5;
+    color: var(--SmartThemeBodyColor);
+    animation: story-arc-spoiler-reveal 0.2s ease-out;
+}
+
+.story-arc-spoiler-content.open {
+    display: block;
+}
+
+@keyframes story-arc-spoiler-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Spoiler Warning ────────────────────────────────────────────────────── */
+
+.story-arc-spoiler-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    font-size: 0.78em;
+    color: var(--sa-status-abandoned);
+    background: rgba(239, 83, 80, 0.08);
+    border-radius: var(--sa-radius-sm);
+}
+
+.story-arc-spoiler-warning i {
+    font-size: 0.9em;
+}
+
+/* ─── Spoiler Group ──────────────────────────────────────────────────────── */
+
+.story-arc-spoiler-group {
+    margin-bottom: 8px;
+}
+
+.story-arc-spoiler-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ─── Spoiler List Items ─────────────────────────────────────────────────── */
+
+.story-arc-spoiler-content ul {
+    margin: 4px 0;
+    padding-left: 16px;
+}
+
+.story-arc-spoiler-content li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.story-arc-spoiler-content p {
+    margin: 4px 0;
+}
