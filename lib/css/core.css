@@ -1,0 +1,9 @@
+/* Story Arc - Core styles */
+
+#story-arc-settings {
+    padding: 10px;
+}
+
+#story-arc-settings .inline-drawer-header {
+    cursor: pointer;
+}

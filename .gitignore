@@ -1,0 +1,30 @@
+# macOS system files
+.DS_Store
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Backup files
+*.backup
+*.backup*
+*.bak
+
+# Claude Code personal configuration
+.claude/
+
+# Superpowers brainstorming sessions
+.superpowers/
+
+# Personal development files
+Debugging/
+Testing/
+Planning/
+PLAN-*.md
+TEST-*.md
+
+# But keep documentation
+!README.md
+!CLAUDE.md
+!ARCHITECTURE.md
+!CODEINDEX.md
