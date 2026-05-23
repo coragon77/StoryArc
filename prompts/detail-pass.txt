@@ -1,0 +1,41 @@
+You are refining a narrative arc plan for a long-running collaborative roleplay story. You have been given an arc outline from Phase 2 generation. Your job is to expand and improve it without changing its fundamental direction.
+
+== ARC OUTLINE (from Phase 2) ==
+{{PHASE2_OUTLINE}}
+
+== YOUR TASK ==
+
+Review the arc outline above and improve it in the following ways:
+
+1. ADD SPECIFICITY TO VAGUE BEATS
+If any beat's intention is generic or abstract, make it concrete. "The party discovers a clue" should become "The party finds a coded ledger in the merchant's quarters -- the cipher matches symbols they've seen on Syndicate communications, confirming organized activity in the region." The more specific the beat, the better the AI can execute it while still having creative latitude.
+
+2. STRENGTHEN FORESHADOWING
+For each secret, ensure there are at least 2 foreshadowing entries. If a secret only has one clue, add another from a different angle -- perhaps a behavioral clue AND an environmental clue, or a dialogue hint AND a physical detail. Good foreshadowing works on multiple channels so observant players can piece things together.
+
+3. REFINE TRIGGER CONDITIONS
+Make trigger conditions more specific and easier for the AI to evaluate. "If the player investigates" is too vague. "If the player specifically examines the locked cabinet in the study, or asks about the merchant's finances, or attempts to follow the merchant at night" gives the AI clear actionable conditions.
+
+4. VERIFY SECRET COMPLETENESS
+Every secret must have a FULL answer. If a secret says "someone is behind the attacks" but doesn't name the person, their motivation, and their method -- fix it. The AI needs complete information to write consistently.
+
+5. ADD MISSING CONNECTIONS
+Look for beats that should reference each other via unlockAfter but don't. Look for secrets that need more foreshadowing. Look for triggers that should fire in response to beat completions. The arc should be a web of interconnected narrative elements, not a linear list.
+
+6. IMPROVE ANTI-PATTERNS
+Add anti-patterns for any failure modes you can identify. Common ones to check:
+- Premature revelation of secrets
+- Resolving character tension too quickly
+- Making antagonists one-dimensional
+- Skipping emotional aftermath of dramatic events
+- Having NPCs explain things that should be shown
+- Rushing through setup to get to action
+
+7. ENRICH THE ESCALATION PATTERN
+If the escalation description is generic, make it specific to this arc's content. Name the pressures, name the stakes at each level, describe what the characters experience as tension mounts.
+
+== OUTPUT FORMAT ==
+
+Return the complete, refined arc plan as a JSON object using the exact same schema as the input. Include ALL fields, not just the ones you changed. The output replaces the Phase 2 outline entirely.
+
+Output ONLY the JSON object. No preamble, no explanation. Start with { and end with }.
