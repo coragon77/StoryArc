@@ -13,7 +13,6 @@ import {
     chat,
     chat_metadata,
     saveMetadata,
-    generateRaw,
 } from '/script.js';
 
 import {
@@ -21,43 +20,82 @@ import {
     getContext,
 } from '/scripts/extensions.js';
 
-import { groups, selected_group } from '/scripts/group-chats.js';
-import { Popup, POPUP_TYPE } from '/scripts/popup.js';
+import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
+import { getActiveArcs } from './lib/planning/index.js';
+import { buildInjection } from './lib/injection/index.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults } from './lib/injection/index.js';
+import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/index.js';
+import { updateProgress } from './lib/ui/index.js';
 
-import { MODULE_NAME, defaultSettings } from './lib/core/constants.js';
-
-// ─── Settings ────────────────────────────────────────────────────────────────
+// ─── Event Handlers ─────────────────────────────────────────────────────────
 
 /**
- * Load extension settings, merging defaults for missing keys
+ * Before each LLM call: inject active arc plans into the prompt.
  */
-function loadSettings() {
-    if (!extension_settings[MODULE_NAME]) {
-        extension_settings[MODULE_NAME] = {};
+async function onGenerationStarted() {
+    if (!isEnabled()) return;
+
+    const arcs = getActiveArcs();
+    if (!arcs.length) return;
+
+    const injection = buildInjection(arcs);
+    setExtensionPrompt(
+        'story_arc_plan',
+        injection,
+        extension_prompt_types.IN_PROMPT,
+        0,
+        0,
+        false,
+        extension_prompt_roles.SYSTEM,
+    );
+}
+
+/**
+ * After the AI responds: parse ARC_SIGNAL patterns, strip them from display,
+ * and update beat statuses accordingly.
+ */
+async function onMessageReceived(messageIndex) {
+    if (!isEnabled()) return;
+
+    const message = chat[messageIndex];
+    if (!message?.mes) return;
+
+    const signals = parseSignals(message.mes);
+    if (signals.length) {
+        stripSignalsFromMessage(messageIndex);
+        const activeArcs = getActiveArcs();
+        await processSignalResults(signals, activeArcs);
+        updateProgress();
+        await saveMetadata();
     }
-    Object.entries(defaultSettings).forEach(([key, value]) => {
-        if (extension_settings[MODULE_NAME][key] === undefined) {
-            extension_settings[MODULE_NAME][key] = value;
-        }
-    });
 }
 
 /**
- * Get current extension settings
- * @returns {object}
+ * When the user switches to a different chat: re-init per-chat state
+ * and refresh the progress display.
  */
-export function getSettings() {
-    return extension_settings[MODULE_NAME] || defaultSettings;
+function onChatChanged() {
+    ensureChatState();
+    updateProgress();
 }
 
-// ─── Extension Entry Point ───────────────────────────────────────────────────
+// ─── Extension Entry Point ──────────────────────────────────────────────────
 
 jQuery(async () => {
     loadSettings();
 
-    // TODO: Load settings UI panel HTML
-    // TODO: Wire up event listeners
-    // TODO: Register SillyTavern events
+    // Render settings panel into ST's extensions drawer
+    $('#extensions_settings2').append(renderSettingsPanel());
+    setupSettingsPanelEvents();
+
+    // Register SillyTavern event listeners
+    eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
+    eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
+    eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
+
+    // Initialize state for current chat
+    ensureChatState();
+    updateProgress();
 
     console.log('[Story Arc] Extension loaded');
 });
