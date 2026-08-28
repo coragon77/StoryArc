@@ -1,6 +1,9 @@
 # Code Index
 
-File structure and module dependencies. For quick reference, see [CLAUDE.md](./CLAUDE.md). For system design, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+- **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
+- **Last Updated:** 2026-08-28
+
+File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
 ## Directory Structure
 
@@ -11,9 +14,6 @@ StoryArc/
 ├── manifest.json               # SillyTavern extension manifest
 ├── .gitignore                  # Git ignore rules
 ├── CLAUDE.md                   # AI coding assistant reference
-├── ARCHITECTURE.md             # System design documentation
-├── CODEINDEX.md                # This file
-├── ST-EXTENSION-PATTERNS.md    # SillyTavern extension API reference
 ├── prompts/
 │   ├── analyze-context.txt     # Phase 1 prompt: analyze harvested context into story state
 │   ├── generate-arc.txt        # Phase 2 prompt: produce JSON arc plan from analysis
@@ -39,7 +39,10 @@ StoryArc/
 │   │   ├── index.js            # Facade — re-exports generateArc(), saveArc(), getArcs(),
 │   │   │                       #   getActiveArcs(), getArcById(), updateArc(), deleteArc()
 │   │   ├── generator.js        # generateArc(context, userDirection, callbacks) —
-│   │   │                       #   two-phase LLM generation with retry logic
+│   │   │                       #   two-phase LLM generation with retry logic;
+│   │   │                       #   POSTs /api/backends/chat-completions/generate
+│   │   │                       #   directly and reads the SSE stream, bypassing
+│   │   │                       #   generateRaw
 │   │   ├── validation.js       # parseLlmJson() — strips fences, extracts JSON;
 │   │   │                       #   validateArcPlan() — schema check + normalization
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
@@ -83,8 +86,16 @@ StoryArc/
 │   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.
 │   └── test-core.js            # Tests: validation, pacing, signals (pure logic)
 └── docs/
+    ├── architecture/
+    │   ├── architecture.md     # System design documentation
+    │   ├── code-index.md       # This file
+    │   └── st-extension-patterns.md
+    │                           # SillyTavern extension API reference
     └── goals/GOALS.md          # High-level feature goals
 ```
+
+The three architecture docs moved out of the repo root into `docs/architecture/`
+(docs reorganization 2026-08-28, outside git history).
 
 ## Module Dependencies
 
@@ -103,7 +114,8 @@ lib/planning/
 ├── templates.js   (no ST deps — fetch only)
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
-└── generator.js   (imports: templates.js, validation.js, core/settings.js, /script.js)
+└── generator.js   (imports: templates.js, validation.js, core/settings.js, /script.js;
+                    dynamic imports: /scripts/extensions.js, /scripts/openai.js)
 
 lib/injection/
 ├── pacing.js   (imports: core/constants.js, /script.js)

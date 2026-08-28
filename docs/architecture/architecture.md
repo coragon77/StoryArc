@@ -1,6 +1,9 @@
 # Architecture
 
-System design for Story Arc. For quick reference, see [CLAUDE.md](./CLAUDE.md). For file index, see [CODEINDEX.md](./CODEINDEX.md).
+- **Coverage:** `index.js`, `lib/`, `prompts/`
+- **Last Updated:** 2026-08-28
+
+System design for Story Arc. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For file index, see [code-index.md](./code-index.md).
 
 ## High-Level Data Flow
 
@@ -20,6 +23,8 @@ Arc Generation  (lib/planning/)
   │     → LLM produces a prose story-state summary
   ├── Phase 2 — Arc Outline: send analysis + user direction through generate-arc.txt
   │     → LLM returns a JSON arc plan
+  ├── Each LLM call: direct streaming POST to /api/backends/chat-completions/generate,
+  │     auto-retried (max 2, linear backoff) on transient errors
   ├── Parse + validate JSON (strip fences, extract object, schema-check)
   ├── Retry once with stricter JSON instruction if parse fails
   └── Normalize schema, assign defaults, save to chat_metadata.story_arc.arcs
@@ -76,7 +81,9 @@ Harvests story state from all available ST data sources.
 
 Arc generation, validation, storage, and prompt template management.
 
-- `generator.js` — `generateArc(context, userDirection, callbacks)` runs the two-phase LLM pipeline; Phase 3 (detail pass) is scaffolded but deferred post-MVP; includes retry logic for JSON parse failures; supports progress callbacks (`onProgress`, `isCancelled`)
+- `generator.js` — `generateArc(context, userDirection, callbacks)` runs the two-phase LLM pipeline; Phase 3 (detail pass) is scaffolded but deferred post-MVP; includes retry logic for JSON parse failures; supports progress callbacks (`onProgress`, `isCancelled`). Both phases go through `callLlm()`, which wraps the call in a transient-error retry loop (max 2 retries, linear backoff `2000 * (attempt + 1)`, matching `502|503|504|timeout|gateway|ETIMEDOUT` — 42bce4a, d064dc3; 42bce4a's message says "exponential", the code is linear), and `callBackendDirectly()`, which POSTs a minimal body to ST's `/api/backends/chat-completions/generate` with `stream: true` and assembles the SSE deltas (a14ae32, a257d92). Model comes from `getChatCompletionModel(oai_settings)`, temperature from `oai_settings.temp_openai`, `max_tokens` fixed at 4096.
+
+  The fixed `max_tokens: 4096` (entered via a700465/a14ae32 during the 502 debugging session) is a leftover, not a decision — owner's word, 2026-08-28: it is unwanted, and arc generation should take its response length from the connection profile once Connection Manager support is wired. (INTENT resolved 2026-08-28)
 - `validation.js` — `parseLlmJson()` strips markdown fences and extracts the first JSON object; `validateArcPlan()` checks required fields (`title`, `premise`, `beats`), normalizes optional fields via helper functions, returns `{ valid, arc, errors }`
 - `storage.js` — CRUD on `chat_metadata.story_arc.arcs[]`: `getArcs()`, `getActiveArcs()`, `getArcById()`, `saveArc()`, `updateArc()`, `deleteArc()`; each write calls `saveMetadata()`
 - `templates.js` — `loadTemplate(name)` fetches a `.txt` file from `prompts/`; `fillTemplate(template, vars)` does `{{KEY}}` substitution
@@ -93,7 +100,8 @@ Builds and delivers prompt injections; tracks progress via AI-emitted signals.
 
 All user-facing views. No business logic — delegates to core/context/planning/injection.
 
-- `settings-panel.js` — renders into the ST extension drawer; enable toggle, connection profile picker, injection budget slider
+- `settings-panel.js` — renders into the ST extension drawer; enable toggle, "Plan Next Arc" / "Manage Arcs" buttons, and the progress container. The connection profile picker and injection budget slider this doc originally claimed were never implemented: `git log --all -S 'profile' -- lib/ui/settings-panel.js` is empty across the file's whole history, `generator.js` carries a TODO for Connection Manager support "when UI for profile selection is built", and only the settings keys (`defaultConnectionProfile`, `connectionProfile` in `lib/core/constants.js`) exist. The claim described the design spec, not shipped UI. (VERIFY resolved 2026-08-28)
+
 - `wizard.js` — multi-step planning popup: (1) show harvested context preview, (2) freeform direction input, (3) live generation progress, (4) plan preview with accept/reject
 - `arc-manager.js` — popup listing all arcs with status badges; controls to toggle foreground/background, activate/deactivate, delete
 - `progress.js` — compact widget showing beat list with status indicators (active / completed / pending / locked), injected near the ST message input
@@ -221,7 +229,7 @@ The user can promote/demote arcs between foreground and background via the Arc M
 | World Info | `world_info` import or `context.worldInfo` | Read lorebook entries |
 | Chat messages | `chat` import from `/script.js` | Read history + signal scanning |
 | Prompt injection | `setExtensionPrompt()` | Inject arc guidance into AI context |
-| LLM calls | `generateRaw()` | Run multi-phase generation |
+| LLM calls | direct `fetch()` to `/api/backends/chat-completions/generate` | Run multi-phase generation (not `generateRaw()` — see Gotchas, a14ae32) |
 | Per-chat persistence | `chat_metadata` + `saveMetadata()` | Store arc plans |
 | Global settings | `extension_settings` + `saveSettingsDebounced()` | Store config |
 | Events | `eventSource.on(event_types.*)` | React to chat lifecycle |
@@ -235,6 +243,15 @@ Key events used:
 | `MESSAGE_RECEIVED` | Parse signals, update beat status |
 | `USER_MESSAGE_RENDERED` | Refresh progress display |
 | `CHAT_CHANGED` | Re-initialize per-chat state, refresh UI |
+
+## Gotchas
+
+- **Arc generation deliberately does not go through `generateRaw()`.** It adds fields (`include_reasoning`, `reasoning_effort`, `type`, `stop`, `logit_bias`, …) that make some providers answer 502. `callBackendDirectly()` sends the minimal body SillyTavern-MemoryBooks uses — `messages`, `model`, `temperature`, `max_tokens`, `chat_completion_source`, plus `custom_url` when set. Pinned by a14ae32.
+- **`generateQuietPrompt()` is not the alternative.** It routes through the full chat pipeline, which re-enters Story Arc's own `GENERATION_STARTED` / `MESSAGE_RECEIVED` handlers while a plan is being generated. Tried in 8787fea, reverted in a700465.
+- **Non-streaming requests time out on large prompts.** The arc prompt arrives as one 24K+ char message and exceeds nano-gpt's ~38s non-streaming ceiling; normal chat escapes this only because its prompt is spread over many small messages. The request therefore sets `stream: true` and reassembles the SSE `data:` chunks, skipping `[DONE]`. Pinned by a257d92.
+- **The model name must come from `getChatCompletionModel(oai_settings)`.** `oai_settings.openai_model` is only correct for the OpenAI source — nanogpt keeps its model in `oai_settings.nanogpt_model`, so reading the field directly sent "gpt-5" to a backend that does not serve it. Pinned by ca2dfb8.
+- **A 200 OK can still be an error.** Some backends return `{ error: … }` in a 200 body, and errors also turn up inside individual SSE chunks. Both paths throw instead of handing the body to the arc JSON parser, which otherwise reports it as a parse failure. Pinned by 3a14aa3.
+- **The settings drawer needs ST's exact markup.** The header div must carry `inline-drawer-toggle` — ST binds its click handler to that class, not to `inline-drawer-header` — and without it the drawer silently never opens. Pinned by 1310dc7. Leave the styling to ST too: wrapper padding and a header border misalign the panel in the drawer list (a09887b).
 
 ## Design Principles
 
