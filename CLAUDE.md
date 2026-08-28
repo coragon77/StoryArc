@@ -17,14 +17,12 @@ Story Arc is a SillyTavern extension that plans new story arcs for existing, lon
 3. **Prompt Injection** -- inject the active arc plan into SillyTavern's prompt pipeline to guide the AI
 4. **Progress Tracking** -- track which beats have been hit as the story progresses
 
-## Documentation Index
+## Documentation
 
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **CLAUDE.md** (this file) | Quick reference, patterns, constraints | Always loaded |
-| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | System design, data flow, module responsibilities | Modifying core logic |
-| **[CODEINDEX.md](./CODEINDEX.md)** | File structure, module dependencies | Finding files |
-| **[ST-EXTENSION-PATTERNS.md](./ST-EXTENSION-PATTERNS.md)** | SillyTavern extension API reference | Integrating with ST |
+**Read [docs/claude/onboarding.md](./docs/claude/onboarding.md) first (blocking).**
+It holds the context-trigger routing table — which doc to read for which task —
+plus the verification gate and behavioral rules. The routing table there is the
+sole routing artifact; do not duplicate it here.
 
 ## Tech Stack
 
@@ -90,7 +88,10 @@ StoryArc/
 │   │   └── st-mocks.js         # Mock SillyTavern globals
 │   └── test-*.js               # Test files
 └── docs/
-    └── goals/GOALS.md
+    ├── architecture/           # Subsystem docs (drift-tracked, Coverage headers)
+    ├── claude/                 # onboarding.md (routing table) + canon guidelines
+    ├── plans/                  # Dated design specs + implementation plans
+    └── goals/GOALS.md          # Long-horizon goals
 ```
 
 ## Code Patterns

@@ -1,0 +1,4 @@
+# Project-specific drift-report ignore patterns (fnmatch, one per line).
+# Stray files unrelated to the extension:
+old-norse-translator.jsx
+.playwright-mcp/*
