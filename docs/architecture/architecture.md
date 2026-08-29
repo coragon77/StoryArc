@@ -46,11 +46,13 @@ Prompt Injection  (lib/injection/)
        v
 Signal-Based Progress Tracking  (lib/injection/signals.js)
   ├── On MESSAGE_RECEIVED: scan AI message for [ARC_SIGNAL:arcId:beatId:COMPLETE]
+  │     (emitted HTML-comment-wrapped; bare form still parsed for old messages)
   ├── Mark matching beats as completed (active or pending; locked/completed refused)
   ├── Unlock gated beats whose unlockAfter prerequisites are all complete
   ├── Promote the first pending beat to active when no beat is active
   ├── Mark arc complete when all non-optional beats are done
-  ├── Strip signal tokens from displayed message text
+  ├── Strip signal tokens (and their leftover blank lines) from the message
+  ├── Scrub leaked plan identifiers (beat/arc ids, all arcs) from the message
   └── Save updated arc state to chat_metadata, refresh progress UI
        |
        v
@@ -101,9 +103,9 @@ Arc generation, validation, storage, and prompt template management.
 
 Builds and delivers prompt injections; tracks progress via AI-emitted signals.
 
-- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each (beat lines carry their `[beatId]` so the model can connect beats to signal markers), trims the body to token budget if needed; `buildSignalInjection(arcs)` builds the beat-signal directive as a *separate* injection (empty when `autoTrack` is off or no beat is active) — it was moved out of the plan text because the tail-slice budget trim used to cut it off first on any realistic plan (27c3d17)
+- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each (beat lines carry their `[beatId]` so the model can connect beats to signal markers), trims the body to token budget if needed; `buildSignalInjection(arcs)` builds the beat-signal directive as a *separate* injection (empty when `autoTrack` is off or no beat is active) — it was moved out of the plan text because the tail-slice budget trim used to cut it off first on any realistic plan (27c3d17). The directive opens with a continuation guard (never restart the scene, even when the last message is not the user's — RP presets like Celia wrap "the latest turn" at fixed depths, which mislabels the anchor when the user generates without input), presents each marker as a conditional output ("When beat X is fulfilled, output exactly: …" — GLM read a bare `:COMPLETE` token as status and forced the active beat into every reply), and declares the plan invisible scaffolding whose internals must not appear in any journal/summary/state-tracking block the preset requests
 - `pacing.js` — `calculatePhase(arc)` computes beat-completion ratio and message-count ratio against `estimatedLength`, takes the minimum to get a conservative phase; `getPacingDirective(phase)` returns the directive string; `messagesUntilNextPhase()` for pacing hint in injection
-- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message; `processSignalResults(signals, activeArcs)` marks signaled beats completed (accepts `active` *and* `pending` beats — stories often fulfill the next beat in the same scene; `locked`/`completed` are refused), unlocks beats whose `unlockAfter` list is satisfied, promotes the first pending beat to `active` when none is active (without this the arc stalls after its first completed beat), marks arcs complete when all non-optional beats are done (27c3d17); `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM
+- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message, bare or HTML-comment-wrapped (the directive asks for the comment form — ST's renderer hides it completely, even mid-stream; verified against `messageFormatting`: a custom tag leaves an empty `<p>`, an open/close tag leaks its inner text, a comment leaves nothing); `processSignalResults(signals, activeArcs)` marks signaled beats completed (accepts `active` *and* `pending` beats — stories often fulfill the next beat in the same scene; `locked`/`completed` are refused), unlocks beats whose `unlockAfter` list is satisfied, promotes the first pending beat to `active` when none is active (without this the arc stalls after its first completed beat), marks arcs complete when all non-optional beats are done (27c3d17); `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM and trims the blank lines the marker leaves at message start; `scrubArcInternals(messageIndex, arcs)` mechanically removes leaked beat/arc ids from the saved message after marker parsing — the confidentiality clause steers the model, only the scrub guarantees it (RP presets with state-tracking blocks, e.g. Celia's `[Main-line]`, otherwise persist beat ids and next-beat agendas into history, where they steer later generations). Called with *all* arcs, not just active — past arcs' ids linger in journal recaps. Only underscore-containing ids are scrubbed; a plain-word id is indistinguishable from prose and harmless
 
 ### lib/ui/
 
@@ -191,10 +193,10 @@ Five phases, each with a 0–1 percentage range applied to both beat-completion 
 When `autoTrack` is enabled, a dedicated injection (`story_arc_signals`, IN_CHAT depth 0 — the last message the model sees before generating) instructs the AI to emit completion markers:
 
 ```
-[ARC_SIGNAL:<arcId-prefix>:<beatId>:COMPLETE]
+<!-- [ARC_SIGNAL:<arcId-prefix>:<beatId>:COMPLETE] -->
 ```
 
-Only the first 8 characters of the arc UUID are used in the signal to keep it compact. The model is told to put the marker on the **first** line of its reply, not the last — end-of-message markers get eaten whenever the response hits the token cap. On `MESSAGE_RECEIVED`, `parseSignals()` scans the whole message, `processSignalResults()` resolves the full arc by prefix match, and `stripSignalsFromMessage()` removes the tokens before the user sees them.
+The HTML-comment wrapper makes the marker invisible in ST's renderer even while it streams in; the bare form (without the wrapper) is still parsed for messages written before the change. Only the first 8 characters of the arc UUID are used in the signal to keep it compact. The model is told to put the marker on the **first** line of its reply, not the last — end-of-message markers get eaten whenever the response hits the token cap. On `MESSAGE_RECEIVED`, `parseSignals()` scans the whole message, `processSignalResults()` resolves the full arc by prefix match, `stripSignalsFromMessage()` removes the tokens (and their leftover blank lines) before the user sees them, and `scrubArcInternals()` deletes any beat/arc ids the model leaked elsewhere in the message — journals and state-tracking blocks from RP presets otherwise carry plan internals (spoilers, next-beat agendas) into saved history.
 
 Directive placement is the load-bearing detail (27c3d17): with the directive in the system prompt (or even one message back from the end), GLM 5.2 reasoned about beats in its chain-of-thought and still never emitted a marker. Depth 0 produced compliance. Emission remains stochastic per message — acceptable over a 40-message arc, since beats only need to complete eventually.
 
@@ -269,6 +271,8 @@ Key events used:
 - **The model name must come from `getChatCompletionModel(oai_settings)`.** `oai_settings.openai_model` is only correct for the OpenAI source — nanogpt keeps its model in `oai_settings.nanogpt_model`, so reading the field directly sent "gpt-5" to a backend that does not serve it. Pinned by ca2dfb8.
 - **A 200 OK can still be an error.** Some backends return `{ error: … }` in a 200 body, and errors also turn up inside individual SSE chunks. Both paths throw instead of handing the body to the arc JSON parser, which otherwise reports it as a parse failure. Pinned by 3a14aa3.
 - **The settings drawer needs ST's exact markup.** The header div must carry `inline-drawer-toggle` — ST binds its click handler to that class, not to `inline-drawer-header` — and without it the drawer silently never opens. Pinned by 1310dc7. Leave the styling to ST too: wrapper padding and a header border misalign the panel in the drawer list (a09887b).
+- **Assistant-last histories make RP presets restart the scene.** Celia injects `<latest_turn_start>`/`<latest_turn_end>` wrappers at fixed IN_CHAT depths 1/0; when the user generates without typing (a normal way to advance the story), the wrappers label the model's *own last reply* as "the latest turn to answer", and GLM re-answered the last user message from scratch — three parallel takes of the same scene. The signal directive's continuation guard counters this at depth 0. Pinned by 8dbfdb1.
+- **Prompt clauses steer; only post-processing guarantees.** GLM pastes beat ids and next-beat agendas into Celia's `[Main-line]`/journal blocks even when told not to; because those blocks re-enter the prompt as history, the model ends up pacing the arc off its own agenda instead of the pacing rules. `scrubArcInternals` deletes the ids mechanically after every AI message — the confidentiality clause reduces the leakage, the scrub makes the identifiers unable to persist.
 
 ## Design Principles
 

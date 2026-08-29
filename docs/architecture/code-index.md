@@ -55,18 +55,20 @@ StoryArc/
 │   ├── injection/
 │   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
 │   │   │                       #   parseSignals(), stripSignalsFromMessage(),
-│   │   │                       #   processSignalResults()
+│   │   │                       #   processSignalResults(), scrubArcInternals()
 │   │   ├── builder.js          # buildInjection(arcs) — assembles plan injection text
 │   │   │                       #   from foreground/background arcs, respects token budget;
 │   │   │                       #   buildSignalInjection(arcs) — separate beat-signal
 │   │   │                       #   directive (injected IN_CHAT depth 0)
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
 │   │   │                       #   messagesUntilNextPhase(arc, phase)
-│   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens;
+│   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens
+│   │                           #   (bare or HTML-comment-wrapped);
 │   │                           #   processSignalResults() — marks active/pending beats
 │   │                           #   complete, unlocks gated beats, promotes next pending
 │   │                           #   beat to active, marks arcs complete;
-│   │                           #   stripSignalsFromMessage() — removes tokens from display
+│   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
+│   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── ui/
 │   │   ├── index.js            # Facade — re-exports renderSettingsPanel(),
 │   │   │                       #   setupSettingsPanelEvents(), showWizard(),

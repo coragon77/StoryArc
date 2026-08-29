@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSignals, processSignalResults, stripSignalsFromMessage } from '../lib/injection/signals.js';
+import { parseSignals, processSignalResults, stripSignalsFromMessage, scrubArcInternals } from '../lib/injection/signals.js';
 import { chat } from './mocks/st-mocks.js';
 
 describe('parseSignals', () => {
@@ -59,6 +59,37 @@ describe('stripSignalsFromMessage', () => {
         stripSignalsFromMessage(0);
 
         assert.equal(chat[0].mes, 'Story text.');
+    });
+});
+
+describe('scrubArcInternals', () => {
+    const arcs = [{
+        id: '46fcef53-aaaa-bbbb',
+        beats: [
+            { id: 'sensory_bleed' },
+            { id: 'explicit_pursuit' },
+            { id: 'climax' },
+        ],
+    }];
+
+    it('removes leaked beat and arc ids from tracker blocks, leaving prose intact', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: 'The sensory bleed hit her hard.\n\n<!--\nsensory_bleed beat COMPLETE. Next: explicit_pursuit begins (arc 46fcef53).\n-->' });
+
+        scrubArcInternals(0, arcs);
+
+        assert.equal(chat[0].mes, 'The sensory bleed hit her hard.\n\n<!--\n… beat COMPLETE. Next: … begins (arc …).\n-->');
+    });
+
+    it('leaves plain-word beat ids alone — they are indistinguishable from prose', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: 'The climax of the evening came quietly.' });
+
+        scrubArcInternals(0, arcs);
+
+        assert.equal(chat[0].mes, 'The climax of the evening came quietly.');
     });
 });
 

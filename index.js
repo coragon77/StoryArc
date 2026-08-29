@@ -21,9 +21,9 @@ import {
 } from '/scripts/extensions.js';
 
 import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
-import { getActiveArcs } from './lib/planning/index.js';
+import { getArcs, getActiveArcs } from './lib/planning/index.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/index.js';
-import { parseSignals, stripSignalsFromMessage, processSignalResults } from './lib/injection/index.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals } from './lib/injection/index.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
 
@@ -70,14 +70,20 @@ async function onMessageReceived(messageIndex) {
     const message = chat[messageIndex];
     if (!message?.mes) return;
 
+    const activeArcs = getActiveArcs();
     const signals = parseSignals(message.mes);
     if (signals.length) {
         stripSignalsFromMessage(messageIndex);
-        const activeArcs = getActiveArcs();
         await processSignalResults(signals, activeArcs);
         updateProgress();
         await saveMetadata();
     }
+
+    // After marker parsing: mechanically remove any plan identifiers the
+    // model leaked into journals/trackers — the directive alone can't
+    // guarantee it, and leaked ids feed back into later generations.
+    // All arcs, not just active: past arcs' ids linger in journal recaps.
+    scrubArcInternals(messageIndex, getArcs());
 }
 
 /**
