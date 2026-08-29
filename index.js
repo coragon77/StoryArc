@@ -23,7 +23,7 @@ import {
 import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
 import { getArcs, getActiveArcs } from './lib/planning/index.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/index.js';
-import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals } from './lib/injection/index.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
 
@@ -87,6 +87,25 @@ async function onMessageReceived(messageIndex) {
 }
 
 /**
+ * After the user sends a message: activate the next beat in any arc that has
+ * none. Promotion waits for the user's turn so the AI cannot chain its own
+ * aftermath prose into the next objective — the player reacts to a development
+ * before the model learns what comes after it.
+ *
+ * MESSAGE_RECEIVED only fires for AI messages; user messages fire
+ * USER_MESSAGE_RENDERED (same event Story Mode counts rounds on).
+ */
+async function onUserMessageRendered() {
+    if (!isEnabled()) return;
+
+    const promoted = await promoteNextBeats(getActiveArcs());
+    if (promoted) {
+        updateProgress();
+        await saveMetadata();
+    }
+}
+
+/**
  * When the user switches to a different chat: re-init per-chat state
  * and refresh the progress display.
  */
@@ -107,6 +126,7 @@ jQuery(async () => {
     // Register SillyTavern event listeners
     eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
+    eventSource.on(event_types.USER_MESSAGE_RENDERED, onUserMessageRendered);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
 
     // Initialize state for current chat

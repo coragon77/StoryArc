@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSignals, processSignalResults, stripSignalsFromMessage, scrubArcInternals } from '../lib/injection/signals.js';
+import { parseSignals, processSignalResults, stripSignalsFromMessage, scrubArcInternals, promoteNextBeats } from '../lib/injection/signals.js';
 import { chat } from './mocks/st-mocks.js';
 
 describe('parseSignals', () => {
@@ -107,19 +107,20 @@ describe('processSignalResults', () => {
         };
     }
 
-    it('completes the active beat and promotes the next pending beat', async () => {
+    it('completes the active beat and leaves the arc without an active beat', async () => {
         const arc = makeArc();
         await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', status: 'COMPLETE' }], [arc]);
         assert.equal(arc.beats[0].status, 'completed');
-        assert.equal(arc.beats[1].status, 'active');
+        // No promotion here — that waits for the next user message.
+        assert.equal(arc.beats[1].status, 'pending');
+        assert.equal(arc.beats.some(b => b.status === 'active'), false);
     });
 
-    it('accepts a signal for a pending beat without touching the active one', async () => {
+    it('ignores signals for pending beats', async () => {
         const arc = makeArc();
         await processSignalResults([{ arcId: 'arc12345', beatId: 'b2', status: 'COMPLETE' }], [arc]);
-        assert.equal(arc.beats[1].status, 'completed');
+        assert.equal(arc.beats[1].status, 'pending');
         assert.equal(arc.beats[0].status, 'active');
-        assert.equal(arc.beats[2].status, 'pending');
     });
 
     it('ignores signals for locked beats', async () => {
@@ -127,5 +128,114 @@ describe('processSignalResults', () => {
         await processSignalResults([{ arcId: 'arc12345', beatId: 'b3', status: 'COMPLETE' }], [arc]);
         assert.equal(arc.beats[2].status, 'locked');
         assert.equal(arc.beats[0].status, 'active');
+    });
+
+    it('accepts only the first completion per arc in one message', async () => {
+        const arc = makeArc();
+        arc.beats[1].status = 'active';
+        const { completedBeats } = await processSignalResults([
+            { arcId: 'arc12345', beatId: 'b1', status: 'COMPLETE' },
+            { arcId: 'arc12345', beatId: 'b2', status: 'COMPLETE' },
+        ], [arc]);
+        assert.deepEqual(completedBeats, ['b1']);
+        assert.equal(arc.beats[0].status, 'completed');
+        assert.equal(arc.beats[1].status, 'active');
+    });
+
+    it('allows one completion in each of two arcs in the same message', async () => {
+        const first = makeArc();
+        const second = makeArc();
+        second.id = 'arc99999-full-id';
+        const { completedBeats } = await processSignalResults([
+            { arcId: 'arc12345', beatId: 'b1', status: 'COMPLETE' },
+            { arcId: 'arc99999', beatId: 'b1', status: 'COMPLETE' },
+        ], [first, second]);
+        assert.deepEqual(completedBeats, ['b1', 'b1']);
+        assert.equal(first.beats[0].status, 'completed');
+        assert.equal(second.beats[0].status, 'completed');
+    });
+
+    it('unlocks gated beats when their prerequisites are complete', async () => {
+        const arc = makeArc();
+        arc.beats[1].status = 'active';
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b2', status: 'COMPLETE' }], [arc]);
+        assert.equal(arc.beats[2].status, 'pending');
+    });
+
+    it('marks the arc completed when the last non-optional beat completes', async () => {
+        const arc = {
+            id: 'arc12345-full-id',
+            title: 'Single Beat Arc',
+            status: 'active',
+            beats: [
+                { id: 'b1', intention: 'only', status: 'active', unlockAfter: [], optional: false },
+                { id: 'b2', intention: 'extra', status: 'pending', unlockAfter: [], optional: true },
+            ],
+        };
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', status: 'COMPLETE' }], [arc]);
+        assert.equal(arc.status, 'completed');
+    });
+});
+
+describe('promoteNextBeats', () => {
+    it('activates the first pending beat when no beat is active', async () => {
+        const arc = {
+            id: 'arc12345-full-id',
+            title: 'Test Arc',
+            beats: [
+                { id: 'b1', intention: 'first', status: 'completed' },
+                { id: 'b2', intention: 'second', status: 'pending' },
+                { id: 'b3', intention: 'third', status: 'pending' },
+            ],
+        };
+        const promoted = await promoteNextBeats([arc]);
+        assert.equal(promoted, true);
+        assert.equal(arc.beats[1].status, 'active');
+        assert.equal(arc.beats[2].status, 'pending');
+    });
+
+    it('leaves an arc that already has an active beat alone', async () => {
+        const arc = {
+            id: 'arc12345-full-id',
+            title: 'Test Arc',
+            beats: [
+                { id: 'b1', intention: 'first', status: 'active' },
+                { id: 'b2', intention: 'second', status: 'pending' },
+            ],
+        };
+        const promoted = await promoteNextBeats([arc]);
+        assert.equal(promoted, false);
+        assert.equal(arc.beats[1].status, 'pending');
+    });
+
+    it('does not promote locked beats', async () => {
+        const arc = {
+            id: 'arc12345-full-id',
+            title: 'Test Arc',
+            beats: [
+                { id: 'b1', intention: 'first', status: 'completed' },
+                { id: 'b2', intention: 'second', status: 'locked' },
+            ],
+        };
+        const promoted = await promoteNextBeats([arc]);
+        assert.equal(promoted, false);
+        assert.equal(arc.beats[1].status, 'locked');
+    });
+
+    it('promotes in every arc that needs it', async () => {
+        const first = {
+            id: 'arc11111-full-id',
+            title: 'First',
+            beats: [{ id: 'b1', intention: 'a', status: 'pending' }],
+        };
+        const second = {
+            id: 'arc22222-full-id',
+            title: 'Second',
+            beats: [{ id: 'b1', intention: 'b', status: 'pending' }],
+        };
+        const promoted = await promoteNextBeats([first, second]);
+        assert.equal(promoted, true);
+        assert.equal(first.beats[0].status, 'active');
+        assert.equal(second.beats[0].status, 'active');
     });
 });

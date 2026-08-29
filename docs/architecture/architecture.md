@@ -36,10 +36,11 @@ Prompt Injection  (lib/injection/)
   ├── Calculate current phase for each arc (beat ratio × message ratio, take minimum)
   ├── Build TWO separate injections:
   │     story_arc_plan (IN_PROMPT) — token-budgeted plan text:
-  │       Foreground arcs — full detail: premise, tone, beats, secrets, foreshadowing,
-  │                          triggers, pacing directives, anti-patterns
+  │       Foreground arcs — premise, tone, the ACTIVE beat's pressure only, secrets,
+  │                          foreshadowing, triggers, pacing directives, anti-patterns
   │       Background arcs — summary only: premise + "keep as distant tension"
-  │     story_arc_signals (IN_CHAT, depth 0) — the beat-signal directive, placed as
+  │     story_arc_signals (IN_CHAT, depth 0) — continuation guard + confidentiality
+  │       clause always; the beat check only while a beat is active. Placed as
   │       the last message before generation (models ignore it anywhere else)
   └── Both are set to '' when no arcs are active or the extension is disabled
        |
@@ -47,13 +48,21 @@ Prompt Injection  (lib/injection/)
 Signal-Based Progress Tracking  (lib/injection/signals.js)
   ├── On MESSAGE_RECEIVED: scan AI message for [ARC_SIGNAL:arcId:beatId:COMPLETE]
   │     (emitted HTML-comment-wrapped; bare form still parsed for old messages)
-  ├── Mark matching beats as completed (active or pending; locked/completed refused)
+  ├── Mark matching beats as completed (active only; at most one per arc per message)
   ├── Unlock gated beats whose unlockAfter prerequisites are all complete
-  ├── Promote the first pending beat to active when no beat is active
   ├── Mark arc complete when all non-optional beats are done
   ├── Strip signal tokens (and their leftover blank lines) from the message
   ├── Scrub leaked plan identifiers (beat/arc ids, all arcs) from the message
   └── Save updated arc state to chat_metadata, refresh progress UI
+       |
+       v
+Beat Promotion  (lib/injection/signals.js — promoteNextBeats)
+  ├── On USER_MESSAGE_RENDERED: for every active arc without an active beat,
+  │     promote its first pending beat to active and persist
+  └── Between completion and promotion the arc lingers: the plan section carries a
+        "develop the consequences" directive instead of a pressure, and no marker
+        lines are injected. The player always reacts before the model learns
+        what comes next; the next user message always ends the linger
        |
        v
 UI Display  (lib/ui/)
@@ -103,9 +112,12 @@ Arc generation, validation, storage, and prompt template management.
 
 Builds and delivers prompt injections; tracks progress via AI-emitted signals.
 
-- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each (beat lines carry their `[beatId]` so the model can connect beats to signal markers), trims the body to token budget if needed; `buildSignalInjection(arcs)` builds the beat-signal directive as a *separate* injection (empty when `autoTrack` is off or no beat is active) — it was moved out of the plan text because the tail-slice budget trim used to cut it off first on any realistic plan (27c3d17). The directive opens with a continuation guard (never restart the scene, even when the last message is not the user's — RP presets like Celia wrap "the latest turn" at fixed depths, which mislabels the anchor when the user generates without input), presents each marker as a conditional output ("When beat X is fulfilled, output exactly: …" — GLM read a bare `:COMPLETE` token as status and forced the active beat into every reply), and declares the plan invisible scaffolding whose internals must not appear in any journal/summary/state-tracking block the preset requests
+- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each, trims the body to token budget if needed; `buildSignalInjection(arcs)` builds the signal directive as a *separate* injection (empty only when `autoTrack` is off or there are no arcs) — it was moved out of the plan text because the tail-slice budget trim used to cut it off first on any realistic plan (27c3d17).
+  - **The plan section shows one beat and no ids.** The foreground section carries a `CURRENT PRESSURE:` block holding the active beat's `pressure` text (falling back to `intention` for arcs planned before the field existed). Pending and locked beats are omitted entirely — no ids, no intentions, no teaser. Beat ids appear nowhere in the plan text at all. The old `CURRENT BEATS` list with `(NOW)`/`(upcoming)` markers turned the plan into a visible task list: live testing burned 7 of 10 non-optional beats in ~8 exchanges on an arc planned for 40 messages.
+  - **Linger.** When an arc has no active beat (the gap between a completion and the next user message), the pressure block is replaced by a directive to develop consequences and introduce no new major developments.
+  - `buildSignalDirective` always emits the continuation guard (never restart the scene, even when the last message is not the user's — RP presets like Celia wrap "the latest turn" at fixed depths, which mislabels the anchor when the user generates without input) and the confidentiality clause declaring the plan invisible scaffolding whose internals must not appear in any journal/summary/state-tracking block the preset requests. Both must survive linger, so neither is gated on having an active beat. The BEAT CHECK block and its marker lines are gated: they appear only while a beat is active, and each line is phrased as recognition of the past (`If the story has already brought this about — "<intention>" — output exactly: …`) with an explicit "these are not instructions, do not steer toward them". Earlier phrasings were read as objectives; a bare `:COMPLETE` token was read as status and forced the active beat into every reply
 - `pacing.js` — `calculatePhase(arc)` computes beat-completion ratio and message-count ratio against `estimatedLength`, takes the minimum to get a conservative phase; `getPacingDirective(phase)` returns the directive string; `messagesUntilNextPhase()` for pacing hint in injection
-- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message, bare or HTML-comment-wrapped (the directive asks for the comment form — ST's renderer hides it completely, even mid-stream; verified against `messageFormatting`: a custom tag leaves an empty `<p>`, an open/close tag leaks its inner text, a comment leaves nothing); `processSignalResults(signals, activeArcs)` marks signaled beats completed (accepts `active` *and* `pending` beats — stories often fulfill the next beat in the same scene; `locked`/`completed` are refused), unlocks beats whose `unlockAfter` list is satisfied, promotes the first pending beat to `active` when none is active (without this the arc stalls after its first completed beat), marks arcs complete when all non-optional beats are done (27c3d17); `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM and trims the blank lines the marker leaves at message start; `scrubArcInternals(messageIndex, arcs)` mechanically removes leaked beat/arc ids from the saved message after marker parsing — the confidentiality clause steers the model, only the scrub guarantees it (RP presets with state-tracking blocks, e.g. Celia's `[Main-line]`, otherwise persist beat ids and next-beat agendas into history, where they steer later generations). Called with *all* arcs, not just active — past arcs' ids linger in journal recaps. Only underscore-containing ids are scrubbed; a plain-word id is indistinguishable from prose and harmless
+- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message, bare or HTML-comment-wrapped (the directive asks for the comment form — ST's renderer hides it completely, even mid-stream; verified against `messageFormatting`: a custom tag leaves an empty `<p>`, an open/close tag leaks its inner text, a comment leaves nothing); `processSignalResults(signals, activeArcs)` marks signaled beats completed (`active` beats only, and at most one per arc per message — `pending` beats are not shown to the model at all, so a signal for one is a hallucinated or stale id, and an eager scene claiming two beats at once burns the arc's pace), unlocks beats whose `unlockAfter` list is satisfied, marks arcs complete when all non-optional beats are done (27c3d17). It deliberately does **not** promote the next beat; `promoteNextBeats(arcs)` does that on `USER_MESSAGE_RENDERED`, activating the first pending beat of every active arc that has none. Recording stays liberal in one direction on purpose: a completion signal is never refused for being too fast, because the signal arrives *after* the scene was written and refusing it would make the tracker disagree with the visible story. The brake is what the model can see, not what the bookkeeping accepts; `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM and trims the blank lines the marker leaves at message start; `scrubArcInternals(messageIndex, arcs)` mechanically removes leaked beat/arc ids from the saved message after marker parsing — the confidentiality clause steers the model, only the scrub guarantees it (RP presets with state-tracking blocks, e.g. Celia's `[Main-line]`, otherwise persist beat ids and next-beat agendas into history, where they steer later generations). Called with *all* arcs, not just active — past arcs' ids linger in journal recaps. Only underscore-containing ids are scrubbed; a plain-word id is indistinguishable from prose and harmless
 
 ### lib/ui/
 
@@ -141,7 +153,12 @@ The arc object stored in `chat_metadata.story_arc.arcs[]`:
     // Beats — the structural spine
     beats: [{
         id: string,
-        intention: string,   // what must narratively happen (flexible, not a script)
+        pressure: string,    // the force the beat exerts BEFORE it happens — the only
+                             // part the narrating AI ever sees. '' on pre-2026-08-29
+                             // arcs; the builder falls back to intention
+        intention: string,   // the fulfillment condition: what has already happened on
+                             // screen when the beat is complete (past tense). Shown only
+                             // in the signal directive, never in the plan text
         flexibility: string, // how literally to interpret the intention
         urgency: 'when-ready' | 'soon' | 'urgent',
         status: 'pending' | 'active' | 'completed' | 'locked' | 'skipped',
@@ -200,6 +217,17 @@ The HTML-comment wrapper makes the marker invisible in ST's renderer even while 
 
 Directive placement is the load-bearing detail (27c3d17): with the directive in the system prompt (or even one message back from the end), GLM 5.2 reasoned about beats in its chain-of-thought and still never emitted a marker. Depth 0 produced compliance. Emission remains stochastic per message — acceptable over a 40-message arc, since beats only need to complete eventually.
 
+## Pacing Enforcement
+
+Prompt-side pacing ("do not advance for N more messages") was demonstrably ignored, so the brakes are mechanical and sit on what the model can *see*:
+
+1. **Information hiding** — the plan text shows one beat, as a pressure, with no id. A model cannot race toward objectives it was never given.
+2. **Pressure/fulfillment split** — the plan shows the beat as weather (`pressure`, no completion state); only the signal directive carries the fulfillment condition (`intention`), phrased as recognition of the past. An outcome-phrased beat is a solvable, and models are trained to solve visible goals in one scene and then parrot the solution into dialogue.
+3. **Active-only, one per arc per message** — the backstop in `processSignalResults` against one eager scene burning several beats.
+4. **Promotion on the next user turn** — after a completion the arc is left with no active beat until `USER_MESSAGE_RENDERED`. The AI's own aftermath prose and empty-input continues cannot chain into the next objective; the player reacts to a development before the model learns what follows.
+
+Promotion is reactive, not clocked. A message-budget hold was considered and rejected: scenes must react to the roleplay, not to a round counter, and a clock detaches the plan from an unforeseen story direction. The accepted consequence is that an arc "planned for 40 messages" can finish sooner if the model keeps fulfilling beats and the player plays along — `estimatedLength` feeds only the advisory phase wording, and the real pace is set by the player's turns.
+
 ## Multi-Arc Support
 
 Multiple arcs can be active simultaneously with different focus levels:
@@ -253,10 +281,19 @@ Key events used:
 | Event | Handler |
 |-------|---------|
 | `GENERATION_STARTED` | Build and inject arc guidance (or clear it when no arcs / disabled) |
-| `MESSAGE_RECEIVED` | Parse signals, update beat status, refresh progress |
+| `MESSAGE_RECEIVED` | Parse signals, update beat status, scrub leaked ids, refresh progress |
+| `USER_MESSAGE_RENDERED` | Promote the next beat in arcs left without an active one |
 | `CHAT_CHANGED` | Re-initialize per-chat state, refresh UI |
 
-(`USER_MESSAGE_RENDERED` appeared in earlier revisions of this doc but was never wired in code; progress refreshes on the two events above.)
+`MESSAGE_RECEIVED` fires only for AI messages; user messages fire `USER_MESSAGE_RENDERED` (the same event Story Mode counts rounds on). The split is what makes the promotion gap a *user* turn rather than any turn.
+
+**Emission order matters here.** `Generate()` emits `GENERATION_STARTED` at its top (`public/script.js:4299`) and only calls `sendMessageAsUser()` — which emits `MESSAGE_SENT` and then `USER_MESSAGE_RENDERED` — about 150 lines later (`:4453`, emitting at `:5912`/`:5919`). The injection for the message the user just typed is therefore built *before* promotion runs, so a freshly promoted beat's pressure first reaches the model on the generation after that. The resulting sequence, per completed beat:
+
+1. AI message completes a beat; the arc is left with no active beat.
+2. The player types a reaction. Its generation still sees the linger directive → the AI writes one consequences/breather message with no beat check.
+3. The player types again. This generation carries the newly promoted beat's pressure.
+
+One AI message of breathing room per beat, which is the intent. This cannot be shortened by choosing a different event: every user-message event fires after `GENERATION_STARTED` inside the same `Generate()` call. Promoting in `onGenerationStarted` instead would restore exactly the chaining the design removes, because empty-input continues also go through `Generate()`.
 
 ## Gotchas
 
@@ -264,7 +301,10 @@ Key events used:
 - **`maxTokens: undefined` is how the profile preset's response length wins.** `ChatCompletionService.createRequestData` deletes undefined payload keys *before* `presetToGeneratePayload` merges the preset, so an undefined `max_tokens` lets the preset's value through. Passing a number would override the preset on every call. Pinned by e65449d.
 - **The signal directive must never live inside the budget-trimmed plan text.** The trim slices from the tail, the directive was the last section — so on any plan larger than the budget the model never saw the signal protocol at all. This was the primary reason tracking never worked. It now injects separately (`story_arc_signals`). Pinned by 27c3d17.
 - **The signal directive only works at IN_CHAT depth 0.** In the system prompt or even one message from the end, GLM 5.2 demonstrably reasoned about the beats in its chain-of-thought and still skipped the marker; as the final message before generation it complied. Marker goes on the reply's *first* line — end-of-message markers are eaten by response-token-cap truncation. Pinned by 27c3d17.
-- **Beat progression needs explicit promotion.** Completing a beat does not make the next one `active` by itself; without the promotion step in `processSignalResults` the arc has no `(NOW)` beat after the first completion, the directive lists no markers, and tracking silently dies. Pinned by 27c3d17.
+- **Beat progression needs explicit promotion.** Completing a beat does not make the next one `active` by itself; without a promotion step the arc has no active beat after the first completion, the directive lists no markers, and tracking silently dies. Promotion now lives in `promoteNextBeats` on `USER_MESSAGE_RENDERED` — deliberately one user turn later than the completion, never in `processSignalResults`. Pinned by 27c3d17 (the step) and this change (its placement).
+- **A visible plan is a task list.** Listing pending beats with ids and intentions made GLM 5.2 drive at them: 7 of 10 non-optional beats in ~8 exchanges on a 40-message arc, with beat intentions parroted into dialogue. The plan text now shows one beat, as a pressure, without ids. This is the primary pacing brake; the prompt-side "do not advance for N more messages" rule was ignored every time.
+- **Never refuse a completion for being too fast.** The signal arrives after the scene is already on screen, so refusing it makes the tracker disagree with the visible story and re-arms the same marker instruction next message — a loop. Bookkeeping stays liberal; the pace is controlled by what the model is shown, not by what the recorder accepts.
+- **Do not migrate stored arcs to add `pressure`.** Arcs planned before 2026-08-29 have beats without the field; `buildForegroundSection` falls back to `intention` and they keep working. A live arc in the owner's Amy chat depends on this.
 - **`setExtensionPrompt` takes `(key, value, position, depth, scan, role, filter)`.** The original call passed seven positional args (an extra `0` before `scan`), shifting `role` into `scan` and the role constant into `filter` — it only worked because everything coerced to the intended values. Pinned by 27c3d17.
 - **`generateQuietPrompt()` is not the alternative.** It routes through the full chat pipeline, which re-enters Story Arc's own `GENERATION_STARTED` / `MESSAGE_RECEIVED` handlers while a plan is being generated. Tried in 8787fea, reverted in a700465.
 - **Non-streaming requests time out on large prompts.** The arc prompt arrives as one 24K+ char message and exceeds nano-gpt's ~38s non-streaming ceiling; normal chat escapes this only because its prompt is spread over many small messages. The request therefore sets `stream: true` and reassembles the SSE `data:` chunks, skipping `[DONE]`. Pinned by a257d92.

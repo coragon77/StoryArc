@@ -55,18 +55,25 @@ StoryArc/
 │   ├── injection/
 │   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
 │   │   │                       #   parseSignals(), stripSignalsFromMessage(),
-│   │   │                       #   processSignalResults(), scrubArcInternals()
+│   │   │                       #   processSignalResults(), scrubArcInternals(),
+│   │   │                       #   promoteNextBeats()
 │   │   ├── builder.js          # buildInjection(arcs) — assembles plan injection text
-│   │   │                       #   from foreground/background arcs, respects token budget;
-│   │   │                       #   buildSignalInjection(arcs) — separate beat-signal
-│   │   │                       #   directive (injected IN_CHAT depth 0)
+│   │   │                       #   from foreground/background arcs, respects token budget.
+│   │   │                       #   Plan shows only the active beat, as CURRENT PRESSURE
+│   │   │                       #   (pressure, falling back to intention), no beat ids;
+│   │   │                       #   linger directive when no beat is active;
+│   │   │                       #   buildSignalInjection(arcs) — separate directive
+│   │   │                       #   (IN_CHAT depth 0): continuation guard + confidentiality
+│   │   │                       #   always, BEAT CHECK + markers only while a beat is active
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
 │   │   │                       #   messagesUntilNextPhase(arc, phase)
 │   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens
 │   │                           #   (bare or HTML-comment-wrapped);
-│   │                           #   processSignalResults() — marks active/pending beats
-│   │                           #   complete, unlocks gated beats, promotes next pending
-│   │                           #   beat to active, marks arcs complete;
+│   │                           #   processSignalResults() — marks ACTIVE beats complete
+│   │                           #   (max one per arc per message), unlocks gated beats,
+│   │                           #   marks arcs complete; does NOT promote;
+│   │                           #   promoteNextBeats(arcs) — activates the next pending beat,
+│   │                           #   called on USER_MESSAGE_RENDERED (one user turn later);
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── ui/
@@ -98,9 +105,13 @@ StoryArc/
 │   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.
 │   ├── test-core.js            # Tests: core/constants (phases, defaults, arc factory)
 │   ├── test-lorebook.js        # Tests: categorizeEntries (World Info classification)
+│   ├── test-builder.js         # Tests: plan-section beat visibility (active-only,
+│   │                           #   pressure w/ intention fallback, linger) + signal
+│   │                           #   directive (recognition phrasing, linger survival)
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives
 │   ├── test-signals.js         # Tests: signal parsing + processSignalResults
-│   │                           #   (completion, promotion, locked-beat rejection)
+│   │                           #   (active-only completion, one per arc per message,
+│   │                           #   locked-beat rejection) + promoteNextBeats
 │   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution
 │   └── test-validation.js      # Tests: parseLlmJson + validateArcPlan
 └── docs/
@@ -162,6 +173,7 @@ index.js  (imports: core/, ui/, injection/, planning/storage.js,
 | Prompt injection | `lib/injection/builder.js` | `pacing.js`, `signals.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/storage.js` |
+| Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |
 | Arc manager | `lib/ui/arc-manager.js` | `lib/planning/storage.js` |
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |

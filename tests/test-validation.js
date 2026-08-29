@@ -70,6 +70,23 @@ describe('validateArcPlan', () => {
         assert.equal(arc.estimatedLength, 60);
     });
 
+    it('keeps the pressure field when the LLM supplies one', () => {
+        const { arc } = validateArcPlan({
+            title: 'Test', premise: 'X',
+            beats: [{ pressure: 'The audits are closing in', intention: 'She has confessed' }],
+        });
+        assert.equal(arc.beats[0].pressure, 'The audits are closing in');
+        assert.equal(arc.beats[0].intention, 'She has confessed');
+    });
+
+    it('defaults pressure to an empty string when absent', () => {
+        const { arc } = validateArcPlan({
+            title: 'Test', premise: 'X',
+            beats: [{ intention: 'Something happened' }],
+        });
+        assert.equal(arc.beats[0].pressure, '');
+    });
+
     it('sets first beat to active, rest to pending', () => {
         const { arc } = validateArcPlan({
             title: 'Test', premise: 'X',
