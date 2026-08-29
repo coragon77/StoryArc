@@ -22,7 +22,7 @@ import {
 
 import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
 import { getActiveArcs } from './lib/planning/index.js';
-import { buildInjection } from './lib/injection/index.js';
+import { buildInjection, buildSignalInjection } from './lib/injection/index.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults } from './lib/injection/index.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
@@ -33,17 +33,27 @@ import { updateProgress } from './lib/ui/index.js';
  * Before each LLM call: inject active arc plans into the prompt.
  */
 async function onGenerationStarted() {
-    if (!isEnabled()) return;
-
-    const arcs = getActiveArcs();
-    if (!arcs.length) return;
-
-    const injection = buildInjection(arcs);
+    // Always set the prompt, empty when disabled or no active arcs —
+    // otherwise a previously set injection would linger after the last
+    // arc completes or the extension is turned off.
+    const arcs = isEnabled() ? getActiveArcs() : [];
+    const injection = arcs.length ? buildInjection(arcs) : '';
     setExtensionPrompt(
         'story_arc_plan',
         injection,
         extension_prompt_types.IN_PROMPT,
         0,
+        false,
+        extension_prompt_roles.SYSTEM,
+    );
+
+    // Signal directive goes in-chat near the generation point — models
+    // ignore it when it sits far back in the system prompt.
+    const signalInjection = arcs.length ? buildSignalInjection(arcs) : '';
+    setExtensionPrompt(
+        'story_arc_signals',
+        signalInjection,
+        extension_prompt_types.IN_CHAT,
         0,
         false,
         extension_prompt_roles.SYSTEM,
