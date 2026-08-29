@@ -7,6 +7,7 @@ import assert from 'node:assert';
 
 import {
     ARC_PRESET_NAME,
+    ARC_PRESET_SETTINGS,
     ARC_PROMPT_ENTRIES,
     buildArcPresetSettings,
     buildArcProfile,
@@ -22,21 +23,6 @@ function addMockPreset(name, settings) {
     mockPresetList.preset_names[name] = mockPresetList.presets.length - 1;
 }
 
-/** A roleplay preset with settings that break arc generation. */
-function makeRpPreset() {
-    return {
-        chat_completion_source: 'nanogpt',
-        nanogpt_model: 'zai-org/glm-5.2:thinking',
-        reasoning_effort: 'max',
-        openai_max_tokens: 8192,
-        temperature: 1.15,
-        top_p: 0.5,
-        stream_openai: false,
-        prompts: [{ identifier: 'main', content: 'You are a lewd roleplay partner.' }],
-        prompt_order: [{ character_id: 100001, order: [{ identifier: 'main', enabled: true }] }],
-    };
-}
-
 /** The enabled state a directive carries in a preset's global prompt order. */
 function enabledStateOf(preset, identifier) {
     const order = preset.prompt_order.find(o => o.character_id === 100001);
@@ -44,8 +30,8 @@ function enabledStateOf(preset, identifier) {
 }
 
 describe('buildArcPresetSettings', () => {
-    test('overrides the parameters that break arc generation', () => {
-        const result = buildArcPresetSettings(makeRpPreset());
+    test('pins the parameters that break arc generation when left to the live settings', () => {
+        const result = buildArcPresetSettings();
 
         assert.strictEqual(result.reasoning_effort, 'high');
         assert.strictEqual(result.openai_max_tokens, 20000);
@@ -54,115 +40,111 @@ describe('buildArcPresetSettings', () => {
         assert.strictEqual(result.stream_openai, true);
     });
 
-    test('keeps connection keys from the base preset', () => {
-        const result = buildArcPresetSettings(makeRpPreset());
+    test('pins neutral values so live RP settings cannot leak in', () => {
+        const result = buildArcPresetSettings();
 
-        assert.strictEqual(result.chat_completion_source, 'nanogpt');
-        assert.strictEqual(result.nanogpt_model, 'zai-org/glm-5.2:thinking');
+        assert.strictEqual(result.top_k, 0);
+        assert.strictEqual(result.repetition_penalty, 1);
+        assert.strictEqual(result.function_calling, false);
+        assert.strictEqual(result.request_images, false);
     });
 
-    test('does not share nested state with the base preset', () => {
-        const base = makeRpPreset();
-        const result = buildArcPresetSettings(base);
+    test('carries no connection keys — those come from the profile', () => {
+        const result = buildArcPresetSettings();
+
+        assert.strictEqual(result.chat_completion_source, undefined);
+        assert.strictEqual(result.nanogpt_model, undefined);
+    });
+
+    test('does not share nested state with the settings template', () => {
+        const result = buildArcPresetSettings();
 
         result.prompts[0].content = 'changed';
 
-        assert.strictEqual(base.prompts[0].content, 'You are a lewd roleplay partner.');
-    });
-
-    test('rejects a missing base preset', () => {
-        assert.throws(() => buildArcPresetSettings(undefined), /Base preset/);
+        assert.notStrictEqual(ARC_PROMPT_ENTRIES[0].content, 'changed');
+        assert.strictEqual(ARC_PRESET_SETTINGS.prompts, undefined);
     });
 });
 
-describe('directive entries in a derived preset', () => {
-    test('seeds the three directive entries with their default states', () => {
-        const result = buildArcPresetSettings(makeRpPreset());
+describe('directive entries in the preset', () => {
+    test('seeds the directive entries with their default states', () => {
+        const result = buildArcPresetSettings();
 
         const identifiers = result.prompts.map(p => p.identifier);
         assert.ok(identifiers.includes('storyArcAdultContent'));
-        assert.ok(identifiers.includes('storyArcStakes'));
         assert.ok(identifiers.includes('storyArcGenre'));
 
-        // Only the stakes entry carries text that is safe to send unedited.
-        assert.strictEqual(enabledStateOf(result, 'storyArcStakes'), true);
+        // Adult content is opt-in; the genre default text is safe to send unedited.
         assert.strictEqual(enabledStateOf(result, 'storyArcAdultContent'), false);
+        assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), true);
+    });
+
+    test('contains nothing but the directive entries', () => {
+        const result = buildArcPresetSettings();
+
+        assert.strictEqual(result.prompts.length, ARC_PROMPT_ENTRIES.length);
+        assert.strictEqual(result.prompt_order.length, 1);
+        assert.strictEqual(result.prompt_order[0].character_id, 100001);
+        assert.strictEqual(result.prompt_order[0].order.length, ARC_PROMPT_ENTRIES.length);
+    });
+
+    test('carries edited text and toggles across a re-create', () => {
+        const previous = buildArcPresetSettings();
+        previous.prompts.find(p => p.identifier === 'storyArcGenre').content = 'Genre: hard-boiled noir.';
+        previous.prompt_order[0].order.find(o => o.identifier === 'storyArcAdultContent').enabled = true;
+        previous.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = false;
+
+        const result = buildArcPresetSettings(previous);
+
+        assert.strictEqual(result.prompts.find(p => p.identifier === 'storyArcGenre').content, 'Genre: hard-boiled noir.');
+        assert.strictEqual(enabledStateOf(result, 'storyArcAdultContent'), true);
         assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), false);
     });
 
-    test('keeps the base preset own prompts', () => {
-        const result = buildArcPresetSettings(makeRpPreset());
-
-        assert.strictEqual(result.prompts[0].identifier, 'main');
-        assert.strictEqual(enabledStateOf(result, 'main'), true);
-    });
-
-    test('carries edited text and toggles across a re-derive', () => {
-        const previous = buildArcPresetSettings(makeRpPreset());
-        previous.prompts.find(p => p.identifier === 'storyArcGenre').content = 'Genre: hard-boiled noir.';
-        previous.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = true;
-        previous.prompt_order[0].order.find(o => o.identifier === 'storyArcStakes').enabled = false;
-
-        const result = buildArcPresetSettings(makeRpPreset(), previous);
-
-        assert.strictEqual(result.prompts.find(p => p.identifier === 'storyArcGenre').content, 'Genre: hard-boiled noir.');
-        assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), true);
-        assert.strictEqual(enabledStateOf(result, 'storyArcStakes'), false);
-    });
-
-    test('does not duplicate entries when re-derived twice', () => {
-        const once = buildArcPresetSettings(makeRpPreset());
-        const twice = buildArcPresetSettings(once, once);
+    test('does not duplicate entries when re-created twice', () => {
+        const once = buildArcPresetSettings();
+        const twice = buildArcPresetSettings(once);
 
         const genreEntries = twice.prompts.filter(p => p.identifier === 'storyArcGenre');
         const genreOrder = twice.prompt_order[0].order.filter(o => o.identifier === 'storyArcGenre');
         assert.strictEqual(genreEntries.length, 1);
         assert.strictEqual(genreOrder.length, 1);
     });
-
-    test('creates a prompt order when the base preset has none', () => {
-        const base = makeRpPreset();
-        delete base.prompt_order;
-
-        const result = buildArcPresetSettings(base);
-
-        assert.strictEqual(result.prompt_order.length, 1);
-        assert.strictEqual(result.prompt_order[0].character_id, 100001);
-        assert.strictEqual(enabledStateOf(result, 'storyArcStakes'), true);
-    });
 });
 
 describe('collectArcDirectives', () => {
     test('returns only the enabled directives', () => {
-        const preset = buildArcPresetSettings(makeRpPreset());
+        const preset = buildArcPresetSettings();
 
         const result = collectArcDirectives(preset);
 
-        const stakes = ARC_PROMPT_ENTRIES.find(e => e.identifier === 'storyArcStakes').content;
-        assert.deepStrictEqual(result, [stakes]);
+        const genre = ARC_PROMPT_ENTRIES.find(e => e.identifier === 'storyArcGenre').content;
+        assert.deepStrictEqual(result, [genre]);
     });
 
     test('picks up an entry the user enabled and rewrote', () => {
-        const preset = buildArcPresetSettings(makeRpPreset());
-        preset.prompts.find(p => p.identifier === 'storyArcGenre').content = 'Genre: hard-boiled noir.';
-        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = true;
-        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcStakes').enabled = false;
+        const preset = buildArcPresetSettings();
+        preset.prompts.find(p => p.identifier === 'storyArcAdultContent').content = 'No fade to black.';
+        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcAdultContent').enabled = true;
+        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = false;
 
         const result = collectArcDirectives(preset);
 
-        assert.deepStrictEqual(result, ['Genre: hard-boiled noir.']);
+        assert.deepStrictEqual(result, ['No fade to black.']);
     });
 
-    test('ignores the preset own roleplay prompts', () => {
-        const preset = buildArcPresetSettings(makeRpPreset());
-        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcStakes').enabled = false;
+    test('ignores roleplay prompts in a hand-built preset', () => {
+        const preset = buildArcPresetSettings();
+        preset.prompts.push({ identifier: 'main', content: 'You are a lewd roleplay partner.' });
+        preset.prompt_order[0].order.push({ identifier: 'main', enabled: true });
+        preset.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = false;
 
         assert.deepStrictEqual(collectArcDirectives(preset), []);
     });
 
     test('drops an enabled entry the user emptied', () => {
-        const preset = buildArcPresetSettings(makeRpPreset());
-        preset.prompts.find(p => p.identifier === 'storyArcStakes').content = '   ';
+        const preset = buildArcPresetSettings();
+        preset.prompts.find(p => p.identifier === 'storyArcGenre').content = '   ';
 
         assert.deepStrictEqual(collectArcDirectives(preset), []);
     });
@@ -214,14 +196,13 @@ describe('createArcPreset', () => {
         for (const key of Object.keys(mockPresetList.preset_names)) delete mockPresetList.preset_names[key];
         for (const key of Object.keys(savedPresets)) delete savedPresets[key];
         for (const key of Object.keys(savedPresetOptions)) delete savedPresetOptions[key];
-        addMockPreset('Writer\'s O\'Block', makeRpPreset());
         extension_settings.connectionManager = {
             profiles: [{ id: 'profile-1', name: 'GLM 5.2 - O\'Block', api: 'nanogpt', preset: 'Writer\'s O\'Block' }],
         };
     });
 
     test('saves the preset and creates a profile pinning it', async () => {
-        const result = await createArcPreset('Writer\'s O\'Block', 'profile-1', approve);
+        const result = await createArcPreset('profile-1', approve);
 
         assert.strictEqual(result.presetCreated, true);
         assert.strictEqual(savedPresets[ARC_PRESET_NAME].reasoning_effort, 'high');
@@ -234,7 +215,7 @@ describe('createArcPreset', () => {
     });
 
     test('never switches the preset the user is chatting with', async () => {
-        await createArcPreset('Writer\'s O\'Block', 'profile-1', approve);
+        await createArcPreset('profile-1', approve);
 
         // savePreset without skipUpdate selects the saved preset in ST's dropdown,
         // swapping the live roleplay preset out from under the user.
@@ -242,7 +223,7 @@ describe('createArcPreset', () => {
     });
 
     test('registers the preset so it resolves by name right away', async () => {
-        await createArcPreset('Writer\'s O\'Block', 'profile-1', approve);
+        await createArcPreset('profile-1', approve);
 
         const index = mockPresetList.preset_names[ARC_PRESET_NAME];
         assert.notStrictEqual(index, undefined);
@@ -252,7 +233,7 @@ describe('createArcPreset', () => {
     test('leaves everything alone when the overwrite is declined', async () => {
         addMockPreset(ARC_PRESET_NAME, { marker: 'untouched' });
 
-        const result = await createArcPreset('Writer\'s O\'Block', 'profile-1', decline);
+        const result = await createArcPreset('profile-1', decline);
 
         assert.strictEqual(result.presetCreated, false);
         assert.strictEqual(savedPresets[ARC_PRESET_NAME], undefined);
@@ -263,25 +244,18 @@ describe('createArcPreset', () => {
     test('reuses an existing arc profile instead of duplicating it', async () => {
         extension_settings.connectionManager.profiles.push({ id: 'existing-arc', name: ARC_PRESET_NAME, preset: ARC_PRESET_NAME });
 
-        const result = await createArcPreset('Writer\'s O\'Block', 'profile-1', approve);
+        const result = await createArcPreset('profile-1', approve);
 
         assert.strictEqual(result.profileId, 'existing-arc');
         assert.strictEqual(extension_settings.connectionManager.profiles.length, 2);
     });
 
     test('still saves the preset when no base profile is selected', async () => {
-        const result = await createArcPreset('Writer\'s O\'Block', null, approve);
+        const result = await createArcPreset(null, approve);
 
         assert.strictEqual(result.presetCreated, true);
         assert.strictEqual(result.profileId, null);
         assert.strictEqual(savedPresets[ARC_PRESET_NAME].openai_max_tokens, 20000);
         assert.strictEqual(extension_settings.connectionManager.profiles.length, 1);
-    });
-
-    test('rejects an unknown base preset', async () => {
-        await assert.rejects(
-            () => createArcPreset('Does Not Exist', 'profile-1', approve),
-            /not found/,
-        );
     });
 });
