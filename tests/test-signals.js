@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSignals, processSignalResults } from '../lib/injection/signals.js';
+import { parseSignals, processSignalResults, stripSignalsFromMessage } from '../lib/injection/signals.js';
+import { chat } from './mocks/st-mocks.js';
 
 describe('parseSignals', () => {
     it('parses a single signal', () => {
@@ -29,6 +30,35 @@ describe('parseSignals', () => {
         const signals = parseSignals('[ARC_SIGNAL:arc-1:valdris_dinner:COMPLETE]');
         assert.equal(signals[0].arcId, 'arc-1');
         assert.equal(signals[0].beatId, 'valdris_dinner');
+    });
+
+    it('parses the HTML-comment-wrapped form', () => {
+        const signals = parseSignals('<!-- [ARC_SIGNAL:abc123:lean_in:COMPLETE] -->\n\nStory text.');
+        assert.equal(signals.length, 1);
+        assert.equal(signals[0].arcId, 'abc123');
+        assert.equal(signals[0].beatId, 'lean_in');
+    });
+});
+
+describe('stripSignalsFromMessage', () => {
+    it('removes a comment-wrapped marker including the leading blank lines', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: '<!-- [ARC_SIGNAL:abc123:lean_in:COMPLETE] -->\n\nStory text.' });
+
+        stripSignalsFromMessage(0);
+
+        assert.equal(chat[0].mes, 'Story text.');
+    });
+
+    it('removes a bare marker from an old-format message', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: '[ARC_SIGNAL:abc123:lean_in:COMPLETE]\n\nStory text.' });
+
+        stripSignalsFromMessage(0);
+
+        assert.equal(chat[0].mes, 'Story text.');
     });
 });
 
