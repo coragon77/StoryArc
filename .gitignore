@@ -22,6 +22,9 @@ package-lock.json
 # graphify knowledge graph output (regenerate with /graphify)
 graphify-out/
 
+# Personal reference material (chat exports etc.)
+docs/info/
+
 # Personal development files
 Debugging/
 Testing/
