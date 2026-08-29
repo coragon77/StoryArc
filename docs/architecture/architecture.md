@@ -1,7 +1,7 @@
 # Architecture
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`
-- **Last Updated:** 2026-08-28
+- **Last Updated:** 2026-08-29
 
 System design for Story Arc. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For file index, see [code-index.md](./code-index.md).
 
@@ -23,7 +23,8 @@ Arc Generation  (lib/planning/)
   │     → LLM produces a prose story-state summary
   ├── Phase 2 — Arc Outline: send analysis + user direction through generate-arc.txt
   │     → LLM returns a JSON arc plan
-  ├── Each LLM call: direct streaming POST to /api/backends/chat-completions/generate,
+  ├── Each LLM call: ConnectionManagerRequestService (when a generation profile is
+  │     configured) or direct streaming POST to /api/backends/chat-completions/generate,
   │     auto-retried (max 2, linear backoff) on transient errors
   ├── Parse + validate JSON (strip fences, extract object, schema-check)
   ├── Retry once with stricter JSON instruction if parse fails
@@ -33,18 +34,21 @@ Arc Generation  (lib/planning/)
 Prompt Injection  (lib/injection/)
   ├── On GENERATION_STARTED: read active arcs from storage
   ├── Calculate current phase for each arc (beat ratio × message ratio, take minimum)
-  ├── Build injection text:
-  │     Foreground arcs — full detail: premise, tone, beats, secrets, foreshadowing,
-  │                        triggers, pacing directives, anti-patterns
-  │     Background arcs — summary only: premise + "keep as distant tension"
-  │     Signal directive — instruct AI which [ARC_SIGNAL:…:COMPLETE] to emit
-  └── Call setExtensionPrompt() with token-budgeted text
+  ├── Build TWO separate injections:
+  │     story_arc_plan (IN_PROMPT) — token-budgeted plan text:
+  │       Foreground arcs — full detail: premise, tone, beats, secrets, foreshadowing,
+  │                          triggers, pacing directives, anti-patterns
+  │       Background arcs — summary only: premise + "keep as distant tension"
+  │     story_arc_signals (IN_CHAT, depth 0) — the beat-signal directive, placed as
+  │       the last message before generation (models ignore it anywhere else)
+  └── Both are set to '' when no arcs are active or the extension is disabled
        |
        v
 Signal-Based Progress Tracking  (lib/injection/signals.js)
   ├── On MESSAGE_RECEIVED: scan AI message for [ARC_SIGNAL:arcId:beatId:COMPLETE]
-  ├── Mark matching beats as completed
+  ├── Mark matching beats as completed (active or pending; locked/completed refused)
   ├── Unlock gated beats whose unlockAfter prerequisites are all complete
+  ├── Promote the first pending beat to active when no beat is active
   ├── Mark arc complete when all non-optional beats are done
   ├── Strip signal tokens from displayed message text
   └── Save updated arc state to chat_metadata, refresh progress UI
@@ -81,9 +85,9 @@ Harvests story state from all available ST data sources.
 
 Arc generation, validation, storage, and prompt template management.
 
-- `generator.js` — `generateArc(context, userDirection, callbacks)` runs the two-phase LLM pipeline; Phase 3 (detail pass) is scaffolded but deferred post-MVP; includes retry logic for JSON parse failures; supports progress callbacks (`onProgress`, `isCancelled`). Both phases go through `callLlm()`, which wraps the call in a transient-error retry loop (max 2 retries, linear backoff `2000 * (attempt + 1)`, matching `502|503|504|timeout|gateway|ETIMEDOUT` — 42bce4a, d064dc3; 42bce4a's message says "exponential", the code is linear), and `callBackendDirectly()`, which POSTs a minimal body to ST's `/api/backends/chat-completions/generate` with `stream: true` and assembles the SSE deltas (a14ae32, a257d92). Model comes from `getChatCompletionModel(oai_settings)`, temperature from `oai_settings.temp_openai`, `max_tokens` fixed at 4096.
-
-  The fixed `max_tokens: 4096` (entered via a700465/a14ae32 during the 502 debugging session) is a leftover, not a decision — owner's word, 2026-08-28: it is unwanted, and arc generation should take its response length from the connection profile once Connection Manager support is wired. (INTENT resolved 2026-08-28)
+- `generator.js` — `generateArc(context, userDirection, callbacks)` runs the two-phase LLM pipeline; Phase 3 (detail pass) is scaffolded but deferred post-MVP; includes retry logic for JSON parse failures; supports progress callbacks (`onProgress`, `isCancelled`). Both phases go through `callLlm()`, which builds a system+user message pair (large prompt as system message, short user trigger) and wraps the call in a transient-error retry loop (max 2 retries, linear backoff `2000 * (attempt + 1)`, matching `502|503|504|timeout|gateway|ETIMEDOUT` against `err.message` plus `err.cause?.message` — 42bce4a, d064dc3; 42bce4a's message says "exponential", the code is linear). The call itself takes one of two routes (e65449d):
+  - **Profile route** — when `defaultConnectionProfile` is set, `callViaProfile()` streams through `ConnectionManagerRequestService.sendRequest(profileId, messages, undefined, { stream: true })`. `maxTokens` is deliberately `undefined`: ST deletes undefined payload keys before merging the profile preset, so the preset's response length wins — this is the owner-intended replacement for the old hardcoded `max_tokens: 4096` (INTENT of 2026-08-28 implemented in e65449d).
+  - **Fallback route** — no profile configured: `callBackendDirectly()` POSTs a minimal body to ST's `/api/backends/chat-completions/generate` with `stream: true` and assembles the SSE deltas (a14ae32, a257d92). Model comes from `getChatCompletionModel(oai_settings)`, temperature from `oai_settings.temp_openai`, `max_tokens` from `oai_settings.openai_max_tokens` (the current API's response-length setting, 4096 only as last-resort default).
 - `validation.js` — `parseLlmJson()` strips markdown fences and extracts the first JSON object; `validateArcPlan()` checks required fields (`title`, `premise`, `beats`), normalizes optional fields via helper functions, returns `{ valid, arc, errors }`
 - `storage.js` — CRUD on `chat_metadata.story_arc.arcs[]`: `getArcs()`, `getActiveArcs()`, `getArcById()`, `saveArc()`, `updateArc()`, `deleteArc()`; each write calls `saveMetadata()`
 - `templates.js` — `loadTemplate(name)` fetches a `.txt` file from `prompts/`; `fillTemplate(template, vars)` does `{{KEY}}` substitution
@@ -92,15 +96,15 @@ Arc generation, validation, storage, and prompt template management.
 
 Builds and delivers prompt injections; tracks progress via AI-emitted signals.
 
-- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each, appends the signal directive when `autoTrack` is on, trims to token budget if needed
+- `builder.js` — `buildInjection(arcs)` separates arcs into foreground and background, builds a structured text block for each (beat lines carry their `[beatId]` so the model can connect beats to signal markers), trims the body to token budget if needed; `buildSignalInjection(arcs)` builds the beat-signal directive as a *separate* injection (empty when `autoTrack` is off or no beat is active) — it was moved out of the plan text because the tail-slice budget trim used to cut it off first on any realistic plan (27c3d17)
 - `pacing.js` — `calculatePhase(arc)` computes beat-completion ratio and message-count ratio against `estimatedLength`, takes the minimum to get a conservative phase; `getPacingDirective(phase)` returns the directive string; `messagesUntilNextPhase()` for pacing hint in injection
-- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens; `processSignalResults(signals, activeArcs)` marks beats completed, unlocks beats whose `unlockAfter` list is satisfied, marks arcs complete when all non-optional beats are done; `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM
+- `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message; `processSignalResults(signals, activeArcs)` marks signaled beats completed (accepts `active` *and* `pending` beats — stories often fulfill the next beat in the same scene; `locked`/`completed` are refused), unlocks beats whose `unlockAfter` list is satisfied, promotes the first pending beat to `active` when none is active (without this the arc stalls after its first completed beat), marks arcs complete when all non-optional beats are done (27c3d17); `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM
 
 ### lib/ui/
 
 All user-facing views. No business logic — delegates to core/context/planning/injection.
 
-- `settings-panel.js` — renders into the ST extension drawer; enable toggle, "Plan Next Arc" / "Manage Arcs" buttons, and the progress container. The connection profile picker and injection budget slider this doc originally claimed were never implemented: `git log --all -S 'profile' -- lib/ui/settings-panel.js` is empty across the file's whole history, `generator.js` carries a TODO for Connection Manager support "when UI for profile selection is built", and only the settings keys (`defaultConnectionProfile`, `connectionProfile` in `lib/core/constants.js`) exist. The claim described the design spec, not shipped UI. (VERIFY resolved 2026-08-28)
+- `settings-panel.js` — renders into the ST extension drawer; enable toggle, **"Generation profile" dropdown** (lists Connection Manager profiles from `extension_settings.connectionManager.profiles`, persists to `defaultConnectionProfile`, repopulates on mousedown so newly created profiles appear; empty option = "Current API" fallback — e65449d), "Plan Next Arc" / "Manage Arcs" buttons, and the progress container. History note: the profile picker was claimed by the original docs long before it existed (VERIFY resolved 2026-08-28: never shipped until e65449d). The injection budget slider from the design spec remains unimplemented — only the settings key exists.
 
 - `wizard.js` — multi-step planning popup: (1) show harvested context preview, (2) freeform direction input, (3) live generation progress, (4) plan preview with accept/reject
 - `arc-manager.js` — popup listing all arcs with status badges; controls to toggle foreground/background, activate/deactivate, delete
@@ -179,13 +183,15 @@ Five phases, each with a 0–1 percentage range applied to both beat-completion 
 
 ## Signal Protocol
 
-When `autoTrack` is enabled, the prompt injection instructs the AI to append completion signals:
+When `autoTrack` is enabled, a dedicated injection (`story_arc_signals`, IN_CHAT depth 0 — the last message the model sees before generating) instructs the AI to emit completion markers:
 
 ```
 [ARC_SIGNAL:<arcId-prefix>:<beatId>:COMPLETE]
 ```
 
-Only the first 8 characters of the arc UUID are used in the signal to keep it compact. On `MESSAGE_RECEIVED`, `parseSignals()` scans the message, `processSignalResults()` resolves the full arc by prefix match, and `stripSignalsFromMessage()` removes the tokens before the user sees them.
+Only the first 8 characters of the arc UUID are used in the signal to keep it compact. The model is told to put the marker on the **first** line of its reply, not the last — end-of-message markers get eaten whenever the response hits the token cap. On `MESSAGE_RECEIVED`, `parseSignals()` scans the whole message, `processSignalResults()` resolves the full arc by prefix match, and `stripSignalsFromMessage()` removes the tokens before the user sees them.
+
+Directive placement is the load-bearing detail (27c3d17): with the directive in the system prompt (or even one message back from the end), GLM 5.2 reasoned about beats in its chain-of-thought and still never emitted a marker. Depth 0 produced compliance. Emission remains stochastic per message — acceptable over a 40-message arc, since beats only need to complete eventually.
 
 ## Multi-Arc Support
 
@@ -228,8 +234,8 @@ The user can promote/demote arcs between foreground and background via the Arc M
 |------------|-----|---------|
 | World Info | `world_info` import or `context.worldInfo` | Read lorebook entries |
 | Chat messages | `chat` import from `/script.js` | Read history + signal scanning |
-| Prompt injection | `setExtensionPrompt()` | Inject arc guidance into AI context |
-| LLM calls | direct `fetch()` to `/api/backends/chat-completions/generate` | Run multi-phase generation (not `generateRaw()` — see Gotchas, a14ae32) |
+| Prompt injection | `setExtensionPrompt()` ×2 (`story_arc_plan` IN_PROMPT, `story_arc_signals` IN_CHAT depth 0) | Inject arc guidance + signal directive |
+| LLM calls | `ConnectionManagerRequestService.sendRequest()` (profile set) or direct `fetch()` to `/api/backends/chat-completions/generate` (fallback) | Run multi-phase generation (not `generateRaw()` — see Gotchas, a14ae32) |
 | Per-chat persistence | `chat_metadata` + `saveMetadata()` | Store arc plans |
 | Global settings | `extension_settings` + `saveSettingsDebounced()` | Store config |
 | Events | `eventSource.on(event_types.*)` | React to chat lifecycle |
@@ -239,14 +245,20 @@ Key events used:
 
 | Event | Handler |
 |-------|---------|
-| `GENERATION_STARTED` | Build and inject arc guidance |
-| `MESSAGE_RECEIVED` | Parse signals, update beat status |
-| `USER_MESSAGE_RENDERED` | Refresh progress display |
+| `GENERATION_STARTED` | Build and inject arc guidance (or clear it when no arcs / disabled) |
+| `MESSAGE_RECEIVED` | Parse signals, update beat status, refresh progress |
 | `CHAT_CHANGED` | Re-initialize per-chat state, refresh UI |
+
+(`USER_MESSAGE_RENDERED` appeared in earlier revisions of this doc but was never wired in code; progress refreshes on the two events above.)
 
 ## Gotchas
 
-- **Arc generation deliberately does not go through `generateRaw()`.** It adds fields (`include_reasoning`, `reasoning_effort`, `type`, `stop`, `logit_bias`, …) that make some providers answer 502. `callBackendDirectly()` sends the minimal body SillyTavern-MemoryBooks uses — `messages`, `model`, `temperature`, `max_tokens`, `chat_completion_source`, plus `custom_url` when set. Pinned by a14ae32.
+- **Arc generation deliberately does not go through `generateRaw()`.** It adds fields (`include_reasoning`, `reasoning_effort`, `type`, `stop`, `logit_bias`, …) that make some providers answer 502. The profile route goes through `ConnectionManagerRequestService` (a controlled payload via `ChatCompletionService.processRequest`, not the `generateRaw` path); the no-profile fallback `callBackendDirectly()` sends the minimal body SillyTavern-MemoryBooks uses — `messages`, `model`, `temperature`, `max_tokens`, `chat_completion_source`, plus `custom_url` when set. Pinned by a14ae32, e65449d.
+- **`maxTokens: undefined` is how the profile preset's response length wins.** `ChatCompletionService.createRequestData` deletes undefined payload keys *before* `presetToGeneratePayload` merges the preset, so an undefined `max_tokens` lets the preset's value through. Passing a number would override the preset on every call. Pinned by e65449d.
+- **The signal directive must never live inside the budget-trimmed plan text.** The trim slices from the tail, the directive was the last section — so on any plan larger than the budget the model never saw the signal protocol at all. This was the primary reason tracking never worked. It now injects separately (`story_arc_signals`). Pinned by 27c3d17.
+- **The signal directive only works at IN_CHAT depth 0.** In the system prompt or even one message from the end, GLM 5.2 demonstrably reasoned about the beats in its chain-of-thought and still skipped the marker; as the final message before generation it complied. Marker goes on the reply's *first* line — end-of-message markers are eaten by response-token-cap truncation. Pinned by 27c3d17.
+- **Beat progression needs explicit promotion.** Completing a beat does not make the next one `active` by itself; without the promotion step in `processSignalResults` the arc has no `(NOW)` beat after the first completion, the directive lists no markers, and tracking silently dies. Pinned by 27c3d17.
+- **`setExtensionPrompt` takes `(key, value, position, depth, scan, role, filter)`.** The original call passed seven positional args (an extra `0` before `scan`), shifting `role` into `scan` and the role constant into `filter` — it only worked because everything coerced to the intended values. Pinned by 27c3d17.
 - **`generateQuietPrompt()` is not the alternative.** It routes through the full chat pipeline, which re-enters Story Arc's own `GENERATION_STARTED` / `MESSAGE_RECEIVED` handlers while a plan is being generated. Tried in 8787fea, reverted in a700465.
 - **Non-streaming requests time out on large prompts.** The arc prompt arrives as one 24K+ char message and exceeds nano-gpt's ~38s non-streaming ceiling; normal chat escapes this only because its prompt is spread over many small messages. The request therefore sets `stream: true` and reassembles the SSE `data:` chunks, skipping `[DONE]`. Pinned by a257d92.
 - **The model name must come from `getChatCompletionModel(oai_settings)`.** `oai_settings.openai_model` is only correct for the OpenAI source — nanogpt keeps its model in `oai_settings.nanogpt_model`, so reading the field directly sent "gpt-5" to a backend that does not serve it. Pinned by ca2dfb8.

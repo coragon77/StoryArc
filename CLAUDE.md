@@ -144,13 +144,13 @@ eventSource.on(event_types.CHAT_CHANGED, ...)          // Different chat loaded 
 ### Prompt Injection
 
 ```javascript
-// Inject text into the AI's prompt at a specific position
+// Inject text into the AI's prompt.
+// Signature: (key, value, position, depth, scan, role, filter)
 setExtensionPrompt(
     'story_arc_plan',           // Unique identifier
-    promptText,                 // The text to inject
-    extension_prompt_types.IN_PROMPT,  // Position type
-    0,                          // Position (0 = after main prompt)
-    0,                          // Depth
+    promptText,                 // The text to inject ('' clears it)
+    extension_prompt_types.IN_PROMPT,  // Position type (IN_PROMPT or IN_CHAT)
+    0,                          // Depth (for IN_CHAT: messages from the end)
     false,                      // Not a scan
     extension_prompt_roles.SYSTEM      // Role
 );
@@ -188,13 +188,16 @@ const plan = chat_metadata.story_arc?.activePlan;
 // Use a specific API profile for arc generation (separate from chat)
 import { ConnectionManagerRequestService } from '/scripts/extensions/shared.js';
 
+// maxTokens: pass undefined to let the profile preset's response length apply
 const result = await ConnectionManagerRequestService.sendRequest(
     profileId,
     messages,
     maxTokens,
     { stream: false, extractData: true }
 );
-const text = result.text || result.content || '';
+const text = result.content || '';
+// With { stream: true } it instead returns an AsyncGenerator factory —
+// see docs/architecture/st-extension-patterns.md
 ```
 
 ### SillyTavern Popup API
@@ -268,3 +271,13 @@ Key differences from Story Mode:
 - **Story Arc** harvests context from lorebook/chat; Story Mode uses wizard input
 - **Story Arc** is intentionally lean -- no library, no cover art, no PNG storage
 - **Story Arc** focuses on one thing: "where are we?" -> "what happens next?" -> "guide the AI"
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

@@ -16,6 +16,12 @@ package-lock.json
 # Superpowers brainstorming sessions
 .superpowers/
 
+# Playwright MCP browser artifacts (console logs, screenshots)
+.playwright-mcp/
+
+# graphify knowledge graph output (regenerate with /graphify)
+graphify-out/
+
 # Personal development files
 Debugging/
 Testing/

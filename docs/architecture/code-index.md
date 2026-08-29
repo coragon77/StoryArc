@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-08-28
+- **Last Updated:** 2026-08-29
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -40,9 +40,12 @@ StoryArc/
 │   │   │                       #   getActiveArcs(), getArcById(), updateArc(), deleteArc()
 │   │   ├── generator.js        # generateArc(context, userDirection, callbacks) —
 │   │   │                       #   two-phase LLM generation with retry logic;
-│   │   │                       #   POSTs /api/backends/chat-completions/generate
-│   │   │                       #   directly and reads the SSE stream, bypassing
-│   │   │                       #   generateRaw
+│   │   │                       #   callViaProfile() streams via
+│   │   │                       #   ConnectionManagerRequestService when a profile
+│   │   │                       #   is set; callBackendDirectly() POSTs
+│   │   │                       #   /api/backends/chat-completions/generate and
+│   │   │                       #   reads the SSE stream (fallback, bypasses
+│   │   │                       #   generateRaw)
 │   │   ├── validation.js       # parseLlmJson() — strips fences, extracts JSON;
 │   │   │                       #   validateArcPlan() — schema check + normalization
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
@@ -50,21 +53,28 @@ StoryArc/
 │   │   │                       #   saveArc(), updateArc(), deleteArc()
 │   │   └── templates.js        # loadTemplate(name), fillTemplate(template, vars)
 │   ├── injection/
-│   │   ├── index.js            # Facade — re-exports buildInjection(),
-│   │   │                       #   parseSignals(), processSignalResults()
-│   │   ├── builder.js          # buildInjection(arcs) — assembles full prompt injection
-│   │   │                       #   text from foreground/background arcs, respects token budget
+│   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
+│   │   │                       #   parseSignals(), stripSignalsFromMessage(),
+│   │   │                       #   processSignalResults()
+│   │   ├── builder.js          # buildInjection(arcs) — assembles plan injection text
+│   │   │                       #   from foreground/background arcs, respects token budget;
+│   │   │                       #   buildSignalInjection(arcs) — separate beat-signal
+│   │   │                       #   directive (injected IN_CHAT depth 0)
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
 │   │   │                       #   messagesUntilNextPhase(arc, phase)
 │   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens;
-│   │                           #   processSignalResults() — marks beats complete, unlocks
-│   │                           #   gated beats, marks arcs complete;
+│   │                           #   processSignalResults() — marks active/pending beats
+│   │                           #   complete, unlocks gated beats, promotes next pending
+│   │                           #   beat to active, marks arcs complete;
 │   │                           #   stripSignalsFromMessage() — removes tokens from display
 │   ├── ui/
 │   │   ├── index.js            # Facade — re-exports renderSettingsPanel(),
-│   │   │                       #   openWizard(), openArcManager(), renderProgress()
-│   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML,
-│   │   │                       #   enable toggle, connection profile, budget controls
+│   │   │                       #   setupSettingsPanelEvents(), showWizard(),
+│   │   │                       #   showArcManager(), updateProgress()
+│   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
+│   │   │                       #   enable toggle, generation profile dropdown
+│   │   │                       #   (Connection Manager profiles), plan/manage
+│   │   │                       #   buttons, progress container
 │   │   ├── wizard.js           # openWizard() — multi-step arc planning popup:
 │   │   │                       #   context preview → user direction → generation progress
 │   │   ├── arc-manager.js      # openArcManager() — arc list popup: view, activate,
@@ -84,7 +94,13 @@ StoryArc/
 │   ├── loader.js               # Custom ESM loader — intercepts ST imports, returns mocks
 │   ├── mocks/
 │   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.
-│   └── test-core.js            # Tests: validation, pacing, signals (pure logic)
+│   ├── test-core.js            # Tests: core/constants (phases, defaults, arc factory)
+│   ├── test-lorebook.js        # Tests: categorizeEntries (World Info classification)
+│   ├── test-pacing.js          # Tests: phase calculation + pacing directives
+│   ├── test-signals.js         # Tests: signal parsing + processSignalResults
+│   │                           #   (completion, promotion, locked-beat rejection)
+│   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution
+│   └── test-validation.js      # Tests: parseLlmJson + validateArcPlan
 └── docs/
     ├── architecture/
     │   ├── architecture.md     # System design documentation
@@ -115,7 +131,7 @@ lib/planning/
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
 └── generator.js   (imports: templates.js, validation.js, core/settings.js, /script.js;
-                    dynamic imports: /scripts/extensions.js, /scripts/openai.js)
+                    dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js)
 
 lib/injection/
 ├── pacing.js   (imports: core/constants.js, /script.js)

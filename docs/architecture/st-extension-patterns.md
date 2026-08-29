@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-08-28
+- **Last Updated:** 2026-08-29
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -103,22 +103,32 @@ eventSource.on(event_types.MESSAGE_RECEIVED, async (mesId) => {
 
 ## Prompt Injection
 
-The primary way extensions influence AI behavior:
+The primary way extensions influence AI behavior. The real signature
+(`public/script.js:8926`) is `(key, value, position, depth, scan, role,
+filter)` — six meaningful args, no separate "position priority" slot. Story
+Arc's original call passed seven positional args and only worked because the
+misaligned values coerced correctly (fixed in `27c3d17`):
 
 ```javascript
 setExtensionPrompt(
     'unique_id',                       // String identifier (use MODULE_NAME prefix)
     promptText,                        // The text to inject
-    extension_prompt_types.IN_PROMPT,  // Where to inject
-    0,                                 // Position (0 = highest priority)
-    0,                                 // Depth (0 = always active)
+    extension_prompt_types.IN_PROMPT,  // Where: IN_PROMPT (system area) or IN_CHAT
+    0,                                 // Depth: for IN_CHAT, messages from the end
     false,                             // Scan (false = not a scan prompt)
     extension_prompt_roles.SYSTEM      // Role (SYSTEM/USER/ASSISTANT)
 );
 
-// Remove injection
+// Remove injection: set the value to '' with the same key
 setExtensionPrompt('unique_id', '', extension_prompt_types.IN_PROMPT, 0);
 ```
+
+**Position determines compliance, not just placement.** An instruction the
+model must *act on* (e.g. Story Arc's beat-signal markers) is reliably ignored
+at IN_PROMPT and even at IN_CHAT depth 1 — GLM 5.2 reasoned about the beats in
+its chain-of-thought and still skipped the marker. IN_CHAT depth 0 (the last
+message before generation) produced compliance (`27c3d17`). Reserve that slot
+for short directives; bulk context belongs at IN_PROMPT.
 
 ## Settings Persistence
 
@@ -182,12 +192,14 @@ extension's own `GENERATION_STARTED` / `MESSAGE_RECEIVED` handlers. For an
 extension that both generates and listens, that is a feedback loop. Story Arc
 tried it and backed out the same day (`a700465`).
 
-### Direct backend call (what Story Arc uses)
+### Direct backend call (Story Arc's no-profile fallback)
 
 `callBackendDirectly()` in `lib/planning/generator.js` posts to the same
 endpoint `generateRaw` ends at, with a minimal body. The pattern is lifted from
 SillyTavern-MemoryBooks, which works against providers where `generateRaw`
-502s (`a14ae32`):
+502s (`a14ae32`). Since `e65449d` this is only the fallback for when no
+Connection Manager profile is configured — the preferred route is
+`ConnectionManagerRequestService` below:
 
 ```javascript
 const { oai_settings, getChatCompletionModel } = await import('/scripts/openai.js');
@@ -215,22 +227,48 @@ const res = await fetch('/api/backends/chat-completions/generate', {
   38s on 24K+ char prompts; ordinary chat escapes this only because its prompt
   is spread over many small messages (`a257d92`).
 
-The hardcoded `max_tokens: 4096` in `callBackendDirectly()` is a
-debugging-session leftover, not a decision — owner's word, 2026-08-28: it is
-unwanted, and arc generation should take its response length from the
-connection profile once Connection Manager support (the TODO in
-`generator.js`) is wired. (INTENT resolved 2026-08-28)
+The fallback's `max_tokens` comes from `oai_settings.openai_max_tokens` (the
+current API's response-length setting). The hardcoded 4096 that used to sit
+here was a debugging-session leftover — owner's word, 2026-08-28 — and was
+replaced when Connection Manager support landed (`e65449d`).
 
-### ConnectionManager (dedicated profile)
+### ConnectionManagerRequestService (what Story Arc uses when a profile is set)
+
+Lives at `public/scripts/extensions/shared.js:392`. Routes through
+`context.ChatCompletionService.processRequest` with a controlled payload — NOT
+the `generateRaw` path, so none of the extra-field 502s above apply.
+
 ```javascript
-const result = await ConnectionManagerRequestService.sendRequest(
-    profileId,     // API profile ID string
-    messages,      // Array of {role, content} messages
-    maxTokens,     // Max tokens for response
-    { stream: false, extractData: true }
+const { ConnectionManagerRequestService } = await import('/scripts/extensions/shared.js');
+
+// Streaming (Story Arc's callViaProfile): returns an AsyncGenerator factory
+const streamFactory = await ConnectionManagerRequestService.sendRequest(
+    profileId,     // Connection Manager profile id (extension_settings.connectionManager.profiles[].id)
+    messages,      // Array of {role, content} — or a plain string (wrapped as one user message)
+    undefined,     // maxTokens — see below
+    { stream: true },
 );
-const text = result.text || result.content || '';
+let text = '';
+for await (const chunk of streamFactory()) text = chunk.text;
+
+// Non-streaming: returns ExtractedData — the reply is in .content
+const result = await ConnectionManagerRequestService.sendRequest(
+    profileId, messages, maxTokens, { stream: false, extractData: true });
+const text2 = result.content;
 ```
+
+Behavior verified against ST source (`custom-request.js`, 2026-08-29):
+
+- **`maxTokens: undefined` lets the profile preset's response length win.**
+  `createRequestData` deletes undefined payload keys, then
+  `presetToGeneratePayload` merges the preset under the payload — an absent
+  `max_tokens` falls through to the preset value; a number overrides it.
+  (Requires `includePreset: true`, which is the default.)
+- **Errors are wrapped**: failures rethrow as `Error('API request failed',
+  { cause })` — the provider's actual message is in `err.cause.message`, so
+  retry-matching on `err.message` alone sees nothing (`e65449d` matches both).
+- A profile without a preset sends no `max_tokens` at all; most providers
+  then apply their own default.
 
 ## World Info / Lorebook Access
 
@@ -347,3 +385,8 @@ Do NOT use `import './file.css'` in JavaScript -- ST doesn't support CSS module 
 - **Missing the `inline-drawer-toggle` class fails silently.** The panel renders
   correctly and does nothing on click, because ST's handler is bound to a class
   the markup never had (`1310dc7`).
+- **Never ask the model for machine-readable markers at the END of its reply.**
+  Whenever the response hits the preset's token cap, the tail is exactly what
+  truncation removes — the marker dies every time on chatty models that write
+  to the cap. Ask for markers on the FIRST line instead; parse them anywhere
+  (`27c3d17`).
