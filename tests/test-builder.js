@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildInjection, buildSignalInjection } from '../lib/injection/builder.js';
+import { chat_metadata } from './mocks/st-mocks.js';
 
 function makeArc(overrides = {}) {
     return {
@@ -74,6 +75,64 @@ describe('buildInjection — beat visibility', () => {
         assert.ok(text.includes('Develop the consequences of recent events.'));
         assert.equal(text.includes('CURRENT PRESSURE:'), false);
         assert.equal(text.includes('explicit_pursuit'), false);
+    });
+});
+
+describe('buildInjection — section order and budget trim', () => {
+    it('puts the guardrail sections before the content lists', () => {
+        const arc = makeArc({
+            antiPatterns: ['No sudden villains.'],
+            secrets: [{ content: 'The butler did it.', disclosed: false, revealPhase: 'any' }],
+            foreshadowing: [{ clue: 'A dropped glove.', target: 'the butler', planted: false }],
+            triggers: [{ condition: 'the butler appears', action: 'he lies', fired: false }],
+        });
+        const text = buildInjection([arc]);
+        const order = ['PACING RULES:', 'DO NOT:', 'SECRETS', 'TRIGGERS', 'FORESHADOWING'];
+        const positions = order.map(h => text.indexOf(h));
+        assert.ok(positions.every(p => p >= 0), `all sections present: ${positions}`);
+        for (let i = 1; i < positions.length; i++) {
+            assert.ok(positions[i] > positions[i - 1], `${order[i]} after ${order[i - 1]}`);
+        }
+    });
+
+    it('trims at line boundaries — foreshadowing items drop, pacing rules survive, no mid-sentence cut', () => {
+        chat_metadata.story_arc.settings.injectionBudget = 200;
+        try {
+            const foreshadowing = Array.from({ length: 40 }, (_, i) => ({
+                clue: `Clue number ${i} about the mystery, phrased at length so each line carries real weight.`,
+                target: 'the reveal',
+                planted: false,
+            }));
+            const arc = makeArc({ antiPatterns: ['No sudden villains.'], foreshadowing });
+            const text = buildInjection([arc]);
+
+            assert.ok(text.includes('PACING RULES:'));
+            assert.ok(text.includes('No sudden villains.'));
+            assert.ok(text.endsWith('\n[END STORY ARC]'));
+            assert.equal(text.includes('Clue number 39'), false);
+            // Every surviving line is intact: a clue line either appears whole
+            // (ending in its target suffix) or not at all.
+            for (const line of text.split('\n')) {
+                if (line.startsWith('- Clue number')) {
+                    assert.ok(line.endsWith('(foreshadows: the reveal)'), `intact line: ${line}`);
+                }
+            }
+        } finally {
+            delete chat_metadata.story_arc.settings.injectionBudget;
+        }
+    });
+
+    it('does not leave a section header whose items were all trimmed away', () => {
+        chat_metadata.story_arc.settings.injectionBudget = 60;
+        try {
+            const arc = makeArc({
+                foreshadowing: [{ clue: 'A very long clue that will not fit inside the tiny budget at all.', target: 'x', planted: false }],
+            });
+            const text = buildInjection([arc]);
+            assert.equal(text.includes('FORESHADOWING TO PLANT:'), false);
+        } finally {
+            delete chat_metadata.story_arc.settings.injectionBudget;
+        }
     });
 });
 
