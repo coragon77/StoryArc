@@ -26,7 +26,12 @@ The user experiences the story as a player, not a planner. Mysteries have real a
 
 3. **The plan is secret from me** -- the arc plan is injected into the AI's prompt so I experience the story as a player. Mysteries stay mysterious. I can peek behind spoiler toggles if I want, but by default I'm surprised by what happens.
 
-4. **Multiple arcs run simultaneously** -- like a quest log in a game: a long-running main arc ("defeat the demon king") provides background direction while shorter side arcs ("House Valdris wants to acquire Anne") drive immediate narrative tension. Arcs can clash, merge, and trigger events in each other.
+4. **Multiple arcs run simultaneously, at different timescales** -- the long-term structure (decided 2026-08-29) is three nested tiers, like episode/season/series in serialized TV:
+   - **Episode** (~10 messages, foreground): a playable, resolvable unit -- "the group takes a job from the guild board." Gets the full treatment: active beat as pressure, hidden roadmap, signal tracking, promotion gating.
+   - **Act** (~100 messages, background): influences everything without being pursued. Its current beat is injected as a standing *pressure line* (no completable objective), and it completes by *recognition* -- whenever the story, possibly mid-episode, happens to fulfill it.
+   - **Saga** (~1000 messages): the overarching storyline ("defeat the Big Bad"). Premise plus current era as one line of standing tension; beats at this scale are milestones, advanced by the same recognition mechanism, coarser.
+
+   Supporting goals: **quick episode planning** (a lightweight wizard path that plans a small arc on the spot, harvesting the active act/saga so episodes inherit their weather) and resisting a formal hierarchy (no arc-owns-arc links) until recognition-based completion proves insufficient -- the act notices what episodes do for free.
 
 5. **The AI doesn't rush** -- pacing controls prevent the LLM from resolving tension in 2-3 messages. Beat gating hides future plot points from the AI until the story reaches them. Explicit phase directives ("you are in SETUP, do not resolve anything") keep the narrative pace realistic.
 
@@ -89,7 +94,9 @@ Arc completes -> "Plan Next Arc" (cycle repeats)
 ## Guiding Principles
 
 - **Context is king.** The quality of the arc plan depends entirely on how well we understand the current story. Invest heavily in context harvesting.
-- **Read-only.** Never modify the user's lorebook, chat history, or other extensions' data. We consume context, we don't produce side effects.
+- **Read-only.** Never modify the user's lorebook, chat history, or other extensions' data. We consume context, we don't produce side effects. One deliberate exception: freshly received AI messages are cleaned of plan internals (signal markers stripped, leaked arc/beat identifiers scrubbed) before they persist -- that is our own protocol data, not the user's story.
+- **Starve the solver.** LLMs are trained to complete visible goals: a stated destination gets referenced verbatim, characters turn into exposition mouthpieces, and tension escalates to 100% immediately. A story cannot be "solved" -- it must meander and leave threads open. So the model is never shown the roadmap: it sees only the current beat, phrased as a *pressure* (a force in the scene), never as an outcome; fulfillment conditions exist only for past-tense recognition; upcoming beats stay hidden until the story reaches them. Prompt clauses steer, but only withholding information guarantees.
+- **React, don't clock.** Arc progression follows the roleplay, never a round counter. Beats complete when the model recognizes the story fulfilled them; the next beat is revealed only after the player's next turn. A mechanical clock detaches the plan from an unforeseen story direction; when the story truly leaves the plan, the answer is mid-arc revision, not pacing.
 - **Narrative-first.** Plans are novelist's outlines, not quest logs. Secrets, foreshadowing, escalation patterns, and flexible beats -- not checkboxes.
 - **Player experience.** The user should feel like a player in a story with a skilled dungeon master, not a co-author staring at an outline.
 - **Pace control.** The single biggest failure mode is the LLM rushing to resolution. Every layer of the system pushes against this: gated beats, phase directives, explicit anti-patterns, message-count awareness.
