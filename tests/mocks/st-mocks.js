@@ -16,6 +16,7 @@ export const extension_prompt_types = { IN_PROMPT: 0 };
 export const extension_prompt_roles = { SYSTEM: 0 };
 export function saveMetadata() {}
 export function generateRaw() { return ''; }
+export function getRequestHeaders() { return {}; }
 
 // --- /scripts/extensions.js mocks ---
 export const extension_settings = {};
@@ -39,6 +40,37 @@ export class Popup {
     async show() {}
 }
 export const POPUP_TYPE = { TEXT: 0 };
+
+// --- /scripts/preset-manager.js mocks ---
+/** In-memory preset list, shaped like ST's openai_settings / openai_setting_names. */
+export const mockPresetList = { presets: [], preset_names: {} };
+/** Presets written through savePreset — tests assert on this. */
+export const savedPresets = {};
+/** Options savePreset was called with, keyed by preset name. */
+export const savedPresetOptions = {};
+
+export function getPresetManager() {
+    return {
+        getAllPresets: () => Object.keys(mockPresetList.preset_names),
+        getSelectedPresetName: () => Object.keys(mockPresetList.preset_names)[0] || '',
+        getCompletionPresetByName: (name) => {
+            const index = mockPresetList.preset_names[name];
+            return index === undefined ? undefined : mockPresetList.presets[index];
+        },
+        getPresetList: () => mockPresetList,
+        savePreset: async (name, settings, options = {}) => {
+            savedPresets[name] = settings;
+            savedPresetOptions[name] = options;
+        },
+    };
+}
+
+// --- /scripts/utils.js mocks ---
+let uuidCounter = 0;
+export function uuidv4() {
+    uuidCounter += 1;
+    return `mock-uuid-${uuidCounter}`;
+}
 
 // --- /scripts/power-user.js mocks ---
 export const power_user = { personas: {}, persona_descriptions: {} };

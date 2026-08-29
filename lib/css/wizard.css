@@ -234,6 +234,59 @@
     animation: story-arc-pulse 2s ease-in-out infinite;
 }
 
+/* ─── Generation Step Log ────────────────────────────────────────────────── */
+
+.story-arc-step-log-profile {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 12px 12px 0;
+    font-size: 0.85em;
+    color: var(--SmartThemeEmColor, #888);
+}
+
+.story-arc-step-log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 24px 12px;
+    font-size: 0.85em;
+}
+
+.story-arc-step-log-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--SmartThemeEmColor, #888);
+}
+
+.story-arc-step-log-line.active {
+    color: var(--SmartThemeBodyColor);
+}
+
+.story-arc-step-log-line.done .story-arc-step-log-icon {
+    color: var(--sa-accent);
+}
+
+.story-arc-step-log-line.failed .story-arc-step-log-icon {
+    color: #d08a4a;
+}
+
+.story-arc-step-log-icon {
+    flex: 0 0 1.2em;
+    text-align: center;
+}
+
+.story-arc-step-log-message {
+    flex: 1;
+}
+
+.story-arc-step-log-detail {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+}
+
 /* ─── Wizard Footer ──────────────────────────────────────────────────────── */
 
 .story-arc-wizard-footer {

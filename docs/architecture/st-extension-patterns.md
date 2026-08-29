@@ -270,6 +270,60 @@ Behavior verified against ST source (`custom-request.js`, 2026-08-29):
 - A profile without a preset sends no `max_tokens` at all; most providers
   then apply their own default.
 
+## Creating Presets and Connection Profiles Programmatically
+
+What Story Arc's "Create arc preset" button does (`lib/planning/arc-preset.js`).
+Verified against ST source and live, 2026-08-29.
+
+```javascript
+import { getPresetManager } from '/scripts/preset-manager.js';
+
+const presetManager = getPresetManager('openai');       // null if Chat Completion is not the active API
+const base = presetManager.getCompletionPresetByName('Some Preset');
+await presetManager.savePreset('New Preset', settings, { skipUpdate: true });
+```
+
+- **`savePreset` without `skipUpdate` switches the user's live preset.** It
+  calls `updateList`, which does `$(select).val(...).trigger('change')` on ST's
+  preset dropdown — the newly saved preset becomes the *selected* one, so the
+  roleplay preset the user is chatting with is swapped out from under them.
+  Always pass `{ skipUpdate: true }` from an extension.
+- **`skipUpdate: true` also means the preset is not registered in memory**, so
+  `getCompletionPresetByName` misses it and `presetToGeneratePayload` silently
+  falls back to the live chat settings until ST is reloaded. Register it by
+  hand — `getPresetList()` returns the live `{presets, preset_names}`
+  references, so pushing the settings and setting `preset_names[name] = index`
+  is enough (that is `updateList` minus the selection change).
+- **`getCompletionPresetByName` logs `console.error` on a miss.** For an
+  existence check read `getPresetList().preset_names` instead. `getAllPresets()`
+  is not equivalent: it reads the option *texts* of ST's dropdown, which lag
+  behind when the preset was registered by hand.
+- **Never call `savePreset(name)` without a settings object for `openai`.** It
+  falls back to `getPresetSettings(name)`, whose `getSettingsByApiId` switch has
+  no `openai` case — it hits `default:`, warns `Unknown API ID openai` and
+  returns `{}`, so the preset file is overwritten with an empty object. (Learned
+  by destroying a preset this way, 2026-08-29.) Chat completion presets have
+  their own save path: `saveOpenAIPreset(name, oai_settings)` in `openai.js`,
+  which is what the `#update_oai_preset` button calls. Always pass explicit
+  settings.
+- **Prompt entries survive a preset round trip.** `prompts` and `prompt_order`
+  are both in `settingsToUpdate` (`openai.js:377`), so ST's own save writes them
+  and `Object.assign(openai_settings[value], presetBody)` makes them readable by
+  name immediately. Toggling a prompt in the prompt manager writes
+  `enabled` into the *live* `oai_settings.prompt_order` and calls
+  `saveSettingsDebounced()` — the preset file only changes when the user saves
+  the preset.
+- **The prompt order the UI edits is `character_id: 100001`.** `openai.js`
+  configures the prompt manager with `promptOrder: { strategy: 'global',
+  dummyId: 100001 }`; presets can carry stale orders under other ids.
+- **Connection profiles are plain objects** in
+  `extension_settings.connectionManager.profiles`, and they pin a preset **by
+  name** (`profile.preset`). `/profile-create` snapshots the *current live
+  settings*, so it cannot pin a preset the user has not selected; cloning an
+  existing profile and overwriting `id`, `name` and `preset` avoids touching
+  live settings at all. Connection Manager does not re-render on external
+  pushes — the new profile appears in its own dropdown only after a reload.
+
 ## World Info / Lorebook Access
 
 ```javascript
