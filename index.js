@@ -24,7 +24,7 @@ import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/cor
 import { getArcs, getActiveArcs } from './lib/planning/index.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/index.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
-import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/index.js';
+import { renderSettingsPanel, setupSettingsPanelEvents, registerWandMenuEntry } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
 
 // ─── Event Handlers ─────────────────────────────────────────────────────────
@@ -122,6 +122,9 @@ jQuery(async () => {
     // Render settings panel into ST's extensions drawer
     $('#extensions_settings2').append(renderSettingsPanel());
     setupSettingsPanelEvents();
+
+    // Add the Story Arc entry to the wand menu next to the chat bar
+    registerWandMenuEntry();
 
     // Register SillyTavern event listeners
     eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
