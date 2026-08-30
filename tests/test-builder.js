@@ -1,7 +1,17 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildInjection, buildSignalInjection } from '../lib/injection/builder.js';
-import { chat_metadata } from './mocks/st-mocks.js';
+import { chat, chat_metadata } from './mocks/st-mocks.js';
+
+function withChatLength(n, fn) {
+    chat.length = 0;
+    for (let i = 0; i < n; i++) chat.push({ mes: `message ${i}` });
+    try {
+        return fn();
+    } finally {
+        chat.length = 0;
+    }
+}
 
 function makeArc(overrides = {}) {
     return {
@@ -161,5 +171,35 @@ describe('buildSignalInjection', () => {
 
     it('returns nothing when there are no arcs', () => {
         assert.equal(buildSignalInjection([]), '');
+    });
+});
+
+describe('prefix-cache stability', () => {
+    // The IN_PROMPT block sits before the cache breakpoint. One changed byte
+    // there invalidates the whole cached prefix, so nothing in it may depend
+    // on the message count.
+    it('IN_PROMPT injection is byte-identical as messages accumulate', () => {
+        const arc = makeArc();
+        const atZero = withChatLength(0, () => buildInjection([arc]));
+        const atSix = withChatLength(6, () => buildInjection([arc]));
+        assert.equal(atSix, atZero);
+    });
+
+    it('puts the message counters in the in-chat injection instead', () => {
+        // estimatedLength 40, messageStart 0, 6 messages: setup phase
+        // (6/40 = 0.15 < 0.20), boundary at floor(0.20 * 40) = message 8.
+        const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
+        assert.ok(text.includes('- "The Warmth Behind the Wall": 6 messages into this arc. Do not advance to the next phase for at least 2 more messages.'));
+    });
+
+    it('emits the pacing block even when beat tracking is off', () => {
+        chat_metadata.story_arc.settings.autoTrack = false;
+        try {
+            const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
+            assert.ok(text.includes('ARC PACING:'));
+            assert.equal(text.includes('ARC_SIGNAL'), false);
+        } finally {
+            delete chat_metadata.story_arc.settings.autoTrack;
+        }
     });
 });

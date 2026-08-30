@@ -83,9 +83,13 @@ StoryArc/
 │   │   │                       #   Plan shows only the active beat, as CURRENT PRESSURE
 │   │   │                       #   (pressure, falling back to intention), no beat ids;
 │   │   │                       #   linger directive when no beat is active;
-│   │   │                       #   buildSignalInjection(arcs) — separate directive
-│   │   │                       #   (IN_CHAT depth 0): continuation guard + confidentiality
-│   │   │                       #   always, BEAT CHECK + markers only while a beat is active.
+│   │   │                       #   buildSignalInjection(arcs) — separate injection
+│   │   │                       #   (IN_CHAT depth 0): ARC PACING message counters always,
+│   │   │                       #   continuation guard + confidentiality when autoTrack,
+│   │   │                       #   BEAT CHECK + markers only while a beat is active.
+│   │   │                       #   Counters live here, not in the IN_PROMPT plan, because
+│   │   │                       #   per-message text before the cache breakpoint kills the
+│   │   │                       #   provider's prefix cache.
 │   │   │                       #   Sections are assembled guardrails-first with the
 │   │   │                       #   content lists last (secrets, triggers, foreshadowing),
 │   │   │                       #   and trimToBudget() drops whole trailing lines plus
