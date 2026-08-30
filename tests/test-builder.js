@@ -185,11 +185,29 @@ describe('prefix-cache stability', () => {
         assert.equal(atSix, atZero);
     });
 
-    it('puts the message counters in the in-chat injection instead', () => {
+    it('states the phase brake as a fixed boundary, not a countdown', () => {
         // estimatedLength 40, messageStart 0, 6 messages: setup phase
-        // (6/40 = 0.15 < 0.20), boundary at floor(0.20 * 40) = message 8.
+        // (6/40 = 0.15 < 0.20), boundary at floor(0.20 * 40) = arc message 8.
         const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
-        assert.ok(text.includes('- "The Warmth Behind the Wall": 6 messages into this arc. Do not advance to the next phase for at least 2 more messages.'));
+        assert.ok(text.includes('- "The Warmth Behind the Wall": do not advance to the next phase before arc message 8.'));
+    });
+
+    // The in-chat block sits at the very end of the prompt. Anything in it that
+    // moves from message to message costs the whole cached prefix, so the
+    // per-message counters live on the messages themselves instead.
+    it('in-chat injection is byte-identical as messages accumulate within a phase', () => {
+        const arc = makeArc();
+        // 2 and 7 of 40 are both setup (< 0.20 * 40 = 8).
+        const atTwo = withChatLength(2, () => buildSignalInjection([arc]));
+        const atSeven = withChatLength(7, () => buildSignalInjection([arc]));
+        assert.ok(atTwo.includes('ARC PACING:'));
+        assert.equal(atSeven, atTwo);
+    });
+
+    it('carries no digit that tracks the current message count', () => {
+        const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
+        assert.equal(/\b6 messages\b/.test(text), false);
+        assert.equal(/\b2 more messages\b/.test(text), false);
     });
 
     it('emits the pacing block even when beat tracking is off', () => {

@@ -22,7 +22,7 @@ import {
 
 import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
 import { getArcs, getActiveArcs } from './lib/planning/index.js';
-import { buildInjection, buildSignalInjection } from './lib/injection/index.js';
+import { buildInjection, buildSignalInjection, stampPromptMessages } from './lib/injection/index.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, registerWandMenuEntry } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
@@ -58,6 +58,23 @@ async function onGenerationStarted() {
         false,
         extension_prompt_roles.SYSTEM,
     );
+}
+
+/**
+ * Last stop before the request goes out: stamp each user message in the
+ * outgoing prompt with its own arc counter.
+ *
+ * ST fires this after squashing system messages and hands us the very array it
+ * then sends (openai.js:1616-1623), so in-place mutation reaches the wire and
+ * nothing re-merges afterwards. Stored chat and the displayed chat are
+ * untouched. Dry runs are token-counting passes and must be left alone.
+ * @param {{ chat: Array<object>, dryRun: boolean }} eventData
+ */
+function onChatCompletionPromptReady(eventData) {
+    if (eventData?.dryRun || !isEnabled()) return;
+    const arcs = getActiveArcs();
+    if (!arcs.length) return;
+    stampPromptMessages(eventData.chat, arcs);
 }
 
 /**
@@ -128,6 +145,7 @@ jQuery(async () => {
 
     // Register SillyTavern event listeners
     eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);
+    eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, onChatCompletionPromptReady);
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
     eventSource.on(event_types.USER_MESSAGE_RENDERED, onUserMessageRendered);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);

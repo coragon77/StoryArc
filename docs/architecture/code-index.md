@@ -77,27 +77,40 @@ StoryArc/
 │   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
 │   │   │                       #   parseSignals(), stripSignalsFromMessage(),
 │   │   │                       #   processSignalResults(), scrubArcInternals(),
-│   │   │                       #   promoteNextBeats()
+│   │   │                       #   promoteNextBeats(), stampPromptMessages()
 │   │   ├── builder.js          # buildInjection(arcs) — assembles plan injection text
 │   │   │                       #   from foreground/background arcs, respects token budget.
 │   │   │                       #   Plan shows only the active beat, as CURRENT PRESSURE
 │   │   │                       #   (pressure, falling back to intention), no beat ids;
 │   │   │                       #   linger directive when no beat is active;
 │   │   │                       #   buildSignalInjection(arcs) — separate injection
-│   │   │                       #   (IN_CHAT depth 0): ARC PACING message counters always,
+│   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake always,
 │   │   │                       #   continuation guard + confidentiality when autoTrack,
 │   │   │                       #   BEAT CHECK + markers only while a beat is active.
-│   │   │                       #   Counters live here, not in the IN_PROMPT plan, because
-│   │   │                       #   per-message text before the cache breakpoint kills the
-│   │   │                       #   provider's prefix cache.
+│   │   │                       #   Every line here must be byte-identical from message
+│   │   │                       #   to message within a phase — the block sits at the end
+│   │   │                       #   of the prompt and any churn costs the whole cached
+│   │   │                       #   prefix. The per-message counters live on the messages
+│   │   │                       #   themselves (stamping.js).
 │   │   │                       #   Sections are assembled guardrails-first with the
 │   │   │                       #   content lists last (secrets, triggers, foreshadowing),
 │   │   │                       #   and trimToBudget() drops whole trailing lines plus
 │   │   │                       #   any header left without items
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
-│   │   │                       #   messagesUntilNextPhase(arc, phase) — returns 0
+│   │   │                       #   phaseBoundaryMessage(arc, phase) — arc-relative
+│   │   │                       #   message number where the phase ends (chat-length
+│   │   │                       #   independent, safe to put in the prompt);
+│   │   │                       #   messagesUntilNextPhase(arc, phase) — same boundary as
+│   │   │                       #   a countdown, progress card only. Both return 0
 │   │   │                       #   (not NaN) for arcs without estimatedLength or
 │   │   │                       #   messageStart
+│   │   ├── stamping.js         # buildStamp(arc, chatIndex) — "[Arc: message N of ~M]",
+│   │   │                       #   a pure function of the index and fixed arc metadata;
+│   │   │                       #   stampPromptMessages(promptChat, arcs) — prepends the
+│   │   │                       #   stamp to every user message in the OUTGOING prompt
+│   │   │                       #   array on CHAT_COMPLETION_PROMPT_READY. Stored chat
+│   │   │                       #   and the UI are never touched. Entries are matched to
+│   │   │                       #   chat indices by content suffix, not position
 │   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens
 │   │                           #   (bare or HTML-comment-wrapped);
 │   │                           #   processSignalResults() — marks ACTIVE beats complete
@@ -159,6 +172,11 @@ StoryArc/
 │   │                           #   pressure w/ intention fallback, linger) + signal
 │   │                           #   directive (recognition phrasing, linger survival)
 │   │                           #   + section order and line-boundary trimming
+│   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
+│   │                           #   blocks byte-identical as messages accumulate)
+│   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
+│   │                           #   (numbering, old positions unchanged as the chat
+│   │                           #   grows, foreign-entry and rewritten-text handling)
 │   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast)
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing

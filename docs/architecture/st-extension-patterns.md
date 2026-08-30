@@ -130,6 +130,47 @@ its chain-of-thought and still skipped the marker. IN_CHAT depth 0 (the last
 message before generation) produced compliance (`27c3d17`). Reserve that slot
 for short directives; bulk context belongs at IN_PROMPT.
 
+## Mutating the Outgoing Prompt (CHAT_COMPLETION_PROMPT_READY)
+
+`setExtensionPrompt` can only *add* blocks. To change the chat messages
+themselves on their way out — without touching stored chat or the UI — hook
+`event_types.CHAT_COMPLETION_PROMPT_READY` and mutate the array in place.
+
+```javascript
+eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, (eventData) => {
+    if (eventData?.dryRun) return;              // token-counting pass, not a real send
+    for (const message of eventData.chat) { /* mutate message.content in place */ }
+});
+```
+
+Verified in ST source (2026-08-30, this install):
+
+- `public/scripts/openai.js:1616-1623` — `const chat = chatCompletion.getChat();`
+  then `emit(CHAT_COMPLETION_PROMPT_READY, { chat, dryRun })` and `return [chat, …]`.
+  The array handed to the handler **is** the one returned, and
+  `public/script.js:5285-5303` puts it straight into `generate_data.prompt`. So
+  in-place mutation reaches the wire. This path does **not** read `eventData.chat`
+  back, so replacing the array (`eventData.chat = [...]`) is silently ignored here
+  — mutate, do not reassign.
+- `getChat()` (`openai.js:3805-3820`) rebuilds fresh `{role, content, …}` objects
+  from the prompt collection, so mutating them cannot corrupt ST's own state.
+- `squash_system_messages` runs at `openai.js:1608-1610`, **before** the event.
+  Nothing re-merges or re-orders afterwards.
+- `dryRun` is a real payload field and must be honoured — dry runs happen for
+  token counting and would otherwise double the work and skew counts.
+- `public/script.js:4030-4039` — `generateRaw()` emits the *same* event
+  (`{ chat: prompt, dryRun: false }`) for chat-completion utility calls from any
+  extension, and there it *does* read `eventData.chat` back. A handler meant for
+  the real chat prompt needs its own discriminator; Story Arc checks for its
+  `INJECTION_HEADER` in the prompt.
+
+Prompt entries do **not** line up positionally with `chat[]`: `coreChat` is
+`chat.filter(x => !x.is_system …)` (`public/script.js:4496`), `doChatInject`
+splices entries in (`:4745`), and a jailbreak may be appended as a user message
+(`:4757`). Match by content instead — ST strips `\r` and may prepend
+`${name}: ` (`setOpenAIMessages`, `openai.js:570-615`), so the stored `mes` is a
+*suffix* of the prompt content, not equal to it.
+
 ## Settings Persistence
 
 ```javascript
