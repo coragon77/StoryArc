@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-08-29
+- **Last Updated:** 2026-08-30
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -273,13 +273,16 @@ Behavior verified against ST source (`custom-request.js`, 2026-08-29):
 ## Creating Presets and Connection Profiles Programmatically
 
 What Story Arc's "Create arc preset" button does (`lib/planning/arc-preset.js`).
-Verified against ST source and live, 2026-08-29.
+Verified against ST source and live, 2026-08-29. The preset it writes is a fixed
+key set (`ARC_PRESET_SETTINGS`), not derived from a base preset; the only preset
+read back is the *previous* arc preset, whose directive entries survive a
+re-create (`9cd3c5b`).
 
 ```javascript
 import { getPresetManager } from '/scripts/preset-manager.js';
 
 const presetManager = getPresetManager('openai');       // null if Chat Completion is not the active API
-const base = presetManager.getCompletionPresetByName('Some Preset');
+const previous = presetManager.getCompletionPresetByName(ARC_PRESET_NAME);
 await presetManager.savePreset('New Preset', settings, { skipUpdate: true });
 ```
 
@@ -369,6 +372,31 @@ wrapper or a `border-bottom` on the header misaligns the panel against the
 other extensions in `#extensions_settings2`, which inherit ST's defaults
 (`a09887b`).
 
+### Wand Menu Entry
+
+The wand next to the chat bar is a plain DOM list at `#extensionsMenu`. An
+extension appends its own row and binds a namespaced delegated handler to it —
+`registerWandMenuEntry()` in `lib/ui/wand-menu.js` (`f4a0503`):
+
+```javascript
+$('#extensionsMenu').append(`
+    <div id="story_arc_wand_button" class="list-group-item flex-container flexGap5 interactable" title="...">
+        <i class="fa-solid fa-compass"></i><span>Story Arc</span>
+    </div>`);
+$(document).on('click.storyArcWand', '#story_arc_wand_button', showWandPopup);
+```
+
+`list-group-item flex-container flexGap5 interactable` is what ST's own menu
+rows carry. Story Mode drives a Popper dropdown from its entry; Story Arc opens
+a `Popup` instead.
+
+**Nested ST popups stack badly.** The wizard and the arc manager are `Popup`s
+themselves, so the wand popup calls `popup.complete(0)` and awaits its own
+`show()` promise *before* opening the chosen one (`f4a0503`). Since `f754381`
+the whole popup body sits in a `do … while (openAfterClose)` loop, so the wand
+popup comes back when the sub-popup resolves — rebuilt, which also refreshes
+the progress cards with whatever the wizard or manager just changed.
+
 ### jQuery DOM
 SillyTavern uses jQuery extensively. Follow the convention:
 ```javascript
@@ -386,6 +414,14 @@ $(document).on('click.myExtension', '.my-selector', function(e) {
     // Handle click
 });
 ```
+
+Unbind again when the popup that owns the handlers closes, not only before
+rebinding. A namespace left bound after its popup is gone still fires on
+matching selectors elsewhere: the wizard's and the arc manager's
+`.story-arc-spoiler-toggle` handlers both ran on one click in the manager,
+toggling the spoiler twice — visually a no-op. Every Story Arc popup now calls
+`$(document).off('click.<its namespace>')` once its `show()` promise resolves
+(`7945e3a`).
 
 ## File Storage (if needed)
 
@@ -439,6 +475,12 @@ Do NOT use `import './file.css'` in JavaScript -- ST doesn't support CSS module 
 - **Missing the `inline-drawer-toggle` class fails silently.** The panel renders
   correctly and does nothing on click, because ST's handler is bound to a class
   the markup never had (`1310dc7`).
+- **ST's renderer hides HTML comments, so machine markers can be wrapped in
+  one.** Bare `[ARC_SIGNAL:…]` markers were visible in the message while it
+  streamed. Asking the model for `<!-- [ARC_SIGNAL:…] -->` instead makes them
+  invisible in rendered output; `SIGNAL_PATTERN` in `lib/injection/signals.js`
+  keeps the `<!--` / `-->` optional so messages written before the change still
+  parse (`8dbfdb1`).
 - **Never ask the model for machine-readable markers at the END of its reply.**
   Whenever the response hits the preset's token cap, the tail is exactly what
   truncation removes — the marker dies every time on chatty models that write

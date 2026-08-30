@@ -1,7 +1,7 @@
 # Architecture
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`
-- **Last Updated:** 2026-08-29
+- **Last Updated:** 2026-08-30
 
 System design for Story Arc. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For file index, see [code-index.md](./code-index.md).
 
@@ -66,7 +66,8 @@ Beat Promotion  (lib/injection/signals.js — promoteNextBeats)
        |
        v
 UI Display  (lib/ui/)
-  ├── Settings panel in ST extension drawer
+  ├── Settings panel in ST extension drawer (setup rows only)
+  ├── Wand-menu entry + popup (Plan / Manage / progress cards) — the everyday route
   ├── Planning wizard popup (context preview → direction → generation progress)
   ├── Arc manager popup (list arcs, toggle foreground/background, delete)
   └── Compact progress widget in ST sidebar (beat list with status indicators)
@@ -116,7 +117,7 @@ Builds and delivers prompt injections; tracks progress via AI-emitted signals.
   - **The plan section shows one beat and no ids.** The foreground section carries a `CURRENT PRESSURE:` block holding the active beat's `pressure` text (falling back to `intention` for arcs planned before the field existed). Pending and locked beats are omitted entirely — no ids, no intentions, no teaser. Beat ids appear nowhere in the plan text at all. The old `CURRENT BEATS` list with `(NOW)`/`(upcoming)` markers turned the plan into a visible task list: live testing burned 7 of 10 non-optional beats in ~8 exchanges on an arc planned for 40 messages.
   - **Linger.** When an arc has no active beat (the gap between a completion and the next user message), the pressure block is replaced by a directive to develop consequences and introduce no new major developments.
   - `buildSignalDirective` always emits the continuation guard (never restart the scene, even when the last message is not the user's — RP presets like Celia wrap "the latest turn" at fixed depths, which mislabels the anchor when the user generates without input) and the confidentiality clause declaring the plan invisible scaffolding whose internals must not appear in any journal/summary/state-tracking block the preset requests. Both must survive linger, so neither is gated on having an active beat. The BEAT CHECK block and its marker lines are gated: they appear only while a beat is active, and each line is phrased as recognition of the past (`If the story has already brought this about — "<intention>" — output exactly: …`) with an explicit "these are not instructions, do not steer toward them". Earlier phrasings were read as objectives; a bare `:COMPLETE` token was read as status and forced the active beat into every reply
-- `pacing.js` — `calculatePhase(arc)` computes beat-completion ratio and message-count ratio against `estimatedLength`, takes the minimum to get a conservative phase; `getPacingDirective(phase)` returns the directive string; `messagesUntilNextPhase()` for pacing hint in injection
+- `pacing.js` — `calculatePhase(arc)` computes beat-completion ratio and message-count ratio against `estimatedLength`, takes the minimum to get a conservative phase; `getPacingDirective(phase)` returns the directive string; `messagesUntilNextPhase(arc, phase)` serves both the pacing hint in the injection and the progress card's "~N msgs to next phase" line. It returns `0` — not `NaN` — when the boundary cannot be computed, which is the case for arcs planned before `estimatedLength` and `messageStart` existed (e1bc69a)
 - `signals.js` — `parseSignals(text)` finds all `[ARC_SIGNAL:arcId:beatId:COMPLETE]` tokens anywhere in the message, bare or HTML-comment-wrapped (the directive asks for the comment form — ST's renderer hides it completely, even mid-stream; verified against `messageFormatting`: a custom tag leaves an empty `<p>`, an open/close tag leaks its inner text, a comment leaves nothing); `processSignalResults(signals, activeArcs)` marks signaled beats completed (`active` beats only, and at most one per arc per message — `pending` beats are not shown to the model at all, so a signal for one is a hallucinated or stale id, and an eager scene claiming two beats at once burns the arc's pace), unlocks beats whose `unlockAfter` list is satisfied, marks arcs complete when all non-optional beats are done (27c3d17). It deliberately does **not** promote the next beat; `promoteNextBeats(arcs)` does that on `USER_MESSAGE_RENDERED`, activating the first pending beat of every active arc that has none. Recording stays liberal in one direction on purpose: a completion signal is never refused for being too fast, because the signal arrives *after* the scene was written and refusing it would make the tracker disagree with the visible story. The brake is what the model can see, not what the bookkeeping accepts; `stripSignalsFromMessage()` removes tokens from both `chat[]` and the rendered DOM and trims the blank lines the marker leaves at message start; `scrubArcInternals(messageIndex, arcs)` mechanically removes leaked beat/arc ids from the saved message after marker parsing — the confidentiality clause steers the model, only the scrub guarantees it (RP presets with state-tracking blocks, e.g. Celia's `[Main-line]`, otherwise persist beat ids and next-beat agendas into history, where they steer later generations). Called with *all* arcs, not just active — past arcs' ids linger in journal recaps. Only underscore-containing ids are scrubbed; a plain-word id is indistinguishable from prose and harmless
 
 ### lib/ui/
@@ -127,7 +128,8 @@ All user-facing views. No business logic — delegates to core/context/planning/
 
 - `wizard.js` — multi-step planning popup: (1) show harvested context preview, (2) freeform direction input, (3) live generation progress, (4) plan preview with accept/reject. Step 3 uses `createStepLog()`, an append-only log: each `onProgress` closes the running line (✓ plus elapsed seconds, ✗ when the next step is a retry) and appends a new one, while `onChunk` rewrites the running line's detail with the received char count, repainted at most every 250 ms.
 - `arc-manager.js` — popup listing all arcs with status badges; controls to toggle foreground/background, activate/deactivate, delete
-- `progress.js` — compact widget showing beat list with status indicators (active / completed / pending / locked), injected near the ST message input
+- `wand-menu.js` — `registerWandMenuEntry()` appends a "Story Arc" item to ST's `#extensionsMenu` (the wand next to the chat bar) and `showWandPopup()` opens the quick-access popup: Plan Next Arc, Manage Arcs, and the active arcs' progress cards, all reusing `showWizard` / `showArcManager` / `renderProgressDisplay`. Setup rows (enable toggle, generation profile, arc preset) deliberately stay in the settings drawer, so the wand popup holds only the per-chat actions. Disabled extension shows a "disabled" note instead of dead buttons. Story Mode's Popper dropdown was not copied — nested ST popups stack badly, so this popup closes itself before opening the wizard or the manager (f4a0503). `showWandPopup` runs a `do…while` loop around the popup: when the sub-popup resolves, the wand popup is rebuilt and shown again, so several actions run without reopening the menu and the progress cards pick up whatever just changed (f754381)
+- `progress.js` — compact widget showing beat list with status indicators (active / completed / pending / locked), injected near the ST message input. Each card also carries a `~N msgs to next phase` line, rendered only while the message count is what holds the phase back — `calculatePhase()` takes the minimum of beat ratio and message ratio, so a full beat bar can still sit in an early phase and the reason was previously invisible. `0` (the beats are the limit, or the arc has no `estimatedLength`) and the `resolution` phase, which has nothing after it, both hide the line (e1bc69a)
 
 ## Arc Schema
 
@@ -274,7 +276,8 @@ The user can promote/demote arcs between foreground and background via the Arc M
 | Per-chat persistence | `chat_metadata` + `saveMetadata()` | Store arc plans |
 | Global settings | `extension_settings` + `saveSettingsDebounced()` | Store config |
 | Events | `eventSource.on(event_types.*)` | React to chat lifecycle |
-| UI popups | `Popup` class from `/scripts/popup.js` | Wizard and arc manager |
+| UI popups | `Popup` class from `/scripts/popup.js` | Wizard, arc manager and wand popup |
+| Wand menu | append to `#extensionsMenu` | "Story Arc" quick-access entry next to the chat bar (f4a0503) |
 
 Key events used:
 
@@ -312,6 +315,7 @@ One AI message of breathing room per beat, which is the intent. This cannot be s
 - **A 200 OK can still be an error.** Some backends return `{ error: … }` in a 200 body, and errors also turn up inside individual SSE chunks. Both paths throw instead of handing the body to the arc JSON parser, which otherwise reports it as a parse failure. Pinned by 3a14aa3.
 - **The settings drawer needs ST's exact markup.** The header div must carry `inline-drawer-toggle` — ST binds its click handler to that class, not to `inline-drawer-header` — and without it the drawer silently never opens. Pinned by 1310dc7. Leave the styling to ST too: wrapper padding and a header border misalign the panel in the drawer list (a09887b).
 - **Assistant-last histories make RP presets restart the scene.** Celia injects `<latest_turn_start>`/`<latest_turn_end>` wrappers at fixed IN_CHAT depths 1/0; when the user generates without typing (a normal way to advance the story), the wrappers label the model's *own last reply* as "the latest turn to answer", and GLM re-answered the last user message from scratch — three parallel takes of the same scene. The signal directive's continuation guard counters this at depth 0. Pinned by 8dbfdb1.
+- **Every popup must unbind its click namespace when it resolves.** The handlers are delegated on `document`, so they outlive the popup's DOM. The wizard's `click.storyArcWizard` stayed bound after the wizard closed, and one click in the arc manager then fired both modules' `.story-arc-spoiler-toggle` handlers — the spoiler toggled twice and looked like nothing happened. The manager leaked the same way in reverse. Each popup now calls `$(document).off('click.<namespace>')` after `await popupPromise`. Pinned by 7945e3a; `wand-menu.js` follows the same pattern for `click.storyArcWandPopup`, and needs it more than the others because the popup is reopened in a loop.
 - **Prompt clauses steer; only post-processing guarantees.** GLM pastes beat ids and next-beat agendas into Celia's `[Main-line]`/journal blocks even when told not to; because those blocks re-enter the prompt as history, the model ends up pacing the arc off its own agenda instead of the pacing rules. `scrubArcInternals` deletes the ids mechanically after every AI message — the confidentiality clause reduces the leakage, the scrub makes the identifiers unable to persist.
 
 ## Design Principles
