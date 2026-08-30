@@ -123,6 +123,15 @@
     text-align: right;
 }
 
+/* ─── Pacing Hint (messages until the next phase) ─────────────────────────── */
+
+.story-arc-progress-pacing {
+    font-size: 0.68em;
+    color: var(--SmartThemeEmColor, #888);
+    opacity: 0.8;
+    text-align: right;
+}
+
 /* ─── Focus Indicator ────────────────────────────────────────────────────── */
 
 .story-arc-progress-focus {
