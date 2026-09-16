@@ -82,7 +82,7 @@ StoryArc/
 │   │   │                       #   normalization: tier defaults to episode (the
 │   │   │                       #   wizard's tier wins over the model's echo);
 │   │   │                       #   milestones (act/saga) all active, unlockAfter
-│   │   │                       #   stripped, pressure required (#13, pending); estimatedLength
+│   │   │                       #   stripped, non-empty pressure required; estimatedLength
 │   │   │                       #   clamped to TIER_TABLE[tier].lengthBand; optional
 │   │   │                       #   `pressure` per episode beat (stored arcs are
 │   │   │                       #   not migrated or re-validated)
@@ -136,9 +136,9 @@ StoryArc/
 │   │   │   ├── milestone.js    # buildMilestoneSection(arc, pressures?) — act/saga:
 │   │   │   │                   #   === ACT/SAGA: header, premise, unfulfilled milestone
 │   │   │   │                   #   pressures under STANDING PRESSURES (header + trailer
-│   │   │   │                   #   swappable; pressure only, never the fulfillment,
-│   │   │   │                   #   once #13 lands — today it still falls back to
-│   │   │   │                   #   intention), gated secrets/triggers/foreshadowing; no
+│   │   │   │                   #   swappable; pressure only, never the fulfillment —
+│   │   │   │                   #   a pressure-less milestone is skipped), gated
+│   │   │   │                   #   secrets/triggers/foreshadowing; no
 │   │   │   │                   #   pacing rules, no phase line
 │   │   │   ├── spotlight.js    # buildSpotlightSection(arc) — episode → episode section;
 │   │   │   │                   #   act/saga → milestone section under BRING TO A HEAD
@@ -269,7 +269,8 @@ StoryArc/
 │   │                           #   grows, foreign-entry and rewritten-text handling,
 │   │                           #   stamps follow the spotlit episode)
 │   ├── test-tier.js            # Tests: buildTierBlock per tier, milestone section
-│   │                           #   (normal focus), progress widget milestone label
+│   │                           #   (normal focus; pressure-less milestone skipped),
+│   │                           #   progress widget milestone label
 │   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast)
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing
@@ -281,7 +282,8 @@ StoryArc/
 │   │                           #   + scrubArcInternals
 │   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution
 │   └── test-validation.js      # Tests: parseLlmJson + validateArcPlan incl. tier
-│                               #   (default, milestone activation, band clamp)
+│                               #   (default, milestone activation, band clamp,
+│                               #   pressure-less milestone rejected)
 ├── CONTEXT.md                  # Glossary — the words for tier, focus, beats, recognition
 └── docs/
     ├── adr/                    # Decision records 0001–0003 (tier/focus split,
