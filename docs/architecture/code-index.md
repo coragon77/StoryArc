@@ -86,8 +86,8 @@ StoryArc/
 │   │   │                       #   one section per arc from sections/, spotlight first,
 │   │   │                       #   then normal episodes, then the rest; respects token
 │   │   │                       #   budget. buildSignalInjection(arcs) — separate injection
-│   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for the
-│   │   │                       #   pacing clock (clock.js) always,
+│   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for every
+│   │   │                       #   non-paused episode always,
 │   │   │                       #   continuation guard + confidentiality when autoTrack,
 │   │   │                       #   BEAT CHECK + markers only while a beat is active.
 │   │   │                       #   Every line here must be byte-identical from message
@@ -114,7 +114,8 @@ StoryArc/
 │   │   │   └── signal-directive.js  # buildSignalDirective(arcs) — continuation guard,
 │   │   │                       #   confidentiality clause, BEAT CHECK (moved unchanged)
 │   │   ├── clock.js            # selectPacingClock(arcs) — spotlit episode, else first
-│   │   │                       #   normal episode; never paused, never act/saga;
+│   │   │                       #   normal episode; never paused, never act/saga; feeds
+│   │   │                       #   stamping.js;
 │   │   │                       #   pauseArc(id) / resumeArc(id, focus) — stubs that only
 │   │   │                       #   write focus (clock freeze/shift come with the focus ticket)
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
@@ -162,9 +163,11 @@ StoryArc/
 │   │   │                       #   (append-only step log with elapsed times, live
 │   │   │                       #   streamed-chars ticker, active profile name);
 │   │   │                       #   unbinds its click namespace when the popup resolves
-│   │   ├── arc-manager.js      # openArcManager() — arc list popup: view, activate,
-│   │   │                       #   deactivate, delete, foreground/background toggle;
-│   │   │                       #   unbinds its click namespace when the popup resolves
+│   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
+│   │   │                       #   badges, three-way focus <select> (paused / normal /
+│   │   │                       #   spotlight via clock.js), Re-plan (closes, then opens
+│   │   │                       #   showWizard(arcId)), complete, abandon; unbinds the whole
+│   │   │                       #   .storyArcManager namespace when the popup resolves
 │   │   └── progress.js         # renderProgress() — compact beat status display
 │   │                           #   injected into ST sidebar; shows "~N msgs to next
 │   │                           #   phase" only while the message count holds the phase
@@ -254,7 +257,7 @@ lib/injection/
 ├── signals.js  (imports: planning/storage.js, /script.js)
 ├── sections/   (episode.js imports pacing.js; spotlight.js and milestone.js
 │                import episode.js / paused.js; paused.js, signal-directive.js: no deps)
-└── builder.js  (imports: pacing.js, clock.js, sections/*, core/settings.js,
+└── builder.js  (imports: pacing.js, sections/*, core/settings.js,
                  context/chat-history.js)
 
 lib/ui/
@@ -282,8 +285,8 @@ index.js  (imports: core/, ui/, injection/, planning/storage.js,
 | Arc generation | `lib/planning/generator.js` | `templates.js`, `validation.js`, `arc-preset.js`, `prompts/` |
 | Arc preset + profile | `lib/planning/arc-preset.js` | `lib/ui/settings-panel.js`, `lib/planning/generator.js` (`formatArcDirectives`) |
 | Arc storage | `lib/planning/storage.js` | `lib/core/settings.js` |
-| Prompt injection | `lib/injection/builder.js` | `sections/*.js`, `clock.js`, `pacing.js`, `signals.js` |
-| Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
+| Prompt injection | `lib/injection/builder.js` | `sections/*.js`, `pacing.js`, `signals.js` |
+| Pacing clock (stamps) | `lib/injection/clock.js` | `stamping.js` |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/storage.js` |

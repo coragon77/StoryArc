@@ -265,18 +265,22 @@ describe('prefix-cache stability', () => {
         assert.equal(/\b2 more messages\b/.test(text), false);
     });
 
-    it('brakes only the pacing clock, not every episode', () => {
+    it('brakes every episode that is not paused, as before tiers', () => {
         const text = withChatLength(6, () => buildSignalInjection([
-            makeArc({ title: 'Clock' }),
+            makeArc({ title: 'First' }),
             makeArc({ id: 'second', title: 'Second Episode' }),
+            makeArc({ id: 'lit', title: 'Spotlit', focus: 'spotlight' }),
             makeArc({ id: 'paused', title: 'Paused', focus: 'paused' }),
+            makeArc({ id: 'act', title: 'An Act', tier: 'act' }),
         ]));
-        assert.ok(text.includes('- "Clock": do not advance'));
-        assert.equal(text.includes('"Second Episode"'), false);
+        assert.ok(text.includes('- "First": do not advance to the next phase before arc message 8.'));
+        assert.ok(text.includes('- "Second Episode": do not advance'));
+        assert.ok(text.includes('- "Spotlit": do not advance'));
         assert.equal(text.includes('"Paused"'), false);
+        assert.equal(text.includes('"An Act"'), false);
     });
 
-    it('emits no pacing block when nothing can be the clock', () => {
+    it('emits no pacing block when every episode is paused', () => {
         const text = withChatLength(6, () => buildSignalInjection([makeArc({ focus: 'paused' })]));
         assert.equal(text.includes('ARC PACING:'), false);
         assert.ok(text.includes('CONTINUATION:'));
