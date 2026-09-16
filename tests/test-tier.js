@@ -77,6 +77,8 @@ describe('buildTierBlock', () => {
     });
 
     it('unknown tier falls back to the episode block', () => {
+        // The episode block's content is asserted independently above; this
+        // only pins the fallback to that known-good reference.
         assert.equal(buildTierBlock('campaign'), buildTierBlock('episode'));
     });
 });
