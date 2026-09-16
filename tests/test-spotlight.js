@@ -89,6 +89,16 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
         assert.equal(/steer|choose one|pick one|resolve one|toward/i.test(text), false);
     });
 
+    it('skips a milestone without a pressure under BRING TO A HEAD instead of printing its fulfillment (#13)', () => {
+        const arc = makeAct();
+        arc.beats[0].pressure = '';
+        const text = withChatLength(10, () => buildInjection([arc]));
+        assert.ok(text.includes('BRING TO A HEAD:'));
+        assert.equal(text.includes('The valley knows it will not last the winter.'), false);
+        assert.equal(text.includes('- \n'), false);
+        assert.ok(text.includes('- The guild ledgers do not add up.'));
+    });
+
     it('keeps secrets, triggers and foreshadowing exactly as the normal section shows them', () => {
         const lit = withChatLength(10, () => buildInjection([makeAct()]));
         const normal = withChatLength(10, () => buildInjection([makeAct({ focus: 'normal' })]));
