@@ -61,9 +61,9 @@ StoryArc/
 │   │   ├── generator.js        # Multi-phase LLM generation
 │   │   ├── validation.js       # JSON parsing + schema validation
 │   │   ├── storage.js          # Arc CRUD on chat_metadata
-│   │   ├── tier-block.js       # {{TIER_BLOCK}} for the generate template (stub)
-│   │   ├── arc-so-far.js       # {{ARC_SO_FAR}} for re-planning (stub)
-│   │   ├── replan.js           # mergeReplan(existing, generated) (stub)
+│   │   ├── tier-block.js       # {{TIER_BLOCK}} per tier for the generate template
+│   │   ├── arc-so-far.js       # {{ARC_SO_FAR}} block for re-planning
+│   │   ├── replan.js           # mergeReplan: keep the situation, replace the road
 │   │   └── templates.js        # Prompt template loader
 │   ├── injection/
 │   │   ├── index.js            # Facade

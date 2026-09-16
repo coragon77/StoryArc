@@ -31,9 +31,10 @@ Before writing any code:
 
 You **CANNOT** claim work is done until you have completed:
 
-- [ ] `superpowers:requesting-code-review` — review against the plan, or against
-      the request if no plan exists
-- [ ] `superpowers:verification-before-completion` — verify it actually works
+- [ ] `/code-review` — one reviewer pass against the plan, or against the
+      request if no plan exists
+- [ ] Verify it actually works: `bash tests/run.sh` green, and a live check in
+      the running SillyTavern instance for anything the tests cannot reach
 
 This half is not optional. Every time, every size.
 
@@ -83,7 +84,7 @@ root cause first.
 
 ### Debugging
 
-Use `superpowers:systematic-debugging` for any bug or unexpected behaviour.
+Use `systematic-debugging` for any bug or unexpected behaviour.
 For patterns specific to this stack see `debugging-protocol.md` in this
 directory. Note: that file's canon content is Django-oriented; the
 StoryArc-specific reality is browser-side JS — debug via the browser console of
