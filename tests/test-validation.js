@@ -106,9 +106,9 @@ describe('validateArcPlan — tier', () => {
     const plan = (extra = {}) => ({
         title: 'Test', premise: 'X',
         beats: [
-            { intention: 'First', unlockAfter: [] },
-            { intention: 'Second', unlockAfter: ['beat_1'] },
-            { intention: 'Third', unlockAfter: ['beat_2'] },
+            { pressure: 'One', intention: 'First', unlockAfter: [] },
+            { pressure: 'Two', intention: 'Second', unlockAfter: ['beat_1'] },
+            { pressure: 'Three', intention: 'Third', unlockAfter: ['beat_2'] },
         ],
         ...extra,
     });
@@ -159,5 +159,50 @@ describe('validateArcPlan — tier', () => {
     it('clamps a missing estimatedLength into the band too', () => {
         assert.equal(validateArcPlan(plan()).arc.estimatedLength, 20);
         assert.equal(validateArcPlan(plan(), { tier: 'saga' }).arc.estimatedLength, 400);
+    });
+});
+
+describe('validateArcPlan — milestones carry a pressure (#13)', () => {
+    const plan = (beats) => ({ title: 'Test', premise: 'X', beats });
+
+    it('act: a beat without pressure is a validation error naming the beat', () => {
+        const { valid, arc, errors } = validateArcPlan(plan([
+            { pressure: 'Rations shrink.', intention: 'First' },
+            { id: 'm_lies', intention: 'Someone has caught the guild in a lie.' },
+        ]), { tier: 'act' });
+        assert.equal(valid, false);
+        assert.equal(arc, null);
+        assert.deepEqual(errors, ['Milestone "m_lies" has no pressure']);
+    });
+
+    it('act: a blank pressure counts as missing', () => {
+        const { valid, errors } = validateArcPlan(plan([{ pressure: '   ', intention: 'First' }]), { tier: 'act' });
+        assert.equal(valid, false);
+        assert.deepEqual(errors, ['Milestone "beat_1" has no pressure']);
+    });
+
+    it('saga: one error per pressure-less beat, in beat order', () => {
+        const { valid, errors } = validateArcPlan(plan([
+            { intention: 'First' },
+            { pressure: 'Fine.', intention: 'Second' },
+            { intention: 'Third' },
+        ]), { tier: 'saga' });
+        assert.equal(valid, false);
+        assert.deepEqual(errors, ['Milestone "beat_1" has no pressure', 'Milestone "beat_3" has no pressure']);
+    });
+
+    it('act: valid when every milestone has a pressure', () => {
+        const { valid, arc } = validateArcPlan(plan([
+            { pressure: 'Rations shrink.', intention: 'First' },
+            { pressure: 'Ledgers lie.', intention: 'Second' },
+        ]), { tier: 'act' });
+        assert.equal(valid, true);
+        assert.deepEqual(arc.beats.map(b => b.pressure), ['Rations shrink.', 'Ledgers lie.']);
+    });
+
+    it('episode: a beat without pressure is still accepted (pre-tier fallback)', () => {
+        const { valid, arc } = validateArcPlan(plan([{ intention: 'Something happened' }]), { tier: 'episode' });
+        assert.equal(valid, true);
+        assert.equal(arc.beats[0].pressure, '');
     });
 });

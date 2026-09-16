@@ -138,11 +138,21 @@ describe('milestone section — act / saga in normal focus', () => {
         assert.ok(text.includes('=== SAGA: "The Long Winter" ==='));
     });
 
-    it('falls back to the intention for milestones without a pressure', () => {
+    it('skips a milestone without a pressure and never prints its intention (#13)', () => {
         const arc = makeAct();
         arc.beats[0].pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
-        assert.ok(text.includes('- The valley knows it will not last the winter.'));
+        assert.equal(text.includes('The valley knows it will not last the winter.'), false);
+        assert.equal(text.includes('- \n'), false);
+        assert.ok(text.includes('- The guild ledgers do not add up.'));
+    });
+
+    it('omits the pressures block entirely when no unfulfilled milestone has a pressure', () => {
+        const arc = makeAct();
+        for (const beat of arc.beats) beat.pressure = '';
+        const text = withChatLength(10, () => buildInjection([arc]));
+        assert.equal(text.includes('STANDING PRESSURES'), false);
+        assert.equal(text.includes('The valley knows it will not last the winter.'), false);
     });
 
     it('emits no ARC PACING block when only acts and sagas are active', () => {

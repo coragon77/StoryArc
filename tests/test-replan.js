@@ -62,16 +62,15 @@ function generatedPlan(overrides = {}) {
         ],
         foreshadowing: [{ clue: 'A cough behind the curtain', target: 'secret_2' }],
         beats: [
-            { intention: 'She has found the brother.' },
-            { intention: 'She has chosen mercy.', unlockAfter: ['beat_1'] },
+            { pressure: 'The trail goes cold.', intention: 'She has found the brother.' },
+            { pressure: 'Everyone expects vengeance.', intention: 'She has chosen mercy.', unlockAfter: ['beat_1'] },
         ],
         escalation: 'new escalation',
         triggers: [{ condition: 'if she lies', action: 'the brother knows' }],
         characters: ['new character'],
         estimatedLength: 12,
         ...overrides,
-    });
-    arc.tier = overrides.tier || 'episode';
+    }, { tier: overrides.tier || 'episode' });
     return arc;
 }
 
@@ -155,6 +154,22 @@ describe('mergeReplan', () => {
         assert.equal(merged.tier, 'act');
         assert.deepEqual(merged.beats.slice(2).map(b => b.status), ['active', 'active']);
         assert.deepEqual(merged.beats.slice(0, 2).map(b => b.status), ['completed', 'completed']);
+    });
+
+    it('a re-planned act with a pressure-less milestone is rejected by validation before any merge (#13)', () => {
+        // generator.js validates with the chosen tier and only then calls
+        // mergeReplan; the same gate as a fresh plan applies.
+        const { valid, arc, errors } = validateArcPlan({
+            title: 'Model-invented title',
+            premise: 'Model-invented premise',
+            beats: [
+                { pressure: 'The trail goes cold.', intention: 'She has found the brother.' },
+                { intention: 'She has chosen mercy.' },
+            ],
+        }, { tier: 'act' });
+        assert.equal(valid, false);
+        assert.equal(arc, null);
+        assert.deepEqual(errors, ['Milestone "beat_2" has no pressure']);
     });
 
     it('does not mutate its inputs', () => {
