@@ -174,10 +174,10 @@ describe('buildInjection — dispatch by tier and focus', () => {
         assert.equal(text.includes('PAUSED'), false);
     });
 
-    it('renders acts and sagas as the one-liner until the milestone section exists', () => {
+    it('renders acts and sagas as the milestone section (details in test-tier.js)', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildInjection([makeArc({ tier })]);
-            assert.ok(text.includes('=== PAUSED:'), tier);
+            assert.ok(text.includes(`=== ${tier.toUpperCase()}: "The Warmth Behind the Wall" ===`), tier);
             assert.equal(text.includes('CURRENT PRESSURE:'), false, tier);
         }
     });

@@ -239,3 +239,63 @@ describe('promoteNextBeats', () => {
         assert.equal(second.beats[0].status, 'active');
     });
 });
+
+describe('milestones (act / saga)', () => {
+    function makeAct() {
+        return {
+            id: 'act12345-full-id',
+            title: 'Test Act',
+            status: 'active',
+            tier: 'act',
+            beats: [
+                { id: 'm1', intention: 'first', status: 'active', unlockAfter: [], optional: false },
+                { id: 'm2', intention: 'second', status: 'active', unlockAfter: [], optional: false },
+                { id: 'm3', intention: 'third', status: 'active', unlockAfter: [], optional: false },
+            ],
+        };
+    }
+
+    it('a marker for any milestone completes it and leaves the others active', async () => {
+        const arc = makeAct();
+        await processSignalResults([{ arcId: 'act12345', beatId: 'm3', status: 'COMPLETE' }], [arc]);
+        assert.equal(arc.beats[2].status, 'completed');
+        assert.equal(arc.beats[0].status, 'active');
+        assert.equal(arc.beats[1].status, 'active');
+        assert.equal(arc.status, 'active');
+    });
+
+    it('a second marker in the same message is ignored', async () => {
+        const arc = makeAct();
+        const { completedBeats } = await processSignalResults([
+            { arcId: 'act12345', beatId: 'm2', status: 'COMPLETE' },
+            { arcId: 'act12345', beatId: 'm1', status: 'COMPLETE' },
+        ], [arc]);
+        assert.deepEqual(completedBeats, ['m2']);
+        assert.equal(arc.beats[0].status, 'active');
+    });
+
+    it('promotion does not re-hide milestones and repairs any pending one', async () => {
+        const arc = makeAct();
+        arc.beats[0].status = 'completed';
+        arc.beats[2].status = 'pending';
+        const promoted = await promoteNextBeats([arc]);
+        assert.equal(promoted, true);
+        assert.deepEqual(arc.beats.map(b => b.status), ['completed', 'active', 'active']);
+    });
+
+    it('promotion leaves an act with every milestone active or completed alone', async () => {
+        const arc = makeAct();
+        arc.beats[1].status = 'completed';
+        const promoted = await promoteNextBeats([arc]);
+        assert.equal(promoted, false);
+        assert.deepEqual(arc.beats.map(b => b.status), ['active', 'completed', 'active']);
+    });
+
+    it('a saga with no active milestone gets all of them activated at once', async () => {
+        const arc = makeAct();
+        arc.tier = 'saga';
+        for (const beat of arc.beats) beat.status = 'pending';
+        await promoteNextBeats([arc]);
+        assert.ok(arc.beats.every(b => b.status === 'active'));
+    });
+});
