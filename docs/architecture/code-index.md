@@ -105,19 +105,21 @@ StoryArc/
 │   │   │   │                   #   falling back to intention), no beat ids; linger
 │   │   │   │                   #   directive when no beat is active; guardrails first,
 │   │   │   │                   #   content lists last. Header still reads FOREGROUNDED
-│   │   │   ├── paused.js       # buildPausedSection(arc) — one-line premise as distant
-│   │   │   │                   #   tension. Header still reads BACKGROUNDED
+│   │   │   ├── paused.js       # buildPausedSection(arc) — one line under PAUSED: premise
+│   │   │   │                   #   + "pending, not being pursued right now"
 │   │   │   ├── milestone.js    # buildMilestoneSection(arc) — act/saga in normal focus;
 │   │   │   │                   #   stub: falls through to the paused one-liner
 │   │   │   ├── spotlight.js    # buildSpotlightSection(arc) — episode → episode section;
 │   │   │   │                   #   act/saga stub: falls through to the paused one-liner
 │   │   │   └── signal-directive.js  # buildSignalDirective(arcs) — continuation guard,
-│   │   │                       #   confidentiality clause, BEAT CHECK (moved unchanged)
+│   │   │                       #   confidentiality clause, BEAT CHECK; paused arcs get
+│   │   │                       #   no recognition lines
 │   │   ├── clock.js            # selectPacingClock(arcs) — spotlit episode, else first
 │   │   │                       #   normal episode; never paused, never act/saga; feeds
 │   │   │                       #   stamping.js;
-│   │   │                       #   pauseArc(id) / resumeArc(id, focus) — stubs that only
-│   │   │                       #   write focus (clock freeze/shift come with the focus ticket)
+│   │   │                       #   pauseArc(id) freezes the clock (pausedAt = chat.length);
+│   │   │                       #   resumeArc(id, focus) shifts messageStart/lastFulfilledAt
+│   │   │                       #   by the paused span, no-op on the clock if never paused
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
 │   │   │                       #   phaseBoundaryMessage(arc, phase) — arc-relative
 │   │   │                       #   message number where the phase ends (chat-length

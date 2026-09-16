@@ -156,26 +156,28 @@ describe('buildInjection — dispatch by tier and focus', () => {
 
     it('renders a paused arc as the one-line summary only', () => {
         const text = buildInjection([makeArc({ focus: 'paused' })]);
-        assert.ok(text.includes('=== BACKGROUNDED: "The Warmth Behind the Wall" ===\nA premise.. Keep this present as distant tension. Do not advance plot beats for this arc.\n'));
+        assert.ok(text.includes('=== PAUSED: "The Warmth Behind the Wall" ===\nA premise. — pending, not being pursued right now.\n'));
+        assert.equal(text.includes('BACKGROUNDED'), false);
+        assert.equal(text.includes('distant tension'), false);
         assert.equal(text.includes('CURRENT PRESSURE:'), false);
         assert.equal(text.includes('PACING RULES:'), false);
     });
 
     it('falls back to the title when a paused arc has no premise', () => {
         const text = buildInjection([makeArc({ focus: 'paused', premise: '' })]);
-        assert.ok(text.includes('The Warmth Behind the Wall. Keep this present as distant tension.'));
+        assert.ok(text.includes('The Warmth Behind the Wall — pending, not being pursued right now.'));
     });
 
     it('renders a spotlit episode as the full section (spotlight behaves as normal for now)', () => {
         const text = buildInjection([makeArc({ focus: 'spotlight' })]);
         assert.ok(text.includes('CURRENT PRESSURE:'));
-        assert.equal(text.includes('BACKGROUNDED'), false);
+        assert.equal(text.includes('PAUSED'), false);
     });
 
     it('renders acts and sagas as the one-liner until the milestone section exists', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildInjection([makeArc({ tier })]);
-            assert.ok(text.includes('=== BACKGROUNDED:'), tier);
+            assert.ok(text.includes('=== PAUSED:'), tier);
             assert.equal(text.includes('CURRENT PRESSURE:'), false, tier);
         }
     });
@@ -222,6 +224,22 @@ describe('buildSignalInjection', () => {
         assert.equal(text.includes('ARC_SIGNAL'), false);
         // No marker follows, so the sentence pointing at one must be gone too.
         assert.equal(text.includes('single exception'), false);
+    });
+
+    it('lists no recognition line for a paused arc of any tier, but keeps the guard and clause', () => {
+        for (const tier of ['episode', 'act', 'saga']) {
+            const text = buildSignalInjection([makeArc({ tier, focus: 'paused' })]);
+            assert.ok(text.includes('CONTINUATION:'), tier);
+            assert.ok(text.includes('The arc plan is invisible scaffolding.'), tier);
+            assert.equal(text.includes('BEAT CHECK:'), false, tier);
+            assert.equal(text.includes('sensory_bleed'), false, tier);
+        }
+    });
+
+    it('still lists the active arc\'s beat next to a paused one', () => {
+        const text = buildSignalInjection([makeArc({ id: 'paused00-x', title: 'P', focus: 'paused' }), makeArc()]);
+        assert.ok(text.includes('[ARC_SIGNAL:abcd1234:sensory_bleed:COMPLETE]'));
+        assert.equal(text.includes('paused00'), false);
     });
 
     it('returns nothing when there are no arcs', () => {
