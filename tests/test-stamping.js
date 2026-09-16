@@ -132,6 +132,22 @@ describe('stampPromptMessages', () => {
         assert.equal(prompt[5].content, 'line 4');
     });
 
+    it('follows the first normal episode in storage order, and the spotlit one once there is one', () => {
+        fillChat(10);
+        const first = makeArc({ id: 'first', title: 'First' });                          // start 4, ~20
+        const second = makeArc({ id: 'second', title: 'Second', messageStart: 0, estimatedLength: 12 });
+
+        const plain = makePrompt();
+        stampPromptMessages(plain, [first, second]);
+        assert.equal(plain[9].content, '[Arc: message 5 of ~20]\nline 8');
+        assert.equal(plain[3].content, 'line 2'); // before First started; Second is not the clock
+
+        const lit = makePrompt();
+        stampPromptMessages(lit, [first, { ...second, focus: 'spotlight' }]);
+        assert.equal(lit[9].content, '[Arc: message 9 of ~12]\nline 8');
+        assert.equal(lit[3].content, '[Arc: message 3 of ~12]\nline 2');
+    });
+
     it('stamps nothing when no episode can be the pacing clock', () => {
         fillChat(10);
         const prompt = makePrompt();
