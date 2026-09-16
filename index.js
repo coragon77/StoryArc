@@ -91,7 +91,7 @@ async function onMessageReceived(messageIndex) {
     const signals = parseSignals(message.mes);
     if (signals.length) {
         stripSignalsFromMessage(messageIndex);
-        await processSignalResults(signals, activeArcs);
+        await processSignalResults(signals, activeArcs, messageIndex);
         updateProgress();
         await saveMetadata();
     }

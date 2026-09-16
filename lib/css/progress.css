@@ -132,6 +132,21 @@
     text-align: right;
 }
 
+/* ─── Stall Nudge (episode may have diverged — re-plan) ──────────────────── */
+
+.story-arc-stall-btn {
+    font-size: 0.72em;
+    color: var(--sa-phase-escalation);
+    margin-top: 4px;
+    text-align: right;
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
+
+.story-arc-stall-btn:hover {
+    color: var(--sa-accent);
+}
+
 /* ─── Focus Indicator ────────────────────────────────────────────────────── */
 
 .story-arc-progress-focus {
