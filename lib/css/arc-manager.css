@@ -72,37 +72,13 @@
     padding: 3px 8px;
 }
 
-/* ─── Focus Toggle ───────────────────────────────────────────────────────── */
+/* ─── Focus Control ──────────────────────────────────────────────────────── */
 
-.story-arc-focus-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    font-size: 0.72em;
-    font-weight: 500;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: var(--sa-transition-fast);
-    border: 1px solid transparent;
-}
-
-.story-arc-focus-toggle.foreground {
-    background: rgba(212, 165, 116, 0.15);
-    color: var(--sa-accent);
-    border-color: rgba(212, 165, 116, 0.3);
-}
-
-.story-arc-focus-toggle.background {
-    background: rgba(189, 189, 189, 0.1);
-    color: var(--sa-status-pending);
-    border-color: rgba(189, 189, 189, 0.2);
-}
-
-.story-arc-focus-toggle:hover {
-    background: var(--sa-accent-subtle);
-    color: var(--sa-accent-hover);
-    border-color: var(--sa-accent);
+.story-arc-row-actions .story-arc-focus-select {
+    width: auto;
+    font-size: 0.75em;
+    padding: 2px 6px;
+    margin: 0;
 }
 
 /* ─── Progress Bar (in arc rows) ─────────────────────────────────────────── */

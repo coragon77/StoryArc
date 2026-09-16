@@ -220,14 +220,25 @@
     color: var(--sa-status-abandoned);
 }
 
-.story-arc-badge-foreground {
+.story-arc-badge-normal {
     background: rgba(212, 165, 116, 0.2);
     color: var(--sa-accent);
 }
 
-.story-arc-badge-background {
+.story-arc-badge-spotlight {
+    background: rgba(212, 165, 116, 0.35);
+    color: var(--sa-accent-hover);
+    box-shadow: 0 0 4px var(--sa-accent-glow);
+}
+
+.story-arc-badge-paused {
     background: rgba(189, 189, 189, 0.15);
     color: var(--sa-status-pending);
+}
+
+.story-arc-badge-tier {
+    background: rgba(66, 165, 245, 0.15);
+    color: var(--sa-status-completed);
 }
 
 /* ─── Loading / Spinner ──────────────────────────────────────────────────── */

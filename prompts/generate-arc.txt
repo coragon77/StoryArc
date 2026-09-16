@@ -10,7 +10,9 @@ The author has provided the following guidance for what they want this arc to ex
 
 {{USER_DIRECTION}}
 
+{{TIER_BLOCK}}
 {{ARC_DIRECTIVES}}
+{{ARC_SO_FAR}}
 == CURRENTLY ACTIVE ARCS ==
 These arcs are already running. Your new arc must complement them, not duplicate them. It can clash with them, run parallel to them, or intersect with them -- but it should not cover the same ground.
 

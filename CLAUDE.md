@@ -61,10 +61,16 @@ StoryArc/
 │   │   ├── generator.js        # Multi-phase LLM generation
 │   │   ├── validation.js       # JSON parsing + schema validation
 │   │   ├── storage.js          # Arc CRUD on chat_metadata
+│   │   ├── tier-block.js       # {{TIER_BLOCK}} for the generate template (stub)
+│   │   ├── arc-so-far.js       # {{ARC_SO_FAR}} for re-planning (stub)
+│   │   ├── replan.js           # mergeReplan(existing, generated) (stub)
 │   │   └── templates.js        # Prompt template loader
 │   ├── injection/
 │   │   ├── index.js            # Facade
-│   │   ├── builder.js          # Build injection text from arcs
+│   │   ├── builder.js          # Dispatcher: one section per arc by (tier, focus)
+│   │   ├── sections/           # episode, milestone, paused, spotlight, signal-directive
+│   │   ├── clock.js            # Pacing clock selection, pauseArc/resumeArc
+│   │   ├── stamping.js         # Per-message arc counters on the outgoing prompt
 │   │   ├── pacing.js           # Phase calculation + directives
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
 │   ├── ui/

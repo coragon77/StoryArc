@@ -18,7 +18,8 @@ function makeArc(overrides = {}) {
         id: 'abcd1234-full-id',
         title: 'The Warmth Behind the Wall',
         status: 'active',
-        focus: 'foreground',
+        tier: 'episode',
+        focus: 'normal',
         messageStart: 0,
         premise: 'A premise.',
         tone: '',
@@ -146,6 +147,60 @@ describe('buildInjection — section order and budget trim', () => {
     });
 });
 
+describe('buildInjection — dispatch by tier and focus', () => {
+    it('renders a normal episode as the full section', () => {
+        const text = buildInjection([makeArc()]);
+        assert.ok(text.includes('=== FOREGROUNDED: "The Warmth Behind the Wall" ==='));
+        assert.ok(text.includes('CURRENT PRESSURE:'));
+    });
+
+    it('renders a paused arc as the one-line summary only', () => {
+        const text = buildInjection([makeArc({ focus: 'paused' })]);
+        assert.ok(text.includes('=== BACKGROUNDED: "The Warmth Behind the Wall" ===\nA premise.. Keep this present as distant tension. Do not advance plot beats for this arc.\n'));
+        assert.equal(text.includes('CURRENT PRESSURE:'), false);
+        assert.equal(text.includes('PACING RULES:'), false);
+    });
+
+    it('falls back to the title when a paused arc has no premise', () => {
+        const text = buildInjection([makeArc({ focus: 'paused', premise: '' })]);
+        assert.ok(text.includes('The Warmth Behind the Wall. Keep this present as distant tension.'));
+    });
+
+    it('renders a spotlit episode as the full section (spotlight behaves as normal for now)', () => {
+        const text = buildInjection([makeArc({ focus: 'spotlight' })]);
+        assert.ok(text.includes('CURRENT PRESSURE:'));
+        assert.equal(text.includes('BACKGROUNDED'), false);
+    });
+
+    it('renders acts and sagas as the one-liner until the milestone section exists', () => {
+        for (const tier of ['act', 'saga']) {
+            const text = buildInjection([makeArc({ tier })]);
+            assert.ok(text.includes('=== BACKGROUNDED:'), tier);
+            assert.equal(text.includes('CURRENT PRESSURE:'), false, tier);
+        }
+    });
+
+    it('treats a missing tier as episode', () => {
+        const arc = makeArc();
+        delete arc.tier;
+        assert.ok(buildInjection([arc]).includes('CURRENT PRESSURE:'));
+    });
+
+    it('puts full sections before one-liners, storage order within each group', () => {
+        const text = buildInjection([
+            makeArc({ id: 'p1', title: 'Paused One', focus: 'paused' }),
+            makeArc({ id: 'n1', title: 'Normal One' }),
+            makeArc({ id: 'p2', title: 'Paused Two', focus: 'paused' }),
+            makeArc({ id: 'n2', title: 'Normal Two' }),
+        ]);
+        const order = ['"Normal One"', '"Normal Two"', '"Paused One"', '"Paused Two"'];
+        const positions = order.map(t => text.indexOf(t));
+        for (let i = 1; i < positions.length; i++) {
+            assert.ok(positions[i] > positions[i - 1], `${order[i]} after ${order[i - 1]}`);
+        }
+    });
+});
+
 describe('buildSignalInjection', () => {
     it('asks for the marker in past-tense recognition form', () => {
         const text = buildSignalInjection([makeArc()]);
@@ -208,6 +263,23 @@ describe('prefix-cache stability', () => {
         const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
         assert.equal(/\b6 messages\b/.test(text), false);
         assert.equal(/\b2 more messages\b/.test(text), false);
+    });
+
+    it('brakes only the pacing clock, not every episode', () => {
+        const text = withChatLength(6, () => buildSignalInjection([
+            makeArc({ title: 'Clock' }),
+            makeArc({ id: 'second', title: 'Second Episode' }),
+            makeArc({ id: 'paused', title: 'Paused', focus: 'paused' }),
+        ]));
+        assert.ok(text.includes('- "Clock": do not advance'));
+        assert.equal(text.includes('"Second Episode"'), false);
+        assert.equal(text.includes('"Paused"'), false);
+    });
+
+    it('emits no pacing block when nothing can be the clock', () => {
+        const text = withChatLength(6, () => buildSignalInjection([makeArc({ focus: 'paused' })]));
+        assert.equal(text.includes('ARC PACING:'), false);
+        assert.ok(text.includes('CONTINUATION:'));
     });
 
     it('emits the pacing block even when beat tracking is off', () => {

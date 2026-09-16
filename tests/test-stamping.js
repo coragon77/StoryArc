@@ -8,7 +8,8 @@ function makeArc(overrides = {}) {
     return {
         id: 'abcd1234-full-id',
         title: 'The Warmth Behind the Wall',
-        focus: 'foreground',
+        tier: 'episode',
+        focus: 'normal',
         messageStart: 4,
         estimatedLength: 20,
         ...overrides,
@@ -131,10 +132,11 @@ describe('stampPromptMessages', () => {
         assert.equal(prompt[5].content, 'line 4');
     });
 
-    it('stamps nothing when no arc is foregrounded', () => {
+    it('stamps nothing when no episode can be the pacing clock', () => {
         fillChat(10);
         const prompt = makePrompt();
-        assert.equal(stampPromptMessages(prompt, [makeArc({ focus: 'background' })]), 0);
+        assert.equal(stampPromptMessages(prompt, [makeArc({ focus: 'paused' })]), 0);
+        assert.equal(stampPromptMessages(prompt, [makeArc({ tier: 'act' })]), 0);
     });
 
     it('stamps nothing when message text no longer matches the stored chat', () => {
