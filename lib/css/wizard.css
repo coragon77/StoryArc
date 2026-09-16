@@ -177,6 +177,32 @@
     line-height: 1.5;
 }
 
+.story-arc-tier-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.story-arc-tier-label {
+    font-size: 0.78em;
+    font-weight: 600;
+    color: var(--SmartThemeEmColor, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.story-arc-tier-select {
+    width: auto;
+    min-width: 180px;
+}
+
+.story-arc-tier-hint {
+    flex-basis: 100%;
+    margin-bottom: 0;
+}
+
 /* ─── Step 3: Review ─────────────────────────────────────────────────────── */
 
 .story-arc-review-section {

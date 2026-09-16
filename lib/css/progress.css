@@ -141,11 +141,17 @@
     flex-shrink: 0;
 }
 
-.story-arc-progress-focus.foreground {
+.story-arc-progress-focus.normal,
+.story-arc-progress-focus.spotlight {
     background: var(--sa-accent);
     box-shadow: 0 0 4px var(--sa-accent-glow);
 }
 
-.story-arc-progress-focus.background {
+.story-arc-progress-focus.spotlight {
+    width: 6px;
+    height: 6px;
+}
+
+.story-arc-progress-focus.paused {
     background: var(--sa-status-pending);
 }
