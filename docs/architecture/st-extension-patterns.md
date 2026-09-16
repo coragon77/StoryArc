@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-08-30
+- **Last Updated:** 2026-09-17
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -97,7 +97,8 @@ eventSource.on(event_types.USER_MESSAGE_RENDERED, async (mesId) => {
 });
 
 eventSource.on(event_types.MESSAGE_RECEIVED, async (mesId) => {
-    // AI responded - check for signals/beats
+    // AI responded - check for signals/beats. Use mesId, never chat.length - 1:
+    // `/sys at=N` emits this event with the index of the inserted message
 });
 ```
 
@@ -522,6 +523,12 @@ Do NOT use `import './file.css'` in JavaScript -- ST doesn't support CSS module 
   invisible in rendered output; `SIGNAL_PATTERN` in `lib/injection/signals.js`
   keeps the `<!--` / `-->` optional so messages written before the change still
   parse (`8dbfdb1`).
+- **`MESSAGE_RECEIVED`'s `mesId` is not always the last chat index.** Every
+  ordinary emission site passes the last chat index (`script.js:6691,6716,6738,6781`,
+  `group-chats.js:300`), but `/sys at=N` inserts a message mid-chat and emits
+  the event with that index (`public/scripts/slash-commands.js:6006`). A handler
+  that re-derives the index from `chat.length` reads the wrong message there —
+  take the argument (`9c3e980`).
 - **Never ask the model for machine-readable markers at the END of its reply.**
   Whenever the response hits the preset's token cap, the tail is exactly what
   truncation removes — the marker dies every time on chatty models that write

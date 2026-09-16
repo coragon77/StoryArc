@@ -26,12 +26,14 @@ The user experiences the story as a player, not a planner. Mysteries have real a
 
 3. **The plan is secret from me** -- the arc plan is injected into the AI's prompt so I experience the story as a player. Mysteries stay mysterious. I can peek behind spoiler toggles if I want, but by default I'm surprised by what happens.
 
-4. **Multiple arcs run simultaneously, at different timescales** -- the long-term structure (decided 2026-08-29) is three nested tiers, like episode/season/series in serialized TV:
-   - **Episode** (~10 messages, foreground): a playable, resolvable unit -- "the group takes a job from the guild board." Gets the full treatment: active beat as pressure, hidden roadmap, signal tracking, promotion gating.
-   - **Act** (~100 messages, background): influences everything without being pursued. Its current beat is injected as a standing *pressure line* (no completable objective), and it completes by *recognition* -- whenever the story, possibly mid-episode, happens to fulfill it.
-   - **Saga** (~1000 messages): the overarching storyline ("defeat the Big Bad"). Premise plus current era as one line of standing tension; beats at this scale are milestones, advanced by the same recognition mechanism, coarser.
+4. **Multiple arcs run simultaneously, at different timescales** -- **delivered 2026-09-17** (design decided 2026-08-29, spec `docs/plans/2026-09-16-tiers-focus-and-replan-design.md`, ADRs 0001–0003, PRs #8–#14). Three tiers, like episode/season/series in serialized TV, chosen when an arc is planned; the words are the glossary's (`CONTEXT.md`):
+   - **Episode** (8–20 messages): a playable, resolvable unit -- "the group takes a job from the guild board." Gets the full treatment: ordered scene beats, the active beat as pressure, hidden roadmap, signal tracking, promotion gating, the pacing clock.
+   - **Act** (60–150 messages): influences everything without being pursued. Its unfulfilled milestones are injected as standing *pressures* (no completable objective), and each completes by *recognition* -- whenever the story, possibly mid-episode, happens to fulfill it.
+   - **Saga** (400–1500 messages): the overarching storyline ("defeat the Big Bad"). Same milestone mechanism, coarser: fewer milestones, each a state the story reaches.
 
-   Supporting goals: **quick episode planning** (a lightweight wizard path that plans a small arc on the spot, harvesting the active act/saga so episodes inherit their weather) and resisting a formal hierarchy (no arc-owns-arc links) until recognition-based completion proves insufficient -- the act notices what episodes do for free.
+   Independent of the tier, a **focus** (paused / normal / spotlight) says how much attention an arc gets right now: pausing sets it aside for a tangent with its clock frozen, spotlighting an act or saga pushes its pressures to the front without ever naming a milestone to reach. When an episode's remaining beats no longer fit the story, **re-plan** regenerates the rest from where the story is, keeping the arc's identity, secrets and fulfilled beats; a **stall nudge** on the progress card points the player at it.
+
+   Supporting goals, still open: **quick episode planning** (a lightweight wizard path that plans a small arc on the spot, harvesting the active act/saga so episodes inherit their weather -- the tier selector with default episode is most of it, a shorter direction field can follow) and resisting a formal hierarchy (no arc-owns-arc links) until recognition-based completion proves insufficient -- the act notices what episodes do for free.
 
 5. **The AI doesn't rush** -- pacing controls prevent the LLM from resolving tension in 2-3 messages. Beat gating hides future plot points from the AI until the story reaches them. Explicit phase directives ("you are in SETUP, do not resolve anything") keep the narrative pace realistic.
 
@@ -83,7 +85,7 @@ User reviews the plan (spoiler-gated):
     v
 Plan becomes active:
   - Injected into AI prompts with pacing controls
-  - Multiple arcs layered (foreground gets detail, background gets summary)
+  - Multiple arcs layered by tier and focus (episodes get the full section, acts and sagas their standing pressures, paused arcs one line)
   - Triggers can fire across arcs
   - Progress tracked via AI signals, stripped from visible output
     |

@@ -5,7 +5,7 @@
 
 # Debugging Protocol
 
-**For general debugging methodology:** use the `superpowers:systematic-debugging`
+**For general debugging methodology:** use the `systematic-debugging`
 skill. This document covers the Django-specific patterns that supplement it.
 
 ------------------------------------------------------------------------
