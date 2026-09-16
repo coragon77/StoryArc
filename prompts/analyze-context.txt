@@ -45,6 +45,8 @@ Read between the lines of dialogue and action. Characters in RP rarely say exact
 --- CURRENTLY ACTIVE ARCS ---
 These are arc plans that are already running. Your analysis should account for them so the next arc complements rather than duplicates them. Note their themes, their central tensions, and what narrative space they occupy.
 
+An arc marked [BEING RE-PLANNED] is about to have the rest of its plan regenerated from where the story is now. Its premise and what has already happened in it are established fact; its remaining planned beats are being discarded. Do NOT report that arc's unfulfilled plans as open threads, promises or unfinished business -- only what has actually happened on screen counts.
+
 {{EXISTING_ARCS}}
 
 == END OF CONTEXT ==
