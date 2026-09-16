@@ -272,6 +272,20 @@ Key differences from Story Mode:
 - **Story Arc** is intentionally lean -- no library, no cover art, no PNG storage
 - **Story Arc** focuses on one thing: "where are we?" -> "what happens next?" -> "guide the AI"
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub (github.com/coragon77/StoryArc, private), driven with `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the root plus `docs/adr/`. See `docs/agents/domain.md`.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
