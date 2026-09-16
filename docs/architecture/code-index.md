@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-09-16
+- **Last Updated:** 2026-09-17
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -86,8 +86,8 @@ StoryArc/
 │   │   │                       #   one section per arc from sections/, spotlight first,
 │   │   │                       #   then normal episodes, then the rest; respects token
 │   │   │                       #   budget. buildSignalInjection(arcs) — separate injection
-│   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for every
-│   │   │                       #   non-paused episode always,
+│   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for the
+│   │   │                       #   pacing clock (clock.js) always,
 │   │   │                       #   continuation guard + confidentiality when autoTrack,
 │   │   │                       #   BEAT CHECK + markers only while a beat is active.
 │   │   │                       #   Every line here must be byte-identical from message
@@ -107,10 +107,11 @@ StoryArc/
 │   │   │   │                   #   content lists last. Header still reads FOREGROUNDED
 │   │   │   ├── paused.js       # buildPausedSection(arc) — one line under PAUSED: premise
 │   │   │   │                   #   + "pending, not being pursued right now"
-│   │   │   ├── milestone.js    # buildMilestoneSection(arc) — act/saga in normal focus;
-│   │   │   │                   #   stub: falls through to the paused one-liner
+│   │   │   ├── milestone.js    # buildMilestoneSection(arc, pressures?) — act/saga:
+│   │   │   │                   #   premise, unfulfilled milestone pressures (header +
+│   │   │   │                   #   trailer swappable), gated secrets/triggers/foreshadowing
 │   │   │   ├── spotlight.js    # buildSpotlightSection(arc) — episode → episode section;
-│   │   │   │                   #   act/saga stub: falls through to the paused one-liner
+│   │   │   │                   #   act/saga → milestone section under BRING TO A HEAD
 │   │   │   └── signal-directive.js  # buildSignalDirective(arcs) — continuation guard,
 │   │   │                       #   confidentiality clause, BEAT CHECK; paused arcs get
 │   │   │                       #   no recognition lines

@@ -168,7 +168,7 @@ describe('buildInjection — dispatch by tier and focus', () => {
         assert.ok(text.includes('The Warmth Behind the Wall — pending, not being pursued right now.'));
     });
 
-    it('renders a spotlit episode as the full section (spotlight behaves as normal for now)', () => {
+    it('renders a spotlit episode as the full section (details in test-spotlight.js)', () => {
         const text = buildInjection([makeArc({ focus: 'spotlight' })]);
         assert.ok(text.includes('CURRENT PRESSURE:'));
         assert.equal(text.includes('PAUSED'), false);
@@ -283,17 +283,15 @@ describe('prefix-cache stability', () => {
         assert.equal(/\b2 more messages\b/.test(text), false);
     });
 
-    it('brakes every episode that is not paused, as before tiers', () => {
+    it('brakes the pacing clock only — never a paused episode or an act', () => {
         const text = withChatLength(6, () => buildSignalInjection([
             makeArc({ title: 'First' }),
             makeArc({ id: 'second', title: 'Second Episode' }),
-            makeArc({ id: 'lit', title: 'Spotlit', focus: 'spotlight' }),
             makeArc({ id: 'paused', title: 'Paused', focus: 'paused' }),
             makeArc({ id: 'act', title: 'An Act', tier: 'act' }),
         ]));
         assert.ok(text.includes('- "First": do not advance to the next phase before arc message 8.'));
-        assert.ok(text.includes('- "Second Episode": do not advance'));
-        assert.ok(text.includes('- "Spotlit": do not advance'));
+        assert.equal(text.includes('"Second Episode"'), false);
         assert.equal(text.includes('"Paused"'), false);
         assert.equal(text.includes('"An Act"'), false);
     });
