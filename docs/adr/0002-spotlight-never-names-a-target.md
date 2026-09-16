@@ -1,0 +1,3 @@
+# Spotlight escalates the world without naming a milestone
+
+Spotlighting an act or saga exists to make the world story move. The obvious wording ("choose one of these developments and steer toward it") is the goal instruction the 2026-08-29 pacing work found to be poison: a named target gets resolved in two messages. So spotlight moves the arc's unfulfilled milestone pressures into the main injection block under an instruction to intensify them in the coming scenes, and never tells the model which milestone to reach. Recognition still fires when one happens to be fulfilled. If live play shows this is too soft, the next step is a tempo phrase ("within the next few scenes"), not a target.

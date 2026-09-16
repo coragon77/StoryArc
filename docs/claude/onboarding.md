@@ -54,6 +54,7 @@ Before exploring code, you **MUST** read the relevant documentation (blocking):
 | Model/code analysis | `docs/claude/code-analysis.md` |
 | Arc generation, planning wizard, LLM pipeline, JSON validation, arc schema, beats, phases, pacing, ARC_SIGNAL tracking, prompt injection | `docs/architecture/architecture.md` |
 | Finding files, module dependencies, "where does X live" | `docs/architecture/code-index.md` |
+| Naming a domain concept (tier, focus, milestone, pressure, re-plan, stall), or a change that touches a recorded decision | `CONTEXT.md` (glossary) and `docs/adr/` |
 | SillyTavern API integration — `setExtensionPrompt`, `generateRaw`, events, popups, world info, `chat_metadata`, connection profiles, extension loading | `docs/architecture/st-extension-patterns.md` |
 
 **This is not optional.** Only explore code if the documentation is insufficient
