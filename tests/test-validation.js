@@ -63,11 +63,11 @@ describe('validateArcPlan', () => {
             title: 'Test', premise: 'X',
             anti_patterns: ['Do not rush'],
             beats: [{ intention: 'Y', unlock_after: ['beat_0'] }],
-            estimated_length: 60,
+            estimated_length: 16,
         });
         assert.deepEqual(arc.antiPatterns, ['Do not rush']);
         assert.deepEqual(arc.beats[0].unlockAfter, ['beat_0']);
-        assert.equal(arc.estimatedLength, 60);
+        assert.equal(arc.estimatedLength, 16);
     });
 
     it('keeps the pressure field when the LLM supplies one', () => {
@@ -99,5 +99,65 @@ describe('validateArcPlan', () => {
         assert.equal(arc.beats[0].status, 'active');
         assert.equal(arc.beats[1].status, 'pending');
         assert.equal(arc.beats[2].status, 'pending');
+    });
+});
+
+describe('validateArcPlan — tier', () => {
+    const plan = (extra = {}) => ({
+        title: 'Test', premise: 'X',
+        beats: [
+            { intention: 'First', unlockAfter: [] },
+            { intention: 'Second', unlockAfter: ['beat_1'] },
+            { intention: 'Third', unlockAfter: ['beat_2'] },
+        ],
+        ...extra,
+    });
+
+    it('defaults tier to episode and keeps scene-beat shape', () => {
+        const { arc } = validateArcPlan(plan());
+        assert.equal(arc.tier, 'episode');
+        assert.equal(arc.beats[0].status, 'active');
+        assert.equal(arc.beats[1].status, 'pending');
+        assert.deepEqual(arc.beats[1].unlockAfter, ['beat_1']);
+    });
+
+    it('normalizes an unknown tier to episode', () => {
+        const { arc } = validateArcPlan(plan({ tier: 'campaign' }));
+        assert.equal(arc.tier, 'episode');
+    });
+
+    it('takes the tier from options over the LLM output', () => {
+        const { arc } = validateArcPlan(plan({ tier: 'episode' }), { tier: 'act' });
+        assert.equal(arc.tier, 'act');
+    });
+
+    it('act: every milestone active, unlockAfter stripped', () => {
+        const { arc } = validateArcPlan(plan({ tier: 'act' }));
+        assert.equal(arc.tier, 'act');
+        for (const beat of arc.beats) {
+            assert.equal(beat.status, 'active');
+            assert.deepEqual(beat.unlockAfter, []);
+        }
+    });
+
+    it('saga: every milestone active, unlockAfter stripped', () => {
+        const { arc } = validateArcPlan(plan(), { tier: 'saga' });
+        assert.equal(arc.tier, 'saga');
+        assert.ok(arc.beats.every(b => b.status === 'active' && b.unlockAfter.length === 0));
+    });
+
+    it('clamps estimatedLength to the tier band on both sides', () => {
+        assert.equal(validateArcPlan(plan({ estimatedLength: 40 })).arc.estimatedLength, 20);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 3 })).arc.estimatedLength, 8);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 40 }), { tier: 'act' }).arc.estimatedLength, 60);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 500 }), { tier: 'act' }).arc.estimatedLength, 150);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 100 }), { tier: 'saga' }).arc.estimatedLength, 400);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 9000 }), { tier: 'saga' }).arc.estimatedLength, 1500);
+        assert.equal(validateArcPlan(plan({ estimatedLength: 90 }), { tier: 'act' }).arc.estimatedLength, 90);
+    });
+
+    it('clamps a missing estimatedLength into the band too', () => {
+        assert.equal(validateArcPlan(plan()).arc.estimatedLength, 20);
+        assert.equal(validateArcPlan(plan(), { tier: 'saga' }).arc.estimatedLength, 400);
     });
 });
