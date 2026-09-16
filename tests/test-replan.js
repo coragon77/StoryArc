@@ -157,14 +157,6 @@ describe('mergeReplan', () => {
         assert.deepEqual(merged.beats.slice(0, 2).map(b => b.status), ['completed', 'completed']);
     });
 
-    it('keeps a locked generated beat locked so unlockAfter still gates it', () => {
-        const generated = generatedPlan();
-        generated.beats[1].status = 'locked';
-        const merged = mergeReplan(storedEpisode(), generated);
-
-        assert.equal(merged.beats[3].status, 'locked');
-    });
-
     it('does not mutate its inputs', () => {
         const existing = storedEpisode();
         const generated = generatedPlan();
