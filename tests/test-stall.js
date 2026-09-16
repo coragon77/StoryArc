@@ -70,8 +70,7 @@ describe('lastFulfilledAt — set on fulfillment, shifted on resume', () => {
     it('a fulfillment stamps the index of the fulfilling message', async () => {
         const arc = episode({ id: 'arc12345-full-id', lastFulfilledAt: 100 });
         chat_metadata.story_arc.arcs = [arc];
-        chat.length = 111;
-        await processSignalResults([{ arcId: 'arc12345', beatId: 'b0' }], [arc]);
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b0' }], [arc], 110);
         assert.equal(arc.lastFulfilledAt, 110);
         assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 110);
         assert.equal(isStalled(arc, 111), false);
