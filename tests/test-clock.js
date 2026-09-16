@@ -1,7 +1,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { selectPacingClock, pauseArc, resumeArc } from '../lib/injection/clock.js';
-import { chat_metadata } from './mocks/st-mocks.js';
+import { buildStamp } from '../lib/injection/stamping.js';
+import { chat, chat_metadata } from './mocks/st-mocks.js';
 
 function arc(id, tier, focus) {
     return { id, title: id, status: 'active', tier, focus, messageStart: 0, estimatedLength: 40, beats: [] };
@@ -34,36 +35,99 @@ describe('selectPacingClock', () => {
     });
 });
 
-describe('pauseArc / resumeArc — stubs that only write focus', () => {
+describe('pauseArc / resumeArc — clock freeze', () => {
     beforeEach(() => {
+        chat.length = 0;
         chat_metadata.story_arc = {
             version: 1,
-            arcs: [{ ...arc('a', 'episode', 'normal'), messageStart: 12, pausedAt: null, lastFulfilledAt: 12 }],
+            arcs: [{ ...arc('a', 'episode', 'normal'), messageStart: 88, pausedAt: null, lastFulfilledAt: 92 }],
             settings: {},
         };
     });
 
-    it('pauseArc writes focus paused and nothing else', async () => {
+    function stored() {
+        return chat_metadata.story_arc.arcs[0];
+    }
+
+    it('pauseArc records the chat length and writes focus paused', async () => {
+        chat.length = 100;
         await pauseArc('a');
-        const stored = chat_metadata.story_arc.arcs[0];
-        assert.equal(stored.focus, 'paused');
-        assert.equal(stored.messageStart, 12);
-        assert.equal(stored.pausedAt, null);
-        assert.equal(stored.lastFulfilledAt, 12);
+        assert.equal(stored().focus, 'paused');
+        assert.equal(stored().pausedAt, 100);
+        assert.equal(stored().messageStart, 88);
+        assert.equal(stored().lastFulfilledAt, 92);
     });
 
-    it('resumeArc writes the requested focus and nothing else', async () => {
-        chat_metadata.story_arc.arcs[0].focus = 'paused';
+    it('pausing an already paused arc keeps the original freeze point', async () => {
+        chat.length = 100;
+        await pauseArc('a');
+        chat.length = 130;
+        await pauseArc('a');
+        assert.equal(stored().pausedAt, 100);
+    });
+
+    it('resumeArc shifts messageStart and lastFulfilledAt by the paused span and clears pausedAt', async () => {
+        chat.length = 100;
+        await pauseArc('a');
+        chat.length = 115;
         await resumeArc('a', 'spotlight');
-        const stored = chat_metadata.story_arc.arcs[0];
-        assert.equal(stored.focus, 'spotlight');
-        assert.equal(stored.messageStart, 12);
-        assert.equal(stored.lastFulfilledAt, 12);
+        assert.equal(stored().focus, 'spotlight');
+        assert.equal(stored().pausedAt, null);
+        assert.equal(stored().messageStart, 103);
+        assert.equal(stored().lastFulfilledAt, 107);
+    });
+
+    it('the stamp number continues where it stopped (message 12 before and after)', async () => {
+        chat.length = 100;
+        assert.equal(buildStamp(stored(), 99), '[Arc: message 12 of ~40]');
+        await pauseArc('a');
+        chat.length = 115;
+        await resumeArc('a');
+        assert.equal(buildStamp(stored(), 114), '[Arc: message 12 of ~40]');
     });
 
     it('resumeArc defaults to normal', async () => {
-        chat_metadata.story_arc.arcs[0].focus = 'paused';
+        chat.length = 100;
+        await pauseArc('a');
         await resumeArc('a');
-        assert.equal(chat_metadata.story_arc.arcs[0].focus, 'normal');
+        assert.equal(stored().focus, 'normal');
+    });
+
+    it('resuming a never-paused arc writes the focus but leaves the clock alone', async () => {
+        chat.length = 150;
+        await resumeArc('a', 'spotlight');
+        assert.equal(stored().focus, 'spotlight');
+        assert.equal(stored().pausedAt, null);
+        assert.equal(stored().messageStart, 88);
+        assert.equal(stored().lastFulfilledAt, 92);
+    });
+
+    it('resuming twice in a row shifts the clock once', async () => {
+        chat.length = 100;
+        await pauseArc('a');
+        chat.length = 115;
+        await resumeArc('a');
+        chat.length = 140;
+        await resumeArc('a', 'spotlight');
+        assert.equal(stored().focus, 'spotlight');
+        assert.equal(stored().messageStart, 103);
+        assert.equal(stored().lastFulfilledAt, 107);
+    });
+
+    it('resumes a migrated background arc, which has pausedAt but no lastFulfilledAt', async () => {
+        chat_metadata.story_arc.arcs = [{ ...arc('old', 'episode', 'paused'), messageStart: 10, pausedAt: 50 }];
+        chat.length = 70;
+        await resumeArc('old');
+        assert.equal(stored().focus, 'normal');
+        assert.equal(stored().pausedAt, null);
+        assert.equal(stored().messageStart, 30);
+        assert.equal(stored().lastFulfilledAt, undefined);
+    });
+
+    it('resumeArc on an unknown arc changes nothing', async () => {
+        chat.length = 100;
+        await resumeArc('nope');
+        assert.equal(stored().messageStart, 88);
+        assert.equal(stored().focus, 'normal');
     });
 });
