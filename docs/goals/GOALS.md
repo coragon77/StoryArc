@@ -26,7 +26,7 @@ The user experiences the story as a player, not a planner. Mysteries have real a
 
 3. **The plan is secret from me** -- the arc plan is injected into the AI's prompt so I experience the story as a player. Mysteries stay mysterious. I can peek behind spoiler toggles if I want, but by default I'm surprised by what happens.
 
-4. **Multiple arcs run simultaneously, at different timescales** -- **delivered 2026-09-17** (design decided 2026-08-29, spec `docs/plans/2026-09-16-tiers-focus-and-replan-design.md`, ADRs 0001–0003, PRs #8–#14). Three tiers, like episode/season/series in serialized TV, chosen when an arc is planned; the words are the glossary's (`CONTEXT.md`):
+4. **Multiple arcs run simultaneously, at different timescales** -- **delivered 2026-09-17** (design decided 2026-08-29, spec `docs/plans/2026-09-16-tiers-focus-and-replan-design.md`, ADRs 0001–0003, PRs #8–#14). Three tiers, like episode/season/series in serialized TV, chosen when an arc is planned; the words are the glossary's (`GLOSSARY.md`):
    - **Episode** (8–20 messages): a playable, resolvable unit -- "the group takes a job from the guild board." Gets the full treatment: ordered scene beats, the active beat as pressure, hidden roadmap, signal tracking, promotion gating, the pacing clock.
    - **Act** (60–150 messages): influences everything without being pursued. Its unfulfilled milestones are injected as standing *pressures* (no completable objective), and each completes by *recognition* -- whenever the story, possibly mid-episode, happens to fulfill it.
    - **Saga** (400–1500 messages): the overarching storyline ("defeat the Big Bad"). Same milestone mechanism, coarser: fewer milestones, each a state the story reaches.
