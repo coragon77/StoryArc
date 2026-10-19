@@ -109,28 +109,14 @@ describe('milestone section — act / saga in normal focus', () => {
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
     });
 
-    it('applies phase gating to secrets: climax secret hidden early, shown at climax', () => {
-        // Beat ratio 1/3 caps the phase at development regardless of messages.
-        const early = withChatLength(10, () => buildInjection([makeAct()]));
-        assert.ok(early.includes('The granary was emptied on purpose.'));
-        assert.equal(early.includes('The guildmaster sold the grain.'), false);
-
-        // Two of three done (0.67 → escalation) and 80/100 messages (climax) → escalation still.
-        const arc = makeAct();
-        arc.beats[1].status = 'completed';
-        const mid = withChatLength(80, () => buildInjection([arc]));
-        assert.equal(mid.includes('The guildmaster sold the grain.'), false);
-
-        // All done + 80/100 messages → climax.
-        arc.beats[0].status = 'completed';
-        const climax = withChatLength(80, () => buildInjection([arc]));
-        assert.ok(climax.includes('The guildmaster sold the grain.'));
-    });
-
-    it('carries triggers and unplanted foreshadowing as the episode section does', () => {
+    it('leaves out secrets, triggers and foreshadowing', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
-        assert.ok(text.includes('- IF anyone counts the sacks → the tally is short'));
-        assert.ok(text.includes('- Carts leave at night. (foreshadows: secret:s_climax)'));
+        assert.equal(text.includes('SECRETS'), false);
+        assert.equal(text.includes('The granary was emptied on purpose.'), false);
+        assert.equal(text.includes('TRIGGERS'), false);
+        assert.equal(text.includes('anyone counts the sacks'), false);
+        assert.equal(text.includes('FORESHADOWING'), false);
+        assert.equal(text.includes('Carts leave at night.'), false);
     });
 
     it('uses the saga header for a saga', () => {

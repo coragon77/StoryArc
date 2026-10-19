@@ -99,16 +99,31 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
         assert.ok(text.includes('- The guild ledgers do not add up.'));
     });
 
-    it('keeps secrets, triggers and foreshadowing exactly as the normal section shows them', () => {
+    it('adds the secrets, triggers and foreshadowing that normal focus leaves out', () => {
         const lit = withChatLength(10, () => buildInjection([makeAct()]));
         const normal = withChatLength(10, () => buildInjection([makeAct({ focus: 'normal' })]));
-        const tailOf = text => text.slice(text.indexOf('SECRETS ('));
-        assert.ok(lit.includes('SECRETS ('));
-        assert.equal(tailOf(lit), tailOf(normal));
-        assert.ok(lit.includes('The granary was emptied on purpose.'));
-        assert.equal(lit.includes('The guildmaster sold the grain.'), false, 'climax secret still gated');
-        assert.ok(lit.includes('- IF anyone counts the sacks → the tally is short'));
-        assert.ok(lit.includes('- Carts leave at night. (foreshadows: secret:s_climax)'));
+        assert.ok(lit.includes('SECRETS (guard these carefully — do not reveal directly):\n- The granary was emptied on purpose.'));
+        assert.ok(lit.includes('TRIGGERS (check narrative conditions each message):\n- IF anyone counts the sacks → the tally is short'));
+        assert.ok(lit.includes('FORESHADOWING TO PLANT:\n- Carts leave at night. (foreshadows: secret:s_climax)'));
+        assert.equal(normal.includes('SECRETS'), false);
+    });
+
+    it('applies phase gating to secrets: climax secret hidden early, shown at climax', () => {
+        // Beat ratio 1/3 caps the phase at development regardless of messages.
+        const early = withChatLength(10, () => buildInjection([makeAct()]));
+        assert.ok(early.includes('The granary was emptied on purpose.'));
+        assert.equal(early.includes('The guildmaster sold the grain.'), false);
+
+        // Two of three done (0.67 → escalation) and 80/100 messages (climax) → escalation still.
+        const arc = makeAct();
+        arc.beats[1].status = 'completed';
+        const mid = withChatLength(80, () => buildInjection([arc]));
+        assert.equal(mid.includes('The guildmaster sold the grain.'), false);
+
+        // All done + 80/100 messages → climax.
+        arc.beats[0].status = 'completed';
+        const climax = withChatLength(80, () => buildInjection([arc]));
+        assert.ok(climax.includes('The guildmaster sold the grain.'));
     });
 
     it('uses the saga header for a spotlit saga', () => {
