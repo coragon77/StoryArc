@@ -23,7 +23,7 @@ import {
 import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
 import { getArcs, getActiveArcs } from './lib/planning/index.js';
 import { buildInjection, buildSignalInjection, stampPromptMessages } from './lib/injection/index.js';
-import { parseSignals, stripSignalsFromMessage, processSignalResults, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, registerWandMenuEntry } from './lib/ui/index.js';
 import { updateProgress } from './lib/ui/index.js';
 
@@ -89,12 +89,17 @@ async function onMessageReceived(messageIndex) {
 
     const activeArcs = getActiveArcs();
     const signals = parseSignals(message.mes);
+    let completedBeats = [];
     if (signals.length) {
         stripSignalsFromMessage(messageIndex);
-        await processSignalResults(signals, activeArcs, messageIndex);
+        ({ completedBeats } = await processSignalResults(signals, activeArcs, messageIndex));
         updateProgress();
         await saveMetadata();
     }
+
+    // Every message, not only signalled ones: the wait window can run out on
+    // a message without markers.
+    await flushPendingMarks(messageIndex, completedBeats.length > 0);
 
     // After marker parsing: mechanically remove any plan identifiers the
     // model leaked into journals/trackers — the directive alone can't
