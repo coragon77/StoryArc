@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-09-17
+- **Last Updated:** 2026-10-19
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -51,9 +51,11 @@ StoryArc/
 │   │   │                       #   getActiveArcs(), getArcById(), updateArc(), deleteArc(),
 │   │   │                       #   ARC_PRESET_NAME, createArcPreset(),
 │   │   │                       #   collectArcDirectives(), readActiveArcDirectives()
-│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc }) —
+│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre }) —
 │   │   │                       #   two-phase LLM generation with retry logic; stamps
-│   │   │                       #   tier, direction, messageStart, lastFulfilledAt;
+│   │   │                       #   tier, direction, genre, messageStart, lastFulfilledAt;
+│   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
+│   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
 │   │   │                       #   returns mergeReplan(reviseArc, arc);
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId) marks the
@@ -88,7 +90,12 @@ StoryArc/
 │   │   │                       #   not migrated or re-validated)
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
-│   │   │                       #   saveArc(), updateArc(), deleteArc()
+│   │   │                       #   saveArc(), updateArc(), deleteArc();
+│   │   │                       #   latestGenre(arcs) — wizard default for a new arc
+│   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
+│   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
+│   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
+│   │   │                       #   unlockAfter and unlocks beats with nothing left open
 │   │   ├── tier-block.js       # buildTierBlock(tier) → {{TIER_BLOCK}}: "== TIER: … =="
 │   │   │                       #   with beat kind, beat count, length band and the
 │   │   │                       #   milestone rules, all from TIER_TABLE
@@ -146,7 +153,9 @@ StoryArc/
 │   │   │   └── signal-directive.js  # buildSignalDirective(arcs) — continuation guard,
 │   │   │                       #   confidentiality clause, BEAT CHECK listing every
 │   │   │                       #   active beat (all unfulfilled milestones on an
-│   │   │                       #   act/saga); paused arcs get no recognition lines
+│   │   │                       #   act/saga); paused arcs get no recognition lines;
+│   │   │                       #   PLANT CHECK with :PLANTED / :FIRED lines for the
+│   │   │                       #   clues and triggers the arc's section shows
 │   │   ├── clock.js            # selectPacingClock(arcs) — spotlit episode, else first
 │   │   │                       #   normal episode; never paused, never act/saga; feeds
 │   │   │                       #   stamping.js;
@@ -170,7 +179,10 @@ StoryArc/
 │   │   │                       #   array on CHAT_COMPLETION_PROMPT_READY. Stored chat
 │   │   │                       #   and the UI are never touched. Entries are matched to
 │   │   │                       #   chat indices by content suffix, not position
-│   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE] tokens
+│   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE|PLANTED|FIRED] tokens;
+│   │                           #   PLANTED/FIRED are queued in pendingMarks and applied by
+│   │                           #   flushPendingMarks(messageIndex, promptChangesAnyway);
+│   │                           #   dropPendingMark() for the Arc Manager's hand toggle
 │   │                           #   (bare or HTML-comment-wrapped);
 │   │                           #   processSignalResults(signals, arcs, messageIndex) —
 │   │                           #   marks ACTIVE beats complete (max one per arc per
@@ -212,7 +224,10 @@ StoryArc/
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
 │   │   │                       #   badges, three-way focus <select> (paused / normal /
 │   │   │                       #   spotlight via clock.js), Re-plan (closes, then opens
-│   │   │                       #   showWizard(arcId)), complete, abandon; unbinds the whole
+│   │   │                       #   showWizard(arcId)), complete, abandon; per beat an
+│   │   │                       #   inline editor (pressure + intention, delete with a
+│   │   │                       #   second click) and an Edit arc JSON editor (via
+│   │   │                       #   arc-edit.js); unbinds the whole
 │   │   │                       #   .storyArcManager namespace when the popup resolves
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
@@ -238,7 +253,7 @@ StoryArc/
 │   ├── mocks/
 │   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.
 │   ├── test-core.js            # Tests: core/constants (phases, defaults, arc factory)
-│   ├── test-lorebook.js        # Tests: categorizeEntries (World Info classification)
+│   ├── test-lorebook.js        # Tests: fetchLorebookEntries (filter/sort), categorizeEntries
 │   ├── test-arc-preset.js      # Tests: pinned preset keys, directive entry defaults
 │   │                           #   and round-trip through a re-create, preset/profile
 │   │                           #   creation and overwrite handling
@@ -249,6 +264,9 @@ StoryArc/
 │   │                           #   + section order and line-boundary trimming
 │   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
 │   │                           #   blocks byte-identical as messages accumulate)
+│   ├── test-arc-edit.js        # Tests: applyArcEdit (kept fields, save checks) +
+│   │                           #   checkBeatEdit (empty intention, milestone
+│   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock)
 │   ├── test-clock.js           # Tests: selectPacingClock (spotlit episode, else first
 │   │                           #   normal; never paused/act/saga) + pauseArc/resumeArc
 │   │                           #   clock freeze and shift (stamp number continues)
@@ -272,9 +290,15 @@ StoryArc/
 │   │                           #   (normal focus; pressure-less milestone skipped),
 │   │                           #   progress widget milestone label
 │   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast)
+│   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
+│   │                           #   templates, GENRE: line per section, latestGenre,
+│   │                           #   mergeReplan keeps the edited genre
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing
 │   │                           #   estimatedLength/messageStart)
+│   ├── test-marks.js           # Tests: PLANTED/FIRED parsing, PLANT CHECK lines per
+│   │                           #   tier/focus, queue keeps the prompt byte-identical
+│   │                           #   until flush, flush rules, togglePlanItem
 │   ├── test-signals.js         # Tests: signal parsing + processSignalResults
 │   │                           #   (active-only completion, one per arc per message,
 │   │                           #   locked-beat rejection) + promoteNextBeats
@@ -310,7 +334,7 @@ lib/core/
                    ensureChatState() runs migrateArc() over stored arcs)
 
 lib/context/
-├── lorebook.js      (imports: /scripts/world-info.js or SillyTavern.getContext())
+├── lorebook.js      (imports: /scripts/world-info.js getSortedEntries)
 ├── character.js     (imports: /script.js)
 ├── chat-history.js  (imports: /script.js)
 └── harvester.js     (imports: lorebook.js, character.js, chat-history.js, planning/storage.js)
@@ -320,6 +344,7 @@ lib/planning/
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
 ├── tier-block.js  (imports: core/constants.js)
+├── arc-edit.js    (imports: core/constants.js)
 ├── arc-so-far.js  (no deps)
 ├── replan.js      (no deps)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
@@ -332,7 +357,7 @@ lib/injection/
 ├── pacing.js   (imports: core/constants.js, /script.js)
 ├── clock.js    (imports: planning/storage.js, /script.js)
 ├── stamping.js (imports: clock.js, core/constants.js, /script.js)
-├── signals.js  (imports: planning/storage.js, /script.js)
+├── signals.js  (imports: planning/storage.js, core/settings.js, /script.js)
 ├── sections/   (episode.js imports pacing.js; milestone.js imports pacing.js,
 │                core/constants.js; spotlight.js imports episode.js, milestone.js;
 │                paused.js, signal-directive.js: no deps)
@@ -350,7 +375,8 @@ lib/ui/
 │                              /scripts/extensions.js, /scripts/popup.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
 │                              wizard.js, arc-manager.js, /scripts/popup.js)
-└── arc-manager.js   (imports: planning/storage.js, injection/pacing.js, injection/clock.js,
+└── arc-manager.js   (imports: planning/storage.js, planning/arc-edit.js,
+                               injection/pacing.js, injection/clock.js,
                                core/settings.js, core/constants.js, progress.js,
                                wizard.js, /script.js, /scripts/popup.js)
 

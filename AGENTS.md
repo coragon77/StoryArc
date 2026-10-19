@@ -64,6 +64,7 @@ StoryArc/
 │   │   ├── tier-block.js       # {{TIER_BLOCK}} per tier for the generate template
 │   │   ├── arc-so-far.js       # {{ARC_SO_FAR}} block for re-planning
 │   │   ├── replan.js           # mergeReplan: keep the situation, replace the road
+│   │   ├── arc-edit.js         # applyArcEdit, checkBeatEdit, removeBeat: hand edits in the Arc Manager
 │   │   └── templates.js        # Prompt template loader
 │   ├── injection/
 │   │   ├── index.js            # Facade

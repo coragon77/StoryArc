@@ -34,7 +34,7 @@ The arc is set aside for a tangent. The model is told it exists and is not being
 _Avoid_: shelved, backgrounded, dormant
 
 **Spotlight** (focus):
-The arc is pushed to the front. For an act or saga, its milestone pressures are placed in the main block with a request that the world story move, never naming a milestone to reach. For an episode it only makes that episode the pacing clock.
+The arc is pushed to the front. For an act or saga, its milestone pressures are placed in the main block with a request that the world story move, never naming a milestone to reach, and its secrets, triggers and foreshadowing are added. In normal focus an act or saga shows only its premise and pressures. For an episode it only makes that episode the pacing clock.
 _Avoid_: foregrounded, focused, pushed, urgent
 
 **Pacing clock**:
@@ -44,6 +44,10 @@ _Avoid_: counter, timer
 **Direction**:
 The free-text creative guidance the player gives before an arc is generated or re-planned. Stored on the arc.
 _Avoid_: prompt, instructions, ingredients
+
+**Genre**:
+The register an arc must stay in, written by the player per arc. Binding for both generation phases and printed as one line in the arc's section (ADR-0004).
+_Avoid_: style, theme, tone
 
 **Re-plan**:
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May change the tier.
@@ -60,6 +64,10 @@ An episode's beat. Ordered, one active at a time, the rest hidden from the model
 
 **Milestone**:
 An act's or saga's beat. Unordered, all unfulfilled milestones stand at once, and any may be fulfilled in any message.
+
+**Mark**:
+The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan.
+_Avoid_: tick, flag
 
 **Pressure**:
 The face of a beat the model sees before it is fulfilled: a force acting on the scene, with no completion state.
