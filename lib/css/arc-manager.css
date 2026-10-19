@@ -170,6 +170,74 @@
     opacity: 0.6;
 }
 
+/* ─── Arc Editor (JSON) ──────────────────────────────────────────────────── */
+
+.story-arc-arc-editor {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.story-arc-row.editing-arc .story-arc-arc-editor {
+    display: flex;
+}
+
+.story-arc-arc-editor small {
+    color: var(--SmartThemeEmColor, #888);
+}
+
+.story-arc-arc-json-input {
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.78em;
+}
+
+/* ─── Beat Editor ────────────────────────────────────────────────────────── */
+
+.story-arc-beat-item {
+    flex-wrap: wrap;
+}
+
+.story-arc-beat-edit-btn {
+    cursor: pointer;
+    opacity: 0.5;
+    flex-shrink: 0;
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-beat-edit-btn:hover,
+.story-arc-beat-item.editing .story-arc-beat-edit-btn {
+    opacity: 1;
+    color: var(--sa-accent);
+}
+
+.story-arc-beat-editor {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+}
+
+.story-arc-beat-item.editing .story-arc-beat-editor {
+    display: flex;
+}
+
+.story-arc-beat-editor label small {
+    color: var(--SmartThemeEmColor, #888);
+}
+
+.story-arc-beat-editor-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.story-arc-beat-editor-actions .story-arc-btn {
+    font-size: 0.9em;
+    padding: 3px 8px;
+}
+
 .story-arc-beat-optional-label {
     font-size: 0.85em;
     font-style: italic;
