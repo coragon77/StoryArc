@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { categorizeEntries } from '../lib/context/lorebook.js';
+import { categorizeEntries, fetchLorebookEntries } from '../lib/context/lorebook.js';
+import { mockSortedEntries } from './mocks/st-mocks.js';
 
 describe('categorizeEntries', () => {
     it('categorizes constant entries', () => {
@@ -42,5 +43,19 @@ describe('categorizeEntries', () => {
         assert.equal(constants.length, 1);
         assert.equal(arcSummaries.length, 1);
         assert.equal(recent.length, 1);
+    });
+});
+
+describe('fetchLorebookEntries', () => {
+    it('uses ST getSortedEntries, drops disabled entries and sorts by order', async () => {
+        mockSortedEntries.length = 0;
+        mockSortedEntries.push(
+            { uid: 1, world: 'chat-book', comment: 'Late', content: 'a', order: 200 },
+            { uid: 2, world: 'chat-book', comment: 'Off', content: 'b', order: 50, disable: true },
+            { uid: 3, world: 'global', comment: 'Early', content: 'c', order: 10 },
+        );
+        const entries = await fetchLorebookEntries();
+        assert.deepEqual(entries.map(e => e.comment), ['Early', 'Late']);
+        assert.equal(entries[0].world, 'global');
     });
 });

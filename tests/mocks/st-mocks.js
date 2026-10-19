@@ -26,9 +26,13 @@ export function getContext() {
         persona: 'A test persona',
         characters: [],
         characterId: null,
-        worldInfo: [],
     };
 }
+
+// --- /scripts/world-info.js mocks ---
+/** Entries getSortedEntries resolves with — tests set this. */
+export const mockSortedEntries = [];
+export async function getSortedEntries() { return [...mockSortedEntries]; }
 
 // --- /scripts/group-chats.js mocks ---
 export const groups = [];

@@ -372,22 +372,17 @@ await presetManager.savePreset('New Preset', settings, { skipUpdate: true });
 ## World Info / Lorebook Access
 
 ```javascript
-// The world_info module provides access to lorebook data
-// Exact import path may vary by ST version - verify at development time
-// Common approaches:
+import { getSortedEntries } from '/scripts/world-info.js';
 
-// Via extension context
-const context = getContext();
-// context may expose worldInfo depending on ST version
-
-// Via direct import (if available)
-// import { world_info } from '/scripts/world-info.js';
-
-// Via the SillyTavern API endpoint
-// GET /api/worldinfo/get
+// The exact entry set ST scans for the current chat: chat lorebook,
+// persona lore, character lore and global books, each with { uid, world, ... }
+const entries = await getSortedEntries();
 ```
 
-**Important:** Verify the exact lorebook access pattern against your SillyTavern version. The API has evolved across versions. The safest approach is to check what Story Mode or other extensions use in the same ST installation.
+**Do not use** `getContext().worldInfo` (does not exist in `st-context.js`) or
+`fetch('/api/worldinfo/list')` from an extension (every POST needs the
+`X-CSRF-Token` header from `getRequestHeaders()`, and it returns every book on
+the server rather than the ones bound to this chat).
 
 ## UI Patterns
 
