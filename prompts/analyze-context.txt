@@ -51,7 +51,7 @@ An arc marked [BEING RE-PLANNED] is about to have the rest of its plan regenerat
 
 == END OF CONTEXT ==
 
-== YOUR TASK ==
+{{GENRE_BLOCK}}== YOUR TASK ==
 
 Analyze this story deeply. Do not just tell me what happened -- tell me what is HAPPENING. Identify what is simmering beneath the surface. Find the threads that have been set up but not paid off. Understand what the story is ABOUT at its core -- not the plot events, but the thematic currents running beneath them.
 
