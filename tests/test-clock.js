@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { selectPacingClock, pauseArc, resumeArc } from '../lib/injection/clock.js';
+import { selectPacingClock, pauseArc, resumeArc, spotlightArc } from '../lib/injection/clock.js';
 import { buildStamp } from '../lib/injection/stamping.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
 
@@ -129,5 +129,53 @@ describe('pauseArc / resumeArc — clock freeze', () => {
         await resumeArc('nope');
         assert.equal(stored().messageStart, 88);
         assert.equal(stored().focus, 'normal');
+    });
+});
+
+describe('spotlightArc — one arc in the spotlight', () => {
+    beforeEach(() => {
+        chat.length = 0;
+        chat_metadata.story_arc = {
+            version: 1,
+            arcs: [
+                { ...arc('lit', 'saga', 'spotlight'), pausedAt: null },
+                { ...arc('quiet', 'act', 'normal'), pausedAt: null },
+                { ...arc('done', 'saga', 'spotlight'), status: 'completed', pausedAt: null },
+                { ...arc('off', 'saga', 'background'), pausedAt: null },
+            ],
+            settings: {},
+        };
+    });
+
+    function focusOf(id) {
+        return chat_metadata.story_arc.arcs.find(a => a.id === id).focus;
+    }
+
+    it('spotlights the arc and sends the previous spotlit arc back to normal', async () => {
+        await spotlightArc('quiet');
+        assert.equal(focusOf('quiet'), 'spotlight');
+        assert.equal(focusOf('lit'), 'normal');
+    });
+
+    it('leaves arcs that are not active, and other focus values, alone', async () => {
+        await spotlightArc('quiet');
+        assert.equal(focusOf('done'), 'spotlight');
+        assert.equal(focusOf('off'), 'background');
+    });
+
+    it('keeps the arc spotlit when it already was', async () => {
+        await spotlightArc('lit');
+        assert.equal(focusOf('lit'), 'spotlight');
+    });
+
+    it('shifts the clock of a paused arc it spotlights', async () => {
+        const quiet = chat_metadata.story_arc.arcs.find(a => a.id === 'quiet');
+        Object.assign(quiet, { focus: 'paused', pausedAt: 100, messageStart: 40 });
+        chat.length = 130;
+        await spotlightArc('quiet');
+        assert.equal(focusOf('quiet'), 'spotlight');
+        assert.equal(quiet.pausedAt, null);
+        assert.equal(quiet.messageStart, 70);
+        assert.equal(focusOf('lit'), 'normal');
     });
 });

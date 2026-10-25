@@ -167,6 +167,11 @@
     height: 6px;
 }
 
+.story-arc-progress-focus.background {
+    background: var(--sa-accent);
+    opacity: 0.4;
+}
+
 .story-arc-progress-focus.paused {
     background: var(--sa-status-pending);
 }
