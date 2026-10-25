@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeReplan } from '../lib/planning/replan.js';
+import { mergeReplan, replanTiers } from '../lib/planning/replan.js';
 import { buildArcSoFar } from '../lib/planning/arc-so-far.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
@@ -181,6 +181,25 @@ describe('mergeReplan', () => {
 
         assert.deepEqual(existing, existingBefore);
         assert.deepEqual(generated, generatedBefore);
+    });
+});
+
+describe('replanTiers — an arc may grow, never shrink', () => {
+    it('lets an episode stay or grow into an act or saga', () => {
+        assert.deepEqual(replanTiers('episode'), ['episode', 'act', 'saga']);
+    });
+
+    it('lets an act stay or grow into a saga, never become an episode', () => {
+        assert.deepEqual(replanTiers('act'), ['act', 'saga']);
+    });
+
+    it('keeps a saga a saga', () => {
+        assert.deepEqual(replanTiers('saga'), ['saga']);
+    });
+
+    it('treats a missing or unknown tier as episode', () => {
+        assert.deepEqual(replanTiers(undefined), ['episode', 'act', 'saga']);
+        assert.deepEqual(replanTiers('chapter'), ['episode', 'act', 'saga']);
     });
 });
 
