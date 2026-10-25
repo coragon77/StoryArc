@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-10-19
+- **Last Updated:** 2026-10-25
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -107,7 +107,9 @@ StoryArc/
 │   │   │                       #   secrets (add-only, content-deduped), completed
 │   │   │                       #   beats, planted foreshadowing, fired triggers;
 │   │   │                       #   replaces the rest; withUniqueIds() suffixes
-│   │   │                       #   colliding ids _2, _3, … and renames unlockAfter refs
+│   │   │                       #   colliding ids _2, _3, … and renames unlockAfter refs;
+│   │   │                       #   replanTiers(tier) — the tiers a re-plan may pick:
+│   │   │                       #   same or larger, never smaller (wizard selector)
 │   │   └── templates.js        # loadTemplate(name), fillTemplate(template, vars)
 │   ├── injection/
 │   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
@@ -140,6 +142,9 @@ StoryArc/
 │   │   │   │                   #   tiers for byte-identity (architecture.md, migration)
 │   │   │   ├── paused.js       # buildPausedSection(arc) — one line under PAUSED: premise
 │   │   │   │                   #   + "pending, not being pursued right now"
+│   │   │   ├── background.js   # buildBackgroundSection(arc) — act/saga: title under
+│   │   │   │                   #   BACKGROUND: + "Runs off-screen…" sentence; no
+│   │   │   │                   #   premise, no pressures (beats stay in the beat check)
 │   │   │   ├── milestone.js    # buildMilestoneSection(arc, pressures?) — act/saga:
 │   │   │   │                   #   === ACT/SAGA: header, premise, unfulfilled milestone
 │   │   │   │                   #   pressures under STANDING PRESSURES (header + trailer
@@ -161,7 +166,9 @@ StoryArc/
 │   │   │                       #   stamping.js;
 │   │   │                       #   pauseArc(id) freezes the clock (pausedAt = chat.length);
 │   │   │                       #   resumeArc(id, focus) shifts messageStart/lastFulfilledAt
-│   │   │                       #   by the paused span, no-op on the clock if never paused
+│   │   │                       #   by the paused span, no-op on the clock if never paused;
+│   │   │                       #   spotlightArc(id) — one arc in the spotlight, the
+│   │   │                       #   previous spotlit arc goes back to normal
 │   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
 │   │   │                       #   shouldShowSecret(revealPhase, phase) — secret gate
 │   │   │                       #   shared by the episode and milestone sections;
@@ -222,8 +229,9 @@ StoryArc/
 │   │   │                       #   generateArc, "Apply re-plan" writes via updateArc;
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
-│   │   │                       #   badges, three-way focus <select> (paused / normal /
-│   │   │                       #   spotlight via clock.js), Re-plan (closes, then opens
+│   │   │                       #   badges, focus <select> (paused / background / normal
+│   │   │                       #   / spotlight via clock.js; no background for an
+│   │   │                       #   episode), Re-plan (closes, then opens
 │   │   │                       #   showWizard(arcId)), complete, abandon; per beat an
 │   │   │                       #   inline editor (pressure + intention, delete with a
 │   │   │                       #   second click) and an Edit arc JSON editor (via
@@ -267,13 +275,17 @@ StoryArc/
 │   ├── test-arc-edit.js        # Tests: applyArcEdit (kept fields, save checks) +
 │   │                           #   checkBeatEdit (empty intention, milestone
 │   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock)
+│   ├── test-background.js      # Tests: background focus — section text, no premise or
+│   │                           #   pressures, beat check kept, no plant check, never the
+│   │                           #   clock, resume shift, migration untouched, re-plan
 │   ├── test-clock.js           # Tests: selectPacingClock (spotlit episode, else first
 │   │                           #   normal; never paused/act/saga) + pauseArc/resumeArc
-│   │                           #   clock freeze and shift (stamp number continues)
+│   │                           #   clock freeze and shift (stamp number continues) +
+│   │                           #   spotlightArc (previous spotlit arc back to normal)
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
-│   │                           #   add-only, id de-collision, tier change) +
+│   │                           #   add-only, id de-collision, tier change) + replanTiers +
 │   │                           #   buildArcSoFar + formatExistingArcs mark
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
@@ -346,7 +358,7 @@ lib/planning/
 ├── tier-block.js  (imports: core/constants.js)
 ├── arc-edit.js    (imports: core/constants.js)
 ├── arc-so-far.js  (no deps)
-├── replan.js      (no deps)
+├── replan.js      (imports: core/constants.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
 └── generator.js   (imports: templates.js, validation.js, arc-preset.js,
@@ -360,7 +372,7 @@ lib/injection/
 ├── signals.js  (imports: planning/storage.js, core/settings.js, /script.js)
 ├── sections/   (episode.js imports pacing.js; milestone.js imports pacing.js,
 │                core/constants.js; spotlight.js imports episode.js, milestone.js;
-│                paused.js, signal-directive.js: no deps)
+│                paused.js, background.js, signal-directive.js: no deps)
 └── builder.js  (imports: pacing.js, clock.js, sections/*, core/settings.js,
                  core/constants.js, context/chat-history.js)
 
@@ -397,6 +409,7 @@ index.js  (imports: core/, ui/, injection/, planning/storage.js,
 | Tier (shape at generation) | `lib/planning/validation.js` | `lib/planning/tier-block.js`, `lib/core/constants.js` (`TIER_TABLE`), `prompts/generate-arc.txt` |
 | Milestones (act/saga injection + recognition) | `lib/injection/sections/milestone.js` | `sections/signal-directive.js`, `signals.js` (`promoteNextBeats`) |
 | Focus: pause / resume | `lib/injection/clock.js` | `sections/paused.js`, `lib/ui/arc-manager.js` |
+| Focus: background | `lib/injection/sections/background.js` | `builder.js`, `lib/ui/arc-manager.js` (no background for episodes), `lib/planning/replan.js` (`replanTiers`: re-plan never shrinks an act or saga into an episode) |
 | Focus: spotlight | `lib/injection/sections/spotlight.js` | `clock.js`, `builder.js` (`sectionRank`, `buildPacingBlock`) |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `arc-so-far.js`, `generator.js` (`formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |

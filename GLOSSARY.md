@@ -26,15 +26,19 @@ The largest tier, roughly 400 to 1500 messages. The overarching storyline, such 
 _Avoid_: campaign, main plot
 
 **Focus**:
-How much of the model's attention an arc gets right now: paused, normal or spotlight. Set by hand at any time; the tier decides what each value looks like in the prompt.
-_Avoid_: foreground, background, emphasis, prominence
+How much of the model's attention an arc gets right now: paused, background, normal or spotlight. Set by hand at any time; the tier decides what each value looks like in the prompt.
+_Avoid_: foreground, emphasis, prominence
 
 **Paused** (focus):
 The arc is set aside for a tangent. The model is told it exists and is not being pursued; its beats are not checked and its message clock stands still.
 _Avoid_: shelved, backgrounded, dormant
 
+**Background** (focus):
+An act or saga that goes on off-screen. The model sees only its title and an instruction to leave it out of scenes unless the user's character goes to it or brings it up; no premise, no pressures. Its milestones stay in the beat check, so one still completes when the user plays the thread. Episodes have no background focus. Not the pre-tier `background` value, which meant paused and migrates to it.
+_Avoid_: lurking, simmering, offscreen
+
 **Spotlight** (focus):
-The arc is pushed to the front. For an act or saga, its milestone pressures are placed in the main block with a request that the world story move, never naming a milestone to reach, and its secrets, triggers and foreshadowing are added. In normal focus an act or saga shows only its premise and pressures. For an episode it only makes that episode the pacing clock.
+The arc is pushed to the front. Only one arc at a time: spotlighting an arc sends the previous one back to normal. For an act or saga, its milestone pressures are placed in the main block with a request that the world story move, never naming a milestone to reach, and its secrets, triggers and foreshadowing are added. In normal focus an act or saga shows only its premise and pressures. For an episode it only makes that episode the pacing clock.
 _Avoid_: foregrounded, focused, pushed, urgent
 
 **Pacing clock**:
@@ -50,7 +54,7 @@ The register an arc must stay in, written by the player per arc. Binding for bot
 _Avoid_: style, theme, tone
 
 **Re-plan**:
-Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May change the tier.
+Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
 
 ### Beats
