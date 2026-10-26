@@ -1,7 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSignals, processSignalResults, stripSignalsFromMessage, scrubArcInternals, promoteNextBeats } from '../lib/injection/signals.js';
-import { chat } from './mocks/st-mocks.js';
+import { chat, chat_metadata } from './mocks/st-mocks.js';
+
+/** Store a copy of the arcs, so the stored arc changes only through updateArc. */
+function storeCopies(...arcs) {
+    chat_metadata.story_arc = { version: 1, arcs: structuredClone(arcs), settings: {} };
+    return chat_metadata.story_arc.arcs;
+}
 
 describe('parseSignals', () => {
     it('parses a single signal', () => {
@@ -38,6 +44,20 @@ describe('parseSignals', () => {
         assert.equal(signals[0].arcId, 'abc123');
         assert.equal(signals[0].beatId, 'lean_in');
     });
+
+    it('parses and strips a comment marker written without spaces or with two spaces, leaving no stray comment delimiters', () => {
+        global.$ = () => ({ length: 0 });
+        for (const marker of ['<!--[ARC_SIGNAL:abc123:lean_in:COMPLETE]-->', '<!--  [ARC_SIGNAL:abc123:lean_in:COMPLETE]  -->']) {
+            const signals = parseSignals(`${marker}\nStory text.`);
+            assert.equal(signals.length, 1, marker);
+            assert.equal(signals[0].fullMatch, marker);
+
+            chat.length = 0;
+            chat.push({ mes: `${marker}\nStory text.` });
+            stripSignalsFromMessage(0);
+            assert.equal(chat[0].mes, 'Story text.', marker);
+        }
+    });
 });
 
 describe('stripSignalsFromMessage', () => {
@@ -59,6 +79,26 @@ describe('stripSignalsFromMessage', () => {
         stripSignalsFromMessage(0);
 
         assert.equal(chat[0].mes, 'Story text.');
+    });
+
+    it('leaves a message without a marker byte-identical, surrounding whitespace included', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: '  Story text.\n\n' });
+
+        stripSignalsFromMessage(0);
+
+        assert.equal(chat[0].mes, '  Story text.\n\n');
+    });
+
+    it('is a no-op for an index past the end of the chat', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: 'Story text.' });
+
+        stripSignalsFromMessage(5);
+
+        assert.deepEqual(chat, [{ mes: 'Story text.' }]);
     });
 });
 
@@ -90,6 +130,28 @@ describe('scrubArcInternals', () => {
         scrubArcInternals(0, arcs);
 
         assert.equal(chat[0].mes, 'The climax of the evening came quietly.');
+    });
+
+    it('is a no-op for an index past the end of the chat and for a missing or empty arc list', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: 'sensory_bleed leaked.' });
+
+        scrubArcInternals(5, arcs);
+        scrubArcInternals(0, undefined);
+        scrubArcInternals(0, []);
+
+        assert.deepEqual(chat, [{ mes: 'sensory_bleed leaked.' }]);
+    });
+
+    it('scrubs item ids of an arc without an id, skipping items without one', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: 'Tracker: cold_open done.' });
+
+        scrubArcInternals(0, [{ beats: [{ id: 'cold_open' }, { intention: 'a beat with no id' }] }]);
+
+        assert.equal(chat[0].mes, 'Tracker: … done.');
     });
 });
 
@@ -175,6 +237,64 @@ describe('processSignalResults', () => {
         await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', status: 'COMPLETE' }], [arc]);
         assert.equal(arc.status, 'completed');
     });
+
+    it('unlocks a beat waiting on two others only once both are completed', async () => {
+        const arc = makeArc();
+        arc.beats[1].status = 'active';
+        arc.beats[2].unlockAfter = ['b1', 'b2'];
+
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', verb: 'COMPLETE' }], [arc], 5);
+        assert.equal(arc.beats[2].status, 'locked');
+
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b2', verb: 'COMPLETE' }], [arc], 6);
+        assert.equal(arc.beats[2].status, 'pending');
+    });
+
+    it('keeps a beat locked, without throwing, when it waits on a beat id that does not exist', async () => {
+        const arc = makeArc();
+        arc.beats[2].unlockAfter = ['b1', 'ghost'];
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', verb: 'COMPLETE' }], [arc], 5);
+        assert.equal(arc.beats[2].status, 'locked');
+    });
+
+    it('reports updated false when every signal was ignored', async () => {
+        const arc = makeArc();
+        const result = await processSignalResults([
+            { arcId: 'zzz99999', beatId: 'b1', verb: 'COMPLETE' },   // unknown arc
+            { arcId: 'arc12345', beatId: 'ghost', verb: 'COMPLETE' }, // unknown beat
+            { arcId: 'arc12345', beatId: 'b2', verb: 'COMPLETE' },    // pending beat
+        ], [arc], 5);
+        assert.deepEqual(result, { updated: false, completedBeats: [] });
+        assert.deepEqual(arc.beats.map(b => b.status), ['active', 'pending', 'locked']);
+    });
+
+    it('skips signals for an unknown arc or beat and still applies a later valid one', async () => {
+        const arc = makeArc();
+        const result = await processSignalResults([
+            { arcId: 'zzz99999', beatId: 'b1', verb: 'COMPLETE' },
+            { arcId: 'arc12345', beatId: 'ghost', verb: 'COMPLETE' },
+            { arcId: 'arc12345', beatId: 'b1', verb: 'COMPLETE' },
+        ], [arc], 5);
+        assert.deepEqual(result, { updated: true, completedBeats: ['b1'] });
+        assert.equal(arc.beats[0].status, 'completed');
+    });
+
+    it('persists the new beats, the arc status and lastFulfilledAt through updateArc', async () => {
+        const arc = {
+            id: 'arc12345-full-id',
+            title: 'Single Beat Arc',
+            status: 'active',
+            lastFulfilledAt: 0,
+            beats: [{ id: 'b1', intention: 'only', status: 'active', unlockAfter: [], optional: false }],
+        };
+        const [stored] = storeCopies(arc);
+
+        await processSignalResults([{ arcId: 'arc12345', beatId: 'b1', verb: 'COMPLETE' }], [arc], 7);
+
+        assert.equal(stored.beats[0].status, 'completed');
+        assert.equal(stored.status, 'completed');
+        assert.equal(stored.lastFulfilledAt, 7);
+    });
 });
 
 describe('promoteNextBeats', () => {
@@ -237,6 +357,33 @@ describe('promoteNextBeats', () => {
         assert.equal(promoted, true);
         assert.equal(first.beats[0].status, 'active');
         assert.equal(second.beats[0].status, 'active');
+    });
+
+    it('persists the promotion through updateArc', async () => {
+        const episode = {
+            id: 'arc12345-full-id',
+            title: 'Episode',
+            tier: 'episode',
+            beats: [
+                { id: 'b1', intention: 'first', status: 'completed' },
+                { id: 'b2', intention: 'second', status: 'pending' },
+            ],
+        };
+        const act = {
+            id: 'act12345-full-id',
+            title: 'Act',
+            tier: 'act',
+            beats: [
+                { id: 'm1', intention: 'first', status: 'pending' },
+                { id: 'm2', intention: 'second', status: 'pending' },
+            ],
+        };
+        const [storedEpisode, storedAct] = storeCopies(episode, act);
+
+        await promoteNextBeats([episode, act]);
+
+        assert.deepEqual(storedEpisode.beats.map(b => b.status), ['completed', 'active']);
+        assert.deepEqual(storedAct.beats.map(b => b.status), ['active', 'active']);
     });
 });
 
