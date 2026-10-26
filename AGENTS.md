@@ -47,36 +47,27 @@ StoryArc/
 │   └── detail-pass.txt         # Phase 3: detail expansion
 ├── lib/
 │   ├── core/
-│   │   ├── index.js            # Facade
 │   │   ├── constants.js        # MODULE_NAME, defaults, phases, schema
-│   │   └── settings.js         # Settings load/save, per-chat state
+│   │   └── settings.js         # Settings load/save, per-chat state, arc migration
 │   ├── context/
-│   │   ├── index.js            # Facade
-│   │   ├── harvester.js        # Orchestrates context gathering
-│   │   ├── lorebook.js         # World info adapter
-│   │   ├── character.js        # Character card + persona
-│   │   └── chat-history.js     # Chat message extraction
+│   │   ├── harvester.js        # The whole harvest: lorebook, character, persona, chat, arcs
+│   │   └── chat-history.js     # Recent chat messages, estimateTokens (also used by the builder)
 │   ├── planning/
-│   │   ├── index.js            # Facade
-│   │   ├── generator.js        # Multi-phase LLM generation
+│   │   ├── generator.js        # Multi-phase LLM generation: templates, every {{BLOCK}}, transport
 │   │   ├── validation.js       # JSON parsing + schema validation
 │   │   ├── storage.js          # Arc CRUD on chat_metadata
-│   │   ├── tier-block.js       # {{TIER_BLOCK}} per tier for the generate template
-│   │   ├── arc-so-far.js       # {{ARC_SO_FAR}} block for re-planning
 │   │   ├── replan.js           # mergeReplan: keep the situation, replace the road
 │   │   ├── arc-edit.js         # applyArcEdit, checkBeatEdit, removeBeat: hand edits in the Arc Manager
-│   │   └── templates.js        # Prompt template loader
+│   │   └── arc-preset.js       # The arc generation preset and connection profile
 │   ├── injection/
-│   │   ├── index.js            # Facade
-│   │   ├── builder.js          # Dispatcher: one section per arc by (tier, focus)
-│   │   ├── sections/           # episode, milestone, paused, spotlight, signal-directive
+│   │   ├── builder.js          # Every prompt section per arc by (tier, focus), budget trim, beat check
 │   │   ├── clock.js            # Pacing clock selection, pauseArc/resumeArc
 │   │   ├── stamping.js         # Per-message arc counters on the outgoing prompt
 │   │   ├── pacing.js           # Phase calculation + directives
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
 │   ├── ui/
-│   │   ├── index.js            # Facade
 │   │   ├── settings-panel.js   # Extension drawer content
+│   │   ├── wand-menu.js        # Wand menu entry and its popup
 │   │   ├── wizard.js           # Arc planning wizard popup
 │   │   ├── arc-manager.js      # Arc list + controls popup
 │   │   └── progress.js         # Compact progress display
@@ -231,29 +222,15 @@ $(document).on('click.storyArc', '[data-action]', function(e) {
 });
 ```
 
-### Facade Pattern
+### One Process, One File
 
-Each `lib/*/index.js` re-exports the public API for that module:
-
-```javascript
-// Preferred - import from facade
-import { harvestContext } from './lib/context/index.js';
-
-// Also OK - direct import
-import { harvestFromLorebook } from './lib/context/lorebook.js';
-```
-
-### Re-export Pattern
-
-When extracting functions to separate files, use import-then-export:
+A process a reader follows lives in one file, in the order it runs, each
+helper right after its first caller. A function gets its own file only when
+a second file really calls it (owner ruling, 2026-10-26). There are no
+`index.js` facades: import from the file that holds the code.
 
 ```javascript
-// CORRECT - creates local binding
-import { harvestContext } from './harvester.js';
-export { harvestContext };
-
-// WRONG - no local binding (breaks if used elsewhere in the file)
-export { harvestContext } from './harvester.js';
+import { harvestContext } from './lib/context/harvester.js';
 ```
 
 ## Code Style
