@@ -1,6 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { fillTemplate } from '../lib/planning/templates.js';
+import { fillTemplate, loadTemplate } from '../lib/planning/templates.js';
+
+describe('loadTemplate', () => {
+    it('refuses the unbuilt detail-pass prompt like any unknown name', async () => {
+        await assert.rejects(loadTemplate('detail-pass.txt'), /Invalid template: detail-pass\.txt/);
+    });
+});
 
 describe('fillTemplate', () => {
     it('replaces single placeholder', () => {
