@@ -104,7 +104,7 @@ describe('renderProgressDisplay — escaping the arc title', () => {
         const html = withChatLength(10, () => renderProgressDisplay([episode(0, { title })]));
 
         assert.ok(html.includes(`title="&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;"`));
-        assert.ok(html.includes(`>&lt;b&gt;&quot;Tom&quot; &amp; 'Jerry'&lt;/b&gt;</span>`));
+        assert.ok(html.includes(`>&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;</span>`));
         assert.ok(!html.includes('<b>'));
     });
 
