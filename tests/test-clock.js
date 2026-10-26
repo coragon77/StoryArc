@@ -29,6 +29,12 @@ describe('selectPacingClock', () => {
         assert.equal(clock.id, 'lit');
     });
 
+    it('treats an arc without a tier (planned before tiers) as an episode', () => {
+        const untiered = arc('old', undefined, 'normal');
+        delete untiered.tier;
+        assert.equal(selectPacingClock([arc('act', 'act', 'normal'), untiered]).id, 'old');
+    });
+
     it('returns undefined when no episode can be the clock', () => {
         assert.equal(selectPacingClock([arc('paused', 'episode', 'paused'), arc('act', 'act', 'normal')]), undefined);
         assert.equal(selectPacingClock([]), undefined);
@@ -124,6 +130,14 @@ describe('pauseArc / resumeArc — clock freeze', () => {
         assert.equal(stored().lastFulfilledAt, undefined);
     });
 
+    it('pauseArc on an unknown arc changes nothing and does not throw', async () => {
+        chat.length = 100;
+        await pauseArc('nope');
+        assert.equal(stored().focus, 'normal');
+        assert.equal(stored().pausedAt, null);
+        assert.equal(chat_metadata.story_arc.arcs.length, 1);
+    });
+
     it('resumeArc on an unknown arc changes nothing', async () => {
         chat.length = 100;
         await resumeArc('nope');
@@ -161,6 +175,18 @@ describe('spotlightArc — one arc in the spotlight', () => {
         await spotlightArc('quiet');
         assert.equal(focusOf('done'), 'spotlight');
         assert.equal(focusOf('off'), 'background');
+    });
+
+    it('moves only the previously spotlit arc: a paused arc keeps its focus and its freeze point', async () => {
+        chat_metadata.story_arc.arcs.push({ ...arc('resting', 'episode', 'paused'), pausedAt: 60, messageStart: 20 });
+        chat.length = 130;
+        await spotlightArc('quiet');
+        const resting = chat_metadata.story_arc.arcs.find(a => a.id === 'resting');
+        assert.equal(resting.focus, 'paused');
+        assert.equal(resting.pausedAt, 60);
+        assert.equal(resting.messageStart, 20);
+        assert.equal(focusOf('off'), 'background');
+        assert.equal(focusOf('lit'), 'normal');
     });
 
     it('keeps the arc spotlit when it already was', async () => {

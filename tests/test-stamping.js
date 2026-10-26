@@ -155,6 +155,106 @@ describe('stampPromptMessages', () => {
         assert.equal(stampPromptMessages(prompt, [makeArc({ tier: 'act' })]), 0);
     });
 
+    it('returns 0 without throwing for a missing or empty prompt', () => {
+        fillChat(10);
+        assert.equal(stampPromptMessages(undefined, [makeArc()]), 0);
+        assert.equal(stampPromptMessages(null, [makeArc()]), 0);
+        assert.equal(stampPromptMessages([], [makeArc()]), 0);
+    });
+
+    it('skips entries without string content: a tool-call reply and a multimodal user message', () => {
+        fillChat(10);
+        const prompt = makePrompt();
+        // An assistant tool call carries content null; a user message with an
+        // attached image carries an array of parts.
+        prompt.splice(6, 0, { role: 'assistant', content: null });
+        prompt[8] = { role: 'user', content: [{ type: 'text', text: 'line 6' }] };
+        const stamped = stampPromptMessages(prompt, [makeArc()]);
+
+        assert.equal(stamped, 2);
+        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\nline 4');
+        assert.deepEqual(prompt[8].content, [{ type: 'text', text: 'line 6' }]);
+        assert.equal(prompt[10].content, '[Arc: message 5 of ~20]\nline 8');
+
+        // A foreign prompt is scanned to its end for the plan block.
+        const foreign = [{ role: 'user', content: 'line 8' }, { role: 'assistant', content: null }];
+        assert.equal(stampPromptMessages(foreign, [makeArc()]), 0);
+        assert.equal(foreign[0].content, 'line 8');
+    });
+
+    it('stamps a user message at prompt index 0 when the plan block comes later', () => {
+        fillChat(7); // user messages at 4 and 6
+        const prompt = [
+            { role: 'user', content: 'line 4' },
+            { role: 'assistant', content: 'line 5' },
+            { role: 'user', content: 'line 6' },
+            { role: 'system', content: `${INJECTION_HEADER}\nplan text` },
+        ];
+        assert.equal(stampPromptMessages(prompt, [makeArc()]), 2);
+        assert.equal(prompt[0].content, '[Arc: message 1 of ~20]\nline 4');
+        assert.equal(prompt[2].content, '[Arc: message 3 of ~20]\nline 6');
+    });
+
+    it('stamps the message at messageStart when it directly precedes another user message', () => {
+        chat.push({ mes: 'line 0', is_user: true }, { mes: 'line 1', is_user: false },
+            { mes: 'line 2', is_user: true }, { mes: 'line 3', is_user: false },
+            { mes: 'first in the arc', is_user: true }, { mes: 'and another', is_user: true });
+        const prompt = [
+            { role: 'system', content: `${INJECTION_HEADER}\nplan text` },
+            { role: 'user', content: 'first in the arc' },
+            { role: 'user', content: 'and another' },
+        ];
+        assert.equal(stampPromptMessages(prompt, [makeArc()]), 2);
+        assert.equal(prompt[1].content, '[Arc: message 1 of ~20]\nfirst in the arc');
+        assert.equal(prompt[2].content, '[Arc: message 2 of ~20]\nand another');
+    });
+
+    it('gives two user messages with identical text their own numbers', () => {
+        fillChat(8);
+        chat[4].mes = 'Again.';
+        chat[6].mes = 'Again.';
+        const prompt = makePrompt();
+        prompt[5].content = 'Again.';
+        prompt[7].content = 'Again.';
+        assert.equal(stampPromptMessages(prompt, [makeArc()]), 2);
+        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\nAgain.');
+        assert.equal(prompt[7].content, '[Arc: message 3 of ~20]\nAgain.');
+    });
+
+    it('never lets a chat message with empty text take another message\'s stamp', () => {
+        // Message 6 has no text (an image-only message) and is not in the prompt.
+        fillChat(7);
+        chat[6].mes = '';
+        const prompt = makePrompt().slice(0, 7);
+        assert.equal(stampPromptMessages(prompt, [makeArc()]), 1);
+        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\nline 4');
+    });
+
+    it('tells apart user messages where one text is the tail of the other ("oh yes" / "yes")', () => {
+        for (const [older, newer] of [['oh yes', 'yes'], ['yes', 'oh yes']]) {
+            fillChat(7);
+            chat[4].mes = older;
+            chat[6].mes = newer;
+            const prompt = makePrompt();
+            prompt[5].content = older;
+            prompt[7].content = newer;
+            assert.equal(stampPromptMessages(prompt, [makeArc()]), 2, `${older} / ${newer}`);
+            assert.equal(prompt[5].content, `[Arc: message 1 of ~20]\n${older}`);
+            assert.equal(prompt[7].content, `[Arc: message 3 of ~20]\n${newer}`);
+        }
+    });
+
+    it('does not give a user message the number of a later assistant reply that is its tail', { todo: 'bug: isSameMessage ignores the chat message\'s role, so "oh yes" matches a newer assistant reply "yes" and is stamped one message too far' }, () => {
+        fillChat(6);
+        chat[4].mes = 'oh yes';
+        chat[5].mes = 'yes';
+        const prompt = makePrompt();
+        prompt[5].content = 'oh yes';
+        prompt[6].content = 'yes';
+        stampPromptMessages(prompt, [makeArc()]);
+        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\noh yes');
+    });
+
     it('stamps nothing when message text no longer matches the stored chat', () => {
         fillChat(10);
         const prompt = makePrompt();
