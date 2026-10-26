@@ -16,36 +16,39 @@ and its own helper inventory. Read it alongside this file.
 
 ## Naming
 
-Domain concepts are **German**, matching model and field vocabulary exactly.
-Infrastructure is **English**.
+Domain concepts use the **English terms in `GLOSSARY.md`**, exactly as defined
+there (arc, tier, episode, act, saga, focus, beat, milestone, pressure, secret,
+trigger, foreshadowing). Each glossary entry lists under _Avoid_ the synonyms
+that must not appear in code, comments or UI text. Infrastructure keeps
+SillyTavern's own names (`chat_metadata`, `extension_settings`,
+`setExtensionPrompt`).
 
-``` python
-# YES — domain in German, infrastructure in English
-beleg = None
-abrechnungszeilen_adressat = abrechnungszeilen_gesamt.filter(adressat=adressat)
-counter = 0
-new_state = []
+``` javascript
+// YES — glossary terms
+const pendingMilestones = arc.beats.filter(b => b.status === 'pending');
+if (arc.focus === 'paused') return '';
 
-# NO — translated domain terms
-document = None          # it is a Beleg everywhere else in this codebase
-settlement_lines = ...   # they are Abrechnungszeilen
+// NO — synonyms the glossary avoids
+const quest = getArcById(arcId);       // it is an arc
+if (arc.focus === 'shelved') return '';  // the focus value is paused
 ```
 
-Long descriptive names. Functions are verb phrases stating exactly what they do:
+Long descriptive camelCase names. Functions are verb phrases stating exactly
+what they do:
 
-``` python
-# YES
-def _ermittle_startbetrag_vorauszahlung(self, abrechnungszeilen, letzte_auszahlung): ...
+``` javascript
+// YES
+export function messagesUntilNextPhase(arc, currentPhase) { ... }
 
-# NO
-def _calc_vz(self, az, la): ...
+// NO
+export function calcMsgs(a, p) { ... }
 ```
 
-Collections carry a scope qualifier telling you *which subset* you hold:
-`abrechnungszeilen_gesamt` (everything selected) against
-`abrechnungszeilen_adressat` (filtered to one Adressat). Use only established
-domain abbreviations — never invent new ones. Never shadow builtins, including
-where legacy code does it.
+Collections carry a qualifier telling you *which subset* you hold:
+`nonOptionalBeats` against `arc.beats`, `visibleSecrets` against `arc.secrets`,
+`unplanted` foreshadowing against `arc.foreshadowing`. Use only established
+abbreviations — never invent new ones. Never shadow JavaScript builtins or the
+SillyTavern globals the code imports (`chat`, `characters`, `chat_metadata`).
 
 ## Structure — "simple code"
 
@@ -125,6 +128,6 @@ try/except that silently swallows and continues.
 - Did I re-implement an existing helper? (grep first)
 - Did I add an abstraction with exactly one caller?
 - Did I fragment a linear flow nobody asked me to fragment?
-- Did I translate a German domain term into English?
+- Did I use a term `GLOSSARY.md` lists under _Avoid_?
 - Did I write a bare `except:` or swallow an exception silently?
 - Would the owner recognise this as his code in ten years?
