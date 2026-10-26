@@ -263,9 +263,11 @@ const res = await fetch('/api/backends/chat-completions/generate', {
   field belonging to the *active* `chat_completion_source`.
   `oai_settings.openai_model` is only right for the OpenAI source — nanogpt
   keeps its model in `oai_settings.nanogpt_model` (`ca2dfb8`).
-- **Streaming:** `stream: true`, then collect the SSE chunks yourself — `data: `
-  prefixed lines, `[DONE]` terminator, text in
-  `choices[0].delta.content`. Non-streaming requests to nanogpt time out around
+- **Streaming:** `stream: true`, then read the response through ST's
+  `EventSourceStream` (`/scripts/sse-stream.js`) with a reader loop, stop at
+  `[DONE]`, and take each event's text from ST's `getStreamingReply` (`/scripts/openai.js`):
+  the event shape differs per source (OpenAI `choices[0].delta.content`, Google
+  `candidates[0].content.parts`, Claude `delta.text`). Non-streaming requests to nanogpt time out around
   38s on 24K+ char prompts; ordinary chat escapes this only because its prompt
   is spread over many small messages (`a257d92`).
 

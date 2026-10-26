@@ -52,6 +52,14 @@ if (sillyTavernAvailable) {
     const openaiStub = moduleFromSource(`
         export const oai_settings = { temp_openai: 0.7, openai_max_tokens: 4096, chat_completion_source: 'openai' };
         export function getChatCompletionModel() { return 'test-model'; }
+        // ST's per-source parser, reduced to the two shapes the tests send:
+        // Google's candidates/parts and OpenAI's choices/delta.
+        export function getStreamingReply(data, state, { chatCompletionSource = null } = {}) {
+            if (chatCompletionSource === 'makersuite') {
+                return data?.candidates?.[0]?.content?.parts?.filter(part => !part.thought)?.map(part => part.text)?.[0] || '';
+            }
+            return data?.choices?.[0]?.delta?.content || '';
+        }
     `);
     const powerUserStub = moduleFromSource('export const power_user = {};');
     const utilsStub = moduleFromSource('export async function delay() {}');
@@ -118,6 +126,29 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
         await generateArc(harvestedContext, '');
 
         assert.equal(backendRequests[1].messages[0].content, 'OUTLINE FROM: The story stands at a crossroads.');
+    });
+
+    it('reads a Google (makersuite) stream through ST\'s per-source parser, skipping thoughts', async () => {
+        const { oai_settings } = await import('/scripts/openai.js');
+        oai_settings.chat_completion_source = 'makersuite';
+        try {
+            const backendRequests = installFetch([
+                [
+                    'data: {"candidates":[{"content":{"parts":[{"text":"weighing it","thought":true}]}}]}\n\n',
+                    'data: {"candidates":[{"content":{"parts":[{"text":"The story stands"}]}}]}\n\n',
+                    'data: {"candidates":[{"content":{"parts":[{"text":" at a crossroads."}]}}]}\n\n',
+                ],
+                ['data: {"candidates":[{"content":{"parts":[{"text":"not json"}]}}]}\n\n'],
+                ['data: {"candidates":[{"content":{"parts":[{"text":"still not json"}]}}]}\n\n'],
+            ]);
+
+            await generateArc(harvestedContext, '');
+
+            assert.equal(backendRequests[0].chat_completion_source, 'makersuite');
+            assert.equal(backendRequests[1].messages[0].content, 'OUTLINE FROM: The story stands at a crossroads.');
+        } finally {
+            oai_settings.chat_completion_source = 'openai';
+        }
     });
 
     it('fails with the API error an event carries', async () => {
