@@ -330,8 +330,50 @@ describe('validateArcPlan — beat normalization', () => {
         assert.equal(beatOf({ description: 'She has left town.' }).intention, 'She has left town.');
     });
 
-    it('gives a beat with neither intention nor description an empty intention', () => {
-        assert.equal(beatOf({ pressure: 'Rain.' }).intention, '');
+    it('rejects a beat with neither intention nor description, naming the beat', () => {
+        // The beat check prints the intention as the fulfillment condition;
+        // an empty one asks the model to recognize "".
+        const result = validateArcPlan({ title: 'T', premise: 'P', beats: [{ intention: 'X' }, { pressure: 'Rain.' }] });
+        assert.equal(result.valid, false);
+        assert.equal(result.arc, null);
+        assert.deepEqual(result.errors, ['Beat "beat_2" has no intention']);
+    });
+});
+
+describe('validateArcPlan — same beat and arc rules as the Arc Manager editor', () => {
+    it('rejects a blank title and a blank premise like a missing one', () => {
+        const result = validateArcPlan({ title: '   ', premise: '\n', beats: [{ intention: 'X' }] });
+        assert.equal(result.valid, false);
+        assert.deepEqual(result.errors, ['Missing required field: title', 'Missing required field: premise']);
+    });
+
+    it('rejects a blank intention like a missing one', () => {
+        const result = validateArcPlan({ title: 'T', premise: 'P', beats: [{ id: 'b_door', intention: '  ' }] });
+        assert.deepEqual(result.errors, ['Beat "b_door" has no intention']);
+    });
+
+    it('rejects a beat that is not an object, without throwing', () => {
+        const result = validateArcPlan({ title: 'T', premise: 'P', beats: [{ intention: 'X' }, null] });
+        assert.equal(result.valid, false);
+        assert.deepEqual(result.errors, ['Beat 2 is not an object']);
+    });
+
+    it('rejects two beats with the same id', () => {
+        const result = validateArcPlan({ title: 'T', premise: 'P', beats: [
+            { id: 'b_door', intention: 'X' },
+            { id: 'b_door', intention: 'Y' },
+        ] });
+        assert.equal(result.valid, false);
+        assert.deepEqual(result.errors, ['Beat id "b_door" is used twice']);
+    });
+
+    it('rejects a filled-in positional id that collides with a given one', () => {
+        // The second beat has no id and gets beat_2, which the first already uses.
+        const result = validateArcPlan({ title: 'T', premise: 'P', beats: [
+            { id: 'beat_2', intention: 'X' },
+            { intention: 'Y' },
+        ] });
+        assert.deepEqual(result.errors, ['Beat id "beat_2" is used twice']);
     });
 });
 
