@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { categorizeEntries, fetchLorebookEntries, filterAndSort } from '../lib/context/lorebook.js';
+import { categorizeEntries, fetchLorebookEntries, filterAndSort } from '../lib/context/harvester.js';
 import { mockSortedEntries } from './mocks/st-mocks.js';
 
 describe('categorizeEntries', () => {
