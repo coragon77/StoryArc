@@ -141,8 +141,6 @@ describe('ensureChatState — per-chat namespace and settings', () => {
             version: 1,
             arcs: [],
             settings: {
-                connectionProfile: null,
-                signalPrefix: '[ARC_SIGNAL',
                 injectionBudget: 3000,
                 autoTrack: true,
             },
@@ -154,8 +152,6 @@ describe('ensureChatState — per-chat namespace and settings', () => {
         chat_metadata.story_arc = { version: 1, arcs: [] };
         ensureChatState();
         assert.deepEqual(chat_metadata.story_arc.settings, {
-            connectionProfile: null,
-            signalPrefix: '[ARC_SIGNAL',
             injectionBudget: 3000,
             autoTrack: true,
         });
@@ -165,13 +161,11 @@ describe('ensureChatState — per-chat namespace and settings', () => {
         chat_metadata.story_arc = {
             version: 1,
             arcs: [],
-            settings: { connectionProfile: 'profile-7', injectionBudget: 1200, autoTrack: false },
+            settings: { autoTrack: false },
         };
         ensureChatState();
         assert.deepEqual(chat_metadata.story_arc.settings, {
-            connectionProfile: 'profile-7',
-            signalPrefix: '[ARC_SIGNAL',
-            injectionBudget: 1200,
+            injectionBudget: 3000,
             autoTrack: false,
         });
     });

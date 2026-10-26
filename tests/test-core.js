@@ -107,24 +107,20 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(extension_settings.story_arc, {
             enabled: false,
             defaultConnectionProfile: null,
-            defaultInjectionBudget: 3000,
-            defaultPacingStyle: 'moderate',
         });
     });
 
     it('loadSettings fills missing keys without overwriting the stored ones', () => {
-        extension_settings.story_arc = { enabled: true, defaultInjectionBudget: 1200 };
+        extension_settings.story_arc = { defaultConnectionProfile: 'profile-7' };
         loadSettings();
         assert.deepEqual(extension_settings.story_arc, {
-            enabled: true,
-            defaultConnectionProfile: null,
-            defaultInjectionBudget: 1200,
-            defaultPacingStyle: 'moderate',
+            enabled: false,
+            defaultConnectionProfile: 'profile-7',
         });
     });
 
     it('getSettings returns the stored settings object', () => {
-        const stored = { enabled: true, defaultInjectionBudget: 1200 };
+        const stored = { enabled: true, defaultConnectionProfile: 'profile-7' };
         extension_settings.story_arc = stored;
         assert.equal(getSettings(), stored);
     });
@@ -133,8 +129,6 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(getSettings(), {
             enabled: false,
             defaultConnectionProfile: null,
-            defaultInjectionBudget: 3000,
-            defaultPacingStyle: 'moderate',
         });
     });
 
