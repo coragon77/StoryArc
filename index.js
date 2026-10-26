@@ -13,12 +13,14 @@ import {
     saveMetadata,
 } from '/script.js';
 
-import { loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
-import { getArcs, getActiveArcs } from './lib/planning/index.js';
-import { buildInjection, buildSignalInjection, stampPromptMessages } from './lib/injection/index.js';
-import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
-import { renderSettingsPanel, setupSettingsPanelEvents, registerWandMenuEntry } from './lib/ui/index.js';
-import { updateProgress } from './lib/ui/index.js';
+import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js';
+import { getArcs, getActiveArcs } from './lib/planning/storage.js';
+import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
+import { stampPromptMessages } from './lib/injection/stamping.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
+import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
+import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
+import { updateProgress } from './lib/ui/progress.js';
 
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
