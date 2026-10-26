@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { fillTemplate, loadTemplate } from '../lib/planning/templates.js';
+import { fillTemplate, loadTemplate } from '../lib/planning/generator.js';
 
 describe('loadTemplate', () => {
     it('refuses the unbuilt detail-pass prompt like any unknown name', async () => {

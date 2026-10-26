@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeReplan, replanTiers } from '../lib/planning/replan.js';
-import { buildArcSoFar } from '../lib/planning/arc-so-far.js';
+import { buildArcSoFar } from '../lib/planning/generator.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
 

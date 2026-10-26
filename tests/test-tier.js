@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildTierBlock } from '../lib/planning/tier-block.js';
+import { buildTierBlock } from '../lib/planning/generator.js';
 import { buildInjection, buildSignalInjection } from '../lib/injection/builder.js';
 import { renderProgressDisplay } from '../lib/ui/progress.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
