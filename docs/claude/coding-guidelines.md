@@ -25,7 +25,7 @@ SillyTavern's own names (`chat_metadata`, `extension_settings`,
 
 ``` javascript
 // YES — glossary terms
-const pendingMilestones = arc.beats.filter(b => b.status === 'pending');
+const pendingMilestones = arc.beats.filter(beat => beat.status === 'pending');
 if (arc.focus === 'paused') return '';
 
 // NO — synonyms the glossary avoids
