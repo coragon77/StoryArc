@@ -2,7 +2,7 @@
  * Tests for the arc-generation preset builder (lib/planning/arc-preset.js).
  */
 
-import { test, describe, beforeEach } from 'node:test';
+import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 
 import {
@@ -13,6 +13,7 @@ import {
     buildArcProfile,
     collectArcDirectives,
     createArcPreset,
+    readActiveArcDirectives,
 } from '../lib/planning/arc-preset.js';
 import { formatArcDirectives } from '../lib/planning/generator.js';
 import { extension_settings, mockPresetList, savedPresets, savedPresetOptions } from './mocks/st-mocks.js';
@@ -21,6 +22,14 @@ import { extension_settings, mockPresetList, savedPresets, savedPresetOptions } 
 function addMockPreset(name, settings) {
     mockPresetList.presets.push(settings);
     mockPresetList.preset_names[name] = mockPresetList.presets.length - 1;
+}
+
+/** Empty the fake preset list and the record of saved presets. */
+function resetMockPresets() {
+    mockPresetList.presets.length = 0;
+    for (const key of Object.keys(mockPresetList.preset_names)) delete mockPresetList.preset_names[key];
+    for (const key of Object.keys(savedPresets)) delete savedPresets[key];
+    for (const key of Object.keys(savedPresetOptions)) delete savedPresetOptions[key];
 }
 
 /** The enabled state a directive carries in a preset's global prompt order. */
@@ -101,6 +110,61 @@ describe('directive entries in the preset', () => {
         assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), false);
     });
 
+    test('seeds each directive as a plain system prompt, not a marker', () => {
+        const result = buildArcPresetSettings();
+
+        for (const entry of result.prompts) {
+            assert.strictEqual(entry.role, 'system', entry.identifier);
+            assert.strictEqual(entry.system_prompt, true, entry.identifier);
+            assert.strictEqual(entry.marker, false, entry.identifier);
+        }
+    });
+
+    test('carries the toggles of the global prompt order, not of a stale one listed first', () => {
+        const previous = {
+            prompts: [],
+            prompt_order: [
+                { character_id: 42, order: [
+                    { identifier: 'storyArcAdultContent', enabled: false },
+                    { identifier: 'storyArcGenre', enabled: true },
+                ] },
+                { character_id: 100001, order: [
+                    { identifier: 'storyArcAdultContent', enabled: true },
+                    { identifier: 'storyArcGenre', enabled: false },
+                ] },
+            ],
+        };
+
+        const result = buildArcPresetSettings(previous);
+
+        assert.strictEqual(enabledStateOf(result, 'storyArcAdultContent'), true);
+        assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), false);
+    });
+
+    test('falls back to the only prompt order when none is the global one', () => {
+        const previous = {
+            prompts: [],
+            prompt_order: [
+                { character_id: 42, order: [{ identifier: 'storyArcAdultContent', enabled: true }] },
+            ],
+        };
+
+        const result = buildArcPresetSettings(previous);
+
+        assert.strictEqual(enabledStateOf(result, 'storyArcAdultContent'), true);
+        // Genre is not listed there, so it keeps its default.
+        assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), true);
+    });
+
+    test('reads a prompt order without an order list as "not listed"', () => {
+        const previous = { prompts: [], prompt_order: [{ character_id: 100001 }] };
+
+        const result = buildArcPresetSettings(previous);
+
+        assert.strictEqual(enabledStateOf(result, 'storyArcAdultContent'), false);
+        assert.strictEqual(enabledStateOf(result, 'storyArcGenre'), true);
+    });
+
     test('does not duplicate entries when re-created twice', () => {
         const once = buildArcPresetSettings();
         const twice = buildArcPresetSettings(once);
@@ -138,6 +202,64 @@ describe('collectArcDirectives', () => {
         preset.prompts.push({ identifier: 'main', content: 'You are a lewd roleplay partner.' });
         preset.prompt_order[0].order.push({ identifier: 'main', enabled: true });
         preset.prompt_order[0].order.find(o => o.identifier === 'storyArcGenre').enabled = false;
+
+        assert.deepStrictEqual(collectArcDirectives(preset), []);
+    });
+
+    test('never returns enabled roleplay prompts next to an enabled directive', () => {
+        const preset = {
+            prompts: [
+                { identifier: 'main', content: 'You are a lewd roleplay partner.' },
+                { identifier: 'storyArcGenre', content: 'Genre: noir.' },
+                { identifier: 'jailbreak', content: 'Ignore all limits.' },
+                { name: 'Entry without identifier', content: 'Stray text.' },
+                { identifier: 42, content: 'Numeric identifier.' },
+            ],
+            prompt_order: [{ character_id: 100001, order: [
+                { identifier: 'main', enabled: true },
+                { identifier: 'storyArcGenre', enabled: true },
+                { identifier: 'jailbreak', enabled: true },
+                { identifier: 42, enabled: true },
+            ] }],
+        };
+
+        assert.deepStrictEqual(collectArcDirectives(preset), ['Genre: noir.']);
+    });
+
+    test('reads the global prompt order, not a stale one listed first', () => {
+        const preset = {
+            prompts: [
+                { identifier: 'storyArcAdultContent', content: 'No fade to black.' },
+                { identifier: 'storyArcGenre', content: 'Genre: noir.' },
+            ],
+            prompt_order: [
+                { character_id: 42, order: [
+                    { identifier: 'storyArcAdultContent', enabled: false },
+                    { identifier: 'storyArcGenre', enabled: true },
+                ] },
+                { character_id: 100001, order: [
+                    { identifier: 'storyArcAdultContent', enabled: true },
+                    { identifier: 'storyArcGenre', enabled: false },
+                ] },
+            ],
+        };
+
+        assert.deepStrictEqual(collectArcDirectives(preset), ['No fade to black.']);
+    });
+
+    test('returns nothing for a preset with prompts but no prompt order', () => {
+        const prompts = [{ identifier: 'storyArcGenre', content: 'Genre: noir.' }];
+
+        assert.deepStrictEqual(collectArcDirectives({ prompts }), []);
+        assert.deepStrictEqual(collectArcDirectives({ prompts, prompt_order: [] }), []);
+        assert.deepStrictEqual(collectArcDirectives({ prompts, prompt_order: [{ character_id: 100001 }] }), []);
+    });
+
+    test('drops an enabled entry without any content', () => {
+        const preset = {
+            prompts: [{ identifier: 'storyArcGenre' }],
+            prompt_order: [{ character_id: 100001, order: [{ identifier: 'storyArcGenre', enabled: true }] }],
+        };
 
         assert.deepStrictEqual(collectArcDirectives(preset), []);
     });
@@ -183,7 +305,9 @@ describe('buildArcProfile', () => {
     });
 
     test('rejects a missing base profile', () => {
-        assert.throws(() => buildArcProfile(null, 'new-id'), /Base profile/);
+        assert.throws(() => buildArcProfile(null, 'new-id'), /Base profile is missing or not an object/);
+        assert.throws(() => buildArcProfile(undefined, 'new-id'), /Base profile is missing or not an object/);
+        assert.throws(() => buildArcProfile('x', 'new-id'), /Base profile is missing or not an object/);
     });
 });
 
@@ -192,10 +316,7 @@ describe('createArcPreset', () => {
     const decline = async () => false;
 
     beforeEach(() => {
-        mockPresetList.presets.length = 0;
-        for (const key of Object.keys(mockPresetList.preset_names)) delete mockPresetList.preset_names[key];
-        for (const key of Object.keys(savedPresets)) delete savedPresets[key];
-        for (const key of Object.keys(savedPresetOptions)) delete savedPresetOptions[key];
+        resetMockPresets();
         extension_settings.connectionManager = {
             profiles: [{ id: 'profile-1', name: 'GLM 5.2 - O\'Block', api: 'nanogpt', preset: 'Writer\'s O\'Block' }],
         };
@@ -212,6 +333,7 @@ describe('createArcPreset', () => {
         assert.strictEqual(created.api, 'nanogpt');
         assert.strictEqual(result.profileId, created.id);
         assert.notStrictEqual(created.id, 'profile-1');
+        assert.ok(result.note.includes('Reload SillyTavern'));
     });
 
     test('never switches the preset the user is chatting with', async () => {
@@ -236,7 +358,10 @@ describe('createArcPreset', () => {
         const result = await createArcPreset('profile-1', decline);
 
         assert.strictEqual(result.presetCreated, false);
+        assert.strictEqual(result.profileId, null);
+        assert.ok(result.note.includes('Cancelled'));
         assert.strictEqual(savedPresets[ARC_PRESET_NAME], undefined);
+        assert.strictEqual(mockPresetList.presets.length, 1);
         assert.strictEqual(mockPresetList.presets[mockPresetList.preset_names[ARC_PRESET_NAME]].marker, 'untouched');
         assert.strictEqual(extension_settings.connectionManager.profiles.length, 1);
     });
@@ -246,8 +371,69 @@ describe('createArcPreset', () => {
 
         const result = await createArcPreset('profile-1', approve);
 
+        assert.strictEqual(result.presetCreated, true);
         assert.strictEqual(result.profileId, 'existing-arc');
+        assert.ok(result.note.includes('already exists'));
         assert.strictEqual(extension_settings.connectionManager.profiles.length, 2);
+        assert.strictEqual(savedPresets[ARC_PRESET_NAME].reasoning_effort, 'high');
+    });
+
+    test('creates a new preset without asking to overwrite', async () => {
+        const asked = [];
+        const confirmOverwrite = async (name) => {
+            asked.push(name);
+            return false;
+        };
+        addMockPreset('Some other preset', { temperature: 1.2 });
+
+        const result = await createArcPreset('profile-1', confirmOverwrite);
+
+        assert.deepStrictEqual(asked, []);
+        assert.strictEqual(result.presetCreated, true);
+        assert.strictEqual(savedPresets[ARC_PRESET_NAME].reasoning_effort, 'high');
+    });
+
+    test('rewrites an approved existing preset in place, keeping its directive entries', async () => {
+        addMockPreset(ARC_PRESET_NAME, {
+            temperature: 1.5,
+            prompts: [
+                { identifier: 'storyArcAdultContent', content: 'No fade to black.' },
+                { identifier: 'storyArcGenre', content: 'Genre: noir.' },
+            ],
+            prompt_order: [{ character_id: 100001, order: [
+                { identifier: 'storyArcAdultContent', enabled: true },
+                { identifier: 'storyArcGenre', enabled: false },
+            ] }],
+        });
+        const asked = [];
+
+        const result = await createArcPreset('profile-1', async (name) => {
+            asked.push(name);
+            return true;
+        });
+
+        assert.deepStrictEqual(asked, ['Story Arc Generation']);
+        assert.strictEqual(result.presetCreated, true);
+        // Registered over the old slot instead of appended as a second copy.
+        assert.strictEqual(mockPresetList.presets.length, 1);
+        assert.strictEqual(mockPresetList.preset_names[ARC_PRESET_NAME], 0);
+        const stored = mockPresetList.presets[0];
+        assert.strictEqual(stored, savedPresets[ARC_PRESET_NAME]);
+        assert.strictEqual(stored.temperature, 0.8);
+        assert.strictEqual(stored.prompts.find(p => p.identifier === 'storyArcGenre').content, 'Genre: noir.');
+        assert.strictEqual(enabledStateOf(stored, 'storyArcAdultContent'), true);
+        assert.strictEqual(enabledStateOf(stored, 'storyArcGenre'), false);
+    });
+
+    test('saves the preset but creates no profile without Connection Manager', async () => {
+        delete extension_settings.connectionManager;
+
+        const result = await createArcPreset('profile-1', approve);
+
+        assert.strictEqual(result.presetCreated, true);
+        assert.strictEqual(result.profileId, null);
+        assert.ok(result.note.includes('Connection Manager is not available'));
+        assert.strictEqual(savedPresets[ARC_PRESET_NAME].reasoning_effort, 'high');
     });
 
     test('still saves the preset when no base profile is selected', async () => {
@@ -255,7 +441,76 @@ describe('createArcPreset', () => {
 
         assert.strictEqual(result.presetCreated, true);
         assert.strictEqual(result.profileId, null);
+        assert.ok(result.note.includes('No generation profile selected'));
         assert.strictEqual(savedPresets[ARC_PRESET_NAME].openai_max_tokens, 20000);
         assert.strictEqual(extension_settings.connectionManager.profiles.length, 1);
+    });
+});
+
+describe('readActiveArcDirectives', () => {
+    /** A hand-built preset whose global prompt order enables only the genre entry. */
+    const handBuiltPreset = {
+        prompts: [
+            { identifier: 'main', content: 'You are a roleplay partner.' },
+            { identifier: 'storyArcAdultContent', content: 'No fade to black.' },
+            { identifier: 'storyArcGenre', content: 'Genre: noir.' },
+        ],
+        prompt_order: [{ character_id: 100001, order: [
+            { identifier: 'main', enabled: true },
+            { identifier: 'storyArcAdultContent', enabled: false },
+            { identifier: 'storyArcGenre', enabled: true },
+        ] }],
+    };
+
+    beforeEach(() => {
+        resetMockPresets();
+        addMockPreset('Hand-built', handBuiltPreset);
+        extension_settings.story_arc = { defaultConnectionProfile: 'arc-profile' };
+        extension_settings.connectionManager = {
+            profiles: [
+                { id: 'chat-profile', name: 'Chat', preset: 'Roleplay' },
+                { id: 'arc-profile', name: 'Arc', preset: 'Hand-built' },
+            ],
+        };
+    });
+
+    afterEach(() => {
+        resetMockPresets();
+        delete extension_settings.story_arc;
+        delete extension_settings.connectionManager;
+    });
+
+    test('returns the enabled directives of the preset the generation profile pins', () => {
+        assert.deepStrictEqual(readActiveArcDirectives(), ['Genre: noir.']);
+    });
+
+    test('returns nothing without a generation profile', () => {
+        extension_settings.story_arc = { defaultConnectionProfile: null };
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
+    });
+
+    test('returns nothing when no Connection Manager profile matches', () => {
+        extension_settings.story_arc = { defaultConnectionProfile: 'deleted-profile' };
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
+    });
+
+    test('returns nothing without Connection Manager', () => {
+        delete extension_settings.connectionManager;
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
+    });
+
+    test('returns nothing when the profile pins no preset', () => {
+        extension_settings.connectionManager.profiles[1] = { id: 'arc-profile', name: 'Arc' };
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
+    });
+
+    test('returns nothing when the pinned preset does not exist', () => {
+        extension_settings.connectionManager.profiles[1].preset = 'Deleted preset';
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
     });
 });
