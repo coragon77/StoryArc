@@ -1,93 +1,184 @@
-# StoryArc
+# Story Arc
 
+A [SillyTavern](https://github.com/SillyTavern/SillyTavern) extension that plans the next arc of an existing, long-running roleplay and quietly steers the chat model toward it.
 
+Long roleplays lose direction. After a few hundred messages the story drifts from scene to scene, and the model has no idea where things are supposed to go. Story Arc works like a hidden game master: it reads what has already happened, asks an LLM to plan what happens next, and feeds that plan into every prompt without showing it to you. You play; the plan stays a surprise.
 
-## Getting started
+What it does:
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
+- **Plans an arc** in two LLM passes: first an analysis of the story's current state, then a structured plan with beats, secrets, foreshadowing and triggers.
+- **Steers the chat** by injecting the plan into the prompt. The model sees only the current pressure on the scene, never a checklist of goals, so it does not race through the plan.
+- **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat.
+- **Keeps the plan secret.** Everything that would spoil the story sits behind spoiler toggles.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Story Arc was scaffolded from [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode). Story Mode plans a story from scratch; Story Arc continues one that already exists.
 
-## Add your files
+## Requirements
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://git.asol.at/stefan/storyarc.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://git.asol.at/stefan/storyarc/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- SillyTavern with a **Chat Completion** API. The fallback generation route and the per-message arc counter both use the Chat Completion pipeline. Text Completion APIs are not tested.
+- Optional: SillyTavern's **Connection Manager** extension, if you want arc planning to run on a different API, model or preset than the chat itself.
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+In SillyTavern, open **Extensions → Install extension**, paste the repository URL and confirm:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```
+https://github.com/coragon77/StoryArc
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+To install by hand instead, clone the repository into SillyTavern's third-party extension folder and reload SillyTavern:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+cd SillyTavern/public/scripts/extensions/third-party
+git clone https://github.com/coragon77/StoryArc.git
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+There is no build step. SillyTavern loads the files as they are. To update, use **Manage extensions → Update**, or run `git pull` in the `StoryArc` folder.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Setup
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Open the **Extensions** drawer and expand **Story Arc**.
+
+1. **Enable Story Arc.** The extension does nothing until this is checked.
+2. **Generation profile.** Choose which Connection Manager profile plans the arcs. "Current API" uses whatever the chat is using. Planning sends a large prompt (often 20,000+ characters) and expects a long JSON answer, so a capable model with a generous response length works best.
+3. **Create arc preset** (optional, recommended). This creates a preset named `Story Arc Generation`, tuned for planning (high reasoning effort, 20,000 response tokens, temperature 0.8), plus a connection profile of the same name, cloned from the selected profile. Select that profile as the generation profile afterwards.
+
+The arc preset also holds two **standing directives** as ordinary prompt entries. You edit and toggle them in SillyTavern's own prompt manager:
+
+| Entry | Default | Effect |
+|---|---|---|
+| Story Arc: Genre | on | Keeps new arcs inside the genre and tone the story has already set. Replace its text to force one genre for every arc. |
+| Story Arc: Adult Content | off | Allows arcs to build toward explicit scenes instead of fading to black. |
+
+The directives are read from the **saved** preset, so save the preset after you change a toggle.
+
+## Everyday use
+
+Most of the time you use the **wand menu** next to the chat input: click it and choose **Story Arc**. The popup has **Plan Next Arc**, **Manage Arcs** and a progress card for each active arc. The same buttons are also in the Extensions drawer.
+
+### Planning an arc
+
+**Plan Next Arc** opens a three-step wizard.
+
+1. **Context.** This shows what Story Arc harvested: the character, persona, number of lorebook entries, chat depth, estimated tokens and active arcs. Expand "Inspect harvested entries" to see the lorebook entries themselves.
+2. **Direction.** Here you choose the arc's size and say what you want:
+   - **Tier**: episode, act or saga (see [Tiers](#tiers)).
+   - **Genre**: the register this arc must stay in, for example "Superhero teen drama: cape life, team bonding, romantic comedy. Institutions stay in the background." It binds both planning passes. A new arc starts with the genre of your most recent arc.
+   - **Direction**: free text about what the arc should explore, for example "I want the new team to find its feet: a first real outing, plenty of banter, and one moment where somebody has to trust a teammate they barely know."
+3. **Review.** Story Arc runs the two planning passes and shows a live log. The finished plan shows its title, themes, tone, tier and estimated length openly. The premise, secrets, beats, foreshadowing, triggers and escalation are hidden behind spoiler toggles, so you can activate an arc without reading it. Choose **Activate**, **Regenerate** or **Back**.
+
+Failed requests caused by timeouts or gateway errors are retried automatically, up to two times.
+
+### Managing arcs
+
+**Manage Arcs** lists every arc in the current chat. Completed and abandoned arcs are collapsed under "Past Arcs". For each active arc you can:
+
+- **Set its focus** (paused, background, normal, spotlight) with the dropdown. See [Focus](#focus).
+- **Re-plan** the rest of the arc from where the story is now. See [Re-planning](#re-planning).
+- **Complete** or **Abandon** it.
+- **Edit a beat** with the pencil icon: change its pressure (what the model sees) and its "Fulfilled when" text (what counts as done). Delete is inside the editor and needs a second click.
+- **Toggle a beat's status** by clicking it, for example to complete a beat the model missed.
+- **Mark secrets, clues and triggers as done** in the "Secrets, clues and triggers" spoiler group.
+- **Edit arc** opens the whole arc as JSON. Story Arc refuses invalid edits and always keeps the bookkeeping fields (id, status, tier, focus, message counters) as stored.
+
+### The progress card
+
+Each active arc has a card in the wand popup and the Extensions drawer. It shows:
+
+- the beats or milestones fulfilled so far, for example `2/6 beats`;
+- the current phase (Setup, Development, Escalation, Climax, Resolution);
+- `~N msgs to next phase` when the message count, not the beats, holds the phase back;
+- **"May have drifted — re-plan?"** when an episode has gone about three times its expected length per beat without progress. The button opens the wizard in re-plan mode for that arc. The model is never told about this.
+
+## Concepts
+
+### Tiers
+
+The tier is the size of an arc. You choose it when you plan the arc.
+
+| Tier | Length | Beats | Use it for |
+|---|---|---|---|
+| Episode | 8–20 messages | 5–8 ordered **scene beats** | One playable unit, such as a single mission |
+| Act | 60–150 messages | 3–5 **milestones** | A leg of the larger story that colours the episodes in it |
+| Saga | 400–1500 messages | 2–4 **milestones** | The overarching storyline, such as defeating the big bad |
+
+Scene beats come in order. Only the current one is shown to the model, and the next one is revealed only after you have reacted to the last. Milestones are unordered: all of them stand at once, and any message can fulfil any of them.
+
+You can run several arcs at the same time, for example a saga in the background, an act in normal focus and an episode in the spotlight.
+
+### Focus
+
+Focus decides how much of the model's attention an arc gets right now. You can change it at any time in the Arc Manager.
+
+| Focus | What the model sees |
+|---|---|
+| **Paused** | One line saying the arc exists but is not being pursued. Its beats are not checked and its message clock stands still. Use it for tangents. |
+| **Background** | Acts and sagas only. Only the title and an instruction to keep the thread off-screen unless your character goes to it or brings it up. Its milestones can still complete when you play that thread. |
+| **Normal** | The default. An episode gets its full section; an act or saga gets its premise and the standing pressures of its open milestones. |
+| **Spotlight** | The arc is pushed to the front. For an act or saga, its pressures move into the main block, and its secrets, triggers and foreshadowing are added. Only one arc can be in the spotlight: choosing spotlight sends the previous one back to normal. |
+
+If an act or saga keeps pulling every scene toward itself, set it to background.
+
+### Re-planning
+
+Stories go where they want. When an arc no longer fits, **Re-plan** regenerates the unfulfilled part from the story's current state. Re-plan keeps:
+
+- the arc itself, with its id, progress card and message counter;
+- its title, premise and direction, which you can edit in the wizard;
+- every secret, word for word (new ones may be added);
+- every fulfilled beat, planted clue and fired trigger.
+
+It replaces the open beats, the unplanted clues, the unfired triggers and the arc's tone and rules. You can keep the tier or grow it (episode → act → saga), but you can never shrink it.
+
+### Phases and pacing
+
+Every arc moves through five phases: Setup, Development, Escalation, Climax and Resolution. The phase is the lower of two ratios, beats fulfilled and messages played against the estimated length, so the story never rushes ahead of either. Each phase adds its own pacing directive, for example "Plant seeds. Build atmosphere. No revelations." in Setup. Secrets are released by phase.
+
+### Lorebook conventions
+
+Story Arc reads the lorebook entries SillyTavern itself would scan for the chat: chat lore, persona lore, character lore and global books. Disabled entries are skipped. The entries are sorted into three groups:
+
+- **Constants**: entries marked constant (always active).
+- **Arc summaries**: entries whose comment (title) contains `[ARC ` followed by text, for example `[ARC 3] The Harbour Heist`. Use this to give the planner summaries of earlier arcs.
+- **Recent**: everything else.
+
+## How it works
+
+Story Arc sets two prompt injections before every generation:
+
+- **The plan** (inside the prompt, before the chat history): one section per active arc, chosen by its tier and focus. It is capped at about **3000 tokens**. If it is larger, whole list lines are dropped from the end, and the pacing rules and the spotlight arc are kept.
+- **The beat check** (the last message before the model answers): pacing for the episode that drives the clock, plus one recognition line per open beat. It tells the model that if the story has *already* brought a beat about, it should write a marker such as `<!-- [ARC_SIGNAL:1a2b3c4d:beat_3:COMPLETE] -->` on the first line of its reply.
+
+When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager still shows them as open. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
+
+The injected text changes only when the plan changes, never per message. This keeps the provider's prompt cache working. Completing a beat, changing an arc's focus, editing a beat or marking an item by hand changes the plan, so the next generation misses the cache once.
+
+**If beats never complete**, your model is probably not writing the markers. Some models follow the instruction better than others. You can always complete a beat by hand in the Arc Manager.
+
+## Where the data lives
+
+Everything is stored per chat in the chat file's metadata (`chat_metadata.story_arc`). Story Arc only reads your lorebook, character card and persona. It writes:
+
+- its own chat metadata and its global settings;
+- AI replies, but only to remove its own markers and any leaked plan ids;
+- the `Story Arc Generation` preset and connection profile, and only when you click **Create arc preset**.
+
+Deleting the extension leaves your chats readable; the arc data simply stays unused in the metadata.
+
+## Development
+
+- Vanilla JavaScript ES modules, jQuery and plain CSS. No bundler and no build step.
+- Tests use Node's built-in test runner with a loader that mocks the SillyTavern imports:
+
+  ```bash
+  ./tests/run.sh                        # all tests
+  ./tests/run.sh tests/test-replan.js   # one file
+  ```
+
+- The prompt templates for the planning passes are in `prompts/`.
+- Developer documentation starts at [docs/claude/onboarding.md](docs/claude/onboarding.md). The design is described in [docs/architecture/architecture.md](docs/architecture/architecture.md), the vocabulary in [GLOSSARY.md](GLOSSARY.md), and the design decisions in [docs/adr/](docs/adr/).
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Story Arc is free software under the [GNU Affero General Public License v3.0 or later](LICENSE), the same license as SillyTavern. If you distribute a modified version, you must make its source available under the same license.
