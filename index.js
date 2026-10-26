@@ -92,13 +92,15 @@ async function onMessageReceived(messageIndex) {
 
     // Every message, not only signalled ones: the wait window can run out on
     // a message without markers.
-    await flushPendingMarks(messageIndex, completedBeats.length > 0);
+    const promptChangesAnyway = completedBeats.length > 0;
+    await flushPendingMarks(messageIndex, promptChangesAnyway);
 
     // After marker parsing: mechanically remove any plan identifiers the
     // model leaked into journals/trackers — the directive alone can't
     // guarantee it, and leaked ids feed back into later generations.
     // All arcs, not just active: past arcs' ids linger in journal recaps.
-    scrubArcInternals(messageIndex, getArcs());
+    const allArcs = getArcs();
+    scrubArcInternals(messageIndex, allArcs);
 }
 
 /**
@@ -113,7 +115,8 @@ async function onMessageReceived(messageIndex) {
 async function onUserMessageRendered() {
     if (!isEnabled()) return;
 
-    const promoted = await promoteNextBeats(getActiveArcs());
+    const activeArcs = getActiveArcs();
+    const promoted = await promoteNextBeats(activeArcs);
     if (promoted) {
         updateProgress();
         await saveMetadata();
@@ -135,7 +138,8 @@ jQuery(async () => {
     loadSettings();
 
     // Render settings panel into ST's extensions drawer
-    $('#extensions_settings2').append(renderSettingsPanel());
+    const settingsPanelHtml = renderSettingsPanel();
+    $('#extensions_settings2').append(settingsPanelHtml);
     setupSettingsPanelEvents();
 
     // Add the Story Arc entry to the wand menu next to the chat bar
