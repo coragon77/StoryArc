@@ -22,7 +22,7 @@ register('data:text/javascript,' + encodeURIComponent(
          return nextResolve(specifier, context);
      }`,
 ));
-const { getArcs, saveArc, deleteArc } = await import('../lib/planning/storage.js');
+const { getArcs, saveArc, deleteArc, replaceArc } = await import('../lib/planning/storage.js');
 
 function tieredArc(id) {
     return { id, title: `Arc ${id}`, tier: 'episode', focus: 'normal', status: 'active', beats: [] };
@@ -90,5 +90,28 @@ describe('planning/storage — saveArc, deleteArc, getArcs', () => {
         await deleteArc('a');
 
         assert.deepEqual(chat_metadata.story_arc.arcs, []);
+    });
+});
+
+describe('planning/storage — replaceArc', () => {
+    beforeEach(() => {
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+        globalThis.saveMetadataCalls = 0;
+    });
+
+    it('replaces the stored arc in its place, drops a field the edit removed and saves once', async () => {
+        await saveArc({ ...tieredArc('a'), escalation: 'Storm' });
+        await saveArc(tieredArc('b'));
+        globalThis.saveMetadataCalls = 0;
+        const storedArc = getArcs()[0];
+
+        await replaceArc(storedArc, { id: 'a', title: 'Edited', tier: 'episode', focus: 'normal', status: 'active', beats: [] });
+
+        assert.deepEqual(getArcs().map(arc => arc.id), ['a', 'b']);
+        assert.equal(getArcs()[0], storedArc);
+        assert.equal(storedArc.title, 'Edited');
+        assert.equal('escalation' in storedArc, false);
+        assert.equal(globalThis.saveMetadataCalls, 1);
     });
 });
