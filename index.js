@@ -6,21 +6,14 @@
 import {
     eventSource,
     event_types,
-    saveSettingsDebounced,
     setExtensionPrompt,
     extension_prompt_types,
     extension_prompt_roles,
     chat,
-    chat_metadata,
     saveMetadata,
 } from '/script.js';
 
-import {
-    extension_settings,
-    getContext,
-} from '/scripts/extensions.js';
-
-import { MODULE_NAME, loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
+import { loadSettings, isEnabled, ensureChatState } from './lib/core/index.js';
 import { getArcs, getActiveArcs } from './lib/planning/index.js';
 import { buildInjection, buildSignalInjection, stampPromptMessages } from './lib/injection/index.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, scrubArcInternals, promoteNextBeats } from './lib/injection/index.js';
