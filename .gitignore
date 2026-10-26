@@ -37,3 +37,6 @@ TEST-*.md
 !CLAUDE.md
 !ARCHITECTURE.md
 !CODEINDEX.md
+
+# unittest-audit artifacts (verdicts, mutation reports, packets)
+testaudit-out/

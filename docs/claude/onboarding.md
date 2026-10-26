@@ -57,6 +57,7 @@ Before exploring code, you **MUST** read the relevant documentation (blocking):
 | Finding files, module dependencies, "where does X live" | `docs/architecture/code-index.md` |
 | Naming a domain concept (tier, focus, milestone, pressure, re-plan, stall), or a change that touches a recorded decision | `GLOSSARY.md` (glossary) and `docs/adr/` |
 | SillyTavern API integration — `setExtensionPrompt`, `generateRaw`, events, popups, world info, `chat_metadata`, connection profiles, extension loading | `docs/architecture/st-extension-patterns.md` |
+| Writing or strengthening unit tests, hollow tests, mutation testing (Stryker), the test-suite audit | `docs/goals/2026-10-26-test-suite-worklist.md` |
 
 **This is not optional.** Only explore code if the documentation is insufficient
 after reading the relevant docs.
