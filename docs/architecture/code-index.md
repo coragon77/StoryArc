@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-10-25
+- **Last Updated:** 2026-10-26
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -36,7 +36,9 @@ StoryArc/
 │   │   └── settings.js         # loadSettings(), getSettings(), isEnabled(),
 │   │                           #   ensureChatState() (runs migrateArc() over arcs
 │   │                           #   stored before tiers existed — see the migration
-│   │                           #   note in architecture.md), getChatSettings()
+│   │                           #   note in architecture.md), getChatSettings(),
+│   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
+│   │                           #   messageStart fallbacks, named once
 │   ├── context/
 │   │   ├── index.js            # Facade — re-exports harvestContext()
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
@@ -90,7 +92,8 @@ StoryArc/
 │   │   │                       #   not migrated or re-validated)
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
-│   │   │                       #   saveArc(), updateArc(), deleteArc();
+│   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),
+│   │   │                       #   deleteArc();
 │   │   │                       #   latestGenre(arcs) — wizard default for a new arc
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
@@ -139,7 +142,9 @@ StoryArc/
 │   │   │   │                   #   falling back to intention), no beat ids; linger
 │   │   │   │                   #   directive when no beat is active; guardrails first,
 │   │   │   │                   #   content lists last. Header word kept from before
-│   │   │   │                   #   tiers for byte-identity (architecture.md, migration)
+│   │   │   │                   #   tiers for byte-identity (architecture.md, migration);
+│   │   │   │                   #   pushPlanLists(lines, arc, phase) — secrets,
+│   │   │   │                   #   triggers, foreshadowing; milestone.js reuses it
 │   │   │   ├── paused.js       # buildPausedSection(arc) — one line under PAUSED: premise
 │   │   │   │                   #   + "pending, not being pursued right now"
 │   │   │   ├── background.js   # buildBackgroundSection(arc) — act/saga: title under
@@ -169,7 +174,8 @@ StoryArc/
 │   │   │                       #   by the paused span, no-op on the clock if never paused;
 │   │   │                       #   spotlightArc(id) — one arc in the spotlight, the
 │   │   │                       #   previous spotlit arc goes back to normal
-│   │   ├── pacing.js           # calculatePhase(arc), getPacingDirective(phase),
+│   │   ├── pacing.js           # calculatePhase(arc), selectNonOptionalBeats(beats),
+│   │   │                       #   getPacingDirective(phase),
 │   │   │                       #   shouldShowSecret(revealPhase, phase) — secret gate
 │   │   │                       #   shared by the episode and milestone sections;
 │   │   │                       #   phaseBoundaryMessage(arc, phase) — arc-relative
@@ -366,31 +372,36 @@ lib/planning/
                     dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js)
 
 lib/injection/
-├── pacing.js   (imports: core/constants.js, /script.js)
-├── clock.js    (imports: planning/storage.js, /script.js)
-├── stamping.js (imports: clock.js, core/constants.js, /script.js)
-├── signals.js  (imports: planning/storage.js, core/settings.js, /script.js)
+├── pacing.js   (imports: core/constants.js, core/settings.js, /script.js)
+├── clock.js    (imports: planning/storage.js, core/settings.js, /script.js)
+├── stamping.js (imports: clock.js, core/constants.js, core/settings.js, /script.js)
+├── signals.js  (imports: planning/storage.js, core/settings.js, pacing.js, /script.js)
 ├── sections/   (episode.js imports pacing.js; milestone.js imports pacing.js,
-│                core/constants.js; spotlight.js imports episode.js, milestone.js;
-│                paused.js, background.js, signal-directive.js: no deps)
+│                episode.js, core/constants.js; spotlight.js imports episode.js,
+│                milestone.js, core/settings.js; signal-directive.js imports
+│                core/settings.js; paused.js, background.js: no deps)
 └── builder.js  (imports: pacing.js, clock.js, sections/*, core/settings.js,
                  core/constants.js, context/chat-history.js)
 
 lib/ui/
-├── progress.js      (imports: planning/storage.js, injection/pacing.js, /script.js)
+├── progress.js      (imports: planning/storage.js, injection/pacing.js,
+│                              core/settings.js, /script.js, /scripts/utils.js)
 ├── settings-panel.js (imports: core/constants.js, core/settings.js, planning/index.js,
 │                              wizard.js, arc-manager.js, /script.js,
 │                              /scripts/extensions.js, /scripts/popup.js)
 ├── wizard.js        (imports: context/index.js, planning/index.js (generateArc,
 │                              saveArc, updateArc, getArcById), core/settings.js,
-│                              core/constants.js, progress.js, /script.js,
-│                              /scripts/extensions.js, /scripts/popup.js)
+│                              core/constants.js, progress.js,
+│                              /scripts/extensions.js, /scripts/popup.js,
+│                              /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
-│                              wizard.js, arc-manager.js, /scripts/popup.js)
+│                              wizard.js, arc-manager.js, /scripts/popup.js,
+│                              /scripts/utils.js)
 └── arc-manager.js   (imports: planning/storage.js, planning/arc-edit.js,
-                               injection/pacing.js, injection/clock.js,
-                               core/settings.js, core/constants.js, progress.js,
-                               wizard.js, /script.js, /scripts/popup.js)
+                               injection/signals.js, injection/pacing.js,
+                               injection/clock.js, core/settings.js,
+                               core/constants.js, progress.js, wizard.js,
+                               /scripts/popup.js, /scripts/utils.js)
 
 index.js  (imports: core/, ui/, injection/, planning/storage.js,
                     /script.js, /scripts/extensions.js)
