@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArcEdit, checkBeatEdit, removeBeat } from '../lib/planning/arc-edit.js';
+import { applyArcEdit, checkBeatEdit, completeBeat, removeBeat } from '../lib/planning/arc-edit.js';
 
 /** A small stored episode with every field the editor sees. */
 function storedArc() {
@@ -285,5 +285,75 @@ describe('removeBeat', () => {
         assert.equal(beats.length, 2);
         assert.equal(beats[1].status, 'locked');
         assert.deepEqual(beats[1].unlockAfter, ['beat_1']);
+    });
+});
+
+describe('completeBeat', () => {
+    it('completes the beat and unlocks a beat whose only prerequisite it was', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active', unlockAfter: [] },
+            { id: 'beat_2', status: 'locked', unlockAfter: ['beat_1'] },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_1'), [
+            { id: 'beat_1', status: 'completed', unlockAfter: [] },
+            { id: 'beat_2', status: 'pending', unlockAfter: ['beat_1'] },
+        ]);
+    });
+
+    it('unlocks a beat when the last of several prerequisites completes', () => {
+        const beats = [
+            { id: 'beat_1', status: 'completed', unlockAfter: [] },
+            { id: 'beat_2', status: 'pending', unlockAfter: [] },
+            { id: 'beat_3', status: 'locked', unlockAfter: ['beat_1', 'beat_2'] },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_2')[2], { id: 'beat_3', status: 'pending', unlockAfter: ['beat_1', 'beat_2'] });
+    });
+
+    it('keeps a beat locked while another prerequisite is open', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active', unlockAfter: [] },
+            { id: 'beat_2', status: 'pending', unlockAfter: [] },
+            { id: 'beat_3', status: 'locked', unlockAfter: ['beat_1', 'beat_2'] },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_1')[2], { id: 'beat_3', status: 'locked', unlockAfter: ['beat_1', 'beat_2'] });
+    });
+
+    it('leaves a locked beat alone that did not wait for the completed beat', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active', unlockAfter: [] },
+            { id: 'beat_2', status: 'completed', unlockAfter: [] },
+            { id: 'beat_3', status: 'locked', unlockAfter: ['beat_2'] },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_1')[2], { id: 'beat_3', status: 'locked', unlockAfter: ['beat_2'] });
+    });
+
+    it('leaves pending and active beats that waited for it unchanged', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active', unlockAfter: [] },
+            { id: 'beat_2', status: 'pending', unlockAfter: ['beat_1'] },
+            { id: 'beat_3', status: 'active', unlockAfter: ['beat_1'] },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_1').map(beat => beat.status), ['completed', 'pending', 'active']);
+    });
+
+    it('treats a beat without unlockAfter as waiting for nothing', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active' },
+            { id: 'beat_2', status: 'locked' },
+        ];
+        assert.deepEqual(completeBeat(beats, 'beat_1'), [
+            { id: 'beat_1', status: 'completed' },
+            { id: 'beat_2', status: 'locked' },
+        ]);
+    });
+
+    it('does not mutate the input', () => {
+        const beats = [
+            { id: 'beat_1', status: 'active', unlockAfter: [] },
+            { id: 'beat_2', status: 'locked', unlockAfter: ['beat_1'] },
+        ];
+        completeBeat(beats, 'beat_1');
+        assert.equal(beats[0].status, 'active');
+        assert.equal(beats[1].status, 'locked');
     });
 });
