@@ -108,6 +108,55 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
         assert.equal(normal.includes('SECRETS'), false);
     });
 
+    it('shows only unfired triggers and unplanted clues', () => {
+        const arc = makeAct({
+            triggers: [
+                { id: 't1', condition: 'anyone counts the sacks', action: 'the tally is short', fired: false },
+                { id: 't2', condition: 'the mill burns', action: 'flour rains on the square', fired: true },
+            ],
+            foreshadowing: [
+                { id: 'f1', clue: 'Carts leave at night.', target: 'secret:s_climax', planted: false },
+                { id: 'f2', clue: 'A torn sack by the gate.', target: 'secret:s_any', planted: true },
+            ],
+        });
+        const text = withChatLength(10, () => buildInjection([arc]));
+        assert.ok(text.endsWith([
+            'SECRETS (guard these carefully — do not reveal directly):',
+            '- The granary was emptied on purpose.',
+            '',
+            'TRIGGERS (check narrative conditions each message):',
+            '- IF anyone counts the sacks → the tally is short',
+            '',
+            'FORESHADOWING TO PLANT:',
+            '- Carts leave at night. (foreshadows: secret:s_climax)',
+            '',
+            '[END STORY ARC]',
+        ].join('\n')), text);
+        assert.equal(text.includes('the mill burns'), false);
+        assert.equal(text.includes('A torn sack by the gate.'), false);
+    });
+
+    it('leaves no list header behind when every secret is disclosed, every trigger fired and every clue planted', () => {
+        const arc = makeAct();
+        for (const secret of arc.secrets) secret.disclosed = true;
+        for (const trigger of arc.triggers) trigger.fired = true;
+        for (const clue of arc.foreshadowing) clue.planted = true;
+        const text = withChatLength(10, () => buildInjection([arc]));
+        assert.equal(text.includes('SECRETS'), false);
+        assert.equal(text.includes('TRIGGERS'), false);
+        assert.equal(text.includes('FORESHADOWING'), false);
+        assert.ok(text.endsWith('let the world act on its own interests.\n\n[END STORY ARC]'));
+    });
+
+    it('renders a spotlit arc without a tier (planned before tiers) as an episode', () => {
+        const arc = makeAct();
+        delete arc.tier;
+        const text = withChatLength(10, () => buildInjection([arc]));
+        assert.ok(text.includes('=== FOREGROUNDED: "The Long Winter" ==='));
+        assert.equal(text.includes('=== ACT'), false);
+        assert.equal(text.includes('BRING TO A HEAD'), false);
+    });
+
     it('applies phase gating to secrets: climax secret hidden early, shown at climax', () => {
         // Beat ratio 1/3 caps the phase at development regardless of messages.
         const early = withChatLength(10, () => buildInjection([makeAct()]));

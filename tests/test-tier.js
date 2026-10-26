@@ -93,6 +93,18 @@ describe('milestone section — act / saga in normal focus', () => {
         assert.equal(text.includes('Old grudges resurface.'), false);
     });
 
+    it('puts the STANDING PRESSURES header above the pressures and ends the section after them', () => {
+        const text = withChatLength(10, () => buildInjection([makeAct()]));
+        assert.ok(text.startsWith('[STORY ARC - NARRATIVE DIRECTION]\n\n=== ACT: "The Long Winter" ===\nPREMISE: The valley is starving and the guild is lying about it.\n\nSTANDING PRESSURES (forces at work'));
+        assert.ok(text.endsWith('do not resolve them):\n- Rations shrink week by week.\n- The guild ledgers do not add up.\n\n[END STORY ARC]'));
+    });
+
+    it('prints no PREMISE line for an act without a premise', () => {
+        const text = withChatLength(10, () => buildInjection([makeAct({ premise: '' })]));
+        assert.ok(text.includes('=== ACT: "The Long Winter" ===\n\nSTANDING PRESSURES'));
+        assert.equal(text.includes('PREMISE'), false);
+    });
+
     it('carries no scene-beat machinery: no CURRENT PRESSURE, no PACING RULES, no phase brake', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
         assert.equal(text.includes('CURRENT PRESSURE'), false);
