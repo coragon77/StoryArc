@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { categorizeEntries, fetchLorebookEntries } from '../lib/context/lorebook.js';
+import { categorizeEntries, fetchLorebookEntries, filterAndSort } from '../lib/context/lorebook.js';
 import { mockSortedEntries } from './mocks/st-mocks.js';
 
 describe('categorizeEntries', () => {
@@ -57,5 +57,45 @@ describe('fetchLorebookEntries', () => {
         const entries = await fetchLorebookEntries();
         assert.deepEqual(entries.map(e => e.comment), ['Early', 'Late']);
         assert.equal(entries[0].world, 'global');
+    });
+
+    it('returns an empty list when ST cannot deliver the entries', async () => {
+        // The mock spreads mockSortedEntries; an iterator that throws makes
+        // getSortedEntries itself reject, as a failed fetch would.
+        mockSortedEntries[Symbol.iterator] = () => { throw new Error('world info unavailable'); };
+        const originalError = console.error;
+        console.error = () => {};
+        try {
+            assert.deepEqual(await fetchLorebookEntries(), []);
+        } finally {
+            console.error = originalError;
+            delete mockSortedEntries[Symbol.iterator];
+        }
+    });
+});
+
+describe('filterAndSort', () => {
+    it('sorts an entry without an order as order 100', () => {
+        const entries = [
+            { comment: 'Late', order: 150 },
+            { comment: 'Unordered' },
+            { comment: 'Early', order: 50 },
+            { comment: 'Last', order: 300 },
+            { comment: 'First', order: 5 },
+        ];
+        assert.deepEqual(filterAndSort(entries).map(e => e.comment), ['First', 'Early', 'Unordered', 'Late', 'Last']);
+    });
+});
+
+describe('categorizeEntries — which bucket each entry lands in', () => {
+    it('sorts each entry into exactly one bucket, constants first', () => {
+        const constantArc = { comment: '[ARC 004] - Pinned', constant: true };
+        const lowerCaseArc = { comment: '[arc 002] - Lower case', constant: false };
+        const archive = { comment: '[ARCHIVE] Old notes', constant: false };
+        const noComment = { content: 'untitled', constant: false };
+        const { constants, arcSummaries, recent } = categorizeEntries([constantArc, lowerCaseArc, archive, noComment]);
+        assert.deepEqual(constants, [constantArc]);
+        assert.deepEqual(arcSummaries, [lowerCaseArc]);
+        assert.deepEqual(recent, [archive, noComment]);
     });
 });
