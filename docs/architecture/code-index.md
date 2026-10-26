@@ -27,7 +27,6 @@ StoryArc/
 │   └── detail-pass.txt         # Phase 3 prompt: expand beats and foreshadowing (deferred)
 ├── lib/
 │   ├── core/
-│   │   ├── index.js            # Facade — re-exports MODULE_NAME, settings, constants
 │   │   ├── constants.js        # MODULE_NAME, INJECTION_HEADER, defaultSettings,
 │   │   │                       #   defaultPerChatSettings, ARC_PHASES, PHASE_ORDER,
 │   │   │                       #   PACING_DIRECTIVES, TIER_TABLE (label, beatKind,
@@ -40,19 +39,16 @@ StoryArc/
 │   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
 │   │                           #   messageStart fallbacks, named once
 │   ├── context/
-│   │   ├── index.js            # Facade — re-exports harvestContext()
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
-│   │   │                       #   returns HarvestedContext object
-│   │   ├── lorebook.js         # harvestLorebook() — reads World Info entries,
-│   │   │                       #   classifies into constants / arcSummaries / recent
-│   │   ├── character.js        # harvestCharacter() — character card fields + user persona
+│   │   │                       #   returns HarvestedContext object;
+│   │   │                       #   fetchLorebookEntries(), filterAndSort(),
+│   │   │                       #   categorizeEntries() — read World Info entries,
+│   │   │                       #   classify into constants / arcSummaries / recent;
+│   │   │                       #   getCharacterData(), getPersonaData() (private) —
+│   │   │                       #   character card fields + user persona
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
-│   │   ├── index.js            # Facade — re-exports generateArc(), saveArc(), getArcs(),
-│   │   │                       #   getActiveArcs(), getArcById(), updateArc(), deleteArc(),
-│   │   │                       #   ARC_PRESET_NAME, createArcPreset(),
-│   │   │                       #   collectArcDirectives(), readActiveArcDirectives()
 │   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre }) —
 │   │   │                       #   two-phase LLM generation with retry logic; stamps
 │   │   │                       #   tier, direction, genre, messageStart, lastFulfilledAt;
@@ -72,7 +68,14 @@ StoryArc/
 │   │   │                       #   auth/model errors fail fast;
 │   │   │                       #   formatArcDirectives() renders the enabled
 │   │   │                       #   preset directives into Phase 2;
-│   │   │                       #   callbacks report steps and streamed chars
+│   │   │                       #   callbacks report steps and streamed chars;
+│   │   │                       #   buildTierBlock(tier) → {{TIER_BLOCK}}: "== TIER: … =="
+│   │   │                       #   with beat kind, beat count, length band and the
+│   │   │                       #   milestone rules, all from TIER_TABLE;
+│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
+│   │   │                       #   secrets (add-only), escalation, fulfilled beats as
+│   │   │                       #   "already happened"; '' for null (plan-new);
+│   │   │                       #   loadTemplate(name), fillTemplate(template, vars)
 │   │   ├── arc-preset.js       # ARC_PRESET_NAME, ARC_PRESET_SETTINGS (fixed ~18-key
 │   │   │                       #   barebones preset — no derivation from a base
 │   │   │                       #   preset), ARC_PROMPT_ENTRIES (adult-content off,
@@ -99,28 +102,17 @@ StoryArc/
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open
-│   │   ├── tier-block.js       # buildTierBlock(tier) → {{TIER_BLOCK}}: "== TIER: … =="
-│   │   │                       #   with beat kind, beat count, length band and the
-│   │   │                       #   milestone rules, all from TIER_TABLE
-│   │   ├── arc-so-far.js       # buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
-│   │   │                       #   secrets (add-only), escalation, fulfilled beats as
-│   │   │                       #   "already happened"; '' for null (plan-new)
-│   │   ├── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
-│   │   │                       #   keeps identity, edited title/premise/direction,
-│   │   │                       #   secrets (add-only, content-deduped), completed
-│   │   │                       #   beats, planted foreshadowing, fired triggers;
-│   │   │                       #   replaces the rest; withUniqueIds() suffixes
-│   │   │                       #   colliding ids _2, _3, … and renames unlockAfter refs;
-│   │   │                       #   replanTiers(tier) — the tiers a re-plan may pick:
-│   │   │                       #   same or larger, never smaller (wizard selector)
-│   │   └── templates.js        # loadTemplate(name), fillTemplate(template, vars)
+│   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
+│   │                           #   keeps identity, edited title/premise/direction,
+│   │                           #   secrets (add-only, content-deduped), completed
+│   │                           #   beats, planted foreshadowing, fired triggers;
+│   │                           #   replaces the rest; withUniqueIds() suffixes
+│   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
+│   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
+│   │                           #   same or larger, never smaller (wizard selector)
 │   ├── injection/
-│   │   ├── index.js            # Facade — re-exports buildInjection(), buildSignalInjection(),
-│   │   │                       #   parseSignals(), stripSignalsFromMessage(),
-│   │   │                       #   processSignalResults(), scrubArcInternals(),
-│   │   │                       #   promoteNextBeats(), stampPromptMessages()
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
-│   │   │                       #   one section per arc from sections/, spotlight first,
+│   │   │                       #   one section per arc (private builders below), spotlight first,
 │   │   │                       #   then normal episodes, then the rest; respects token
 │   │   │                       #   budget. buildSignalInjection(arcs) — separate injection
 │   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for the
@@ -136,36 +128,37 @@ StoryArc/
 │   │   │                       #   content lists last (secrets, triggers, foreshadowing),
 │   │   │                       #   and trimToBudget() drops whole trailing lines plus
 │   │   │                       #   any header left without items
-│   │   ├── sections/
-│   │   │   ├── episode.js      # buildEpisodeSection(arc) — the full section: premise,
-│   │   │   │                   #   tone, active beat as CURRENT PRESSURE (pressure,
-│   │   │   │                   #   falling back to intention), no beat ids; linger
-│   │   │   │                   #   directive when no beat is active; guardrails first,
-│   │   │   │                   #   content lists last. Header word kept from before
-│   │   │   │                   #   tiers for byte-identity (architecture.md, migration);
-│   │   │   │                   #   pushPlanLists(lines, arc, phase) — secrets,
-│   │   │   │                   #   triggers, foreshadowing; milestone.js reuses it
-│   │   │   ├── paused.js       # buildPausedSection(arc) — one line under PAUSED: premise
-│   │   │   │                   #   + "pending, not being pursued right now"
-│   │   │   ├── background.js   # buildBackgroundSection(arc) — act/saga: title under
-│   │   │   │                   #   BACKGROUND: + "Runs off-screen…" sentence; no
-│   │   │   │                   #   premise, no pressures (beats stay in the beat check)
-│   │   │   ├── milestone.js    # buildMilestoneSection(arc, pressures?) — act/saga:
-│   │   │   │                   #   === ACT/SAGA: header, premise, unfulfilled milestone
-│   │   │   │                   #   pressures under STANDING PRESSURES (header + trailer
-│   │   │   │                   #   swappable; pressure only, never the fulfillment —
-│   │   │   │                   #   a pressure-less milestone is skipped), gated
-│   │   │   │                   #   secrets/triggers/foreshadowing; no
-│   │   │   │                   #   pacing rules, no phase line
-│   │   │   ├── spotlight.js    # buildSpotlightSection(arc) — episode → episode section;
-│   │   │   │                   #   act/saga → milestone section under BRING TO A HEAD
-│   │   │   │                   #   + one trailer sentence, no milestone named
-│   │   │   └── signal-directive.js  # buildSignalDirective(arcs) — continuation guard,
+│   │   │                       #   Private section builders, picked by buildArcSection():
+│   │   │                       #   buildEpisodeSection(arc) — the full section: premise,
+│   │   │                       #   tone, active beat as CURRENT PRESSURE (pressure,
+│   │   │                       #   falling back to intention), no beat ids; linger
+│   │   │                       #   directive when no beat is active; guardrails first,
+│   │   │                       #   content lists last. Header word kept from before
+│   │   │                       #   tiers for byte-identity (architecture.md, migration);
+│   │   │                       #   pushPlanLists(lines, arc, phase) — secrets,
+│   │   │                       #   triggers, foreshadowing; buildMilestoneSection reuses it;
+│   │   │                       #   buildPausedSection(arc) — one line under PAUSED: premise
+│   │   │                       #   + "pending, not being pursued right now";
+│   │   │                       #   buildBackgroundSection(arc) — act/saga: title under
+│   │   │                       #   BACKGROUND: + "Runs off-screen…" sentence; no
+│   │   │                       #   premise, no pressures (beats stay in the beat check);
+│   │   │                       #   buildMilestoneSection(arc, pressures?) — act/saga:
+│   │   │                       #   === ACT/SAGA: header, premise, unfulfilled milestone
+│   │   │                       #   pressures under STANDING PRESSURES (header + trailer
+│   │   │                       #   swappable; pressure only, never the fulfillment —
+│   │   │                       #   a pressure-less milestone is skipped), gated
+│   │   │                       #   secrets/triggers/foreshadowing; no
+│   │   │                       #   pacing rules, no phase line;
+│   │   │                       #   buildSpotlightSection(arc) — episode → episode section;
+│   │   │                       #   act/saga → milestone section under BRING TO A HEAD
+│   │   │                       #   + one trailer sentence, no milestone named;
+│   │   │                       #   buildSignalDirective(arcs) — continuation guard,
 │   │   │                       #   confidentiality clause, BEAT CHECK listing every
 │   │   │                       #   active beat (all unfulfilled milestones on an
 │   │   │                       #   act/saga); paused arcs get no recognition lines;
 │   │   │                       #   PLANT CHECK with :PLANTED / :FIRED lines for the
 │   │   │                       #   clues and triggers the arc's section shows
+│   │   │                       #   (showsPlanLists(arc) decides which arcs show them)
 │   │   ├── clock.js            # selectPacingClock(arcs) — spotlit episode, else first
 │   │   │                       #   normal episode; never paused, never act/saga; feeds
 │   │   │                       #   stamping.js;
@@ -209,10 +202,6 @@ StoryArc/
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── ui/
-│   │   ├── index.js            # Facade — re-exports renderSettingsPanel(),
-│   │   │                       #   setupSettingsPanelEvents(), showWizard(),
-│   │   │                       #   showArcManager(), updateProgress(),
-│   │   │                       #   registerWandMenuEntry()
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
 │   │   │                       #   enable toggle, generation profile dropdown
 │   │   │                       #   (Connection Manager profiles), 'Create arc preset'
@@ -352,46 +341,39 @@ lib/core/
                    ensureChatState() runs migrateArc() over stored arcs)
 
 lib/context/
-├── lorebook.js      (imports: /scripts/world-info.js getSortedEntries)
-├── character.js     (imports: /script.js)
 ├── chat-history.js  (imports: /script.js)
-└── harvester.js     (imports: lorebook.js, character.js, chat-history.js, planning/storage.js)
+└── harvester.js     (imports: chat-history.js, planning/storage.js, /script.js,
+                      /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
-├── templates.js   (no ST deps — fetch only)
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
-├── tier-block.js  (imports: core/constants.js)
 ├── arc-edit.js    (imports: core/constants.js)
-├── arc-so-far.js  (no deps)
 ├── replan.js      (imports: core/constants.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
-└── generator.js   (imports: templates.js, validation.js, arc-preset.js,
-                    tier-block.js, arc-so-far.js, replan.js, core/settings.js, /script.js;
-                    dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js)
+└── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
+                    core/constants.js, /script.js, /scripts/utils.js;
+                    dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js,
+                    /scripts/sse-stream.js; templates are fetched from prompts/)
 
 lib/injection/
 ├── pacing.js   (imports: core/constants.js, core/settings.js, /script.js)
 ├── clock.js    (imports: planning/storage.js, core/settings.js, /script.js)
 ├── stamping.js (imports: clock.js, core/constants.js, core/settings.js, /script.js)
 ├── signals.js  (imports: planning/storage.js, core/settings.js, pacing.js, /script.js)
-├── sections/   (episode.js imports pacing.js; milestone.js imports pacing.js,
-│                episode.js, core/constants.js; spotlight.js imports episode.js,
-│                milestone.js, core/settings.js; signal-directive.js imports
-│                core/settings.js; paused.js, background.js: no deps)
-└── builder.js  (imports: pacing.js, clock.js, sections/*, core/settings.js,
+└── builder.js  (imports: pacing.js, clock.js, core/settings.js,
                  core/constants.js, context/chat-history.js)
 
 lib/ui/
 ├── progress.js      (imports: planning/storage.js, injection/pacing.js,
 │                              core/settings.js, /script.js, /scripts/utils.js)
-├── settings-panel.js (imports: core/constants.js, core/settings.js, planning/index.js,
-│                              wizard.js, arc-manager.js, /script.js,
-│                              /scripts/extensions.js, /scripts/popup.js)
-├── wizard.js        (imports: context/index.js, planning/index.js (generateArc,
-│                              saveArc, updateArc, getArcById), core/settings.js,
-│                              core/constants.js, progress.js,
+├── settings-panel.js (imports: core/constants.js, core/settings.js,
+│                              planning/arc-preset.js, wizard.js, arc-manager.js,
+│                              /script.js, /scripts/extensions.js, /scripts/popup.js)
+├── wizard.js        (imports: context/harvester.js, planning/generator.js,
+│                              planning/storage.js, planning/replan.js,
+│                              core/settings.js, core/constants.js, progress.js,
 │                              /scripts/extensions.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
@@ -403,8 +385,10 @@ lib/ui/
                                core/constants.js, progress.js, wizard.js,
                                /scripts/popup.js, /scripts/utils.js)
 
-index.js  (imports: core/, ui/, injection/, planning/storage.js,
-                    /script.js, /scripts/extensions.js)
+index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
+                    injection/stamping.js, injection/signals.js,
+                    ui/settings-panel.js, ui/wand-menu.js, ui/progress.js,
+                    /script.js)
 ```
 
 ## Key Files by Feature
@@ -412,18 +396,18 @@ index.js  (imports: core/, ui/, injection/, planning/storage.js,
 | Feature | Primary File | Supporting Files |
 |---------|-------------|------------------|
 | Extension entry | `index.js` | `lib/core/constants.js`, `lib/core/settings.js` |
-| Context harvesting | `lib/context/harvester.js` | `lorebook.js`, `character.js`, `chat-history.js` |
-| Arc generation | `lib/planning/generator.js` | `templates.js`, `validation.js`, `arc-preset.js`, `prompts/` |
+| Context harvesting | `lib/context/harvester.js` (`fetchLorebookEntries`, `categorizeEntries`, `getCharacterData`, `getPersonaData`) | `chat-history.js` |
+| Arc generation | `lib/planning/generator.js` (`loadTemplate`, `fillTemplate`) | `validation.js`, `arc-preset.js`, `prompts/` |
 | Arc preset + profile | `lib/planning/arc-preset.js` | `lib/ui/settings-panel.js`, `lib/planning/generator.js` (`formatArcDirectives`) |
 | Arc storage | `lib/planning/storage.js` | `lib/core/settings.js` |
-| Prompt injection | `lib/injection/builder.js` | `sections/*.js`, `pacing.js`, `signals.js` |
-| Tier (shape at generation) | `lib/planning/validation.js` | `lib/planning/tier-block.js`, `lib/core/constants.js` (`TIER_TABLE`), `prompts/generate-arc.txt` |
-| Milestones (act/saga injection + recognition) | `lib/injection/sections/milestone.js` | `sections/signal-directive.js`, `signals.js` (`promoteNextBeats`) |
-| Focus: pause / resume | `lib/injection/clock.js` | `sections/paused.js`, `lib/ui/arc-manager.js` |
-| Focus: background | `lib/injection/sections/background.js` | `builder.js`, `lib/ui/arc-manager.js` (no background for episodes), `lib/planning/replan.js` (`replanTiers`: re-plan never shrinks an act or saga into an episode) |
-| Focus: spotlight | `lib/injection/sections/spotlight.js` | `clock.js`, `builder.js` (`sectionRank`, `buildPacingBlock`) |
+| Prompt injection | `lib/injection/builder.js` (`buildArcSection` and the section builders) | `pacing.js`, `signals.js` |
+| Tier (shape at generation) | `lib/planning/validation.js` | `lib/planning/generator.js` (`buildTierBlock`), `lib/core/constants.js` (`TIER_TABLE`), `prompts/generate-arc.txt` |
+| Milestones (act/saga injection + recognition) | `lib/injection/builder.js` (`buildMilestoneSection`) | `builder.js` (`buildSignalDirective`), `signals.js` (`promoteNextBeats`) |
+| Focus: pause / resume | `lib/injection/clock.js` | `builder.js` (`buildPausedSection`), `lib/ui/arc-manager.js` |
+| Focus: background | `lib/injection/builder.js` (`buildBackgroundSection`) | `lib/ui/arc-manager.js` (no background for episodes), `lib/planning/replan.js` (`replanTiers`: re-plan never shrinks an act or saga into an episode) |
+| Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
-| Re-plan | `lib/planning/replan.js` | `arc-so-far.js`, `generator.js` (`formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
+| Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
 | Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/injection/signals.js` (`lastFulfilledAt`) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
