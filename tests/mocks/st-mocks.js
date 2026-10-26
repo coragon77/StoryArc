@@ -82,6 +82,20 @@ export function uuidv4() {
     return `mock-uuid-${uuidCounter}`;
 }
 
+// Same bodies as ST's public/scripts/utils.js
+export function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+export function delay(ms) {
+    return new Promise((res) => setTimeout(res, ms));
+}
+
 // --- /scripts/power-user.js mocks ---
 export const power_user = { personas: {}, persona_descriptions: {} };
 
