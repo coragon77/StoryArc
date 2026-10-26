@@ -16,7 +16,9 @@ import {
     readActiveArcDirectives,
 } from '../lib/planning/arc-preset.js';
 import { formatArcDirectives } from '../lib/planning/generator.js';
-import { extension_settings, mockPresetList, savedPresets, savedPresetOptions } from './mocks/st-mocks.js';
+import {
+    extension_settings, mockCalls, mockPresetList, mockPresetManagerState, savedPresets, savedPresetOptions,
+} from './mocks/st-mocks.js';
 
 /** Register a preset in the fake in-memory list, the way SillyTavern holds them. */
 function addMockPreset(name, settings) {
@@ -24,8 +26,10 @@ function addMockPreset(name, settings) {
     mockPresetList.preset_names[name] = mockPresetList.presets.length - 1;
 }
 
-/** Empty the fake preset list and the record of saved presets. */
+/** Empty the fake preset list, the record of saved presets and the settings-save count. */
 function resetMockPresets() {
+    mockPresetManagerState.available = true;
+    mockCalls.saveSettingsDebounced = 0;
     mockPresetList.presets.length = 0;
     for (const key of Object.keys(mockPresetList.preset_names)) delete mockPresetList.preset_names[key];
     for (const key of Object.keys(savedPresets)) delete savedPresets[key];
@@ -378,6 +382,28 @@ describe('createArcPreset', () => {
         assert.strictEqual(savedPresets[ARC_PRESET_NAME].reasoning_effort, 'high');
     });
 
+    test('saves the extension settings once after adding the new profile', async () => {
+        await createArcPreset('profile-1', approve);
+
+        assert.strictEqual(mockCalls.saveSettingsDebounced, 1);
+    });
+
+    test('saves no extension settings when the profile already exists', async () => {
+        extension_settings.connectionManager.profiles.push({ id: 'existing-arc', name: ARC_PRESET_NAME, preset: ARC_PRESET_NAME });
+
+        await createArcPreset('profile-1', approve);
+
+        assert.strictEqual(mockCalls.saveSettingsDebounced, 0);
+    });
+
+    test('throws without a chat-completion preset manager and saves nothing', async () => {
+        mockPresetManagerState.available = false;
+
+        await assert.rejects(() => createArcPreset('profile-1', approve), /preset manager is unavailable/);
+        assert.deepStrictEqual(Object.keys(savedPresets), []);
+        assert.strictEqual(extension_settings.connectionManager.profiles.length, 1);
+    });
+
     test('creates a new preset without asking to overwrite', async () => {
         const asked = [];
         const confirmOverwrite = async (name) => {
@@ -482,6 +508,12 @@ describe('readActiveArcDirectives', () => {
 
     test('returns the enabled directives of the preset the generation profile pins', () => {
         assert.deepStrictEqual(readActiveArcDirectives(), ['Genre: noir.']);
+    });
+
+    test('returns nothing without a chat-completion preset manager', () => {
+        mockPresetManagerState.available = false;
+
+        assert.deepStrictEqual(readActiveArcDirectives(), []);
     });
 
     test('returns nothing without a generation profile', () => {

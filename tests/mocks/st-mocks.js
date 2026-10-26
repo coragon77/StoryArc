@@ -10,7 +10,9 @@ export const characters = [];
 export const this_chid = null;
 export const eventSource = { on: () => {}, emit: () => {} };
 export const event_types = {};
-export function saveSettingsDebounced() {}
+/** Call counts tests can assert on — reset them in the test that reads them. */
+export const mockCalls = { saveSettingsDebounced: 0 };
+export function saveSettingsDebounced() { mockCalls.saveSettingsDebounced += 1; }
 export function setExtensionPrompt() {}
 export const extension_prompt_types = { IN_PROMPT: 0 };
 export const extension_prompt_roles = { SYSTEM: 0 };
@@ -53,7 +55,11 @@ export const savedPresets = {};
 /** Options savePreset was called with, keyed by preset name. */
 export const savedPresetOptions = {};
 
+/** Set `available` to false to make getPresetManager return null (no Chat Completion API). */
+export const mockPresetManagerState = { available: true };
+
 export function getPresetManager() {
+    if (!mockPresetManagerState.available) return null;
     return {
         getAllPresets: () => Object.keys(mockPresetList.preset_names),
         getSelectedPresetName: () => Object.keys(mockPresetList.preset_names)[0] || '',

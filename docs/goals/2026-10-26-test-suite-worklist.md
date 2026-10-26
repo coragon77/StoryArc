@@ -1,6 +1,6 @@
 # StoryArc test-suite worklist (mutation audit, 2026-10-26)
 
-**Status:** open · **Opened / last verified:** 2026-10-26 · **Scale:** 51 hollow function groups, 4 untested groups; several fixing sessions
+**Status:** done (C1–C5) · **Opened / last verified:** 2026-10-26 · **Scale:** 51 hollow function groups, 4 untested groups; several fixing sessions
 
 This is a goals document, not a spec; chapters go through the normal spec/plan workflow.
 
@@ -125,6 +125,9 @@ Every entry is `strength: mutation-proven`: a Stryker run changed the code and t
 | `lib/core` | `constants.js::ARC_FOCUS+defaultSettings` | false-positive | the packet does not show who reads ARC_FOCUS, defaultPacingStyle or signalPrefix; a later session should check whether they are read at all before writing a test | L48 ARC_FOCUS -\> \[\] / ''; L55 defaultPacingStyle; L61 signalPrefix |
 | `lib/context` | `lorebook.js::filterAndSort` | hollow | entries without an order sort as order 100: an entry with order 50 comes before one without order, and one with order 150 comes after it | L47 order \|\| 100 mutated on both sides |
 | `lib/context` | `lorebook.js::fetchLorebookEntries+categorizeEntries` | untested | no test covers these: a failing lorebook fetch returns \[\]; an entry whose comment starts with '\[ARC ' is an arc summary, a constant entry goes to constants, the rest to recent | L33-L35 catch NoCoverage; L63 \[ARC regex NoCoverage |
+| `lib/ui` | `progress.js::renderProgressDisplay+escapeHtml+escapeAttr` | hollow | an arc title written by the model is HTML-escaped in the card text and in the title attribute; the bar fills by non-optional beats only (0% for an arc with only optional beats); the pacing line shows only while the message clock holds the phase back and never in resolution; nothing but whitespace sits between cards | added by the C5 run: L44, L50, L53, L60-L63, L69, L85, L113-L114, L122-L123 |
+| `lib/ui` | `progress.js::isStalled` | hollow | an arc with only optional beats or without estimatedLength is never stalled; optional beats do not shrink the per-beat allowance | added by the C5 run: L29, L30 |
+| `lib/ui` | `progress.js::updateProgress` | untested | jQuery DOM glue: renders into `#story-arc-progress-container`, does nothing without it, empties it on an error. The test mocks have no jQuery | added by the C5 run: L94-L103 NoCoverage |
 
 ## Chapters
 
@@ -134,11 +137,15 @@ Ordered by risk: the injection code runs on every message and shapes what the mo
   - done = a Stryker re-run with `testaudit-out/mutation/stryker.config.json` kills every mutant named in the `lib/injection` rows, except the ones each row calls equivalent.
   - 2026-10-26: status — tests strengthened; `lib/injection` now 881 killed, 59 survived, 12 no coverage (was 692 / 225 / 35); 2 todo tests for real bugs (`ratioToPhase` sends a negative message ratio to resolution; `isSameMessage` lets an assistant reply that is the tail of a user message take its stamp). Two named mutants survive: `pacing.js` L52 `ratio >= min -> true` (only a negative ratio kills it, which is the todo bug) and `clock.js` L82 `a.id !== arcId -> true` (equivalent: an arc that is already spotlit is set to normal and back to spotlight, with the same end state). Everything else that survives is equivalent, log text, DOM against the mock, or BEAT/PLANT CHECK prose kept loose on purpose.
   - 2026-10-26: done — both bugs fixed in production code and their tests are normal tests now: `calculatePhase` clamps a negative message count to 0, and `isSameMessage` matches user chat messages only. Stryker re-run: `lib/injection` 885 killed, 60 survived, 12 no coverage. `pacing.js` L55 `ratio >= min -> true` is equivalent now, because the ratio can no longer be negative. `stamping.js` L85 (skip non-user entries `-> false`) survives because the `is_user` check in `isSameMessage` now covers the same case. Every other survivor is one the rows call equivalent.
-- [ ] **C2. Planning contracts** — the `lib/planning` hollow rows: validation, arc-edit, replan, arc-so-far, tier-block, storage and arc-preset.
+- [x] **C2. Planning contracts** — the `lib/planning` hollow rows: validation, arc-edit, replan, arc-so-far, tier-block, storage and arc-preset.
   - done = the same re-run kills every mutant named in the hollow `lib/planning` rows, except the ones each row calls equivalent.
-- [ ] **C3. Core and context contracts** — the hollow rows in `lib/core` and `lib/context`.
+  - 2026-10-26: done — `lib/planning` 769 killed, 39 survived, 2 no coverage (was 586 / 148 / 76). No real bugs. The shared mock gained a `saveSettingsDebounced` call count and a switch for a missing preset manager, so those `createArcPreset` and `readActiveArcDirectives` mutants die too. One exception: the replace-in-place branches of `applyArcPromptEntries` (L146–L157) cannot be reached through any exported function, because `buildArcPresetSettings` always starts from an empty prompt list. Not decided: whether that code is dead and can go.
+- [x] **C3. Core and context contracts** — the hollow rows in `lib/core` and `lib/context`.
   - done = the re-run kills every mutant named in those rows.
-- [ ] **C4. Untested functions** — the four `untested` rows: `saveArc`, `deleteArc`, `getArcs`, `loadSettings`, `getSettings`, `isEnabled`, `fetchLorebookEntries`, `categorizeEntries` and `readActiveArcDirectives`.
+  - 2026-10-26: done — `lib/core` 130 killed, 7 survived, 0 no coverage (was 71 / 46 / 20); `lib/context` 37 / 2 / 0 (was 31 / 4 / 4). No real bugs. The survivors are equivalent (`settings.js` L49/L53, refilled by the default loop; `lorebook.js` L63), log text, or the `ARC_FOCUS` false-positive row.
+- [x] **C4. Untested functions** — the four `untested` rows: `saveArc`, `deleteArc`, `getArcs`, `loadSettings`, `getSettings`, `isEnabled`, `fetchLorebookEntries`, `categorizeEntries` and `readActiveArcDirectives`.
   - done = the re-run reports 0 NoCoverage mutants in those functions.
-- [ ] **C5. Next run** — a mutation run over the same files plus `lib/ui/progress.js`; later chapters TBD after that run.
+  - 2026-10-26: done — 0 NoCoverage mutants left in all nine functions. `saveArc`, `deleteArc` and `getArcs` have a new `tests/test-storage.js`.
+- [x] **C5. Next run** — a mutation run over the same files plus `lib/ui/progress.js`; later chapters TBD after that run.
   - done = the run's report includes `lib/ui/progress.js`, and its surviving mutants are triaged into the Findings table.
+  - 2026-10-26: done — whole run: mutation score 93.52% (was 71.43%), 1919 killed, 110 survived, 24 no coverage. `progress.js` started at 56%; its three Findings rows were triaged and the two hollow ones fixed in a new `tests/test-progress.js`, which brought it to 89% (98 killed, 2 survived, 10 no coverage). The 10 uncovered mutants are all in `updateProgress` (jQuery DOM glue, the `untested` row). No real bugs. No later chapters: what survives is equivalent, log text, prompt prose left loose on purpose, or the open question about the unreachable `applyArcPromptEntries` branches under C2.
