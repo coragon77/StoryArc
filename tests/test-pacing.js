@@ -139,7 +139,7 @@ describe('phase ranges (ratioToPhase through calculatePhase)', () => {
         assert.equal(phaseAtMessage(35), 'resolution');  // 1.75
     });
 
-    it('counts a chat shorter than the arc start (messages deleted) as setup', { todo: 'bug: a negative message ratio matches no range and falls through to resolution, lifting the message brake' }, () => {
+    it('counts a chat shorter than the arc start (messages deleted) as setup', () => {
         const arc = createDefaultArc({
             messageStart: 30,
             estimatedLength: 20,

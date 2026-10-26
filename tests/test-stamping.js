@@ -244,7 +244,7 @@ describe('stampPromptMessages', () => {
         }
     });
 
-    it('does not give a user message the number of a later assistant reply that is its tail', { todo: 'bug: isSameMessage ignores the chat message\'s role, so "oh yes" matches a newer assistant reply "yes" and is stamped one message too far' }, () => {
+    it('does not give a user message the number of a later assistant reply that is its tail', () => {
         fillChat(6);
         chat[4].mes = 'oh yes';
         chat[5].mes = 'yes';

@@ -130,9 +130,10 @@ Every entry is `strength: mutation-proven`: a Stryker run changed the code and t
 
 Ordered by risk: the injection code runs on every message and shapes what the model is told, so it comes first. Planning code runs once per arc, core and context run at chat load.
 
-- [ ] **C1. Injection contracts** — the `lib/injection` rows above: pacing, clock, stamping, builder, the four sections and signals.
+- [x] **C1. Injection contracts** — the `lib/injection` rows above: pacing, clock, stamping, builder, the four sections and signals.
   - done = a Stryker re-run with `testaudit-out/mutation/stryker.config.json` kills every mutant named in the `lib/injection` rows, except the ones each row calls equivalent.
   - 2026-10-26: status — tests strengthened; `lib/injection` now 881 killed, 59 survived, 12 no coverage (was 692 / 225 / 35); 2 todo tests for real bugs (`ratioToPhase` sends a negative message ratio to resolution; `isSameMessage` lets an assistant reply that is the tail of a user message take its stamp). Two named mutants survive: `pacing.js` L52 `ratio >= min -> true` (only a negative ratio kills it, which is the todo bug) and `clock.js` L82 `a.id !== arcId -> true` (equivalent: an arc that is already spotlit is set to normal and back to spotlight, with the same end state). Everything else that survives is equivalent, log text, DOM against the mock, or BEAT/PLANT CHECK prose kept loose on purpose.
+  - 2026-10-26: done — both bugs fixed in production code and their tests are normal tests now: `calculatePhase` clamps a negative message count to 0, and `isSameMessage` matches user chat messages only. Stryker re-run: `lib/injection` 885 killed, 60 survived, 12 no coverage. `pacing.js` L55 `ratio >= min -> true` is equivalent now, because the ratio can no longer be negative. `stamping.js` L85 (skip non-user entries `-> false`) survives because the `is_user` check in `isSameMessage` now covers the same case. Every other survivor is one the rows call equivalent.
 - [ ] **C2. Planning contracts** — the `lib/planning` hollow rows: validation, arc-edit, replan, arc-so-far, tier-block, storage and arc-preset.
   - done = the same re-run kills every mutant named in the hollow `lib/planning` rows, except the ones each row calls equivalent.
 - [ ] **C3. Core and context contracts** — the hollow rows in `lib/core` and `lib/context`.
