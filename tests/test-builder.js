@@ -263,6 +263,38 @@ describe('buildInjection — section order and budget trim', () => {
         }
     });
 
+    it('drops a spotlit act\'s list items before a later episode\'s guardrails', () => {
+        chat_metadata.story_arc.settings.injectionBudget = 300;
+        try {
+            const foreshadowing = Array.from({ length: 40 }, (_, index) => ({
+                clue: `Clue number ${index} about the mystery, phrased at length so each line carries real weight.`,
+                target: 'the reveal',
+                planted: false,
+            }));
+            const act = makeArc({
+                id: 'act00001-full-id',
+                title: 'The Long Winter',
+                tier: 'act',
+                focus: 'spotlight',
+                foreshadowing,
+                beats: [{ id: 'cold', pressure: 'The cold keeps coming.', intention: 'x', status: 'pending', optional: false }],
+            });
+            const episode = makeArc({ antiPatterns: ['No sudden villains.'] });
+            const text = withChatLength(0, () => buildInjection([episode, act]));
+
+            assert.ok(text.startsWith(`${HEADER}\n\n=== ACT: "The Long Winter" ===\n`), 'spotlit act first');
+            assert.ok(text.includes('BRING TO A HEAD:\n- The cold keeps coming.\n'));
+            assert.ok(text.includes('FORESHADOWING TO PLANT:\n- Clue number 0 '));
+            assert.equal(text.includes('Clue number 39'), false);
+            assert.ok(text.includes('PACING RULES:\n- You are in SETUP phase.'));
+            assert.ok(text.includes('DO NOT:\n- No sudden villains.'));
+            assert.ok(text.endsWith('DO NOT:\n- No sudden villains.\n[END STORY ARC]'), text);
+            assert.ok(Math.ceil(bodyOf(text).length / 4) <= 300, 'trimmed to the budget');
+        } finally {
+            delete chat_metadata.story_arc.settings.injectionBudget;
+        }
+    });
+
     it('does not leave a section header whose items were all trimmed away', () => {
         chat_metadata.story_arc.settings.injectionBudget = 60;
         try {
@@ -271,6 +303,9 @@ describe('buildInjection — section order and budget trim', () => {
             });
             const text = buildInjection([arc]);
             assert.equal(text.includes('FORESHADOWING TO PLANT:'), false);
+            // The guardrails alone exceed 60 tokens: they stay, over budget.
+            assert.ok(text.includes('PACING RULES:\n- You are in SETUP phase.'));
+            assert.ok(text.endsWith('- If tempted to resolve something — add a complication instead.\n[END STORY ARC]'), text);
         } finally {
             delete chat_metadata.story_arc.settings.injectionBudget;
         }
