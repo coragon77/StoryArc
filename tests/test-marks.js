@@ -224,11 +224,23 @@ describe('queued marks keep the prompt byte-identical until a flush', () => {
             { arcId: 'epi00001-full-id', list: 'foreshadowing', flag: 'planted', id: 'wet_prints', at: 5 },
         ];
 
-        assert.equal(await flushPendingMarks(6, true), true);
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = message => warnings.push(message);
+        try {
+            assert.equal(await flushPendingMarks(6, true), true);
+        } finally {
+            console.warn = originalWarn;
+        }
 
         assert.equal(arc.foreshadowing[1].planted, true);
         assert.equal(arc.foreshadowing[0].planted, false);
         assert.deepEqual(chat_metadata.story_arc.pendingMarks, []);
+        assert.deepEqual(warnings, [
+            '[Story Arc] Dropped queued mark: arc "gone0000-full-id" or item "grey_van" no longer exists',
+            '[Story Arc] Dropped queued mark: arc "epi00001-full-id" or item "deleted_clue" no longer exists',
+            '[Story Arc] Dropped queued mark: arc "epi00002-full-id" or item "van_leaves" no longer exists',
+        ]);
     });
 
     it('drops a queued mark so a hand toggle survives the flush', async () => {
