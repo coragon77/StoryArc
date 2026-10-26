@@ -107,9 +107,9 @@ describe('stampPromptMessages', () => {
     it('matches messages ST prefixed with the speaker name', () => {
         fillChat(6);
         const prompt = makePrompt();
-        prompt[5].content = 'Amy: line 4';
+        prompt[5].content = 'Mira: line 4';
         stampPromptMessages(prompt, [makeArc()]);
-        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\nAmy: line 4');
+        assert.equal(prompt[5].content, '[Arc: message 1 of ~20]\nMira: line 4');
     });
 
     it('does not let a foreign injected entry shift the numbering', () => {

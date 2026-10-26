@@ -4,6 +4,8 @@ A [SillyTavern](https://github.com/SillyTavern/SillyTavern) extension that plans
 
 Long roleplays lose direction. After a few hundred messages the story drifts from scene to scene, and the model has no idea where things are supposed to go. Story Arc works like a hidden game master: it reads what has already happened, asks an LLM to plan what happens next, and feeds that plan into every prompt without showing it to you. You play; the plan stays a surprise.
 
+> **Status: beta (0.1.0).** Story Arc is in daily use in long roleplays, but it has mostly been run with GLM and Claude models on one SillyTavern install. Expect rough edges, and please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
+
 What it does:
 
 - **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
@@ -64,8 +66,8 @@ Most of the time you use the **wand menu** next to the chat input: click it and 
 1. **Context.** This shows what Story Arc harvested: the character, persona, number of lorebook entries, chat depth, estimated tokens and active arcs. Expand "Inspect harvested entries" to see the lorebook entries themselves.
 2. **Direction.** Here you choose the arc's size and say what you want:
    - **Tier**: episode, act or saga (see [Tiers](#tiers)).
-   - **Genre**: the register this arc must stay in, for example "Superhero teen drama: cape life, team bonding, romantic comedy. Institutions stay in the background." It binds both planning passes. A new arc starts with the genre of your most recent arc.
-   - **Direction**: free text about what the arc should explore, for example "I want the new team to find its feet: a first real outing, plenty of banter, and one moment where somebody has to trust a teammate they barely know."
+   - **Genre**: the register this arc must stay in, for example "High fantasy adventure: guild jobs, monsters and ruins, banter around the campfire. Dark moments, but never grimdark." It binds both planning passes. A new arc starts with the genre of your most recent arc.
+   - **Direction**: free text about what the arc should explore, for example "The party takes a job from the guild board: find out what haunts the old mill. Let it look routine at first, and let one clue point at something much bigger."
 3. **Review.** Story Arc runs the two planning passes and shows a live log. The finished plan shows its title, themes, tone, tier and estimated length openly. The premise, secrets, beats, foreshadowing, triggers and escalation are hidden behind spoiler toggles, so you can activate an arc without reading it. Choose **Activate**, **Regenerate** or **Back**.
 
 Failed requests caused by timeouts or gateway errors are retried automatically, up to two times.
@@ -99,13 +101,13 @@ The tier is the size of an arc. You choose it when you plan the arc.
 
 | Tier | Length | Beats | Use it for |
 |---|---|---|---|
-| Episode | 8–20 messages | 5–8 ordered **scene beats** | One playable unit, such as a single mission |
+| Episode | 8–20 messages | 5–8 ordered **scene beats** | One playable unit, such as a single job from the guild board |
 | Act | 60–150 messages | 3–5 **milestones** | A leg of the larger story that colours the episodes in it |
-| Saga | 400–1500 messages | 2–4 **milestones** | The overarching storyline, such as defeating the big bad |
+| Saga | 400–1500 messages | 2–4 **milestones** | The overarching storyline, such as defeating the BBEG (Big Bad Evil Guy) |
 
 Scene beats come in order. Only the current one is shown to the model, and the next one is revealed only after you have reacted to the last. Milestones are unordered: all of them stand at once, and any message can fulfil any of them.
 
-You can run several arcs at the same time, for example a saga in the background, an act in normal focus and an episode in the spotlight.
+You can run several arcs at the same time. They work best as layers, the way a TV series has episodes inside seasons inside the whole show.
 
 ### Focus
 
@@ -119,6 +121,28 @@ Focus decides how much of the model's attention an arc gets right now. You can c
 | **Spotlight** | The arc is pushed to the front. For an act or saga, its pressures move into the main block, and its secrets, triggers and foreshadowing are added. Only one arc can be in the spotlight: choosing spotlight sends the previous one back to normal. |
 
 If an act or saga keeps pulling every scene toward itself, set it to background.
+
+### Example: a fantasy campaign
+
+Your adventuring party has played for a few hundred messages. You plan three arcs, one per tier, and give each the focus it needs:
+
+| Arc | Tier | Focus | Why |
+|---|---|---|---|
+| Defeat the Lich of the Northern Wastes | Saga | Background | Defeating the BBEG takes a thousand messages and should not haunt every scene. |
+| Make a name for the party in Port Varrow | Act | Normal | Becoming a known party in the city is a slow goal that should colour every job. |
+| The Haunting at the Old Mill | Episode | Spotlight | The next job from the guild board is what you play tonight. |
+
+What the model gets from each layer:
+
+- **The saga** is only a title and an instruction to keep it off-screen. The lich stays out of scenes until your characters go looking for it or bring it up. Its milestones are coarse states of the world, such as "the party has learned the lich's true name", and they still complete when the story gets there. Its secrets stay specific: who the lich was, and what it wants.
+- **The act** puts its standing pressures into every scene, for example "the city's established parties take the best contracts and close ranks against newcomers". Its milestones, such as "the city watch knows the party by name" or "a rival party sees them as a threat", can come true during any job, the mill job included.
+- **The episode** gives the model one scene beat at a time: the frightened miller, the cold spot in the cellar, the thing behind the wall. It drives the pacing. With a single episode, normal focus does the same; spotlight matters when two episodes run at once.
+
+Then you adjust as the story moves:
+
+- When the party takes a detour to the harvest festival, you **pause** the episode. Its clock stops, and it picks up where it left off when you resume it.
+- When the BBEG should make a move, you put the **saga** in the **spotlight**. Its pressures, secrets and triggers come to the front, and the episode drops back to normal.
+- When the mill job is done, you plan the next episode. The act and the saga keep running.
 
 ### Re-planning
 

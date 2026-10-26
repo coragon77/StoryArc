@@ -267,7 +267,7 @@ export { harvestContext } from './harvester.js';
 
 ## Reference: Story Mode Extension
 
-This project was scaffolded using [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode) as a reference for SillyTavern extension patterns. A local copy is available at `/opt/sillytavern/StoryMode`. Story Mode is a mature, well-structured ST extension that handles:
+This project was scaffolded using [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode) as a reference for SillyTavern extension patterns. A local copy may sit next to this checkout at `../StoryMode`. Story Mode is a mature, well-structured ST extension that handles:
 - Blueprint-based story planning (from scratch)
 - Signal-based scene progression
 - Prompt injection for narrative guidance

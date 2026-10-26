@@ -10,7 +10,7 @@ import { chat, chat_metadata } from './mocks/st-mocks.js';
 function makeSaga(overrides = {}) {
     return {
         id: 'nest0001-full-id',
-        title: 'Nectar of the Nest-Mother',
+        title: 'The Wyrm Below the City',
         status: 'active',
         tier: 'saga',
         focus: 'background',
@@ -18,7 +18,7 @@ function makeSaga(overrides = {}) {
         lastFulfilledAt: 0,
         pausedAt: null,
         premise: 'An escaped construct has imprinted on her.',
-        genre: 'Superhero teen drama',
+        genre: 'High fantasy adventure',
         tone: '',
         themes: [],
         directives: ['Write the construct with sleek aesthetics.'],
@@ -60,7 +60,7 @@ function makeEpisode(overrides = {}) {
 describe('background section — act / saga kept off-screen', () => {
     it('prints the title and the off-screen sentence', () => {
         const text = buildInjection([makeSaga()]);
-        assert.ok(text.includes('=== BACKGROUND: "Nectar of the Nest-Mother" ===\nRuns off-screen. Leave it out of scenes — no hints, sounds or clues — unless the user\'s character goes to it or brings it up.\n'));
+        assert.ok(text.includes('=== BACKGROUND: "The Wyrm Below the City" ===\nRuns off-screen. Leave it out of scenes — no hints, sounds or clues — unless the user\'s character goes to it or brings it up.\n'));
     });
 
     it('prints no premise, genre, pressures, directives or plan lists', () => {
@@ -87,7 +87,7 @@ describe('background section — act / saga kept off-screen', () => {
             makeEpisode(),
             makeSaga({ id: 'lit00001-x', title: 'Centerfold', focus: 'spotlight' }),
         ]);
-        const background = text.indexOf('"Nectar of the Nest-Mother"');
+        const background = text.indexOf('"The Wyrm Below the City"');
         assert.ok(text.indexOf('"Centerfold"') < background);
         assert.ok(text.indexOf('"First Day"') < background);
     });

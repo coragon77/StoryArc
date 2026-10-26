@@ -119,9 +119,9 @@ stops looking and now believes something false about the codebase.
 - Tests cover pure logic only (validation, pacing, signals, templates); ST
   integration is verified by reloading the live ST instance manually.
 - StoryArc is symlinked into the ST instance at
-  `/opt/LLMS/silly_tavern/SillyTavern-Launcher/SillyTavern/public/scripts/extensions/third-party/StoryArc`
+  `<SillyTavern>/public/scripts/extensions/third-party/StoryArc`
   — edits here are live in ST on next page reload, no deploy step.
-- Reference implementation: Story Mode extension at `/opt/sillytavern/StoryMode`.
+- Reference implementation: Story Mode extension at `../StoryMode`.
 
 ------------------------------------------------------------------------
 

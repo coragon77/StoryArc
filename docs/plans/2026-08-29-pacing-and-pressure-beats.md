@@ -7,7 +7,7 @@
 
 ## Problem
 
-Live testing (Amy chat, glm-5.2:thinking + Celia V5.4 preset) showed the arc
+Live testing (test chat, glm-5.2:thinking + Celia V5.4 preset) showed the arc
 tracker running far ahead of the intended pace: 7 of 10 non-optional beats
 completed in ~8 exchanges on an arc planned for ~40 messages. Root causes,
 all verified live:
@@ -18,7 +18,7 @@ all verified live:
 2. **Multi-beat jumps.** `processSignalResults` accepts completions for
    `pending` beats, so one eager scene can burn 2-3 beats at once.
 3. **Outcome-phrased beats are solvables.** A beat written as an outcome
-   ("Amy reveals the virus") is completed in one scene and parroted into
+   ("the doctor reveals the virus") is completed in one scene and parroted into
    dialogue (exposition-head effect). This is an LLM training artifact:
    models are trained to complete visible goals ("solve"), but stories must
    meander and leave threads open.
@@ -86,7 +86,7 @@ Generation:
   intention = past-tense condition observable on screen).
 - `lib/planning/validation.js` normalizes: `pressure` optional string,
   default `''`.
-- **Backward compatibility:** existing arcs (e.g. the live Amy arc) have no
+- **Backward compatibility:** existing arcs (e.g. the live test arc) have no
   `pressure`. Builder falls back to `intention` when `pressure` is empty.
   Do not migrate stored arcs.
 

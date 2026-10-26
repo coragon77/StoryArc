@@ -12,7 +12,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-05-23-storyarc-design.md`
 
-**Reference extension:** `/opt/sillytavern/StoryMode` (structural patterns only)
+**Reference extension:** `../StoryMode` (structural patterns only)
 
 ---
 

@@ -6,18 +6,18 @@ import { latestGenre } from '../lib/planning/storage.js';
 import { mergeReplan } from '../lib/planning/replan.js';
 import { buildInjection } from '../lib/injection/builder.js';
 
-const GENRE = 'Superhero teen drama: cape life, team bonding, romantic comedy.';
+const GENRE = 'High fantasy adventure: guild jobs, monsters and ruins, banter around the campfire.';
 
 function makeArc(overrides = {}) {
     return {
         id: 'gen00001-full-id',
-        title: 'Capes and Chalk Dust',
+        title: 'The Shadow over Greymoor',
         status: 'active',
         tier: 'saga',
         focus: 'normal',
         messageStart: 0,
         genre: GENRE,
-        premise: 'Ellie joins the team.',
+        premise: 'The party joins the guild.',
         tone: '',
         themes: [],
         directives: [],
@@ -77,17 +77,17 @@ describe('prompt templates carry the genre slot', () => {
 describe('GENRE line in the injection', () => {
     it('follows the header of a normal saga', () => {
         const text = buildInjection([makeArc()]);
-        assert.ok(text.includes(`=== SAGA: "Capes and Chalk Dust" ===\nGENRE: ${GENRE}\nPREMISE: Ellie joins the team.`));
+        assert.ok(text.includes(`=== SAGA: "The Shadow over Greymoor" ===\nGENRE: ${GENRE}\nPREMISE: The party joins the guild.`));
     });
 
     it('is carried by a spotlit saga', () => {
         const text = buildInjection([makeArc({ focus: 'spotlight' })]);
-        assert.ok(text.includes(`=== SAGA: "Capes and Chalk Dust" ===\nGENRE: ${GENRE}\n`));
+        assert.ok(text.includes(`=== SAGA: "The Shadow over Greymoor" ===\nGENRE: ${GENRE}\n`));
     });
 
     it('sits above the premise of an episode', () => {
         const text = buildInjection([makeArc({ tier: 'episode', estimatedLength: 20 })]);
-        assert.ok(text.includes(`GENRE: ${GENRE}\n\nPREMISE: Ellie joins the team.`));
+        assert.ok(text.includes(`GENRE: ${GENRE}\n\nPREMISE: The party joins the guild.`));
     });
 
     it('is absent when the arc has no genre', () => {
