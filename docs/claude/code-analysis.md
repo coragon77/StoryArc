@@ -1,7 +1,3 @@
-<!-- Generated from the asol-docs skill templates. Edit at source
-     (asol-docs/templates/claude/code-analysis.md), not here — the drift report
-     flags local edits as divergence. -->
-
 # Code Analysis Guidelines
 
 Best practice for analysing a large codebase without hallucinating.

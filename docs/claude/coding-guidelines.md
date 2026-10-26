@@ -1,8 +1,3 @@
-<!-- Generated from the asol-docs skill templates. Edit at source
-     (asol-docs/templates/claude/coding-guidelines.md), not here — the drift
-     report flags local edits as divergence. Project-specific rules belong in
-     claude/onboarding.md under "Project deltas", not in this file. -->
-
 # Coding Guidelines for AI-Written Code
 
 **Read this before writing any code.** The goal: what you write must read like

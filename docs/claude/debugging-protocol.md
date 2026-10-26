@@ -1,8 +1,3 @@
-<!-- Generated from the asol-docs skill templates. Edit at source
-     (asol-docs/templates/claude/debugging-protocol.md), not here — the drift
-     report flags local edits as divergence. Project-specific debugging quirks
-     belong in claude/onboarding.md under "Project deltas". -->
-
 # Debugging Protocol
 
 **For general debugging methodology:** use the `systematic-debugging`
