@@ -206,3 +206,183 @@ describe('validateArcPlan — milestones carry a pressure (#13)', () => {
         assert.equal(arc.beats[0].pressure, '');
     });
 });
+
+describe('parseLlmJson — fences and fallbacks', () => {
+    // Lists have no braces, so the brace-extraction fallback cannot rescue a
+    // fence that was stripped wrongly: these pin the fence patterns themselves.
+    it('strips a json fence written on one line', () => {
+        assert.deepEqual(parseLlmJson('```json["a","b"]```'), ['a', 'b']);
+        assert.deepEqual(parseLlmJson('```json{"title":"x"}```'), { title: 'x' });
+    });
+
+    it('strips a json fence with newlines around a list', () => {
+        assert.deepEqual(parseLlmJson('```json\n["a"]\n```'), ['a']);
+    });
+
+    it('strips a bare fence on one line and a closing fence at the very end', () => {
+        assert.deepEqual(parseLlmJson('```["a"]```'), ['a']);
+        assert.deepEqual(parseLlmJson('```\n["a"]\n```'), ['a']);
+    });
+
+    it('returns null for braces around invalid JSON, without throwing', () => {
+        assert.equal(parseLlmJson('Here: {not json}'), null);
+    });
+});
+
+describe('validateArcPlan — required fields', () => {
+    const beats = [{ intention: 'X' }];
+
+    it('rejects null and a string as not an object', () => {
+        assert.deepEqual(validateArcPlan(null), { valid: false, arc: null, errors: ['Not a valid object'] });
+        assert.deepEqual(validateArcPlan('a plan'), { valid: false, arc: null, errors: ['Not a valid object'] });
+    });
+
+    it('rejects a plan without premise with the premise error', () => {
+        assert.deepEqual(validateArcPlan({ title: 'T', beats }), {
+            valid: false, arc: null, errors: ['Missing required field: premise'],
+        });
+    });
+
+    it('rejects beats that are missing, empty or not a list', () => {
+        const beatsError = { valid: false, arc: null, errors: ['Missing required field: beats (must be non-empty array)'] };
+        assert.deepEqual(validateArcPlan({ title: 'T', premise: 'P' }), beatsError);
+        assert.deepEqual(validateArcPlan({ title: 'T', premise: 'P', beats: [] }), beatsError);
+        assert.deepEqual(validateArcPlan({ title: 'T', premise: 'P', beats: 'x' }), beatsError);
+    });
+
+    it('lists every missing field at once', () => {
+        assert.deepEqual(validateArcPlan({}).errors, [
+            'Missing required field: title',
+            'Missing required field: premise',
+            'Missing required field: beats (must be non-empty array)',
+        ]);
+    });
+});
+
+describe('validateArcPlan — defaults for optional fields', () => {
+    it('gives tone and escalation an empty string and every list field []', () => {
+        const { arc } = validateArcPlan({ title: 'T', premise: 'P', beats: [{ intention: 'X' }] });
+        assert.equal(arc.tone, '');
+        assert.equal(arc.escalation, '');
+        assert.deepEqual(arc.themes, []);
+        assert.deepEqual(arc.directives, []);
+        assert.deepEqual(arc.antiPatterns, []);
+        assert.deepEqual(arc.characters, []);
+        assert.deepEqual(arc.secrets, []);
+        assert.deepEqual(arc.foreshadowing, []);
+        assert.deepEqual(arc.triggers, []);
+    });
+
+    it('wraps a single string into a one-item list', () => {
+        const { arc } = validateArcPlan({
+            title: 'T', premise: 'P', beats: [{ intention: 'X' }],
+            directives: 'one', themes: 'loss', characters: 'Mara',
+        });
+        assert.deepEqual(arc.directives, ['one']);
+        assert.deepEqual(arc.themes, ['loss']);
+        assert.deepEqual(arc.characters, ['Mara']);
+    });
+
+    it('passes tone and escalation through', () => {
+        const { arc } = validateArcPlan({
+            title: 'T', premise: 'P', beats: [{ intention: 'X' }], tone: 'grim', escalation: 'It gets worse.',
+        });
+        assert.equal(arc.tone, 'grim');
+        assert.equal(arc.escalation, 'It gets worse.');
+    });
+});
+
+describe('validateArcPlan — beat normalization', () => {
+    const beatOf = (beat) => validateArcPlan({ title: 'T', premise: 'P', beats: [beat] }).arc.beats[0];
+
+    it('fills flexibility, urgency, phase and optional with their defaults', () => {
+        assert.deepEqual(beatOf({ intention: 'X' }), {
+            id: 'beat_1',
+            pressure: '',
+            intention: 'X',
+            flexibility: '',
+            urgency: 'when-ready',
+            status: 'active',
+            unlockAfter: [],
+            phase: 'development',
+            optional: false,
+        });
+    });
+
+    it('passes given values through unchanged', () => {
+        assert.deepEqual(beatOf({
+            id: 'b_door', pressure: 'Knocking.', intention: 'X', flexibility: 'any room',
+            urgency: 'soon', status: 'pending', unlockAfter: ['b_0'], phase: 'climax', optional: true,
+        }), {
+            id: 'b_door',
+            pressure: 'Knocking.',
+            intention: 'X',
+            flexibility: 'any room',
+            urgency: 'soon',
+            status: 'pending',
+            unlockAfter: ['b_0'],
+            phase: 'climax',
+            optional: true,
+        });
+    });
+
+    it('uses description as the intention when intention is missing', () => {
+        assert.equal(beatOf({ description: 'She has left town.' }).intention, 'She has left town.');
+    });
+
+    it('gives a beat with neither intention nor description an empty intention', () => {
+        assert.equal(beatOf({ pressure: 'Rain.' }).intention, '');
+    });
+});
+
+describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
+    const arcOf = (extra) => validateArcPlan({ title: 'T', premise: 'P', beats: [{ intention: 'X' }], ...extra }).arc;
+
+    it('turns a plain-string secret into a secret with that content', () => {
+        assert.deepEqual(arcOf({ secrets: ['The duke is alive.'] }).secrets, [
+            { id: 'secret_1', content: 'The duke is alive.', revealPhase: 'any', disclosed: false },
+        ]);
+    });
+
+    it('accepts reveal_phase, defaults the reveal phase to any and always starts undisclosed', () => {
+        assert.deepEqual(arcOf({
+            secrets: [
+                { id: 's_a', content: 'A', reveal_phase: 'climax', disclosed: true },
+                { content: 'B', revealPhase: 'opening' },
+                { content: 'C' },
+            ],
+        }).secrets, [
+            { id: 's_a', content: 'A', revealPhase: 'climax', disclosed: false },
+            { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false },
+            { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false },
+        ]);
+    });
+
+    it('gives a secret object without content an empty content', () => {
+        assert.equal(arcOf({ secrets: [{ revealPhase: 'any' }] }).secrets[0].content, '');
+    });
+
+    it('fills missing clue and target with "", passes given ones and starts unplanted', () => {
+        assert.deepEqual(arcOf({
+            foreshadowing: [
+                { id: 'f_a', clue: 'Ink smells of almonds.', target: 'secret_1', planted: true },
+                {},
+            ],
+        }).foreshadowing, [
+            { id: 'f_a', clue: 'Ink smells of almonds.', target: 'secret_1', planted: false },
+            { id: 'foreshadow_2', clue: '', target: '', planted: false },
+        ]);
+    });
+
+    it('fills missing condition and action with "", passes given ones and starts unfired', () => {
+        assert.deepEqual(arcOf({
+            triggers: [
+                { id: 't_a', condition: 'if she flees', action: 'the guard follows', fired: true },
+                {},
+            ],
+        }).triggers, [
+            { id: 't_a', condition: 'if she flees', action: 'the guard follows', fired: false },
+            { id: 'trigger_2', condition: '', action: '', fired: false },
+        ]);
+    });
+});

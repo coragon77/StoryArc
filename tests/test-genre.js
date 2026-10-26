@@ -108,6 +108,11 @@ describe('latestGenre', () => {
         assert.equal(latestGenre(arcs), 'Cozy mystery');
     });
 
+    it('returns the genre of the first arc when it is the only arc that has one', () => {
+        assert.equal(latestGenre([{ genre: 'Space opera' }, {}, { genre: '' }]), 'Space opera');
+        assert.equal(latestGenre([{ genre: 'Space opera' }]), 'Space opera');
+    });
+
     it('returns an empty string when no arc has a genre', () => {
         assert.equal(latestGenre([]), '');
         assert.equal(latestGenre([{}, { genre: '' }]), '');

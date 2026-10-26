@@ -148,6 +148,55 @@ describe('mergeReplan', () => {
         assert.equal(merged.secrets[2].disclosed, false);
     });
 
+    it('drops a generated secret that differs from an existing one only in case or surrounding spaces', () => {
+        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }] };
+        const generated = { ...generatedPlan(), secrets: [{ id: 'secret_1', content: 'the duke is ALIVE  ', revealPhase: 'any', disclosed: false }] };
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets, [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }]);
+    });
+
+    it('gives two generated beats with the same id distinct ids', () => {
+        const generated = {
+            ...generatedPlan(),
+            beats: [
+                { id: 'beat_x', intention: 'First.', unlockAfter: [] },
+                { id: 'beat_x', intention: 'Second.', unlockAfter: [] },
+            ],
+        };
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.beats.map(b => b.id), ['beat_1', 'beat_2', 'beat_x', 'beat_x_2']);
+    });
+
+    it('skips a suffix that a kept beat already holds, and unlockAfter follows the rename', () => {
+        const existing = {
+            ...storedEpisode(),
+            beats: [
+                { id: 'beat_1', intention: 'Kept one.', status: 'completed', unlockAfter: [] },
+                { id: 'beat_1_2', intention: 'Kept two.', status: 'completed', unlockAfter: [] },
+            ],
+        };
+        const generated = {
+            ...generatedPlan(),
+            beats: [
+                { id: 'beat_1', intention: 'New one.', unlockAfter: [] },
+                { id: 'beat_9', intention: 'New two.', unlockAfter: ['beat_1'] },
+            ],
+        };
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.beats.map(b => b.id), ['beat_1', 'beat_1_2', 'beat_1_3', 'beat_9']);
+        assert.deepEqual(merged.beats[3].unlockAfter, ['beat_1_3']);
+    });
+
+    it('gives a generated beat without unlockAfter an empty list', () => {
+        const generated = { ...generatedPlan(), beats: [{ id: 'beat_9', intention: 'New.' }] };
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.beats[2].unlockAfter, []);
+    });
+
     it('re-planning as an act yields milestones all active and tier act', () => {
         const merged = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
 
@@ -231,6 +280,39 @@ describe('buildArcSoFar', () => {
 
         assert.match(text, /already happened/i);
         assert.doesNotMatch(text, /She has received the summons\./);
+        assert.ok(text.endsWith('do not plan these again):\n(nothing yet — the arc is being re-planned from its start)\n\n'));
+    });
+
+    it('prints one "- " line per secret and per fulfilled beat, under their headers', () => {
+        const text = buildArcSoFar(storedEpisode());
+
+        assert.ok(text.includes(
+            'Secrets already established (do not restate, only add):\n'
+            + '- The creditor is her brother.\n'
+            + '- The ledger is forged.\n'
+            + '\n'
+            + 'Escalation so far: old escalation\n',
+        ));
+        assert.ok(text.endsWith(
+            'Already happened (fulfilled beats — do not plan these again):\n'
+            + '- She has received the summons.\n'
+            + '- She has confronted the messenger.\n'
+            + '\n',
+        ));
+    });
+
+    it('says (none) without secrets and (none recorded) without escalation', () => {
+        const text = buildArcSoFar({ ...storedEpisode(), secrets: [], escalation: '' });
+
+        assert.ok(text.includes('only add):\n(none)\n\nEscalation so far: (none recorded)\n'));
+    });
+
+    it('opens with the header, the re-planning instruction and the premise', () => {
+        const text = buildArcSoFar(storedEpisode());
+
+        assert.ok(text.startsWith('== ARC SO FAR ==\nYou are RE-PLANNING an arc that is already running'));
+        assert.ok(text.includes('your "secrets" output may only ADD new ones'));
+        assert.ok(text.includes('\n\nPremise: A debt comes due.\n\n'));
     });
 });
 

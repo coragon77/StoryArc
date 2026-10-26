@@ -52,6 +52,8 @@ describe('buildTierBlock', () => {
         assert.ok(text.includes('8 and 20'));
         assert.ok(/scene beat/i.test(text));
         assert.equal(/milestone/i.test(text), false);
+        assert.ok(text.includes('This arc is an EPISODE: one playable, resolvable unit of the story'));
+        assert.ok(text.includes('- unlockAfter is allowed and welcome'));
     });
 
     it('act: milestones, 3-5 of them, 60-150 messages, no unlockAfter, no scene-bound fulfillment', () => {
@@ -62,6 +64,11 @@ describe('buildTierBlock', () => {
         assert.ok(/milestone/i.test(text));
         assert.ok(text.includes('unlockAfter'));
         assert.ok(text.includes('revealPhase'));
+        assert.ok(text.includes('This arc is an ACT: one leg of the larger story'));
+        assert.equal(text.includes('SAGA'), false);
+        assert.equal(text.includes('whole roleplay'), false);
+        assert.ok(text.includes('pressure is a standing force in the world'));
+        assert.ok(text.includes('names a STATE the story has reached'));
     });
 
     it('saga: milestones, 2-4 of them, 400-1500 messages', () => {
@@ -69,6 +76,27 @@ describe('buildTierBlock', () => {
         assert.ok(text.includes('SAGA'));
         assert.ok(text.includes('2-4'));
         assert.ok(text.includes('400 and 1500'));
+        assert.ok(text.includes('This arc is a SAGA: the overarching storyline of this whole roleplay'));
+        assert.equal(text.includes('an ACT'), false);
+        assert.equal(text.includes('one leg of the larger story'), false);
+    });
+
+    it('starts with an upper-case tier header line', () => {
+        assert.ok(buildTierBlock('episode').startsWith('== TIER: EPISODE ==\n'));
+        assert.ok(buildTierBlock('act').startsWith('== TIER: ACT ==\n'));
+        assert.ok(buildTierBlock('saga').startsWith('== TIER: SAGA ==\n'));
+    });
+
+    it('keeps one instruction per line, each "- " bullet after the header and the scale line, ending in a newline', () => {
+        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 7 bullets
+        for (const [tier, bulletCount] of [['episode', 4], ['act', 7], ['saga', 7]]) {
+            const text = buildTierBlock(tier);
+            assert.ok(text.endsWith('.\n'), tier);
+            const lines = text.slice(0, -1).split('\n');
+            assert.equal(lines.length, 2 + bulletCount, tier);
+            assert.ok(lines[1].startsWith('This arc is '), tier);
+            assert.ok(lines.slice(2).every(line => line.startsWith('- ')), tier);
+        }
     });
 
     it('asks the model to echo the tier into the JSON', () => {

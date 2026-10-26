@@ -70,13 +70,45 @@ describe('applyArcEdit', () => {
         assert.match(error, /^Not valid JSON: /);
     });
 
-    it('rejects a JSON list', () => {
-        assert.equal(applyArcEdit(storedArc(), '[]').error, 'The arc must be a JSON object.');
+    it('rejects a JSON list, number, null or string', () => {
+        assert.deepEqual(applyArcEdit(storedArc(), '[]'), { arc: null, error: 'The arc must be a JSON object.' });
+        assert.deepEqual(applyArcEdit(storedArc(), '42'), { arc: null, error: 'The arc must be a JSON object.' });
+        assert.deepEqual(applyArcEdit(storedArc(), 'null'), { arc: null, error: 'The arc must be a JSON object.' });
+        assert.deepEqual(applyArcEdit(storedArc(), '"an arc"'), { arc: null, error: 'The arc must be a JSON object.' });
     });
 
     it('rejects an empty title or premise', () => {
         assert.equal(applyArcEdit(storedArc(), JSON.stringify({ ...storedArc(), title: ' ' })).error, 'title cannot be empty.');
         assert.equal(applyArcEdit(storedArc(), JSON.stringify({ ...storedArc(), premise: '' })).error, 'premise cannot be empty.');
+    });
+
+    it('rejects a missing title and a premise of only spaces', () => {
+        const withoutTitle = { ...storedArc() };
+        delete withoutTitle.title;
+        assert.deepEqual(applyArcEdit(storedArc(), JSON.stringify(withoutTitle)), { arc: null, error: 'title cannot be empty.' });
+        assert.deepEqual(applyArcEdit(storedArc(), JSON.stringify({ ...storedArc(), premise: '   ' })), { arc: null, error: 'premise cannot be empty.' });
+    });
+
+    it('rejects a beat without id and a null beat', () => {
+        const withoutId = { ...storedArc(), beats: [{ intention: 'She has read it.', unlockAfter: [] }] };
+        assert.deepEqual(applyArcEdit(storedArc(), JSON.stringify(withoutId)), { arc: null, error: 'Every beat needs an id.' });
+        const nullBeat = { ...storedArc(), beats: [null] };
+        assert.deepEqual(applyArcEdit(storedArc(), JSON.stringify(nullBeat)), { arc: null, error: 'Every beat needs an id.' });
+    });
+
+    it('rejects a beat whose intention is missing or only spaces', () => {
+        const blank = { ...storedArc(), beats: [{ id: 'beat_1', intention: '   ', unlockAfter: [] }] };
+        assert.equal(applyArcEdit(storedArc(), JSON.stringify(blank)).error, 'Beat "beat_1": "Fulfilled when" cannot be empty.');
+        const missing = { ...storedArc(), beats: [{ id: 'beat_1', unlockAfter: [] }] };
+        assert.equal(applyArcEdit(storedArc(), JSON.stringify(missing)).error, 'Beat "beat_1": "Fulfilled when" cannot be empty.');
+    });
+
+    it('rejects a milestone whose pressure is only spaces and accepts one with a pressure', () => {
+        const stored = { ...storedArc(), tier: 'act' };
+        const blank = { ...stored, beats: [{ id: 'm_1', pressure: '   ', intention: 'Done.', unlockAfter: [] }] };
+        assert.equal(applyArcEdit(stored, JSON.stringify(blank)).error, 'Beat "m_1": A milestone needs a pressure.');
+        const filled = { ...stored, beats: [{ id: 'm_1', pressure: 'Rations shrink.', intention: 'Done.', unlockAfter: [] }] };
+        assert.equal(applyArcEdit(stored, JSON.stringify(filled)).error, null);
     });
 
     it('rejects a list field that is not a list', () => {
@@ -129,6 +161,10 @@ describe('checkBeatEdit', () => {
 
     it('treats an arc without a tier as an episode', () => {
         assert.equal(checkBeatEdit(undefined, { pressure: '', intention: 'She has left.' }), null);
+    });
+
+    it('treats an unknown tier as an episode and does not throw', () => {
+        assert.equal(checkBeatEdit('campaign', { pressure: '', intention: 'She has left.' }), null);
     });
 });
 
@@ -192,6 +228,51 @@ describe('removeBeat', () => {
             { id: 'beat_1', status: 'completed', unlockAfter: [] },
             { id: 'beat_3', status: 'locked', unlockAfter: ['beat_1'] },
             { id: 'beat_4', status: 'locked', unlockAfter: [] },
+        ]);
+    });
+
+    it('leaves completed, active and pending beats alone even when they waited for the deleted beat', () => {
+        const beats = [
+            { id: 'beat_1', status: 'pending', unlockAfter: [] },
+            { id: 'beat_2', status: 'completed', unlockAfter: ['beat_1'] },
+            { id: 'beat_3', status: 'active', unlockAfter: ['beat_1'] },
+            { id: 'beat_4', status: 'pending', unlockAfter: ['beat_1'] },
+        ];
+        assert.deepEqual(removeBeat(beats, 'beat_1'), [
+            { id: 'beat_2', status: 'completed', unlockAfter: [] },
+            { id: 'beat_3', status: 'active', unlockAfter: [] },
+            { id: 'beat_4', status: 'pending', unlockAfter: [] },
+        ]);
+    });
+
+    it('checks each remaining prerequisite by its own id, not the first beat in the list', () => {
+        // beat_1 is completed and comes first; beat_3 is the open prerequisite.
+        const beats = [
+            { id: 'beat_1', status: 'completed', unlockAfter: [] },
+            { id: 'beat_2', status: 'pending', unlockAfter: [] },
+            { id: 'beat_3', status: 'active', unlockAfter: [] },
+            { id: 'beat_4', status: 'locked', unlockAfter: ['beat_2', 'beat_3'] },
+        ];
+        assert.deepEqual(removeBeat(beats, 'beat_2')[2], { id: 'beat_4', status: 'locked', unlockAfter: ['beat_3'] });
+    });
+
+    it('keeps a beat locked when a remaining prerequisite id names no beat, without throwing', () => {
+        const beats = [
+            { id: 'beat_1', status: 'pending', unlockAfter: [] },
+            { id: 'beat_2', status: 'locked', unlockAfter: ['beat_1', 'beat_gone'] },
+        ];
+        assert.deepEqual(removeBeat(beats, 'beat_1'), [
+            { id: 'beat_2', status: 'locked', unlockAfter: ['beat_gone'] },
+        ]);
+    });
+
+    it('gives a beat without an unlockAfter field an empty list, without throwing', () => {
+        const beats = [
+            { id: 'beat_1', status: 'pending' },
+            { id: 'beat_2', status: 'locked' },
+        ];
+        assert.deepEqual(removeBeat(beats, 'beat_1'), [
+            { id: 'beat_2', status: 'locked', unlockAfter: [] },
         ]);
     });
 
