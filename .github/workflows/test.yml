@@ -8,8 +8,19 @@ on:
 jobs:
   unit:
     runs-on: ubuntu-latest
+    env:
+      SILLYTAVERN_SCRIPTS_DIR: ${{ github.workspace }}/sillytavern/public/scripts
     steps:
       - uses: actions/checkout@v7
+      # The direct-backend stream tests load SillyTavern's real sse-stream.js;
+      # without it test-generator.js skips that suite.
+      - uses: actions/checkout@v7
+        with:
+          repository: SillyTavern/SillyTavern
+          ref: release
+          path: sillytavern
+          sparse-checkout: public/scripts/sse-stream.js
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
