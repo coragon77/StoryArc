@@ -166,6 +166,15 @@ live ST state needs the running ST instance. Adding a new ST import to a module
 under test requires a matching mock export, or the loader run fails at import
 resolution.
 
+GitHub Actions (`.github/workflows/test.yml`) runs `./tests/run.sh` on Node 24
+on every push to `main` and every pull request. It also checks out
+`public/scripts/sse-stream.js` from SillyTavern's `release` branch and points
+`SILLYTAVERN_SCRIPTS_DIR` at it, because `tests/test-generator.js` skips the
+direct-backend stream suite without that file. A red run with no StoryArc
+change can therefore come from a change to `sse-stream.js` upstream.
+`tests/smoke.sh` needs the live ST instance and does not run in CI. `main`
+rejects force-pushes and deletion (ruleset "Protect main"); normal pushes work.
+
 ------------------------------------------------------------------------
 
 ## Localization

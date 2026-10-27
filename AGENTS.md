@@ -260,7 +260,7 @@ Key differences from Story Mode:
 
 ### Issue tracker
 
-Issues live in GitHub (github.com/coragon77/StoryArc, private), driven with `gh`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub (github.com/coragon77/StoryArc, public), driven with `gh`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
