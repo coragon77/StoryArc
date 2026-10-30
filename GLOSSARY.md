@@ -91,7 +91,7 @@ _Avoid_: signal, tracking, advancement
 A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Never regenerated on re-plan.
 
 **Trigger**:
-A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger may be tied to one secret; it then stays out of the prompt until that secret is shown.
+A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied.
 _Avoid_: event, hook
 
 **Divergence**:

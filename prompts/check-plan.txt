@@ -28,7 +28,7 @@ Direction: {{DIRECTION}}
 - The facts of a revealed secret, or of a secret listed as disclosed, are no longer hidden. Stating them is fine.
 - "text" is the replacement for the action alone (the part after →) or for the pressure alone. Never repeat the IF condition.
 
-3. LINKS. For each trigger whose condition or action concerns a secret, give the one secret it concerns most.
+3. LINKS. A linked trigger stays hidden from the narrator until its secret's phase, so link sparingly. Link a trigger only when it belongs to the moment a secret comes out: before then it makes no sense, or even after your rewrite it would point at the secret. A trigger that only shows a character reacting to suspicion or pressure gets no link, whatever secret explains the reaction.
 
 Answer with ONLY this JSON object, no prose before or after it:
 {
