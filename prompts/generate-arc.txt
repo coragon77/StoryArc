@@ -41,6 +41,8 @@ The `intention` is the fulfillment condition: what has ALREADY HAPPENED on scree
 
 This split exists because the narrating AI only ever sees the pressure. Show it a goal and it drives straight at the goal, resolving in two messages what should take fifteen. Show it weather and it writes the scene the weather produces. Write pressures that could plausibly persist for many scenes without resolving.
 
+A pressure never states what a secret contains. If the secret is that the quartermaster sells supplies to the Syndicate, "Supplies keep coming up short in ways nobody can quite account for" is a pressure; "The quartermaster's sales to the Syndicate are draining the stores" hands the narrating AI the answer, and it will put that answer in a character's mouth.
+
 4. ANTI-PATTERNS ARE CRITICAL
 The single biggest failure mode is the AI rushing to resolution. Your anti-patterns must explicitly address this. What should the AI NOT do? "Do not reveal the traitor's identity before the escalation phase." "Do not resolve the romantic tension -- let it simmer." "Do not let combat encounters end cleanly -- every fight should have consequences and complications." Anti-patterns are your guardrails against lazy storytelling.
 
@@ -127,7 +129,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
     }
   ],
 
-  "characters": ["List of named characters central to this arc. Include both existing characters from the story and any new characters you are introducing. For new characters, their identity and role should be clear from the secrets and beats."],
+  "characters": ["List of named characters central to this arc. Include both existing characters from the story and any new characters you are introducing. Spell existing characters' names exactly as the story does, everywhere in the plan. For new characters, their identity and role should be clear from the secrets and beats."],
 
   "estimatedLength": 40
 }
@@ -160,6 +162,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - Good triggers watch for: player investigating something specific, characters reaching emotional breaking points, NPCs being confronted, certain locations being visited, certain topics being discussed.
 - Trigger actions should be proportional and narratively organic, not plot-device explosions.
 - A trigger action describes what characters do, never what a secret is. When a trigger touches a secret, name only the visible reaction (composure cracks, a deflection, a lie, a hasty exit) and leave the secret's content out. The AI reads every trigger action each message; an action that names the hidden truth gets narrated as a confession the first time the condition is near.
+- The action also stops at the reaction. No payoff after it: not "creating an opening to flip her", not "giving the player the evidence". What the player makes of the reaction is the player's move; an action that names the payoff gets played out in the same message.
 
 == ESTIMATED LENGTH ==
 
@@ -171,7 +174,9 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] If a GENRE block is given: every pressure, secret, trigger and clue reads as that genre, and the arc delivers what readers of that genre come for
 - [ ] Every secret has a SPECIFIC, COMPLETE answer (not "someone is hiding something")
 - [ ] Every foreshadowing entry points to a specific secret or beat
-- [ ] No trigger action states the content of a secret -- it names the reaction only
+- [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only
+- [ ] No `pressure` states the content of a secret
+- [ ] Existing characters are named exactly as the story names them
 - [ ] Every beat has both a `pressure` (a force with no completion state) and an `intention` (a past-tense fulfillment condition)
 - [ ] No `pressure` reads as an objective, a task, or something to be achieved
 - [ ] Scene beats only: at least one breather beat advances no plot
