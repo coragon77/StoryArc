@@ -423,8 +423,14 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
                 {},
             ],
         }).triggers, [
-            { id: 't_a', condition: 'if she flees', action: 'the guard follows', fired: false },
-            { id: 'trigger_2', condition: '', action: '', fired: false },
+            { id: 't_a', condition: 'if she flees', action: 'the guard follows', secret: '', fired: false },
+            { id: 'trigger_2', condition: '', action: '', secret: '', fired: false },
         ]);
+    });
+
+    it('keeps the id of the secret a trigger touches', () => {
+        assert.equal(arcOf({
+            triggers: [{ id: 't_a', condition: 'if pressed', action: 'she deflects', secret: 'brother_leash' }],
+        }).triggers[0].secret, 'brother_leash');
     });
 });

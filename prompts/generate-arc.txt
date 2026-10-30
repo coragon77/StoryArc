@@ -125,7 +125,8 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
     {
       "id": "short_descriptive_slug",
       "condition": "A narrative condition the AI should watch for. Written as a natural language 'if' statement that the AI can evaluate contextually. Example: 'If any character directly accuses Voss of disloyalty in his presence' or 'If the new teammate's power misfires in front of the whole team' or 'If the supply situation becomes desperate enough that characters consider theft or violence.'",
-      "action": "What should happen when the condition is met. Example: 'Voss reacts with disproportionate anger and defensiveness, then withdraws. In his next scene alone, show him making a covert communication.' or 'The Syndicate takes advantage of the split to approach the weaker group with an offer.'"
+      "action": "What should happen when the condition is met. Example: 'Voss reacts with disproportionate anger and defensiveness, then withdraws. In his next scene alone, show him making a covert communication.' or 'The Syndicate takes advantage of the split to approach the weaker group with an offer.'",
+      "secret": "The id of the secret this trigger touches, or \"\" when it touches none. A trigger tied to a secret stays out of the narrating AI's view until that secret's revealPhase."
     }
   ],
 

@@ -603,3 +603,55 @@ describe('prefix-cache stability', () => {
         }
     });
 });
+
+describe('triggers tied to a secret', () => {
+    const escalationSecret = { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: false };
+    const linkedTrigger = { id: 'pressed_alone', condition: 'she is pressed alone', action: 'her composure cracks', secret: 'brother_leash', fired: false };
+    const plainTrigger = { id: 'door_opens', condition: 'the door opens', action: 'the cold rushes in', secret: '', fired: false };
+
+    /** Setup phase: no beat completed, no messages. */
+    function setupArc(overrides = {}) {
+        return makeArc({ secrets: [escalationSecret], triggers: [linkedTrigger, plainTrigger], ...overrides });
+    }
+
+    /** Escalation phase: one of two beats done (0.5) and 20 of 40 messages (0.5). */
+    function inEscalation(arc, fn) {
+        arc.beats[0].status = 'completed';
+        arc.beats[1].status = 'active';
+        return withChatLength(20, () => fn(arc));
+    }
+
+    it('hides the trigger while its secret is hidden, in the plan and in the plant check', () => {
+        const plan = withChatLength(0, () => buildInjection([setupArc()]));
+        const signal = withChatLength(0, () => buildSignalInjection([setupArc()]));
+
+        assert.equal(plan.includes('her composure cracks'), false);
+        assert.ok(plan.includes('- IF the door opens → the cold rushes in'));
+        assert.equal(signal.includes('pressed_alone'), false);
+        assert.ok(signal.includes(':door_opens:FIRED]'));
+    });
+
+    it('shows the trigger once its secret\'s phase is reached', () => {
+        const plan = inEscalation(setupArc(), arc => buildInjection([arc]));
+        const signal = inEscalation(setupArc(), arc => buildSignalInjection([arc]));
+
+        assert.ok(plan.includes('- IF she is pressed alone → her composure cracks'));
+        assert.ok(signal.includes(':pressed_alone:FIRED]'));
+    });
+
+    it('shows the trigger once its secret is disclosed, whatever the phase', () => {
+        const arc = setupArc({ secrets: [{ ...escalationSecret, disclosed: true }] });
+
+        const plan = withChatLength(0, () => buildInjection([arc]));
+
+        assert.ok(plan.includes('- IF she is pressed alone → her composure cracks'));
+    });
+
+    it('shows a trigger whose secret id matches no secret — bad data never hides a trigger', () => {
+        const arc = setupArc({ triggers: [{ ...linkedTrigger, secret: 'no_such_secret' }] });
+
+        const plan = withChatLength(0, () => buildInjection([arc]));
+
+        assert.ok(plan.includes('- IF she is pressed alone → her composure cracks'));
+    });
+});
