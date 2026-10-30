@@ -169,6 +169,8 @@ Story Arc reads the lorebook entries SillyTavern itself would scan for the chat:
 
 ## How it works
 
+In a long RP the narrator model has no idea where the story is going. So it improvises, invents mysteries without answers, and resolves every tension in two or three messages. Story Arc acts as an automated dungeon master. It reads the story, writes a novelist's plan for what comes next, and slips that plan into the narrator's prompt, while you stay a player who gets surprised. The rule that makes this work is "Starve the solver". The narrator gets facts and forces, never a goal or an outcome, because a visible goal gets solved. In one line: prompt clauses steer, but only withholding information guarantees. In that frame, a leaked secret and a rushed scene are the same failure: the narrator was shown an outcome and went straight for it.
+
 Story Arc sets two prompt injections before every generation:
 
 - **The plan** (inside the prompt, before the chat history): one section per active arc, chosen by its tier and focus. It is capped at about **3000 tokens**. If it is larger, whole list lines are dropped from the end, and the pacing rules and the spotlight arc are kept.
