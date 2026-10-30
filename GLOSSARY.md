@@ -90,6 +90,10 @@ _Avoid_: signal, tracking, advancement
 **Secret**:
 A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Never regenerated on re-plan.
 
+**Trigger**:
+A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger may be tied to one secret; it then stays out of the prompt until that secret is shown.
+_Avoid_: event, hook
+
 **Divergence**:
 The story having moved past the state an episode's remaining scene beats assume, so they can no longer be fulfilled. Cannot happen to milestones.
 _Avoid_: derail, drift

@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-10-26
+- **Last Updated:** 2026-10-30
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -24,7 +24,10 @@ StoryArc/
 │   │                           #   length band ("Scene beats only" tags the episode-only
 │   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; renders enabled
 │   │                           #   arc directives as a STANDING CONSTRAINTS section
-│   └── detail-pass.txt         # Phase 3 prompt: expand beats and foreshadowing (deferred)
+│   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
+│   │                           #   and pressures, list revealed secrets (re-plan),
+│   │                           #   link triggers to secrets; answers JSON (ADR-0006)
+│   └── detail-pass.txt         # Old detail-pass draft (not loaded)
 ├── lib/
 │   ├── core/
 │   │   ├── constants.js        # MODULE_NAME, INJECTION_HEADER, defaultSettings,
@@ -41,6 +44,8 @@ StoryArc/
 │   ├── context/
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
 │   │   │                       #   returns HarvestedContext object;
+│   │   │                       #   selectStoryMessages() (private) drops messages
+│   │   │                       #   naming plan ids, the injection header or markers;
 │   │   │                       #   fetchLorebookEntries(), filterAndSort(),
 │   │   │                       #   categorizeEntries() — read World Info entries,
 │   │   │                       #   classify into constants / arcSummaries / recent;
@@ -55,7 +60,9 @@ StoryArc/
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
 │   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
-│   │   │                       #   returns mergeReplan(reviseArc, arc);
+│   │   │                       #   merges with mergeReplan(reviseArc, arc), then
+│   │   │                       #   runPlanCheck() (Phase 3) with the exported
+│   │   │                       #   buildPlanCheckVariables() / applyPlanCheck();
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId) marks the
 │   │   │                       #   re-planned arc in phase 1, omits it in phase 2;
 │   │   │                       #   callViaProfile() streams via
@@ -265,6 +272,7 @@ StoryArc/
 │   │                           #   by tier × focus + signal directive (recognition
 │   │                           #   phrasing, linger survival, paused arcs skipped)
 │   │                           #   + section order and line-boundary trimming
+│   │                           #   + triggers tied to a secret (hidden until shown)
 │   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
 │   │                           #   blocks byte-identical as messages accumulate)
 │   ├── test-arc-edit.js        # Tests: applyArcEdit (kept fields, save checks) +
@@ -296,7 +304,13 @@ StoryArc/
 │   ├── test-tier.js            # Tests: buildTierBlock per tier, milestone section
 │   │                           #   (normal focus; pressure-less milestone skipped),
 │   │                           #   progress widget milestone label
-│   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast)
+│   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast);
+│   │                           #   generateArc stream routes, plan check applied or
+│   │                           #   skipped on an unreadable answer
+│   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
+│   │                           #   only, links, echoed IF line) + buildPlanCheckVariables
+│   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
+│   │                           #   the injection header or markers, keeps OOC direction
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
 │   │                           #   templates, GENRE: line per section, latestGenre,
 │   │                           #   mergeReplan keeps the edited genre
@@ -310,15 +324,17 @@ StoryArc/
 │   │                           #   (active-only completion, one per arc per message,
 │   │                           #   locked-beat rejection) + promoteNextBeats
 │   │                           #   + milestones (all active, any order)
-│   │                           #   + scrubArcInternals
+│   │                           #   + scrubArcInternals (incl. secret ids)
 │   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution
 │   └── test-validation.js      # Tests: parseLlmJson + validateArcPlan incl. tier
 │                               #   (default, milestone activation, band clamp,
 │                               #   pressure-less milestone rejected)
 ├── CONTEXT.md                  # Glossary — the words for tier, focus, beats, recognition
 └── docs/
-    ├── adr/                    # Decision records 0001–0003 (tier/focus split,
-    │                           #   spotlight names no target, re-plan keeps the situation)
+    ├── adr/                    # Decision records 0001–0006 (tier/focus split,
+    │                           #   spotlight names no target, re-plan keeps the situation,
+    │                           #   genre binds generation, marks wait for a prompt change,
+    │                           #   plans are checked for give-aways)
     ├── architecture/
     │   ├── architecture.md     # System design documentation
     │   ├── code-index.md       # This file
@@ -342,7 +358,8 @@ lib/core/
 
 lib/context/
 ├── chat-history.js  (imports: /script.js)
-└── harvester.js     (imports: chat-history.js, planning/storage.js, /script.js,
+└── harvester.js     (imports: chat-history.js, planning/storage.js,
+                      injection/signals.js arcInternalIds, core/constants.js, /script.js,
                       /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
