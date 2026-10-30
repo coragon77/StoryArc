@@ -122,6 +122,16 @@ describe('scrubArcInternals', () => {
         assert.equal(chat[0].mes, 'The sensory bleed hit her hard.\n\n<!--\n… beat COMPLETE. Next: … begins (arc …).\n-->');
     });
 
+    it('removes leaked secret ids too — an OOC analysis once named one beside its content', () => {
+        global.$ = () => ({ length: 0 });
+        chat.length = 0;
+        chat.push({ mes: '- **Apex** has gauntlets with an unauthorized tether (secret: scrimmage_collar_trophy_gambit)' });
+
+        scrubArcInternals(0, [{ id: '46fcef53-aaaa-bbbb', beats: [], secrets: [{ id: 'scrimmage_collar_trophy_gambit' }] }]);
+
+        assert.equal(chat[0].mes, '- **Apex** has gauntlets with an unauthorized tether (secret: …)');
+    });
+
     it('leaves plain-word beat ids alone — they are indistinguishable from prose', () => {
         global.$ = () => ({ length: 0 });
         chat.length = 0;
