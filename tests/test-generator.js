@@ -106,6 +106,7 @@ function installFetch(backendReplies) {
     globalThis.fetch = async (url, init) => {
         if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
         if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE FROM: {{PHASE1_ANALYSIS}}');
+        if (String(url).endsWith('check-plan.txt')) return new Response('CHECK: {{TRIGGERS}}');
         backendRequests.push(JSON.parse(init.body));
         return new Response(streamOfChunks(backendReplies.shift()));
     };
@@ -170,5 +171,47 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
 
         assert.equal(result.arc, null);
         assert.match(result.error, /JSON/);
+    });
+
+    /** One backend reply that streams the given text and ends. */
+    const replyWith = text => [`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`];
+    const plan = JSON.stringify({
+        title: 'The Granary',
+        premise: 'The valley is starving.',
+        beats: [{ id: 'empty_carts', pressure: 'Carts leave at night.', intention: 'The tally was found short.' }],
+        secrets: [{ id: 'guild_theft', content: 'The guild emptied the granary.', revealPhase: 'climax' }],
+        triggers: [{ id: 'sacks_counted', condition: 'anyone counts the sacks', action: 'the clerk admits the guild emptied the granary' }],
+    });
+
+    it('sends the plan to the plan check and applies its rewrite and link', async () => {
+        const backendRequests = installFetch([
+            replyWith('The story stands at a crossroads.'),
+            replyWith(plan),
+            replyWith(JSON.stringify({
+                revealed: [],
+                rewrites: [{ kind: 'trigger', id: 'sacks_counted', text: 'the clerk goes pale and changes the subject' }],
+                links: [{ trigger: 'sacks_counted', secret: 'guild_theft' }],
+            })),
+        ]);
+
+        const result = await generateArc(harvestedContext, '');
+
+        assert.equal(backendRequests[2].messages[0].content, 'CHECK: - [sacks_counted] IF anyone counts the sacks → the clerk admits the guild emptied the granary');
+        assert.deepEqual(result.arc.triggers.map(trigger => [trigger.action, trigger.secret]), [
+            ['the clerk goes pale and changes the subject', 'guild_theft'],
+        ]);
+    });
+
+    it('keeps the plan as generated when the plan check does not answer JSON', async () => {
+        installFetch([
+            replyWith('The story stands at a crossroads.'),
+            replyWith(plan),
+            replyWith('I could not decide.'),
+        ]);
+
+        const result = await generateArc(harvestedContext, '');
+
+        assert.equal(result.error, null);
+        assert.equal(result.arc.triggers[0].action, 'the clerk admits the guild emptied the granary');
     });
 });
