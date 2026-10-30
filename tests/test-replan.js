@@ -148,6 +148,38 @@ describe('mergeReplan', () => {
         assert.equal(merged.secrets[2].disclosed, false);
     });
 
+    it('points a new trigger\'s secret link at the secret\'s merged id', () => {
+        // generatedPlan's secret_1 restates the stored secret_1 and is dropped;
+        // its secret_2 ("The brother is dying.") collides and becomes secret_2_2.
+        const generated = generatedPlan({
+            triggers: [
+                { id: 'brother_coughs', condition: 'if she visits', action: 'he hides the cough', secret: 'secret_2' },
+                { id: 'creditor_named', condition: 'if she asks', action: 'the clerk goes pale', secret: 'secret_1' },
+            ],
+        });
+
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.triggers.map(trigger => [trigger.id, trigger.secret]), [
+            ['trigger_1', undefined],
+            ['brother_coughs', 'secret_2_2'],
+            ['creditor_named', 'secret_1'],
+        ]);
+    });
+
+    it('points a link to a dropped restated secret at the existing secret with that content', () => {
+        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: 'The Duke is alive.', revealPhase: 'any', disclosed: false }] };
+        const generated = {
+            ...generatedPlan(),
+            secrets: [{ id: 'duke_alive', content: 'the duke is alive.', revealPhase: 'climax', disclosed: false }],
+            triggers: [{ id: 'grave_opened', condition: 'if the grave is opened', action: 'the gravedigger flees', secret: 'duke_alive', fired: false }],
+        };
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.equal(merged.triggers.find(trigger => trigger.id === 'grave_opened').secret, 'secret_1');
+    });
+
     it('drops a generated secret that differs from an existing one only in case or surrounding spaces', () => {
         const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }] };
         const generated = { ...generatedPlan(), secrets: [{ id: 'secret_1', content: 'the duke is ALIVE  ', revealPhase: 'any', disclosed: false }] };

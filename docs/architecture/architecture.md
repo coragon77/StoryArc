@@ -345,7 +345,7 @@ Re-plan regenerates the unfulfilled part of an active arc from the story's curre
 | foreshadowing with `planted: true` | triggers with `fired: false` |
 | triggers with `fired: true` | |
 
-Details that matter: a generated secret whose trimmed, case-folded content equals an existing one is dropped (the block tells the model not to restate them, models do anyway); new beat/foreshadowing/trigger ids that collide with kept ids are suffixed `_2`, `_3`, … and `unlockAfter` references follow the rename (`withUniqueIds`); after the merge no episode beat is `active` — the next user turn promotes — while milestones are all set `active` at once. Neither input is mutated. Pinned by `tests/test-replan.js` (e3b81d8, b864ac1).
+Details that matter: a generated secret whose trimmed, case-folded content equals an existing one is dropped (the block tells the model not to restate them, models do anyway); new beat/foreshadowing/trigger ids that collide with kept ids are suffixed `_2`, `_3`, … and `unlockAfter` references follow the rename (`withUniqueIds`); a new trigger's `secret` link follows its secret too, to the suffixed id or to the existing secret a restated one was dropped for, because a stale link would gate the trigger on the wrong secret's phase (2026-10-30); after the merge no episode beat is `active` — the next user turn promotes — while milestones are all set `active` at once. Neither input is mutated. Pinned by `tests/test-replan.js` (e3b81d8, b864ac1).
 
 ## Stall Nudge
 
