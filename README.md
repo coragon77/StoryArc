@@ -9,7 +9,7 @@ Long roleplays lose direction. After a few hundred messages the story drifts fro
 What it does:
 
 - **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
-- **Plans an arc** in two LLM passes: first an analysis of the story's current state, then a structured plan with beats, secrets, foreshadowing and triggers.
+- **Plans an arc** in three LLM passes: an analysis of the story's current state, a structured plan with beats, secrets, foreshadowing and triggers, and a check that rewrites anything in the plan that would give a secret away. On a re-plan the check also notices which secrets the story has already revealed.
 - **Steers the chat** by injecting the plan into the prompt. The model sees only the current pressure on the scene, never a checklist of goals, so it does not race through the plan.
 - **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat.
 - **Keeps the plan secret.** Everything that would spoil the story sits behind spoiler toggles.
