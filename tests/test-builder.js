@@ -143,7 +143,7 @@ describe('buildInjection — episode section content', () => {
             '- Shown from the start.',
             '- Known since setup.',
             '',
-            'TRIGGERS (check narrative conditions each message):',
+            'TRIGGERS (check narrative conditions each message — a trigger changes how characters act, it never discloses a SECRET):',
             '- IF the door opens → the cold rushes in',
             '',
             'FORESHADOWING TO PLANT:',

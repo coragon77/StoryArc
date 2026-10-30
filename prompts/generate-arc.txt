@@ -159,6 +159,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - Triggers let the arc respond to player choices without railroading. The story adapts to what the player does.
 - Good triggers watch for: player investigating something specific, characters reaching emotional breaking points, NPCs being confronted, certain locations being visited, certain topics being discussed.
 - Trigger actions should be proportional and narratively organic, not plot-device explosions.
+- A trigger action describes what characters do, never what a secret is. When a trigger touches a secret, name only the visible reaction (composure cracks, a deflection, a lie, a hasty exit) and leave the secret's content out. The AI reads every trigger action each message; an action that names the hidden truth gets narrated as a confession the first time the condition is near.
 
 == ESTIMATED LENGTH ==
 
@@ -170,6 +171,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] If a GENRE block is given: every pressure, secret, trigger and clue reads as that genre, and the arc delivers what readers of that genre come for
 - [ ] Every secret has a SPECIFIC, COMPLETE answer (not "someone is hiding something")
 - [ ] Every foreshadowing entry points to a specific secret or beat
+- [ ] No trigger action states the content of a secret -- it names the reaction only
 - [ ] Every beat has both a `pressure` (a force with no completion state) and an `intention` (a past-tense fulfillment condition)
 - [ ] No `pressure` reads as an objective, a task, or something to be achieved
 - [ ] Scene beats only: at least one breather beat advances no plot

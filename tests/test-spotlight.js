@@ -103,7 +103,7 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
         const lit = withChatLength(10, () => buildInjection([makeAct()]));
         const normal = withChatLength(10, () => buildInjection([makeAct({ focus: 'normal' })]));
         assert.ok(lit.includes('SECRETS (guard these carefully — do not reveal directly):\n- The granary was emptied on purpose.'));
-        assert.ok(lit.includes('TRIGGERS (check narrative conditions each message):\n- IF anyone counts the sacks → the tally is short'));
+        assert.ok(lit.includes('TRIGGERS (check narrative conditions each message — a trigger changes how characters act, it never discloses a SECRET):\n- IF anyone counts the sacks → the tally is short'));
         assert.ok(lit.includes('FORESHADOWING TO PLANT:\n- Carts leave at night. (foreshadows: secret:s_climax)'));
         assert.equal(normal.includes('SECRETS'), false);
     });
@@ -124,7 +124,7 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
             'SECRETS (guard these carefully — do not reveal directly):',
             '- The granary was emptied on purpose.',
             '',
-            'TRIGGERS (check narrative conditions each message):',
+            'TRIGGERS (check narrative conditions each message — a trigger changes how characters act, it never discloses a SECRET):',
             '- IF anyone counts the sacks → the tally is short',
             '',
             'FORESHADOWING TO PLANT:',
