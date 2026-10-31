@@ -237,7 +237,9 @@ StoryArc/
 │   │   │                       #   showWizard(arcId)), complete, abandon; per beat an
 │   │   │                       #   inline editor (pressure + intention, delete with a
 │   │   │                       #   second click) and an Edit arc JSON editor (via
-│   │   │                       #   arc-edit.js); unbinds the whole
+│   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
+│   │   │                       #   Clues, Triggers drawers with open / waiting /
+│   │   │                       #   done items; buildReportsWaitingLine(); unbinds the whole
 │   │   │                       #   .storyArcManager namespace when the popup resolves
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
@@ -307,6 +309,8 @@ StoryArc/
 │   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast);
 │   │                           #   generateArc stream routes, plan check applied or
 │   │                           #   skipped on an unreadable answer
+│   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
+│   │                           #   waiting state, reports-waiting line
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line) + buildPlanCheckVariables
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
@@ -396,7 +400,8 @@ lib/ui/
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
 │                              wizard.js, arc-manager.js, /scripts/popup.js,
 │                              /scripts/utils.js)
-└── arc-manager.js   (imports: planning/storage.js, planning/arc-edit.js,
+└── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
+                               planning/storage.js, planning/arc-edit.js,
                                injection/signals.js, injection/pacing.js,
                                injection/clock.js, core/settings.js,
                                core/constants.js, progress.js, wizard.js,

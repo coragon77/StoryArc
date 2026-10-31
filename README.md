@@ -81,7 +81,7 @@ Failed requests caused by timeouts or gateway errors are retried automatically, 
 - **Complete** or **Abandon** it.
 - **Edit a beat** with the pencil icon: change its pressure (what the model sees) and its "Fulfilled when" text (what counts as done). Delete is inside the editor and needs a second click.
 - **Toggle a beat's status** by clicking it, for example to complete a beat the model missed.
-- **Mark secrets, clues and triggers as done** in the "Secrets, clues and triggers" spoiler group.
+- **Mark secrets, clues and triggers as done** in their spoiler groups (Secrets, Clues, Triggers — each opens on its own). An hourglass means the model has reported the item and the report waits to be applied; clicking it drops the report.
 - **Edit arc** opens the whole arc as JSON. Story Arc refuses invalid edits and always keeps the bookkeeping fields (id, status, tier, focus, message counters) as stored.
 
 ### The progress card
@@ -176,7 +176,7 @@ Story Arc sets two prompt injections before every generation:
 - **The plan** (inside the prompt, before the chat history): one section per active arc, chosen by its tier and focus. It is capped at about **3000 tokens**. If it is larger, whole list lines are dropped from the end, and the pacing rules and the spotlight arc are kept.
 - **The beat check** (the last message before the model answers): pacing for the episode that drives the clock, plus one recognition line per open beat. It tells the model that if the story has *already* brought a beat about, it should write a marker such as `<!-- [ARC_SIGNAL:1a2b3c4d:beat_3:COMPLETE] -->` on the first line of its reply.
 
-When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager still shows them as open. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
+When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager shows them with an hourglass, and the arc card counts the waiting reports. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
 
 The injected text changes only when the plan changes, never per message. This keeps the provider's prompt cache working. Completing a beat, changing an arc's focus, editing a beat or marking an item by hand changes the plan, so the next generation misses the cache once.
 

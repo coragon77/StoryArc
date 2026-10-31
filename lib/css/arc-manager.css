@@ -170,6 +170,53 @@
     opacity: 0.6;
 }
 
+/* ─── Secrets, Clues and Triggers ────────────────────────────────────────── */
+
+/* Waiting: the model reported the item, the mark is queued (ADR-0005) */
+.story-arc-beat-status.queued {
+    border-color: var(--sa-status-queued);
+    color: var(--sa-status-queued);
+}
+
+.story-arc-plan-waiting-note {
+    margin-top: 2px;
+    font-size: 0.92em;
+    color: var(--sa-status-queued);
+}
+
+.story-arc-plan-chip {
+    margin-left: 6px;
+    padding: 0 6px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    background: var(--black20a, rgba(0,0,0,0.2));
+    white-space: nowrap;
+}
+
+.story-arc-plan-chip.done {
+    color: var(--sa-status-active);
+}
+
+.story-arc-plan-chip.queued {
+    color: var(--sa-status-queued);
+}
+
+.story-arc-plan-done-heading {
+    display: block;
+    margin-top: 8px;
+    color: var(--SmartThemeEmColor, #888);
+    text-transform: capitalize;
+}
+
+.story-arc-reports-waiting {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 6px;
+    font-size: 0.74em;
+    color: var(--sa-status-queued);
+}
+
 /* ─── Arc Editor (JSON) ──────────────────────────────────────────────────── */
 
 .story-arc-arc-editor {
