@@ -99,6 +99,19 @@ describe('buildReportsWaitingLine', () => {
         );
     });
 
+    it('skips a mark whose item is gone or already done — the drawers show no hourglass for those', () => {
+        const staleMarks = [
+            ...marks,
+            { arcId: 'act00001-full-id', list: 'triggers', flag: 'fired', id: 'removed_by_replan', at: 2010 },
+            { arcId: 'act00001-full-id', list: 'triggers', flag: 'fired', id: 'debt_paid', at: 2011 },
+        ];
+
+        assert.equal(
+            textOf(buildReportsWaitingLine(makeAct(), staleMarks)),
+            '2 reports waiting — applied with the next milestone or after 20 messages',
+        );
+    });
+
     it('is empty without waiting reports and for an arc that is not active', () => {
         assert.equal(buildReportsWaitingLine(makeAct(), []), '');
         assert.equal(buildReportsWaitingLine(makeAct({ status: 'completed' }), marks), '');
