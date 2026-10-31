@@ -18,7 +18,7 @@ Direction: {{DIRECTION}}
 
 == YOUR TASK ==
 
-1. REVEALED SECRETS. Only when a STORY SO FAR block is given above: list the ids of the secrets the story has already revealed. A secret counts as revealed only when a character states or discovers its hidden part on screen. Text in square brackets or marked OOC is not the story. When in doubt, the secret is not revealed.
+1. REVEALED SECRETS. Only when a STORY SO FAR block is given above: list the ids of the secrets the story has already revealed. Judge from the story block alone: a secret you leave out counts as not revealed, even if it was marked revealed before, because the author may have deleted or rewritten the message it came out in. A secret counts as revealed only when a character states or discovers its hidden part on screen. Text in square brackets or marked OOC is not the story. When in doubt, the secret is not revealed.
 
 2. REWRITES. Find every trigger action and every pressure that states the hidden part of a secret that is not revealed, and every trigger action that names a payoff after the reaction. Write a replacement for each:
 - A trigger action names only the visible reaction: composure cracks, a deflection, a lie, a threat, a hasty exit. No cause, no payoff.

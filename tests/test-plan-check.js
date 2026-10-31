@@ -67,6 +67,33 @@ describe('applyPlanCheck', () => {
         assert.equal(checked.triggers[0].action, 'Vera\'s facade shatters into tearful gratitude.');
     });
 
+    it('on a re-plan, un-marks an existing secret the check no longer lists — the user may have rewound the reveal', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[0].disclosed = true;
+
+        const checked = applyPlanCheck(arc, { revealed: [] }, ['brother_leash']);
+
+        assert.equal(checked.secrets[0].disclosed, false);
+    });
+
+    it('leaves disclosure alone when the answer has no revealed list', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[0].disclosed = true;
+
+        const checked = applyPlanCheck(arc, { rewrites: [] }, ['brother_leash']);
+
+        assert.equal(checked.secrets[0].disclosed, true);
+    });
+
+    it('never un-marks a secret the story cannot have revealed — only the re-planned arc\'s own', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[1].disclosed = true;
+
+        const checked = applyPlanCheck(arc, { revealed: [] }, ['brother_leash']);
+
+        assert.equal(checked.secrets[1].disclosed, true);
+    });
+
     it('marks nothing revealed on a new plan — its secrets were just invented', () => {
         const checked = applyPlanCheck(makeReplannedAct(), { revealed: ['brother_leash'], rewrites: [], links: [] }, []);
 
@@ -127,6 +154,15 @@ describe('buildPlanCheckVariables', () => {
         ].join('\n'));
         assert.equal(variables.TRIGGERS, '- [usb_accepted] IF Ellie takes the drive → Vera breaks down and swears to feed Ellie updates from inside.');
         assert.equal(variables.PRESSURES, '- [pier_stage] The stage is rigged with Julian\'s gauntlet tether.');
+    });
+
+    it('on a re-plan, hides the old disclosure mark so the check judges from the story alone', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[0].disclosed = true;
+
+        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+
+        assert.equal(variables.SECRETS.split('\n')[0], '- [brother_leash] (escalation) Her brother\'s clinic place is the leash.');
     });
 
     it('gives a re-plan the analysis and the last ten story messages', () => {
