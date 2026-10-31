@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSignals, processSignalResults, flushPendingMarks, dropPendingMark, scrubArcInternals, MARK_FLUSH_WINDOW } from '../lib/injection/signals.js';
+import { parseSignals, processSignalResults, flushPendingMarks, dropPendingMark, dropPendingMarksFrom, scrubArcInternals, MARK_FLUSH_WINDOW } from '../lib/injection/signals.js';
 import { buildInjection, buildSignalInjection } from '../lib/injection/builder.js';
 import { togglePlanItem } from '../lib/planning/arc-edit.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
@@ -273,6 +273,38 @@ describe('queued marks keep the prompt byte-identical until a flush', () => {
         store(makeEpisode());
         dropPendingMark('epi00001-full-id', 'foreshadowing', 'grey_van');
         assert.equal(chat_metadata.story_arc.pendingMarks, undefined);
+    });
+});
+
+describe('dropPendingMarksFrom — the reply a report came from is gone', () => {
+    it('drops the reports of the removed messages and keeps earlier ones', () => {
+        store(makeEpisode());
+        chat_metadata.story_arc.pendingMarks = [
+            { arcId: 'epi00001-full-id', list: 'foreshadowing', flag: 'planted', id: 'grey_van', at: 2019 },
+            { arcId: 'epi00001-full-id', list: 'triggers', flag: 'fired', id: 'van_leaves', at: 2023 },
+            { arcId: 'epi00002-full-id', list: 'foreshadowing', flag: 'planted', id: 'wet_prints', at: 2024 },
+        ];
+
+        const dropped = dropPendingMarksFrom(2023);
+
+        assert.equal(dropped, true);
+        assert.deepEqual(chat_metadata.story_arc.pendingMarks.map(mark => mark.id), ['grey_van']);
+    });
+
+    it('reports false and keeps the queue when no report came from the removed messages', () => {
+        store(makeEpisode());
+        chat_metadata.story_arc.pendingMarks = [
+            { arcId: 'epi00001-full-id', list: 'foreshadowing', flag: 'planted', id: 'grey_van', at: 2019 },
+        ];
+
+        assert.equal(dropPendingMarksFrom(2023), false);
+        assert.equal(chat_metadata.story_arc.pendingMarks.length, 1);
+    });
+
+    it('drops nothing, without throwing, when there is no queue or no Story Arc state', () => {
+        assert.equal(dropPendingMarksFrom(0), false);
+        store(makeEpisode());
+        assert.equal(dropPendingMarksFrom(0), false);
     });
 });
 

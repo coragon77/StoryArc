@@ -17,7 +17,7 @@ import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
-import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
+import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
@@ -126,6 +126,26 @@ async function onUserMessageRendered() {
 }
 
 /**
+ * After messages were deleted, including the last reply before a
+ * regeneration: ST passes the new chat length, so every message from that
+ * index on is gone, and so is what its queued marks report.
+ * @param {number} chatLength - Chat length after the deletion
+ */
+async function onMessageDeleted(chatLength) {
+    if (dropPendingMarksFrom(chatLength)) await saveMetadata();
+}
+
+/**
+ * When the user swipes a reply: the shown text is replaced, so its queued
+ * marks no longer match the story. A newly generated swipe arrives through
+ * MESSAGE_RECEIVED and queues its own marks.
+ * @param {number} messageIndex - Index of the swiped message
+ */
+async function onMessageSwiped(messageIndex) {
+    if (dropPendingMarksFrom(messageIndex)) await saveMetadata();
+}
+
+/**
  * When the user switches to a different chat: re-init per-chat state
  * and refresh the progress display.
  */
@@ -152,6 +172,8 @@ jQuery(async () => {
     eventSource.on(event_types.CHAT_COMPLETION_PROMPT_READY, onChatCompletionPromptReady);
     eventSource.on(event_types.MESSAGE_RECEIVED, onMessageReceived);
     eventSource.on(event_types.USER_MESSAGE_RENDERED, onUserMessageRendered);
+    eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
+    eventSource.on(event_types.MESSAGE_SWIPED, onMessageSwiped);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
 
     // Initialize state for current chat
