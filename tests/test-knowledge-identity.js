@@ -300,6 +300,57 @@ describe('updateKnowledgeAfterSwipe and the stamps', () => {
             lastUpdatedMessageId: 'm4',
         });
     });
+
+    it('a branch from a swipe whose knowledge a swipe took back reads that swipe again', async () => {
+        setSwitches({ tracker: true });
+        fillChat({ stamped: true });
+        storeStampedLedger();
+        const reply = chat[6];
+        reply.swipes = ['Dougal heard you.', 'Dougal was out.'];
+        reply.swipe_info = [{ extra: {} }, { extra: {} }];
+        reply.swipe_id = 0;
+        installExtraction([JSON.stringify({ present: ['Noor', 'Ellie'], newCharacters: [], learned: [] })]);
+
+        // ST's syncMesToSwipe keeps the shown swipe's extra in its swipe_info,
+        // then the switch shows swipe 1 with that swipe's own extra.
+        reply.swipe_info[0].extra = structuredClone(reply.extra);
+        reply.swipe_id = 1;
+        reply.mes = reply.swipes[1];
+        reply.extra = structuredClone(reply.swipe_info[1].extra);
+        await updateKnowledgeAfterSwipe(6);
+
+        // A branch at message 6 with swipe 0 chosen: ST's getBranchChatSnapshot
+        // copies the chat and syncSwipeToMes shows swipe 0; the branch keeps the
+        // chat metadata whole and loads with its own length.
+        const branch = structuredClone(chat);
+        branch[6].swipe_id = 0;
+        branch[6].mes = branch[6].swipes[0];
+        branch[6].extra = structuredClone(branch[6].swipe_info[0].extra);
+        chat.splice(0, chat.length, ...branch);
+        await rollBackKnowledgeFrom(chat.length);
+
+        // Swipe 0's knowledge (f3) went with the first swipe: the ledger ends
+        // before message 6, so the next update reads it again.
+        assert.equal(chat[6].extra.story_arc_message_id, undefined);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            characters: CHARACTERS,
+            facts: [
+                {
+                    id: 'f1', text: 'Ellie is Dice', public: false,
+                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 1, messageId: 'm1' }],
+                },
+                {
+                    id: 'f2', text: 'Gabriel wants titanium latches', public: false,
+                    holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' }],
+                },
+                FACT_USER,
+            ],
+            scene: { at: 3, messageId: 'm3', present: ['c1', 'c2'] },
+            sceneHistory: [],
+            lastUpdatedAt: 5,
+            lastUpdatedMessageId: 'm5',
+        });
+    });
 });
 
 describe('the stamps an update leaves on the messages it read', () => {
