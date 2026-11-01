@@ -111,11 +111,22 @@ async function onMessageReceived(messageIndex) {
     // After signal processing, so the extraction reads the reply without its
     // markers. Not awaited: ST waits for its listeners, and the extraction
     // must not hold up the next generation.
-    updateKnowledgeAfterReply(messageIndex)
-        .then(updated => {
-            if (updated) updateKnowledgeStatus();
+    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterReply(messageIndex), 'Knowledge update failed:');
+}
+
+/**
+ * Wait for a knowledge update the caller does not await, then refresh the
+ * settings panel's status line when it changed the ledger. A failure is
+ * logged, never thrown into ST's event loop.
+ * @param {Promise<boolean>} knowledgeUpdate - Resolves true when the ledger changed
+ * @param {string} failureText - Log text for a failed update
+ */
+function refreshKnowledgeStatusWhenChanged(knowledgeUpdate, failureText) {
+    knowledgeUpdate
+        .then(changed => {
+            if (changed) updateKnowledgeStatus();
         })
-        .catch(err => console.warn('[Story Arc] Knowledge update failed:', err));
+        .catch(err => console.warn(`[Story Arc] ${failureText}`, err));
 }
 
 /**
@@ -163,11 +174,7 @@ async function onMessageSwiped(messageIndex) {
     // Not awaited: the re-extraction must not hold up the swipe. The drop
     // inside runs before the first await, so a new swipe's reply update
     // always sees the rolled-back ledger.
-    updateKnowledgeAfterSwipe(Number(messageIndex))
-        .then(changed => {
-            if (changed) updateKnowledgeStatus();
-        })
-        .catch(err => console.warn('[Story Arc] Knowledge rollback after a swipe failed:', err));
+    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterSwipe(Number(messageIndex)), 'Knowledge rollback after a swipe failed:');
 }
 
 /**
@@ -177,11 +184,7 @@ async function onMessageSwiped(messageIndex) {
  * @param {number} messageIndex - Index of the edited message
  */
 function onMessageEdited(messageIndex) {
-    updateKnowledgeAfterEdit(Number(messageIndex))
-        .then(changed => {
-            if (changed) updateKnowledgeStatus();
-        })
-        .catch(err => console.warn('[Story Arc] Knowledge update after an edit failed:', err));
+    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterEdit(Number(messageIndex)), 'Knowledge update after an edit failed:');
 }
 
 /**

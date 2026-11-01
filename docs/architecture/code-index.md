@@ -29,7 +29,7 @@ StoryArc/
 │   │                           #   link triggers to secrets; answers JSON (ADR-0006)
 │   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
 │   │                           #   new characters, who learned which fact and how,
-│   │                           #   revealed plan secrets; answers JSON
+│   │                           #   revealed secrets with what was heard; answers JSON
 │   └── detail-pass.txt         # Old detail-pass draft (not loaded)
 ├── lib/
 │   ├── core/
@@ -39,7 +39,7 @@ StoryArc/
 │   │   │                       #   beatCount, lengthBand per tier), ARC_FOCUS,
 │   │   │                       #   createDefaultArc(); knowledge tracker:
 │   │   │                       #   defaultKnowledgeTrackerSettings (off, interval 1),
-│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'),
+│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'), HOLDER_HOW,
 │   │   │                       #   createEmptyKnowledgeLedger() — the ledger's schema
 │   │   └── settings.js         # loadSettings(), getSettings(), isEnabled(),
 │   │                           #   ensureChatState() (runs migrateArc() over arcs
@@ -224,25 +224,29 @@ StoryArc/
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── knowledge/
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
-│   │                           #   the order it runs:
+│   │                           #   the order it runs, helpers after their first caller;
+│   │                           #   every ledger operation changes the stored ledger in
+│   │                           #   place and returns true when it changed:
+│   │                           #   Update after a reply — updateKnowledgeAfterReply(i),
+│   │                           #   every N replies, one at a time, stale answers dropped;
 │   │                           #   Extraction — extractKnowledge(ledger, chat, fromIndex,
 │   │                           #   persona) → parsed answer or null; listShownSecrets(arcs),
 │   │                           #   buildKnowledgeExtractionVariables(),
 │   │                           #   parseKnowledgeExtractionAnswer() (all or nothing),
-│   │                           #   resolveRevealedSecrets();
-│   │                           #   Apply — applyExtractionAnswer(ledger, answer, index)
-│   │                           #   returns a new ledger; nextLedgerId(prefix, entries);
-│   │                           #   Drop — dropKnowledgeFrom(ledger, N) in place, true
-│   │                           #   when changed; user entries (at null) stay;
-│   │                           #   Build — buildKnowledgeBlock(ledger, chat), present +
-│   │                           #   talked-about characters, KNOWLEDGE_LIST_CAP = 5;
+│   │                           #   resolveRevealedSecrets() (keeps the heard text);
+│   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
+│   │                           #   last): the teller of a told fact holds it too, an
+│   │                           #   at outside from..last falls back to last;
+│   │                           #   nextLedgerId(prefix, entries);
+│   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
+│   │                           #   load) via dropKnowledgeFrom(ledger, N) (user entries,
+│   │                           #   at null, stay), updateKnowledgeAfterSwipe(i),
+│   │                           #   updateKnowledgeAfterEdit(i);
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
 │   │                           #   in-chat depth 1, system, '' while off;
-│   │                           #   Update after a reply — updateKnowledgeAfterReply(i),
-│   │                           #   every N replies, one at a time, stale answers dropped;
-│   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
-│   │                           #   load), updateKnowledgeAfterSwipe(i),
-│   │                           #   updateKnowledgeAfterEdit(i)
+│   │                           #   Build — buildKnowledgeBlock(ledger, chat), present +
+│   │                           #   talked-about characters, KNOWLEDGE_LIST_CAP = 5;
+│   │                           #   characterName(ledger, id) (also for the popup)
 │   ├── ui/
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
 │   │   │                       #   enable toggle, generation profile dropdown
@@ -285,9 +289,12 @@ StoryArc/
 │   │   │                       #   (addCharacter, renameCharacter, setCharacterAliases,
 │   │   │                       #   addFact, editFactText, deleteFact, setFactPublic,
 │   │   │                       #   addFactHolder, removeFactHolder) return
-│   │   │                       #   { ledger, error }; new holders are how 'user',
-│   │   │                       #   at null. Opened from the Arc Manager and the wand
-│   │   │                       #   menu while the tracker is on
+│   │   │                       #   { ledger, error }; new holders are how
+│   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
+│   │   │                       #   Manager and the wand menu while the tracker is on
+│   │   ├── spoiler-group.js    # buildSpoilerGroup(id, label, warning, body) — the
+│   │   │                       #   collapsed spoiler drawer of the Arc Manager and
+│   │   │                       #   the Knowledge popup
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
 │   │                           #   milestones"; shows "~N msgs to next phase" only
@@ -364,7 +371,8 @@ StoryArc/
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
 │   │                           #   parsing (all or nothing, null keys)
 │   ├── test-knowledge-apply.js # Tests: applyExtractionAnswer (new characters, aliases,
-│   │                           #   unknown names/ids ignored, input untouched)
+│   │                           #   unknown names/ids ignored, teller holds a told fact, changed in place,
+│   │                           #   then the card case through buildKnowledgeBlock)
 │   ├── test-knowledge-drop.js  # Tests: dropKnowledgeFrom (holders from N on, user
 │   │                           #   entries kept, scene and lastUpdatedAt reset)
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
@@ -377,9 +385,11 @@ StoryArc/
 │   │                           #   popup edit during the call, swipe during the call)
 │   ├── test-knowledge-rollback.js # Tests: rollback on regeneration and branch load,
 │   │                           #   new vs. existing swipe, edit re-extracts one message,
-│   │                           #   late answers dropped
+│   │                           #   late answers dropped, an at outside the covered
+│   │                           #   messages still rolled back, an early reveal kept
 │   ├── test-knowledge-revealed.js # Tests: shown secrets (phase gate, refs), revealed
-│   │                           #   secret becomes a linked fact with its holders
+│   │                           #   secret becomes a linked fact worded as heard, its own
+│   │                           #   text nowhere in the block
 │   ├── test-knowledge-secrets.js # Tests: SECRETS holder suffix on, injection as
 │   │                           #   before with the tracker off, budget trim
 │   ├── test-knowledge-settings.js # Tests: tracker switch, interval and status line in
@@ -485,11 +495,14 @@ lib/ui/
 │                              injection/signals.js, injection/pacing.js,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
-│                              knowledge-popup.js, /scripts/popup.js,
+│                              knowledge-popup.js, spoiler-group.js, /scripts/popup.js,
 │                              /scripts/utils.js)
-└── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
-                               knowledge/ledger.js nextLedgerId,
-                               /scripts/popup.js, /scripts/utils.js)
+├── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
+│                              core/constants.js HOLDER_HOW,
+│                              knowledge/ledger.js characterName + nextLedgerId,
+│                              spoiler-group.js, /scripts/popup.js,
+│                              /scripts/utils.js)
+└── spoiler-group.js (imports: nothing)
 
 index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
                     injection/stamping.js, injection/signals.js,

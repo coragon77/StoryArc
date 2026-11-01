@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-09-17
+- **Last Updated:** 2026-11-01
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -100,7 +100,28 @@ eventSource.on(event_types.MESSAGE_RECEIVED, async (mesId) => {
     // AI responded - check for signals/beats. Use mesId, never chat.length - 1:
     // `/sys at=N` emits this event with the index of the inserted message
 });
+
+eventSource.on(event_types.MESSAGE_SWIPED, async (mesId) => {
+    // A swipe of message mesId, both kinds (see below)
+});
+
+eventSource.on(event_types.MESSAGE_EDITED, async (mesId) => {
+    // The edited text is already in chat[mesId]
+});
+
+eventSource.on(event_types.MESSAGE_DELETED, async (newChatLength) => {
+    // Messages from newChatLength on are gone
+});
 ```
+
+### Swipe, edit and delete events (verified behaviour, 2026-11-01)
+
+Story Arc's knowledge tracker and pending marks roll back on these; the handlers are in `index.js`, the rollback in `lib/knowledge/ledger.js` (architecture.md, "Knowledge Tracker").
+
+- **`MESSAGE_DELETED(newChatLength)`** fires after messages are deleted, with the chat length after the deletion, so every index from that value on is gone. It also fires for the last reply before a regeneration, and ST awaits it before the regeneration starts: a handler that drops state from that index on runs before the new reply exists.
+- **`MESSAGE_SWIPED(mesId)`** fires both for a swipe that generates a new reply and for switching to a swipe that already exists, with the message's index. To tell them apart: ST sets `swipe_id` before it fires the event, and on a new swipe `swipe_id === swipes.length` (the slot the generation will fill). The new reply then arrives through `MESSAGE_RECEIVED`.
+- **`MESSAGE_EDITED(mesId)`** fires once the new text is saved into `chat[mesId]`, with the message's index.
+- **`CHAT_CHANGED`** fires after the chat's messages are printed, so `chat.length` is the loaded chat's length. ST copies the chat metadata whole when it branches, so state keyed to message indices past the branch point arrives with the branch and has to be dropped on load.
 
 ## Prompt Injection
 

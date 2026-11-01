@@ -44,7 +44,8 @@ StoryArc/
 ├── prompts/
 │   ├── analyze-context.txt     # Phase 1: story state analysis
 │   ├── generate-arc.txt        # Phase 2: arc outline generation
-│   └── detail-pass.txt         # Phase 3: detail expansion
+│   ├── detail-pass.txt         # Phase 3: detail expansion
+│   └── extract-knowledge.txt   # Knowledge tracker: who learned what in the new messages
 ├── lib/
 │   ├── core/
 │   │   ├── constants.js        # MODULE_NAME, defaults, phases, schema
@@ -65,12 +66,15 @@ StoryArc/
 │   │   ├── stamping.js         # Per-message arc counters on the outgoing prompt
 │   │   ├── pacing.js           # Phase calculation + directives
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
+│   ├── knowledge/
+│   │   └── ledger.js           # The whole knowledge tracker: update, extraction, apply, rollback, block
 │   ├── ui/
 │   │   ├── settings-panel.js   # Extension drawer content
 │   │   ├── wand-menu.js        # Wand menu entry and its popup
 │   │   ├── wizard.js           # Arc planning wizard popup
 │   │   ├── arc-manager.js      # Arc list + controls popup
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
+│   │   ├── spoiler-group.js    # The collapsed spoiler drawer (Arc Manager, Knowledge popup)
 │   │   └── progress.js         # Compact progress display
 │   └── css/
 │       ├── core.css            # Variables, base styles

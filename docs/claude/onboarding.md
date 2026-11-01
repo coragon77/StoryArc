@@ -56,6 +56,7 @@ Before exploring code, you **MUST** read the relevant documentation (blocking):
 | Arc generation, planning wizard, LLM pipeline, JSON validation, arc schema, beats, phases, pacing, ARC_SIGNAL tracking, prompt injection, the tier × focus injection matrix, milestones, pausing (clock shift), background focus, spotlight, re-plan merge, stall nudge | `docs/architecture/architecture.md` |
 | Finding files, module dependencies, "where does X live" | `docs/architecture/code-index.md` |
 | Naming a domain concept (tier, focus, milestone, pressure, re-plan, stall), or a change that touches a recorded decision | `GLOSSARY.md` (glossary) and `docs/adr/` |
+| Knowledge tracker — the knowledge ledger, holders, the extraction call, the knowledge block, rollback on swipe / regeneration / edit / delete / branch load, the Knowledge popup | `docs/architecture/architecture.md` ("Knowledge Tracker" section) |
 | SillyTavern API integration — `setExtensionPrompt`, `generateRaw`, events, popups, world info, `chat_metadata`, connection profiles, extension loading | `docs/architecture/st-extension-patterns.md` |
 | Writing or strengthening unit tests, hollow tests, mutation testing (Stryker), the test-suite audit | `docs/goals/2026-10-26-test-suite-worklist.md` |
 

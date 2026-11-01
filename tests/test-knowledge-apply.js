@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyExtractionAnswer } from '../lib/knowledge/ledger.js';
+import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
 import { createEmptyKnowledgeLedger } from '../lib/core/constants.js';
 
 /** The workshop cast after breakfast: Gabriel told Ellie about the titanium latches. */
@@ -28,7 +28,8 @@ function makeBreakfastLedger() {
 
 describe('applyExtractionAnswer', () => {
     it('adds new characters, creates facts with holders and sets the scene', () => {
-        const ledger = applyExtractionAnswer(createEmptyKnowledgeLedger(), {
+        const ledger = createEmptyKnowledgeLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Noor', 'Ellie'],
             newCharacters: [
                 { name: 'Ellie', aliases: ['Dice'] },
@@ -39,7 +40,7 @@ describe('applyExtractionAnswer', () => {
                 { text: 'The gauntlet session is this afternoon.', public: false, who: ['Noor'], how: 'told', toldBy: 'Ellie', at: 2080 },
                 { text: 'Overdrive is Bellweather\'s ringer for Sunday.', public: true, who: ['Ellie'], how: 'witnessed', toldBy: null, at: 2080 },
             ],
-        }, 2080);
+        }, 2079, 2080);
 
         assert.deepEqual(ledger, {
             characters: [
@@ -61,6 +62,7 @@ describe('applyExtractionAnswer', () => {
                     text: 'The gauntlet session is this afternoon.',
                     public: false,
                     holders: [
+                        { characterId: 'c1', how: 'witnessed', toldBy: null, at: 2080 },
                         { characterId: 'c2', how: 'told', toldBy: 'c1', at: 2080 },
                     ],
                 },
@@ -79,13 +81,14 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('adds a holder to a known fact and does not duplicate one already there', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Ellie'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [
                 { factId: 'f1', public: false, who: ['Noor', 'Ellie'], how: 'told', toldBy: 'Ellie', at: 2081 },
             ],
-        }, 2081);
+        }, 2081, 2081);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -102,7 +105,8 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('ignores unknown names and unknown fact ids', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Ellie', 'Dougal'],
             newCharacters: [],
             learned: [
@@ -110,7 +114,7 @@ describe('applyExtractionAnswer', () => {
                 { factId: 'f9', public: false, who: ['Ellie'], how: 'witnessed', toldBy: null, at: 2070 },
                 { text: 'The kiln router logged odd queries.', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2070 },
             ],
-        }, 2070);
+        }, 2070, 2070);
 
         const expected = makeBreakfastLedger();
         expected.scene = { at: 2070, present: ['c1'] };
@@ -119,19 +123,21 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('resolves an alias in who, in toldBy and in present to its character, ignoring case', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['dice', 'Mr. Marin'],
             newCharacters: [],
             learned: [
                 { text: 'Gabriel Marin is Aegis.', public: false, who: ['DICE'], how: 'told', toldBy: 'aegis', at: 2075 },
             ],
-        }, 2075);
+        }, 2075, 2075);
 
         assert.deepEqual(ledger.facts[1], {
             id: 'f2',
             text: 'Gabriel Marin is Aegis.',
             public: false,
             holders: [
+                { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2075 },
                 { characterId: 'c1', how: 'told', toldBy: 'c2', at: 2075 },
             ],
         });
@@ -139,14 +145,72 @@ describe('applyExtractionAnswer', () => {
         assert.deepEqual(ledger.scene, { at: 2075, present: ['c1', 'c2'] });
     });
 
-    it('does not change the ledger it was given', () => {
-        const before = makeBreakfastLedger();
-        applyExtractionAnswer(before, {
+    it('changes the ledger it was given and says so', () => {
+        const ledger = makeBreakfastLedger();
+        const changed = applyExtractionAnswer(ledger, {
             present: ['Noor'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [{ factId: 'f1', public: false, who: ['Noor'], how: 'witnessed', toldBy: null, at: 2090 }],
-        }, 2090);
+        }, 2090, 2090);
 
-        assert.deepEqual(before, makeBreakfastLedger());
+        assert.equal(changed, true);
+        assert.deepEqual(ledger.characters[2], { id: 'c3', name: 'Noor', aliases: [] });
+        assert.deepEqual(ledger.facts[0].holders[2], { characterId: 'c3', how: 'witnessed', toldBy: null, at: 2090 });
+        assert.deepEqual(ledger.scene, { at: 2090, present: ['c3'] });
+        assert.equal(ledger.lastUpdatedAt, 2090);
+    });
+
+    it('says nothing changed when the answer repeats what the ledger already holds', () => {
+        const ledger = makeBreakfastLedger();
+        const changed = applyExtractionAnswer(ledger, {
+            present: ['Ellie', 'Gabriel Marin'],
+            newCharacters: [{ name: 'Dice', aliases: [] }],
+            learned: [{ factId: 'f1', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2063 }],
+        }, 2063, 2063);
+
+        assert.equal(changed, false);
+        assert.deepEqual(ledger, makeBreakfastLedger());
+    });
+});
+
+describe('applying an extraction answer, then building the block', () => {
+    it('makes the teller of a told fact its holder, so a talked-about teller knows it and has told only the listener', () => {
+        // Breakfast at 2063: Gabriel tells Ellie about the latches. The answer
+        // names only the listener in "who", as the prompt asks.
+        const ledger = createEmptyKnowledgeLedger();
+        applyExtractionAnswer(ledger, {
+            present: ['Ellie', 'Gabriel Marin'],
+            newCharacters: [
+                { name: 'Ellie', aliases: ['Dice'] },
+                { name: 'Gabriel Marin', aliases: ['Aegis'] },
+            ],
+            learned: [
+                { text: 'Noor should lock the gauntlet on with titanium latches.', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2063 },
+            ],
+        }, 2062, 2063);
+        // The workshop at 2079: Ellie arrives at Noor's bench; nobody learns anything.
+        applyExtractionAnswer(ledger, {
+            present: ['Ellie', 'Noor'],
+            newCharacters: [{ name: 'Noor', aliases: [] }],
+            learned: [],
+        }, 2078, 2079);
+
+        const messages = [
+            { is_user: true, mes: 'Aegis had some thoughts on the cuff.' },
+            { is_user: false, mes: 'Noor looks up from the bench.' },
+        ];
+        assert.equal(buildKnowledgeBlock(ledger, messages), [
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character speaks and acts only from their own list. Knowledge moves between characters only on-screen.]',
+            '',
+            'ELLIE (present)',
+            '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches.',
+            '',
+            'NOOR (present)',
+            '- Does not know: Noor should lock the gauntlet on with titanium latches.',
+            '',
+            'GABRIEL MARIN (talked about, not present)',
+            '- Knows: Noor should lock the gauntlet on with titanium latches.',
+            '- Has told only Ellie: Noor should lock the gauntlet on with titanium latches.',
+        ].join('\n'));
     });
 });

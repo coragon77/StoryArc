@@ -10,8 +10,8 @@ Each with the other names they go by.
 Each with its id and who already knows it. A public fact is known to everyone.
 {{FACTS}}
 
-== SECRETS OF THE STORY PLAN ==
-Each with its id and the characters the plan says already hold it. Only these secrets can be revealed in the new messages.
+== SECRETS OF THE STORY ARCS ==
+Each with its id and the characters the arc says already hold it. Only these secrets can be revealed in the new messages.
 {{SECRETS}}
 
 == NEW MESSAGES ==
@@ -30,12 +30,14 @@ Each message starts with its index in square brackets.
 - "how": "witnessed" when they saw or heard it happen themselves, "told" when another character told them.
 - "toldBy": the name of the character who told them, or null for "witnessed".
 - "public": true only when the fact is made known to everyone, such as a broadcast or a news story.
-- "at": the index of the message they learn it in.
+- "at": the index in square brackets of the message they learn it in, one of the new messages.
 Only what happens on screen counts. A character who is not in the scene learns nothing, even when it would be likely. Guesses and suspicions are not facts. Text in square brackets or marked OOC is not the story. Report only facts that matter for what characters may say or do later; skip small talk and scenery.
 
-4. REVEALED SECRETS. For every secret from the plan list that comes out on screen in the new messages, write one item:
-- "secretId": the id of the secret in square brackets in the plan list.
-- "heardBy": every character in the scene when it comes out, including those the plan already names as holders.
+4. REVEALED SECRETS. For every secret from the secrets list that comes out on screen in the new messages, write one item:
+- "secretId": the id of the secret in square brackets in the secrets list.
+- "text": what the characters hear or see of it, in one short sentence that names who and what. Write only what comes out on screen, not the rest of the secret.
+- "heardBy": every character in the scene when it comes out, including those the arc already names as holders.
+- "at": the index in square brackets of the message it comes out in, one of the new messages.
 A secret counts as revealed only when its content is said or shown plainly on screen, not when it is hinted at. Do not write a revealed secret again under LEARNED.
 
 Answer with ONLY this JSON object, no prose before or after it:
@@ -43,11 +45,11 @@ Answer with ONLY this JSON object, no prose before or after it:
   "present": ["name"],
   "newCharacters": [{ "name": "name", "aliases": ["other name"] }],
   "learned": [
-    { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 },
-    { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 }
+    { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> },
+    { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> }
   ],
   "revealedSecrets": [
-    { "secretId": "id of a secret in the plan list", "heardBy": ["name"] }
+    { "secretId": "id of a secret in the secrets list", "text": "what comes out, in one short sentence", "heardBy": ["name"], "at": <index of the message> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
