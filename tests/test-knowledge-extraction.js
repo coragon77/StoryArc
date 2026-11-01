@@ -102,6 +102,18 @@ describe('extract-knowledge.txt', () => {
             + 'unless they did, caused or planned what the fact describes.'), 'missing the exception to the absent rule');
     });
 
+    it('limits the actor rule to the deed itself, not what others found out about the actor', () => {
+        // Live (Paragon 2255): Vera learned that Diana's routing signature sat on
+        // Lucas's underwriting file; Diana, absent, became a holder of that fact.
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            'This covers only the deed as the character did it. A routine act they would not remember '
+            + '(one signature among thousands of files) does not count, and what others found out about them '
+            + 'or their deed is a separate fact they do not hold. A fact is not a character\'s because it names them.'),
+        'missing the limit of the actor rule');
+    });
+
     it('asks for fact text that states the fact itself, not who else knows it', () => {
         // Live: "…, and nobody else knows except Ellie."
         const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
