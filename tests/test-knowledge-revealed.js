@@ -7,6 +7,7 @@ import {
     parseKnowledgeExtractionAnswer,
     resolveRevealedSecrets,
     applyExtractionAnswer,
+    buildKnowledgeBlock,
 } from '../lib/knowledge/ledger.js';
 
 /**
@@ -98,10 +99,10 @@ describe('parseKnowledgeExtractionAnswer with revealed secrets', () => {
     it('reads the revealed secrets and drops keys outside the shape', () => {
         const answer = parseKnowledgeExtractionAnswer(`{
             "present": ["Julian", "Ellie"], "newCharacters": [], "learned": [],
-            "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"], "at": 2071, "why": "he says it" }]
+            "revealedSecrets": [{ "secretId": "the_drop", "text": "Julian means to bring the crane down", "heardBy": ["Ellie"], "at": 2071, "why": "he says it" }]
         }`);
 
-        assert.deepEqual(answer.revealedSecrets, [{ secretId: 'the_drop', heardBy: ['Ellie'], at: 2071 }]);
+        assert.deepEqual(answer.revealedSecrets, [{ secretId: 'the_drop', text: 'Julian means to bring the crane down', heardBy: ['Ellie'], at: 2071 }]);
     });
 
     it('reads a missing list as no revealed secrets', () => {
@@ -114,8 +115,8 @@ describe('parseKnowledgeExtractionAnswer with revealed secrets', () => {
         const base = '"present": [], "newCharacters": [], "learned": []';
         assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": "the_drop" }`), null);
         assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "", "heardBy": ["Ellie"] }] }`), null);
-        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": "Ellie", "at": 2071 }] }`), null);
-        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"] }] }`), null);
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "text": "Julian means to bring the crane down", "heardBy": "Ellie", "at": 2071 }] }`), null);
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "text": "Julian means to bring the crane down", "heardBy": ["Ellie"] }] }`), null);
     });
 });
 
@@ -219,15 +220,62 @@ describe('resolveRevealedSecrets', () => {
     it('turns each ref into its arc, secret id and text, and drops a ref the input did not list', () => {
         const revealed = resolveRevealedSecrets(
             [
-                { secretId: 'the_drop_2', heardBy: ['Ellie'], at: 2071 },
-                { secretId: 'vera_drive', heardBy: ['Ellie'], at: 2071 },
-                { secretId: 'made_up', heardBy: ['Julian'], at: 2071 },
+                { secretId: 'the_drop_2', text: 'The tether will not hold', heardBy: ['Ellie'], at: 2071 },
+                { secretId: 'vera_drive', text: 'Vera has a drive', heardBy: ['Ellie'], at: 2071 },
+                { secretId: 'made_up', text: 'Something', heardBy: ['Julian'], at: 2071 },
             ],
             listShownSecrets(makeArcs()),
         );
 
         assert.deepEqual(revealed, [
-            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether snaps at the second floor', holders: [], heardBy: ['Ellie'], at: 2071 },
+            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether will not hold', holders: [], heardBy: ['Ellie'], at: 2071 },
         ]);
+    });
+});
+
+describe('a revealed secret, from the answer text to the knowledge block', () => {
+    it('becomes a fact worded as the characters heard it, and the secret\'s own text appears nowhere', () => {
+        // Julian lets slip only part of the plan: the crane, not the Annex.
+        const answerText = `{
+            "present": ["Julian", "Ellie", "Noor"],
+            "newCharacters": [{ "name": "Noor", "aliases": [] }],
+            "learned": [],
+            "revealedSecrets": [{ "secretId": "the_drop", "text": "Julian means to bring the crane down tonight", "heardBy": ["Ellie"], "at": 2071 }]
+        }`;
+        const answer = parseKnowledgeExtractionAnswer(answerText);
+        answer.revealedSecrets = resolveRevealedSecrets(answer.revealedSecrets, listShownSecrets(makeArcs()));
+
+        const ledger = applyExtractionAnswer(makeLedger(), answer, 2071, 2071);
+
+        assert.deepEqual(ledger.facts, [{
+            id: 'f1',
+            text: 'Julian means to bring the crane down tonight',
+            public: false,
+            secret: { arcId: 'arc-crane', secretId: 'the_drop' },
+            holders: [
+                { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2071 },
+                { characterId: 'c1', how: 'plan', toldBy: null, at: 2071 },
+            ],
+        }]);
+        const block = buildKnowledgeBlock(ledger, [
+            { is_user: true, mes: 'What happens tonight?' },
+            { is_user: false, mes: 'The crane comes down tonight.' },
+        ]);
+        assert.equal(block, [
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character speaks and acts only from their own list. Knowledge moves between characters only on-screen.]',
+            '',
+            'ELLIE (present)',
+            '- Knows: Julian means to bring the crane down tonight',
+            '',
+            'NOOR (present)',
+            '- Does not know: Julian means to bring the crane down tonight',
+        ].join('\n'));
+        assert.ok(!block.includes('on the Annex'));
+    });
+
+    it('gives nothing when a revealed secret has no heard text', () => {
+        const base = '"present": [], "newCharacters": [], "learned": []';
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"], "at": 2071 }] }`), null);
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "text": " ", "heardBy": ["Ellie"], "at": 2071 }] }`), null);
     });
 });

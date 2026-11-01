@@ -498,7 +498,7 @@ describe('an index the answer gives outside the messages it covered', () => {
             present: ['Noor', 'Ellie'],
             newCharacters: [],
             learned: [],
-            revealedSecrets: [{ secretId: 'the_drop', heardBy: ['Noor'], at: 5 }],
+            revealedSecrets: [{ secretId: 'the_drop', text: 'Julian means to drop the crane', heardBy: ['Noor'], at: 5 }],
         })]);
         await updateKnowledgeAfterReply(6);
 
