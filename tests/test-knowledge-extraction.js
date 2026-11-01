@@ -89,6 +89,27 @@ describe('extract-knowledge.txt', () => {
             assert.ok(template.includes(placeholder), `missing ${placeholder}`);
         }
     });
+
+    it('makes the character who did, caused or planned a fact one of its holders, even when absent', () => {
+        // Live: "Mara rewrote Amy's logs" was told to Amy; Mara, not in the scene, was left out.
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            'A character who did, caused or planned what a fact describes knows it, even when they are not in the scene: '
+            + 'list them in "who" with "how": "witnessed", in an item of their own when the others were told.'), 'missing the actor rule');
+        assert.ok(template.includes(
+            'A character who is not in the scene learns nothing, even when it would be likely, '
+            + 'unless they did, caused or planned what the fact describes.'), 'missing the exception to the absent rule');
+    });
+
+    it('asks for fact text that states the fact itself, not who else knows it', () => {
+        // Live: "…, and nobody else knows except Ellie."
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            'The text states the fact itself, not who knows it or who does not ("and nobody else knows" belongs in no text): '
+            + 'the holders record that.'), 'missing the fact text rule');
+    });
 });
 
 /** A well-formed answer for the workshop scene, as the LLM writes it: fenced, with a stray key. */

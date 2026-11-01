@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
+import { applyExtractionAnswer, buildKnowledgeBlock, dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 import { createEmptyKnowledgeLedger } from '../lib/core/constants.js';
 
 /** The workshop cast after breakfast: Gabriel told Ellie about the titanium latches. */
@@ -76,6 +76,7 @@ describe('applyExtractionAnswer', () => {
                 },
             ],
             scene: { at: 2080, present: ['c2', 'c1'] },
+            sceneHistory: [],
             lastUpdatedAt: 2080,
         });
     });
@@ -118,6 +119,7 @@ describe('applyExtractionAnswer', () => {
 
         const expected = makeBreakfastLedger();
         expected.scene = { at: 2070, present: ['c1'] };
+        expected.sceneHistory = [{ at: 2063, present: ['c1', 'c2'] }];
         expected.lastUpdatedAt = 2070;
         assert.deepEqual(ledger, expected);
     });
@@ -170,6 +172,83 @@ describe('applyExtractionAnswer', () => {
 
         assert.equal(changed, false);
         assert.deepEqual(ledger, makeBreakfastLedger());
+    });
+});
+
+describe('applyExtractionAnswer — the scene history', () => {
+    it('keeps the scene it replaces in the history, also on an old ledger without one', () => {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, { present: ['Ellie'], newCharacters: [], learned: [] }, 2064, 2065);
+
+        assert.deepEqual(ledger.scene, { at: 2065, present: ['c1'] });
+        assert.deepEqual(ledger.sceneHistory, [{ at: 2063, present: ['c1', 'c2'] }]);
+    });
+
+    it('keeps the scene it replaces when only the message moves on', () => {
+        const ledger = makeBreakfastLedger();
+        ledger.sceneHistory = [{ at: 2050, present: ['c2'] }];
+        applyExtractionAnswer(ledger, { present: ['Ellie', 'Gabriel Marin'], newCharacters: [], learned: [] }, 2064, 2065);
+
+        assert.deepEqual(ledger.scene, { at: 2065, present: ['c1', 'c2'] });
+        assert.deepEqual(ledger.sceneHistory, [
+            { at: 2050, present: ['c2'] },
+            { at: 2063, present: ['c1', 'c2'] },
+        ]);
+    });
+
+    it('keeps at most ten earlier scenes, dropping the oldest', () => {
+        const ledger = makeBreakfastLedger();
+        ledger.sceneHistory = [
+            { at: 2053, present: ['c1'] }, { at: 2054, present: ['c1'] }, { at: 2055, present: ['c1'] },
+            { at: 2056, present: ['c1'] }, { at: 2057, present: ['c1'] }, { at: 2058, present: ['c1'] },
+            { at: 2059, present: ['c1'] }, { at: 2060, present: ['c1'] }, { at: 2061, present: ['c1'] },
+            { at: 2062, present: ['c2'] },
+        ];
+        applyExtractionAnswer(ledger, { present: ['Gabriel Marin'], newCharacters: [], learned: [] }, 2064, 2065);
+
+        assert.deepEqual(ledger.sceneHistory, [
+            { at: 2054, present: ['c1'] }, { at: 2055, present: ['c1'] }, { at: 2056, present: ['c1'] },
+            { at: 2057, present: ['c1'] }, { at: 2058, present: ['c1'] }, { at: 2059, present: ['c1'] },
+            { at: 2060, present: ['c1'] }, { at: 2061, present: ['c1'] }, { at: 2062, present: ['c2'] },
+            { at: 2063, present: ['c1', 'c2'] },
+        ]);
+    });
+
+    it('replaces the scene of the same message without keeping it, as an edit re-extracts it', () => {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, { present: ['Gabriel Marin'], newCharacters: [], learned: [] }, 2063, 2063);
+
+        assert.deepEqual(ledger.scene, { at: 2063, present: ['c2'] });
+        assert.equal(ledger.sceneHistory, undefined);
+    });
+
+    it('keeps no scene from before the first update', () => {
+        const ledger = createEmptyKnowledgeLedger();
+        applyExtractionAnswer(ledger, { present: [], newCharacters: [{ name: 'Ellie', aliases: [] }], learned: [] }, 0, 3);
+
+        assert.deepEqual(ledger.scene, { at: 3, present: [] });
+        assert.deepEqual(ledger.sceneHistory, []);
+    });
+
+    it('goes back to the scene before a swiped reply once that reply is dropped', () => {
+        // Reply 44 (Ellie and Amy in the scene) is swiped away; the scene of reply 42 comes back.
+        const ledger = createEmptyKnowledgeLedger();
+        const newCharacters = [{ name: 'Ellie', aliases: [] }, { name: 'Amy', aliases: [] }];
+        applyExtractionAnswer(ledger, { present: ['Ellie', 'Amy'], newCharacters, learned: [] }, 41, 42);
+        applyExtractionAnswer(ledger, { present: ['Ellie'], newCharacters: [], learned: [] }, 43, 44);
+
+        dropKnowledgeFrom(ledger, 44);
+
+        assert.deepEqual(ledger, {
+            characters: [
+                { id: 'c1', name: 'Ellie', aliases: [] },
+                { id: 'c2', name: 'Amy', aliases: [] },
+            ],
+            facts: [],
+            scene: { at: 42, present: ['c1', 'c2'] },
+            sceneHistory: [],
+            lastUpdatedAt: 43,
+        });
     });
 });
 

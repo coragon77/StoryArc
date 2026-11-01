@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
+import { buildKnowledgeBlock, dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 
 const cast = [
     { id: 'gabriel', name: 'Gabriel Marin', aliases: ['Aegis'] },
@@ -162,5 +162,102 @@ describe('dropKnowledgeFrom — what was learned from message N on is taken back
 
         assert.equal(dropKnowledgeFrom(ledger, 0), false);
         assert.deepEqual(ledger, { characters: [], facts: [], scene: { at: null, present: [] }, lastUpdatedAt: null });
+    });
+});
+
+describe('dropKnowledgeFrom — the scene goes back to the one before the dropped message', () => {
+    it('restores the latest earlier scene and drops the later ones from the history', () => {
+        const ledger = {
+            characters: cast,
+            facts: [],
+            scene: { at: 44, present: ['noor'] },
+            sceneHistory: [
+                { at: 38, present: ['gabriel'] },
+                { at: 40, present: ['ellie', 'gabriel'] },
+                { at: 42, present: ['ellie', 'noor'] },
+            ],
+            lastUpdatedAt: 44,
+        };
+
+        const changed = dropKnowledgeFrom(ledger, 42);
+
+        assert.equal(changed, true);
+        assert.deepEqual(ledger, {
+            characters: cast,
+            facts: [],
+            scene: { at: 40, present: ['ellie', 'gabriel'] },
+            sceneHistory: [
+                { at: 38, present: ['gabriel'] },
+            ],
+            lastUpdatedAt: 41,
+        });
+    });
+
+    it('restores the previous scene when only the latest reply is gone, so the block shows its characters present', () => {
+        const amyCast = [
+            { id: 'c1', name: 'Ellie', aliases: [] },
+            { id: 'c2', name: 'Amy', aliases: [] },
+        ];
+        const ledger = {
+            characters: amyCast,
+            facts: [
+                {
+                    id: 'f1', text: 'Amy\'s diagnostic logs were rewritten.', public: false,
+                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 42 }],
+                },
+            ],
+            scene: { at: 44, present: ['c1', 'c2'] },
+            sceneHistory: [{ at: 42, present: ['c1', 'c2'] }],
+            lastUpdatedAt: 44,
+        };
+
+        dropKnowledgeFrom(ledger, 44);
+
+        assert.deepEqual(ledger.scene, { at: 42, present: ['c1', 'c2'] });
+        assert.deepEqual(ledger.sceneHistory, []);
+        const messages = [
+            { is_user: true, mes: 'Ellie sits down next to Amy.' },
+        ];
+        assert.equal(buildKnowledgeBlock(ledger, messages), [
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character speaks and acts only from their own list. Knowledge moves between characters only on-screen.]',
+            '',
+            'ELLIE (present)',
+            '- Knows: Amy\'s diagnostic logs were rewritten.',
+            '',
+            'AMY (present)',
+            '- Does not know: Amy\'s diagnostic logs were rewritten.',
+        ].join('\n'));
+    });
+
+    it('empties the scene when the history holds no scene before the dropped message', () => {
+        const ledger = {
+            characters: cast,
+            facts: [],
+            scene: { at: 44, present: ['noor'] },
+            sceneHistory: [{ at: 43, present: ['ellie'] }],
+            lastUpdatedAt: 44,
+        };
+
+        dropKnowledgeFrom(ledger, 43);
+
+        assert.deepEqual(ledger.scene, { at: null, present: [] });
+        assert.deepEqual(ledger.sceneHistory, []);
+    });
+
+    it('empties the scene of an old ledger that has no scene history', () => {
+        const ledger = {
+            characters: cast,
+            facts: [],
+            scene: { at: 44, present: ['noor'] },
+            lastUpdatedAt: 44,
+        };
+
+        assert.equal(dropKnowledgeFrom(ledger, 44), true);
+        assert.deepEqual(ledger, {
+            characters: cast,
+            facts: [],
+            scene: { at: null, present: [] },
+            lastUpdatedAt: 43,
+        });
     });
 });
