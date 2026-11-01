@@ -32,7 +32,7 @@ function storeLedger() {
 const EXPECTED_BLOCK = [
     '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
         + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
-        + 'Rumors, teammates, news reports and "someone told me" carry nothing that is not on a character\'s list. '
+        + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
         + 'A character not listed here knows only what everyone knows.]',
     '',
     'NOOR (present)',

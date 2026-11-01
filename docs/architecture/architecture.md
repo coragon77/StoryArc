@@ -434,7 +434,7 @@ The single-message re-extraction (`reextractKnowledgeOfMessage`) passes the chat
 - **talked about** — characters whose name or an alias appears as a whole word (case-insensitive, Unicode-aware) in the story text of the latest user message or the latest reply, hidden messages skipped, minus those present. Story text is the message with every tagged element (`<tag>…</tag>`, nested ones included) taken out (`withoutTaggedElements`, issue #22): presets append status blocks such as `<svt>…</svt>` and `<trk>…</trk>` to every reply, and at message 2133 of the Paragon chat three bystanders got a talked-about section only because a `<bg>` line named them. HTML formatting tags in the story text (`<i>Steve</i>`) are taken out too. The extraction input keeps the tags.
 
 ```
-[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. Rumors, teammates, news reports and "someone told me" carry nothing that is not on a character's list. A character not listed here knows only what everyone knows.]
+[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows.]
 
 EVERYONE KNOWS
 - Steve's team won the Best Live Demo award

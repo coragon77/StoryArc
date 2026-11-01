@@ -268,7 +268,7 @@ describe('a revealed secret, from the answer text to the knowledge block', () =>
             { is_user: false, mes: 'The crane comes down tonight.' },
         ]);
         assert.equal(block, [
-            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. Rumors, teammates, news reports and "someone told me" carry nothing that is not on a character\'s list. A character not listed here knows only what everyone knows.]',
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows.]',
             '',
             'ELLIE (present)',
             '- Knows: Julian means to bring the crane down tonight (known only to them)',
