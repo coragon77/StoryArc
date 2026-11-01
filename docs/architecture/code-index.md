@@ -421,6 +421,7 @@ lib/ui/
 │                              knowledge-popup.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 └── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
+                               knowledge/ledger.js nextLedgerId,
                                /scripts/popup.js, /scripts/utils.js)
 
 index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
