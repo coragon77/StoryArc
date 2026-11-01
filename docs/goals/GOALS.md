@@ -46,7 +46,7 @@ The user experiences the story as a player, not a planner. Mysteries have real a
 ## What This Is NOT
 
 - Not a "start a new story" tool -- that's Story Mode's job
-- Not a memory/summarization system -- that's Timeline Memory / Memory Books / Smart Memory
+- Not a memory/summarization system -- that's Timeline Memory / Memory Books / Smart Memory. One exception: the optional knowledge tracker keeps who knows which fact, because a narrator that loses track of it spills the plan's secrets through characters who could not know them (ADR-0007)
 - Not a lorebook manager -- that's LoreManager / WorldInfo Recommender
 - Not a full story authoring suite -- no cover art, no libraries, no PNG export
 - Not a game engine -- arcs are narrative intentions, not gameplay mechanics
@@ -103,4 +103,4 @@ Arc completes -> "Plan Next Arc" (cycle repeats)
 - **Player experience.** The user should feel like a player in a story with a skilled dungeon master, not a co-author staring at an outline.
 - **Pace control.** The single biggest failure mode is the LLM rushing to resolution. Every layer of the system pushes against this: gated beats, phase directives, explicit anti-patterns, message-count awareness.
 - **Graceful degradation.** If the lorebook is empty, work with chat history. If the chat is short, work with user description. Any single context source should be sufficient.
-- **One thing well.** Plan arcs. That's it. Don't creep into memory management, lorebook editing, or story-from-scratch generation.
+- **One thing well.** Plan arcs. That's it. Don't creep into memory management, lorebook editing, or story-from-scratch generation. The one piece of memory Story Arc keeps is who knows what, as an optional feature that can be turned off (ADR-0007).
