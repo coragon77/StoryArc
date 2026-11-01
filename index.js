@@ -17,7 +17,7 @@ import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
-import { injectKnowledgeBlock } from './lib/knowledge/ledger.js';
+import { injectKnowledgeBlock, updateKnowledgeAfterReply } from './lib/knowledge/ledger.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
@@ -107,6 +107,15 @@ async function onMessageReceived(messageIndex) {
     // All arcs, not just active: past arcs' ids linger in journal recaps.
     const allArcs = getArcs();
     scrubArcInternals(messageIndex, allArcs);
+
+    // After signal processing, so the extraction reads the reply without its
+    // markers. Not awaited: ST waits for its listeners, and the extraction
+    // must not hold up the next generation.
+    updateKnowledgeAfterReply(messageIndex)
+        .then(updated => {
+            if (updated) updateKnowledgeStatus();
+        })
+        .catch(err => console.warn('[Story Arc] Knowledge update failed:', err));
 }
 
 /**
