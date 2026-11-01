@@ -58,6 +58,7 @@ describe('buildKnowledgeExtractionVariables', () => {
                 '- [fact-latches] Noor should lock the gauntlet on with titanium latches (known to: Gabriel Marin, Ellie)',
                 '- [fact-overdrive] Overdrive is Bellweather\'s ringer for Sunday (public)',
             ].join('\n'),
+            SECRETS: '(none)',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
                 '[2066] Narrator: Noor looks up from the bench.',
@@ -74,6 +75,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             PERSONA: '(no persona)',
             CHARACTERS: '(none)',
             FACTS: '(none)',
+            SECRETS: '(none)',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',
         });
     });
@@ -83,7 +85,7 @@ describe('extract-knowledge.txt', () => {
     it('holds a placeholder for every template variable', () => {
         const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
 
-        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{MESSAGES}}']) {
+        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{SECRETS}}', '{{MESSAGES}}']) {
             assert.ok(template.includes(placeholder), `missing ${placeholder}`);
         }
     });
@@ -113,6 +115,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
                 { factId: 'fact-latches', public: false, who: ['Noor'], how: 'told', toldBy: 'Ellie', at: 2079 },
                 { text: 'The kiln router logged 42.08 kHz queries overnight', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2080 },
             ],
+            revealedSecrets: [],
         });
     });
 
@@ -131,7 +134,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {
