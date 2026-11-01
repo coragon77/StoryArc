@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLlmJson, validateArcPlan } from '../lib/planning/validation.js';
+import { secretHolders } from '../lib/core/settings.js';
 
 describe('parseLlmJson', () => {
     it('parses clean JSON', () => {
@@ -398,6 +399,17 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
             { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false },
             { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false },
         ]);
+    });
+
+    it('validates a secret without a holder list as before, and it has no holders', () => {
+        const [secret] = arcOf({ secrets: [{ id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax' }] }).secrets;
+        assert.deepEqual(secret, { id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false });
+        assert.deepEqual(secretHolders(secret), []);
+    });
+
+    it('secretHolders returns a stored secret\'s holder names', () => {
+        const secret = { id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] };
+        assert.deepEqual(secretHolders(secret), ['Julian', 'Brody']);
     });
 
     it('gives a secret object without content an empty content', () => {

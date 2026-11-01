@@ -23,7 +23,7 @@ register('data:text/javascript,' + encodeURIComponent(
          return nextResolve(specifier, context);
      }`,
 ));
-const { migrateArc, ensureChatState } = await import('../lib/core/settings.js');
+const { migrateArc, ensureChatState, getKnowledgeLedger } = await import('../lib/core/settings.js');
 
 function oldArc(overrides = {}) {
     return {
@@ -144,6 +144,12 @@ describe('ensureChatState — per-chat namespace and settings', () => {
                 injectionBudget: 3000,
                 autoTrack: true,
             },
+            knowledge: {
+                characters: [],
+                facts: [],
+                scene: { at: null, present: [] },
+                lastUpdatedAt: null,
+            },
         });
         assert.equal(globalThis.saveMetadataCalls, 0);
     });
@@ -167,6 +173,75 @@ describe('ensureChatState — per-chat namespace and settings', () => {
         assert.deepEqual(chat_metadata.story_arc.settings, {
             injectionBudget: 3000,
             autoTrack: false,
+        });
+    });
+});
+
+describe('ensureChatState — the knowledge ledger', () => {
+    beforeEach(() => {
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+        globalThis.saveMetadataCalls = 0;
+    });
+
+    it('gives a stored namespace without a ledger an empty one, without saving', () => {
+        chat_metadata.story_arc = { version: 1, arcs: [], settings: { injectionBudget: 3000, autoTrack: true } };
+        ensureChatState();
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            characters: [],
+            facts: [],
+            scene: { at: null, present: [] },
+            lastUpdatedAt: null,
+        });
+        assert.equal(globalThis.saveMetadataCalls, 0);
+    });
+
+    it('leaves an existing ledger untouched', () => {
+        const storedLedger = {
+            characters: [{ id: 'c1', name: 'Noor', aliases: ['Al-Jamil'] }],
+            facts: [{
+                id: 'f1',
+                text: 'Gabriel Marin is Aegis.',
+                public: false,
+                holders: [{ characterId: 'c1', how: 'user', toldBy: null, at: null }],
+            }],
+            scene: { at: 2078, present: ['c1'] },
+            lastUpdatedAt: 2078,
+        };
+        chat_metadata.story_arc = { version: 1, arcs: [], knowledge: storedLedger };
+        ensureChatState();
+        assert.equal(chat_metadata.story_arc.knowledge, storedLedger);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            characters: [{ id: 'c1', name: 'Noor', aliases: ['Al-Jamil'] }],
+            facts: [{
+                id: 'f1',
+                text: 'Gabriel Marin is Aegis.',
+                public: false,
+                holders: [{ characterId: 'c1', how: 'user', toldBy: null, at: null }],
+            }],
+            scene: { at: 2078, present: ['c1'] },
+            lastUpdatedAt: 2078,
+        });
+    });
+
+    it('gives each fresh chat its own ledger object', () => {
+        ensureChatState();
+        chat_metadata.story_arc.knowledge.characters.push({ id: 'c1', name: 'Noor', aliases: [] });
+        chat_metadata.story_arc.knowledge.scene.present.push('c1');
+        delete chat_metadata.story_arc;
+        ensureChatState();
+        assert.deepEqual(chat_metadata.story_arc.knowledge.characters, []);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.scene.present, []);
+    });
+
+    it('getKnowledgeLedger returns the stored ledger, creating the chat state first', () => {
+        const ledger = getKnowledgeLedger();
+        assert.equal(ledger, chat_metadata.story_arc.knowledge);
+        assert.deepEqual(ledger, {
+            characters: [],
+            facts: [],
+            scene: { at: null, present: [] },
+            lastUpdatedAt: null,
         });
     });
 });
