@@ -17,7 +17,7 @@ import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
-import { injectKnowledgeBlock, updateKnowledgeAfterReply } from './lib/knowledge/ledger.js';
+import { injectKnowledgeBlock, updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
@@ -141,30 +141,59 @@ async function onUserMessageRendered() {
 /**
  * After messages were deleted, including the last reply before a
  * regeneration: ST passes the new chat length, so every message from that
- * index on is gone, and so is what its queued marks report.
+ * index on is gone, and so is what its queued marks report and what the
+ * knowledge ledger learned from it.
  * @param {number} chatLength - Chat length after the deletion
  */
 async function onMessageDeleted(chatLength) {
     if (dropPendingMarksFrom(chatLength)) await saveMetadata();
+    if (await rollBackKnowledgeFrom(chatLength)) updateKnowledgeStatus();
 }
 
 /**
  * When the user swipes a reply: the shown text is replaced, so its queued
- * marks no longer match the story. A newly generated swipe arrives through
- * MESSAGE_RECEIVED and queues its own marks.
+ * marks and what the knowledge ledger learned from it no longer match the
+ * story. A newly generated swipe arrives through MESSAGE_RECEIVED and queues
+ * its own marks and knowledge update; switching to an existing swipe
+ * re-extracts that message's knowledge.
  * @param {number} messageIndex - Index of the swiped message
  */
 async function onMessageSwiped(messageIndex) {
     if (dropPendingMarksFrom(messageIndex)) await saveMetadata();
+    // Not awaited: the re-extraction must not hold up the swipe. The drop
+    // inside runs before the first await, so a new swipe's reply update
+    // always sees the rolled-back ledger.
+    updateKnowledgeAfterSwipe(Number(messageIndex))
+        .then(changed => {
+            if (changed) updateKnowledgeStatus();
+        })
+        .catch(err => console.warn('[Story Arc] Knowledge rollback after a swipe failed:', err));
+}
+
+/**
+ * After the user edited a message: re-extract what the knowledge ledger
+ * learned from that message, keeping everything learned after it.
+ * Not awaited, like the update after a reply.
+ * @param {number} messageIndex - Index of the edited message
+ */
+function onMessageEdited(messageIndex) {
+    updateKnowledgeAfterEdit(Number(messageIndex))
+        .then(changed => {
+            if (changed) updateKnowledgeStatus();
+        })
+        .catch(err => console.warn('[Story Arc] Knowledge update after an edit failed:', err));
 }
 
 /**
  * When the user switches to a different chat: re-init per-chat state
  * and refresh the progress display and the knowledge tracker status line.
+ * ST copies the chat metadata whole when it branches, so the knowledge
+ * ledger drops what it learned past the loaded chat's end.
  */
-function onChatChanged() {
+async function onChatChanged() {
     ensureChatState();
     updateProgress();
+    await rollBackKnowledgeFrom(chat.length);
     updateKnowledgeStatus();
 }
 
@@ -188,6 +217,7 @@ jQuery(async () => {
     eventSource.on(event_types.USER_MESSAGE_RENDERED, onUserMessageRendered);
     eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
     eventSource.on(event_types.MESSAGE_SWIPED, onMessageSwiped);
+    eventSource.on(event_types.MESSAGE_EDITED, onMessageEdited);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
 
     // Initialize state for current chat
