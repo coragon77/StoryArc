@@ -221,6 +221,51 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
     });
 });
 
+describe('rollBackKnowledgeFrom and a retraction after a deletion in the middle', () => {
+    const FACT_LATCHES_RETRACTED = {
+        id: 'f2', text: 'Gabriel wants titanium latches', public: false,
+        holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' }],
+    };
+
+    /** The stamped ledger, but message 5 (an out-of-character correction) retracted f2. */
+    function storeLedgerWithRetraction() {
+        storeStampedLedger();
+        const ledger = chat_metadata.story_arc.knowledge;
+        ledger.facts = ledger.facts.filter(fact => fact.id !== 'f2');
+        ledger.retractedFacts = [{ at: 5, messageId: 'm5', fact: structuredClone(FACT_LATCHES_RETRACTED) }];
+    }
+
+    beforeEach(() => {
+        setSwitches({ tracker: true });
+        fillChat({ stamped: true });
+    });
+
+    it('a retraction whose correction survives stays, at the correction\'s new index', async () => {
+        storeLedgerWithRetraction();
+
+        chat.splice(4, 1);
+        await rollBackKnowledgeFrom(chat.length);
+
+        const ledger = chat_metadata.story_arc.knowledge;
+        assert.deepEqual(ledger.facts.map(fact => fact.id), ['f1', 'f3', 'f4']);
+        assert.deepEqual(ledger.retractedFacts, [{ at: 4, messageId: 'm5', fact: FACT_LATCHES_RETRACTED }]);
+        assert.deepEqual(ledger.facts[1].holders, [{ characterId: 'c3', how: 'witnessed', toldBy: null, at: 5, messageId: 'm6' }]);
+    });
+
+    it('deleting the correction in the middle gives the retracted fact back', async () => {
+        storeLedgerWithRetraction();
+
+        chat.splice(5, 1);
+        await rollBackKnowledgeFrom(chat.length);
+
+        const ledger = chat_metadata.story_arc.knowledge;
+        assert.deepEqual(ledger.retractedFacts, []);
+        assert.deepEqual(ledger.facts.map(fact => fact.id), ['f1', 'f3', 'f4', 'f2']);
+        assert.deepEqual(ledger.facts[3], FACT_LATCHES_RETRACTED);
+        assert.equal(ledger.lastUpdatedAt, 5);
+    });
+});
+
 describe('updateKnowledgeAfterSwipe and the stamps', () => {
     it('a swiped message no update has read again is read by the next update even after a deletion before it', async () => {
         setSwitches({ tracker: true });

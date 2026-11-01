@@ -161,6 +161,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
                 { text: 'The kiln router logged 42.08 kHz queries overnight', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2080 },
             ],
             revealedSecrets: [],
+            retracted: [],
         });
     });
 
@@ -179,7 +180,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {
