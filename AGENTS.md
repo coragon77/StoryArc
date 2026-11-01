@@ -70,12 +70,14 @@ StoryArc/
 │   │   ├── wand-menu.js        # Wand menu entry and its popup
 │   │   ├── wizard.js           # Arc planning wizard popup
 │   │   ├── arc-manager.js      # Arc list + controls popup
+│   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
 │   │   └── progress.js         # Compact progress display
 │   └── css/
 │       ├── core.css            # Variables, base styles
 │       ├── spoiler.css         # Spoiler toggle styles
 │       ├── wizard.css          # Wizard popup styles
 │       ├── arc-manager.css     # Arc manager styles
+│       ├── knowledge.css       # Knowledge popup styles
 │       └── progress.css        # Progress display styles
 ├── tests/
 │   ├── run.sh                  # Node.js test runner

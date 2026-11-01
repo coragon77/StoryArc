@@ -1,0 +1,101 @@
+/* ============================================================================
+   KNOWLEDGE POPUP — characters and facts of the knowledge ledger
+   ============================================================================ */
+
+.story-arc-knowledge-list {
+    margin-top: 8px;
+    padding: 0;
+    list-style: none;
+}
+
+.story-arc-knowledge-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    padding: 6px 8px;
+    font-size: 0.78em;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.story-arc-knowledge-item:last-child {
+    border-bottom: none;
+}
+
+.story-arc-knowledge-text {
+    flex: 1 1 auto;
+}
+
+.story-arc-knowledge-holder {
+    padding: 0 6px;
+    font-size: 0.9em;
+    border-radius: 8px;
+    background: var(--black20a, rgba(0,0,0,0.2));
+    white-space: nowrap;
+}
+
+.story-arc-holder-remove-btn {
+    margin-left: 2px;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.story-arc-holder-remove-btn:hover {
+    opacity: 1;
+    color: var(--sa-accent);
+}
+
+.story-arc-knowledge-edit-btn {
+    cursor: pointer;
+    opacity: 0.5;
+    flex-shrink: 0;
+    transition: var(--sa-transition-fast);
+}
+
+.story-arc-knowledge-edit-btn:hover,
+.story-arc-knowledge-item.editing .story-arc-knowledge-edit-btn {
+    opacity: 1;
+    color: var(--sa-accent);
+}
+
+.story-arc-knowledge-editor {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+}
+
+.story-arc-knowledge-item.editing .story-arc-knowledge-editor {
+    display: flex;
+}
+
+.story-arc-knowledge-editor label small {
+    color: var(--SmartThemeEmColor, #888);
+}
+
+.story-arc-knowledge-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.story-arc-knowledge-editor-actions .story-arc-btn {
+    font-size: 0.9em;
+    padding: 3px 8px;
+}
+
+.story-arc-knowledge-add {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    font-size: 0.78em;
+}
+
+.story-arc-knowledge-holder-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}

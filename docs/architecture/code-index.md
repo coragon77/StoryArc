@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-10-30
+- **Last Updated:** 2026-11-01
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -240,7 +240,17 @@ StoryArc/
 │   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
 │   │   │                       #   Clues, Triggers drawers with open / waiting /
 │   │   │                       #   done items; buildReportsWaitingLine(); unbinds the whole
-│   │   │                       #   .storyArcManager namespace when the popup resolves
+│   │   │                       #   .storyArcManager namespace when the popup resolves;
+│   │   │                       #   Knowledge button (tracker on) opens the knowledge popup
+│   │   ├── knowledge-popup.js  # showKnowledgePopup() — the knowledge ledger behind two
+│   │   │                       #   closed spoiler drawers (Characters, Facts):
+│   │   │                       #   buildKnowledgeContent(); pure ledger edits
+│   │   │                       #   (addCharacter, renameCharacter, setCharacterAliases,
+│   │   │                       #   addFact, editFactText, deleteFact, setFactPublic,
+│   │   │                       #   addFactHolder, removeFactHolder) return
+│   │   │                       #   { ledger, error }; new holders are how 'user',
+│   │   │                       #   at null. Opened from the Arc Manager and the wand
+│   │   │                       #   menu while the tracker is on
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
 │   │                           #   milestones"; shows "~N msgs to next phase" only
@@ -255,6 +265,7 @@ StoryArc/
 │       ├── wizard.css          # Wizard popup layout, step indicators, tier row and
 │       │                       #   hint, generation step log and streamed-chars ticker
 │       ├── arc-manager.css     # Arc list, beat rows, status badges
+│       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
 │       └── progress.css        # Compact sidebar progress widget, incl. the
 │                               #   "msgs to next phase" line and the stall nudge
 ├── tests/
@@ -311,6 +322,8 @@ StoryArc/
 │   │                           #   skipped on an unreadable answer
 │   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
 │   │                           #   waiting state, reports-waiting line
+│   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
+│   │                           #   after ledgers), spoiler drawers start closed
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line) + buildPlanCheckVariables
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
@@ -398,13 +411,17 @@ lib/ui/
 │                              /scripts/extensions.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
-│                              wizard.js, arc-manager.js, /scripts/popup.js,
+│                              wizard.js, arc-manager.js, knowledge-popup.js,
+│                              /scripts/popup.js, /scripts/utils.js)
+├── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
+│                              planning/storage.js, planning/arc-edit.js,
+│                              injection/signals.js, injection/pacing.js,
+│                              injection/clock.js, core/settings.js,
+│                              core/constants.js, progress.js, wizard.js,
+│                              knowledge-popup.js, /scripts/popup.js,
 │                              /scripts/utils.js)
-└── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
-                               planning/storage.js, planning/arc-edit.js,
-                               injection/signals.js, injection/pacing.js,
-                               injection/clock.js, core/settings.js,
-                               core/constants.js, progress.js, wizard.js,
+└── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
+                               knowledge/ledger.js nextLedgerId,
                                /scripts/popup.js, /scripts/utils.js)
 
 index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
