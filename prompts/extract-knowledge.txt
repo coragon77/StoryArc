@@ -10,6 +10,10 @@ Each with the other names they go by.
 Each with its id and who already knows it. A public fact is known to everyone.
 {{FACTS}}
 
+== SECRETS OF THE STORY PLAN ==
+Each with its id and the characters the plan says already hold it. Only these secrets can be revealed in the new messages.
+{{SECRETS}}
+
 == NEW MESSAGES ==
 Each message starts with its index in square brackets.
 {{MESSAGES}}
@@ -29,6 +33,11 @@ Each message starts with its index in square brackets.
 - "at": the index of the message they learn it in.
 Only what happens on screen counts. A character who is not in the scene learns nothing, even when it would be likely. Guesses and suspicions are not facts. Text in square brackets or marked OOC is not the story. Report only facts that matter for what characters may say or do later; skip small talk and scenery.
 
+4. REVEALED SECRETS. For every secret from the plan list that comes out on screen in the new messages, write one item:
+- "secretId": the id of the secret in square brackets in the plan list.
+- "heardBy": the characters in the scene who see or hear it come out. Leave out characters the plan already names as holders.
+A secret counts as revealed only when its content is said or shown plainly on screen, not when it is hinted at. Do not write a revealed secret again under LEARNED.
+
 Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
@@ -36,6 +45,9 @@ Answer with ONLY this JSON object, no prose before or after it:
   "learned": [
     { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 },
     { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 }
+  ],
+  "revealedSecrets": [
+    { "secretId": "id of a secret in the plan list", "heardBy": ["name"] }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
