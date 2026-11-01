@@ -65,17 +65,21 @@ const LEDGER_AS_STORED = {
     lastUpdatedAt: 2,
 };
 
-/** A workshop chat: greeting, then user and reply in turn. */
+/**
+ * A workshop chat: greeting, then user and reply in turn. Each message
+ * carries the Story Arc message id m0 … m6 already, so the ids an update
+ * stores are known in advance.
+ */
 function fillChat() {
     chat.length = 0;
     chat.push(
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Welcome to the bay.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Hi Noor.' },
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Gauntlet on the bench.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Gabriel wants titanium latches.' },
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Titanium it is.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Thanks.' },
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Come back at four.' },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Welcome to the bay.', extra: { story_arc_message_id: 'm0' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Hi Noor.', extra: { story_arc_message_id: 'm1' } },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Gauntlet on the bench.', extra: { story_arc_message_id: 'm2' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Gabriel wants titanium latches.', extra: { story_arc_message_id: 'm3' } },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Titanium it is.', extra: { story_arc_message_id: 'm4' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Thanks.', extra: { story_arc_message_id: 'm5' } },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Come back at four.', extra: { story_arc_message_id: 'm6' } },
     );
 }
 
@@ -153,14 +157,15 @@ describe('updateKnowledgeAfterReply', () => {
                 {
                     id: 'f2', text: 'Gabriel wants the gauntlet locked on with titanium latches', public: false,
                     holders: [
-                        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
-                        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+                        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3, messageId: 'm3' },
+                        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' },
                     ],
                 },
             ],
-            scene: { at: 6, present: ['c1', 'c2'] },
+            scene: { at: 6, messageId: 'm6', present: ['c1', 'c2'] },
             sceneHistory: [{ at: 2, present: ['c1', 'c2'] }],
             lastUpdatedAt: 6,
+            lastUpdatedMessageId: 'm6',
         });
     });
 
@@ -236,8 +241,8 @@ describe('updateKnowledgeAfterReply', () => {
             {
                 id: 'f3', text: 'Gabriel wants the gauntlet locked on with titanium latches', public: false,
                 holders: [
-                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
-                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3, messageId: 'm3' },
+                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' },
                 ],
             },
         ]);

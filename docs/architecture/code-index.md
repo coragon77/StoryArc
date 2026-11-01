@@ -236,10 +236,14 @@ StoryArc/
 │   │                           #   resolveRevealedSecrets() (keeps the heard text);
 │   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
 │   │                           #   last): the teller of a told fact holds it too, an
-│   │                           #   at outside from..last falls back to last;
+│   │                           #   at outside from..last falls back to last; given the
+│   │                           #   chat, gives the read messages a message id (extra.
+│   │                           #   story_arc_message_id) and stores messageId;
 │   │                           #   nextLedgerId(prefix, entries);
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
-│   │                           #   load) via dropKnowledgeFrom(ledger, N) (user entries,
+│   │                           #   load) via followMessagesById(ledger, chat) (entries
+│   │                           #   with a message id follow their message) and
+│   │                           #   dropKnowledgeFrom(ledger, N) (user entries,
 │   │                           #   at null, stay), updateKnowledgeAfterSwipe(i),
 │   │                           #   updateKnowledgeAfterEdit(i);
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
@@ -376,8 +380,14 @@ StoryArc/
 │   ├── test-knowledge-dedupe.js # Tests: learned items with the same text join one
 │   │                           #   fact (in the answer and with the ledger), no
 │   │                           #   Knows/Does-not-know contradiction in the block
+│   ├── test-knowledge-identity.js # Tests: a deletion in the middle takes back exactly
+│   │                           #   the deleted messages' knowledge, later entries move
+│   │                           #   up; index-only ledgers as before; message ids after swipe
 │   ├── test-knowledge-drop.js  # Tests: dropKnowledgeFrom (holders from N on, user
 │   │                           #   entries kept, scene and lastUpdatedAt reset)
+│   ├── test-knowledge-retraction.js # Tests: OOC corrections retract facts (user
+│   │                           #   holders kept, unknown ids ignored), rollback of the
+│   │                           #   correction restores them, retracted parsing, template
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
 │   │                           #   talked about by alias, Has told, cap, public and
 │   │                           #   plan facts never printed)

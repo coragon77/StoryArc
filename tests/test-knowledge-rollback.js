@@ -33,16 +33,21 @@ function setSwitches({ tracker }) {
     };
 }
 
-/** A workshop chat: greeting, then user and reply in turn, seven messages. */
+/**
+ * A workshop chat: greeting, then user and reply in turn, seven messages.
+ * Messages 0 to 5 carry the Story Arc message id m0 … m5 already, so the ids
+ * an update stores are known in advance. Message 6 carries none: every
+ * swipe takes its message id, and the extraction that reads it gives it a new one.
+ */
 function fillChat() {
     chat.length = 0;
     chat.push(
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Welcome to the bay.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Hi Noor.' },
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Gauntlet on the bench.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Gabriel wants titanium latches.' },
-        { is_user: false, is_system: false, name: 'Noor', mes: 'Titanium it is.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'Thanks.' },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Welcome to the bay.', extra: { story_arc_message_id: 'm0' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Hi Noor.', extra: { story_arc_message_id: 'm1' } },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Gauntlet on the bench.', extra: { story_arc_message_id: 'm2' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Gabriel wants titanium latches.', extra: { story_arc_message_id: 'm3' } },
+        { is_user: false, is_system: false, name: 'Noor', mes: 'Titanium it is.', extra: { story_arc_message_id: 'm4' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'Thanks.', extra: { story_arc_message_id: 'm5' } },
         {
             is_user: false, is_system: false, name: 'Noor', mes: 'Dougal heard you.',
             swipe_id: 0, swipes: ['Dougal heard you.'],
@@ -134,7 +139,7 @@ describe('rollBackKnowledgeFrom', () => {
         chat.length = 6;
         const rolledBack = await rollBackKnowledgeFrom(6);
         // ... then the new reply arrives at the same index.
-        chat.push({ is_user: false, is_system: false, name: 'Noor', mes: 'Nobody else is here.' });
+        chat.push({ is_user: false, is_system: false, name: 'Noor', mes: 'Nobody else is here.', extra: { story_arc_message_id: 'm6b' } });
         const updated = await updateKnowledgeAfterReply(6);
 
         assert.equal(rolledBack, true);
@@ -143,8 +148,9 @@ describe('rollBackKnowledgeFrom', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
             facts: [FACT_F1, FACT_F2, FACT_F4],
-            scene: { at: 6, present: ['c1'] },
+            scene: { at: 6, messageId: 'm6b', present: ['c1'] },
             lastUpdatedAt: 6,
+            lastUpdatedMessageId: 'm6b',
         });
     });
 
@@ -219,6 +225,7 @@ describe('updateKnowledgeAfterSwipe', () => {
             facts: [FACT_F1, FACT_F2, FACT_F4],
             scene: { at: null, present: [] },
             lastUpdatedAt: 5,
+            lastUpdatedMessageId: 'm5',
         });
     });
 
@@ -229,8 +236,11 @@ describe('updateKnowledgeAfterSwipe', () => {
         showSecondSwipe();
 
         const updated = await updateKnowledgeAfterSwipe(6);
+        // The re-extraction gave the shown swipe a message id; the id itself is opaque.
+        const swipeMessageId = chat[6].extra.story_arc_message_id;
 
         assert.equal(updated, true);
+        assert.equal(typeof swipeMessageId, 'string');
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[6] Noor: It is on the news.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -238,11 +248,12 @@ describe('updateKnowledgeAfterSwipe', () => {
                 FACT_F1, FACT_F2, FACT_F4,
                 {
                     id: 'f5', text: 'The latches are on the news', public: true,
-                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 6 }],
+                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 6, messageId: swipeMessageId }],
                 },
             ],
-            scene: { at: 6, present: ['c1'] },
+            scene: { at: 6, messageId: swipeMessageId, present: ['c1'] },
             lastUpdatedAt: 6,
+            lastUpdatedMessageId: swipeMessageId,
         });
     });
 
@@ -322,8 +333,8 @@ const ANSWER_EDITED_MESSAGE_3 = JSON.stringify({
 const FACT_STEEL_LATCHES = {
     id: 'f5', text: 'Gabriel wants steel latches', public: false,
     holders: [
-        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
-        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3, messageId: 'm3' },
+        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' },
     ],
 };
 
@@ -383,6 +394,8 @@ describe('updateKnowledgeAfterEdit', () => {
         setSwitches({ tracker: true });
         storeLedger();
         const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
+        // The update that read message 6 gave it a message id; an edit keeps the message's extra.
+        chat[6].extra = { story_arc_message_id: 'm6' };
         chat[6].mes = 'Nobody else heard you.';
 
         const updated = await updateKnowledgeAfterEdit(6);
@@ -392,8 +405,9 @@ describe('updateKnowledgeAfterEdit', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
             facts: [FACT_F1, FACT_F2, FACT_F4],
-            scene: { at: 6, present: ['c1'] },
+            scene: { at: 6, messageId: 'm6', present: ['c1'] },
             lastUpdatedAt: 6,
+            lastUpdatedMessageId: 'm6',
         });
     });
 
@@ -468,7 +482,7 @@ describe('an index the answer gives outside the messages it covered', () => {
         ledger.lastUpdatedAt = 4;
     }
 
-    it('a fact stamped before the covered messages still goes with a regeneration of the reply it came from', async () => {
+    it('a fact placed before the covered messages still goes with a regeneration of the reply it came from', async () => {
         setSwitches({ tracker: true });
         storeLedgerThrough4();
         installExtraction([JSON.stringify({
@@ -484,7 +498,7 @@ describe('an index the answer gives outside the messages it covered', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F4]);
     });
 
-    it('a fact the edit of a message stamped elsewhere is taken back by the next edit of that message', async () => {
+    it('a fact the edit of a message placed elsewhere is taken back by the next edit of that message', async () => {
         setSwitches({ tracker: true });
         storeLedger();
         installExtraction([
@@ -526,6 +540,6 @@ describe('an index the answer gives outside the messages it covered', () => {
         await rollBackKnowledgeFrom(6);
 
         const revealedFact = chat_metadata.story_arc.knowledge.facts.find(fact => fact.secret);
-        assert.deepEqual(revealedFact?.holders, [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 5 }]);
+        assert.deepEqual(revealedFact?.holders, [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 5, messageId: 'm5' }]);
     });
 });
