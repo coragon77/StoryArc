@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-10-30
+- **Last Updated:** 2026-11-01
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -27,6 +27,9 @@ StoryArc/
 │   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
 │   │                           #   and pressures, list revealed secrets (re-plan),
 │   │                           #   link triggers to secrets; answers JSON (ADR-0006)
+│   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
+│   │                           #   new characters, who learned which fact and how,
+│   │                           #   revealed secrets with what was heard; answers JSON
 │   └── detail-pass.txt         # Old detail-pass draft (not loaded)
 ├── lib/
 │   ├── core/
@@ -34,13 +37,20 @@ StoryArc/
 │   │   │                       #   defaultPerChatSettings, ARC_PHASES, PHASE_ORDER,
 │   │   │                       #   PACING_DIRECTIVES, TIER_TABLE (label, beatKind,
 │   │   │                       #   beatCount, lengthBand per tier), ARC_FOCUS,
-│   │   │                       #   createDefaultArc()
+│   │   │                       #   createDefaultArc(); knowledge tracker:
+│   │   │                       #   defaultKnowledgeTrackerSettings (off, interval 1),
+│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'), HOLDER_HOW,
+│   │   │                       #   createEmptyKnowledgeLedger() — the ledger's schema
 │   │   └── settings.js         # loadSettings(), getSettings(), isEnabled(),
 │   │                           #   ensureChatState() (runs migrateArc() over arcs
 │   │                           #   stored before tiers existed — see the migration
 │   │                           #   note in architecture.md), getChatSettings(),
 │   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
-│   │                           #   messageStart fallbacks, named once
+│   │                           #   messageStart fallbacks, named once;
+│   │                           #   getKnowledgeTrackerSettings(),
+│   │                           #   isKnowledgeTrackerEnabled(), getKnowledgeLedger()
+│   │                           #   (ensureChatState creates an empty ledger),
+│   │                           #   secretHolders(secret) — [] for old secrets
 │   ├── context/
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
 │   │   │                       #   returns HarvestedContext object;
@@ -82,7 +92,8 @@ StoryArc/
 │   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
 │   │   │                       #   secrets (add-only), escalation, fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
-│   │   │                       #   loadTemplate(name), fillTemplate(template, vars)
+│   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
+│   │   │                       #   callLlm() exported for the knowledge extraction
 │   │   ├── arc-preset.js       # ARC_PRESET_NAME, ARC_PRESET_SETTINGS (fixed ~18-key
 │   │   │                       #   barebones preset — no derivation from a base
 │   │   │                       #   preset), ARC_PROMPT_ENTRIES (adult-content off,
@@ -99,7 +110,8 @@ StoryArc/
 │   │   │                       #   stripped, non-empty pressure required; estimatedLength
 │   │   │                       #   clamped to TIER_TABLE[tier].lengthBand; optional
 │   │   │                       #   `pressure` per episode beat (stored arcs are
-│   │   │                       #   not migrated or re-validated)
+│   │   │                       #   not migrated or re-validated); optional secret
+│   │   │                       #   `holders` (normalizeSecretHolders, [] when missing)
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
 │   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),
@@ -144,6 +156,8 @@ StoryArc/
 │   │   │                       #   tiers for byte-identity (architecture.md, migration);
 │   │   │                       #   pushPlanLists(lines, arc, phase) — secrets,
 │   │   │                       #   triggers, foreshadowing; buildMilestoneSection reuses it;
+│   │   │                       #   holderSuffix(secret) — " (known only to: …)" on a
+│   │   │                       #   SECRETS line while the knowledge tracker is on;
 │   │   │                       #   buildPausedSection(arc) — one line under PAUSED: premise
 │   │   │                       #   + "pending, not being pursued right now";
 │   │   │                       #   buildBackgroundSection(arc) — act/saga: title under
@@ -208,6 +222,31 @@ StoryArc/
 │   │                           #   user turn later);
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
+│   ├── knowledge/
+│   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
+│   │                           #   the order it runs, helpers after their first caller;
+│   │                           #   every ledger operation changes the stored ledger in
+│   │                           #   place and returns true when it changed:
+│   │                           #   Update after a reply — updateKnowledgeAfterReply(i),
+│   │                           #   every N replies, one at a time, stale answers dropped;
+│   │                           #   Extraction — extractKnowledge(ledger, chat, fromIndex,
+│   │                           #   persona) → parsed answer or null; listShownSecrets(arcs),
+│   │                           #   buildKnowledgeExtractionVariables(),
+│   │                           #   parseKnowledgeExtractionAnswer() (all or nothing),
+│   │                           #   resolveRevealedSecrets() (keeps the heard text);
+│   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
+│   │                           #   last): the teller of a told fact holds it too, an
+│   │                           #   at outside from..last falls back to last;
+│   │                           #   nextLedgerId(prefix, entries);
+│   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
+│   │                           #   load) via dropKnowledgeFrom(ledger, N) (user entries,
+│   │                           #   at null, stay), updateKnowledgeAfterSwipe(i),
+│   │                           #   updateKnowledgeAfterEdit(i);
+│   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
+│   │                           #   in-chat depth 1, system, '' while off;
+│   │                           #   Build — buildKnowledgeBlock(ledger, chat), present +
+│   │                           #   talked-about characters, KNOWLEDGE_LIST_CAP = 5;
+│   │                           #   characterName(ledger, id) (also for the popup)
 │   ├── ui/
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
 │   │   │                       #   enable toggle, generation profile dropdown
@@ -215,13 +254,15 @@ StoryArc/
 │   │   │                       #   button (handleCreateArcPreset(), no base-preset
 │   │   │                       #   dropdown), plan/manage buttons, progress container;
 │   │   │                       #   setupSettingsPanelEvents() also wires the stall
-│   │   │                       #   nudge (.story-arc-stall-btn → showWizard(arcId))
+│   │   │                       #   nudge (.story-arc-stall-btn → showWizard(arcId));
+│   │   │                       #   knowledge tracker switch, update interval and
+│   │   │                       #   status line (updateKnowledgeStatus())
 │   │   ├── wand-menu.js        # registerWandMenuEntry() — adds a "Story Arc" item to
 │   │   │                       #   #extensionsMenu (the wand next to the chat bar);
 │   │   │                       #   showWandPopup() reopens itself after the wizard or
 │   │   │                       #   the manager resolves, so the progress cards rebuild;
 │   │   │                       #   says the extension is disabled instead of offering
-│   │   │                       #   dead buttons
+│   │   │                       #   dead buttons; Knowledge action while the tracker is on
 │   │   ├── wizard.js           # showWizard(reviseArcId?) — multi-step arc planning popup:
 │   │   │                       #   context preview → tier selector + direction →
 │   │   │                       #   generation view (append-only step log with elapsed
@@ -240,7 +281,20 @@ StoryArc/
 │   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
 │   │   │                       #   Clues, Triggers drawers with open / waiting /
 │   │   │                       #   done items; buildReportsWaitingLine(); unbinds the whole
-│   │   │                       #   .storyArcManager namespace when the popup resolves
+│   │   │                       #   .storyArcManager namespace when the popup resolves;
+│   │   │                       #   Knowledge button (tracker on) opens the knowledge popup
+│   │   ├── knowledge-popup.js  # showKnowledgePopup() — the knowledge ledger behind two
+│   │   │                       #   closed spoiler drawers (Characters, Facts):
+│   │   │                       #   buildKnowledgeContent(); pure ledger edits
+│   │   │                       #   (addCharacter, renameCharacter, setCharacterAliases,
+│   │   │                       #   addFact, editFactText, deleteFact, setFactPublic,
+│   │   │                       #   addFactHolder, removeFactHolder) return
+│   │   │                       #   { ledger, error }; new holders are how
+│   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
+│   │   │                       #   Manager and the wand menu while the tracker is on
+│   │   ├── spoiler-group.js    # buildSpoilerGroup(id, label, warning, body) — the
+│   │   │                       #   collapsed spoiler drawer of the Arc Manager and
+│   │   │                       #   the Knowledge popup
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
 │   │                           #   milestones"; shows "~N msgs to next phase" only
@@ -255,6 +309,7 @@ StoryArc/
 │       ├── wizard.css          # Wizard popup layout, step indicators, tier row and
 │       │                       #   hint, generation step log and streamed-chars ticker
 │       ├── arc-manager.css     # Arc list, beat rows, status badges
+│       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
 │       └── progress.css        # Compact sidebar progress widget, incl. the
 │                               #   "msgs to next phase" line and the stall nudge
 ├── tests/
@@ -311,6 +366,37 @@ StoryArc/
 │   │                           #   skipped on an unreadable answer
 │   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
 │   │                           #   waiting state, reports-waiting line
+│   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
+│   │                           #   after ledgers), spoiler drawers start closed
+│   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
+│   │                           #   parsing (all or nothing, null keys)
+│   ├── test-knowledge-apply.js # Tests: applyExtractionAnswer (new characters, aliases,
+│   │                           #   unknown names/ids ignored, teller holds a told fact, changed in place,
+│   │                           #   then the card case through buildKnowledgeBlock)
+│   ├── test-knowledge-dedupe.js # Tests: learned items with the same text join one
+│   │                           #   fact (in the answer and with the ledger), no
+│   │                           #   Knows/Does-not-know contradiction in the block
+│   ├── test-knowledge-drop.js  # Tests: dropKnowledgeFrom (holders from N on, user
+│   │                           #   entries kept, scene and lastUpdatedAt reset)
+│   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
+│   │                           #   talked about by alias, Has told, cap, public and
+│   │                           #   plan facts never printed)
+│   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock key, in-chat depth 1,
+│   │                           #   system role; '' while off or empty
+│   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
+│   │                           #   interval, failed/unreadable answer, first update,
+│   │                           #   popup edit during the call, swipe during the call)
+│   ├── test-knowledge-rollback.js # Tests: rollback on regeneration and branch load,
+│   │                           #   new vs. existing swipe, edit re-extracts one message,
+│   │                           #   late answers dropped, an at outside the covered
+│   │                           #   messages still rolled back, an early reveal kept
+│   ├── test-knowledge-revealed.js # Tests: shown secrets (phase gate, refs), revealed
+│   │                           #   secret becomes a linked fact worded as heard, its own
+│   │                           #   text nowhere in the block
+│   ├── test-knowledge-secrets.js # Tests: SECRETS holder suffix on, injection as
+│   │                           #   before with the tracker off, budget trim
+│   ├── test-knowledge-settings.js # Tests: tracker switch, interval and status line in
+│   │                           #   the settings panel
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line) + buildPlanCheckVariables
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
@@ -335,10 +421,11 @@ StoryArc/
 │                               #   pressure-less milestone rejected)
 ├── CONTEXT.md                  # Glossary — the words for tier, focus, beats, recognition
 └── docs/
-    ├── adr/                    # Decision records 0001–0006 (tier/focus split,
+    ├── adr/                    # Decision records 0001–0007 (tier/focus split,
     │                           #   spotlight names no target, re-plan keeps the situation,
     │                           #   genre binds generation, marks wait for a prompt change,
-    │                           #   plans are checked for give-aways)
+    │                           #   plans are checked for give-aways, Story Arc tracks
+    │                           #   who knows what as an optional feature)
     ├── architecture/
     │   ├── architecture.md     # System design documentation
     │   ├── code-index.md       # This file
@@ -386,6 +473,12 @@ lib/injection/
 └── builder.js  (imports: pacing.js, clock.js, core/settings.js,
                  core/constants.js, context/chat-history.js)
 
+lib/knowledge/
+└── ledger.js   (imports: core/constants.js, core/settings.js, injection/pacing.js,
+                 planning/storage.js, planning/generator.js callLlm + templates,
+                 planning/validation.js parseLlmJson, /script.js,
+                 /scripts/extensions.js)
+
 lib/ui/
 ├── progress.js      (imports: planning/storage.js, injection/pacing.js,
 │                              core/settings.js, /script.js, /scripts/utils.js)
@@ -398,19 +491,26 @@ lib/ui/
 │                              /scripts/extensions.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
-│                              wizard.js, arc-manager.js, /scripts/popup.js,
+│                              wizard.js, arc-manager.js, knowledge-popup.js,
+│                              /scripts/popup.js, /scripts/utils.js)
+├── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
+│                              planning/storage.js, planning/arc-edit.js,
+│                              injection/signals.js, injection/pacing.js,
+│                              injection/clock.js, core/settings.js,
+│                              core/constants.js, progress.js, wizard.js,
+│                              knowledge-popup.js, spoiler-group.js, /scripts/popup.js,
 │                              /scripts/utils.js)
-└── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
-                               planning/storage.js, planning/arc-edit.js,
-                               injection/signals.js, injection/pacing.js,
-                               injection/clock.js, core/settings.js,
-                               core/constants.js, progress.js, wizard.js,
-                               /scripts/popup.js, /scripts/utils.js)
+├── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
+│                              core/constants.js HOLDER_HOW,
+│                              knowledge/ledger.js characterName + nextLedgerId,
+│                              spoiler-group.js, /scripts/popup.js,
+│                              /scripts/utils.js)
+└── spoiler-group.js (imports: nothing)
 
 index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
                     injection/stamping.js, injection/signals.js,
-                    ui/settings-panel.js, ui/wand-menu.js, ui/progress.js,
-                    /script.js)
+                    knowledge/ledger.js, ui/settings-panel.js, ui/wand-menu.js,
+                    ui/progress.js, /script.js)
 ```
 
 ## Key Files by Feature
@@ -440,4 +540,5 @@ index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |

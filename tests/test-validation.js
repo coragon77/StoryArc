@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { parseLlmJson, validateArcPlan } from '../lib/planning/validation.js';
+import { secretHolders } from '../lib/core/settings.js';
 
 describe('parseLlmJson', () => {
     it('parses clean JSON', () => {
@@ -382,7 +384,7 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
 
     it('turns a plain-string secret into a secret with that content', () => {
         assert.deepEqual(arcOf({ secrets: ['The duke is alive.'] }).secrets, [
-            { id: 'secret_1', content: 'The duke is alive.', revealPhase: 'any', disclosed: false },
+            { id: 'secret_1', content: 'The duke is alive.', revealPhase: 'any', disclosed: false, holders: [] },
         ]);
     });
 
@@ -394,10 +396,41 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
                 { content: 'C' },
             ],
         }).secrets, [
-            { id: 's_a', content: 'A', revealPhase: 'climax', disclosed: false },
-            { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false },
-            { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false },
+            { id: 's_a', content: 'A', revealPhase: 'climax', disclosed: false, holders: [] },
+            { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false, holders: [] },
+            { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false, holders: [] },
         ]);
+    });
+
+    it('validates a secret without a holder list with an empty one, and it has no holders', () => {
+        const [secret] = arcOf({ secrets: [{ id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax' }] }).secrets;
+        assert.deepEqual(secret, { id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: [] });
+        assert.deepEqual(secretHolders(secret), []);
+    });
+
+    it('validates a generated secret with holders and keeps them', () => {
+        const [secret] = arcOf({ secrets: [{ id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', holders: ['Julian', 'Brody'] }] }).secrets;
+        assert.deepEqual(secret, { id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] });
+        assert.deepEqual(secretHolders(secret), ['Julian', 'Brody']);
+    });
+
+    it('normalises a holder list that is not a list to an empty one', () => {
+        const secrets = arcOf({ secrets: [
+            { content: 'A', holders: 'Julian and Brody' },
+            { content: 'B', holders: null },
+            { content: 'C', holders: { name: 'Julian' } },
+        ] }).secrets;
+        assert.deepEqual(secrets.map(secret => secret.holders), [[], [], []]);
+    });
+
+    it('trims holder names and drops entries that are not names', () => {
+        const [secret] = arcOf({ secrets: [{ content: 'A', holders: [' Julian ', '', 7, null, { name: 'Vera' }, 'Brody'] }] }).secrets;
+        assert.deepEqual(secret.holders, ['Julian', 'Brody']);
+    });
+
+    it('secretHolders returns a stored secret\'s holder names', () => {
+        const secret = { id: 's_a', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] };
+        assert.deepEqual(secretHolders(secret), ['Julian', 'Brody']);
     });
 
     it('gives a secret object without content an empty content', () => {
@@ -432,5 +465,17 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
         assert.equal(arcOf({
             triggers: [{ id: 't_a', condition: 'if pressed', action: 'she deflects', secret: 'brother_leash' }],
         }).triggers[0].secret, 'brother_leash');
+    });
+});
+
+describe('the arc generation prompt asks for secret holders', () => {
+    const outlinePrompt = readFileSync(new URL('../prompts/generate-arc.txt', import.meta.url), 'utf8');
+
+    it('gives every secret in the output format a holders list', () => {
+        assert.ok(outlinePrompt.includes('"revealPhase": "setup | development | escalation | climax | any",\n      "holders": ['));
+    });
+
+    it('says who belongs in the holder list', () => {
+        assert.ok(outlinePrompt.includes('- Name the holders of every secret: the characters who already know it when the arc starts.'));
     });
 });

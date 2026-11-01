@@ -188,6 +188,29 @@ describe('mergeReplan', () => {
         assert.deepEqual(merged.secrets, [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }]);
     });
 
+    it('keeps the holders of kept secrets and takes a new secret with its own', () => {
+        const existing = { ...storedEpisode(), secrets: [
+            { id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: [] },
+        ] };
+        const { arc: generated } = validateArcPlan({
+            title: 'T', premise: 'P', beats: [{ intention: 'She has found the crane.' }],
+            secrets: [
+                // Restates a kept secret with other holders: the kept one wins.
+                { id: 'crane_again', content: 'julian plans the crane drop.', holders: ['Vera'] },
+                { id: 'flash_drive', content: 'The flash drive holds the tether code.', revealPhase: 'escalation', holders: ['Gabriel'] },
+            ],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets, [
+            { id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: [] },
+            { id: 'flash_drive', content: 'The flash drive holds the tether code.', revealPhase: 'escalation', disclosed: false, holders: ['Gabriel'] },
+        ]);
+    });
+
     it('gives two generated beats with the same id distinct ids', () => {
         const generated = {
             ...generatedPlan(),

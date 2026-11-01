@@ -101,3 +101,25 @@ _Avoid_: derail, drift
 **Stall**:
 The measurable sign of divergence: an episode going roughly three times its expected per-beat length without a fulfillment, tangents excluded. Shown to the player as a nudge to re-plan.
 _Avoid_: timeout, stuck
+
+### Knowledge
+
+**Knowledge ledger**:
+The chat's record of which character knows which fact, and how each one learned it. Optional; it learns from the story only while the player has the tracker switched on, and the player can correct it by hand. It records only who knows; who does not know follows from it.
+_Avoid_: memory, knowledge base, lore
+
+**Fact**:
+One piece of knowledge in the knowledge ledger, stated in a short sentence that names who and what. A secret identity is a fact like any other; a public fact is one everyone knows. A secret becomes a fact once the story reveals it on-screen.
+_Avoid_: clue, info, memory
+
+**Holder**:
+A character who knows a fact or a secret, together with how they learned it: witnessed it, was told by someone, was planned to know it, or was entered by the player. In the story, a character learns a fact only on-screen.
+_Avoid_: owner, knower, witness
+
+**Present** (character):
+A character in the scene at the latest message. The narrator is told what each present character knows and does not know.
+_Avoid_: active, onstage, in-scene
+
+**Talked about** (character):
+A character who is not present but is named, by name or alias, in the latest message of the player or the narrator. The narrator is also told whom such a character has told.
+_Avoid_: mentioned, referenced, offscreen
