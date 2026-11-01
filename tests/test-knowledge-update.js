@@ -67,7 +67,7 @@ const LEDGER_AS_STORED = {
 
 /**
  * A workshop chat: greeting, then user and reply in turn. Each message
- * carries the Story Arc stamp m0 … m6 already, so the stamps an update
+ * carries the Story Arc message id m0 … m6 already, so the ids an update
  * stores are known in advance.
  */
 function fillChat() {

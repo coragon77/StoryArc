@@ -29,7 +29,7 @@ function setSwitches({ tracker }) {
     };
 }
 
-/** One chat message; `messageId` is the Story Arc stamp it carries, if any. */
+/** One chat message; `messageId` is the Story Arc message id it carries, if any. */
 function message(isUser, name, text, messageId) {
     const chatMessage = { is_user: isUser, is_system: false, name, mes: text, extra: {} };
     if (messageId) chatMessage.extra.story_arc_message_id = messageId;
@@ -37,20 +37,20 @@ function message(isUser, name, text, messageId) {
 }
 
 /**
- * A workshop chat of seven messages, greeting first. With `stamped`, each
- * message carries the Story Arc stamp m0 … m6.
+ * A workshop chat of seven messages, greeting first. With `withIds`, each
+ * message carries the Story Arc message id m0 … m6.
  */
-function fillChat({ stamped }) {
-    const stamp = index => (stamped ? `m${index}` : undefined);
+function fillChat({ withIds }) {
+    const messageId = index => (withIds ? `m${index}` : undefined);
     chat.length = 0;
     chat.push(
-        message(false, 'Noor', 'Welcome to the bay.', stamp(0)),
-        message(true, 'Ellie', 'Hi Noor.', stamp(1)),
-        message(false, 'Noor', 'Gauntlet on the bench.', stamp(2)),
-        message(true, 'Ellie', 'Gabriel wants titanium latches.', stamp(3)),
-        message(false, 'Noor', 'Titanium it is.', stamp(4)),
-        message(true, 'Ellie', 'Thanks.', stamp(5)),
-        message(false, 'Noor', 'Dougal heard you.', stamp(6)),
+        message(false, 'Noor', 'Welcome to the bay.', messageId(0)),
+        message(true, 'Ellie', 'Hi Noor.', messageId(1)),
+        message(false, 'Noor', 'Gauntlet on the bench.', messageId(2)),
+        message(true, 'Ellie', 'Gabriel wants titanium latches.', messageId(3)),
+        message(false, 'Noor', 'Titanium it is.', messageId(4)),
+        message(true, 'Ellie', 'Thanks.', messageId(5)),
+        message(false, 'Noor', 'Dougal heard you.', messageId(6)),
     );
 }
 
@@ -66,11 +66,11 @@ const FACT_USER = {
 };
 
 /**
- * Updated through message 6, every reference with its message's stamp:
+ * Updated through message 6, every reference with its message's message id:
  * f1 Noor witnessed at 1, f2 Noor was told at 3, f3 Dougal witnessed at 6,
  * f4 entered by the user. The scene is from message 6, the one before from 3.
  */
-function storeStampedLedger() {
+function storeLedgerWithMessageIds() {
     chat_metadata.story_arc = {
         knowledge: {
             characters: CHARACTERS,
@@ -111,8 +111,8 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
     });
 
     it('removes exactly the knowledge of the deleted messages and moves the later knowledge up', async () => {
-        fillChat({ stamped: true });
-        storeStampedLedger();
+        fillChat({ withIds: true });
+        storeLedgerWithMessageIds();
 
         // The user deletes messages 2, 3 and 4; ST passes only the new length.
         chat.splice(2, 3);
@@ -140,10 +140,10 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
     });
 
     it('when the last read message is gone, the ledger covers up to the last read message left', async () => {
-        fillChat({ stamped: true });
-        // The player wrote message 7 before the update for it ran: not read, no stamp.
+        fillChat({ withIds: true });
+        // The player wrote message 7 before the update for it ran: not read, no message id.
         chat.push(message(true, 'Ellie', 'And the pins?'));
-        storeStampedLedger();
+        storeLedgerWithMessageIds();
 
         // The user deletes messages 5 and 6; message 7 moves to 5.
         chat.splice(5, 2);
@@ -170,8 +170,8 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
         });
     });
 
-    it('a ledger from before the stamps still rolls back from the new chat length on', async () => {
-        fillChat({ stamped: false });
+    it('a ledger from before the message ids still rolls back from the new chat length on', async () => {
+        fillChat({ withIds: false });
         chat_metadata.story_arc = {
             knowledge: {
                 characters: CHARACTERS,
@@ -199,7 +199,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
         chat.splice(2, 3);
         const rolledBack = await rollBackKnowledgeFrom(chat.length);
 
-        // As before the stamps: everything from index 4 on goes, whatever it came from.
+        // As before the message ids: everything from index 4 on goes, whatever it came from.
         assert.equal(rolledBack, true);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -227,9 +227,9 @@ describe('rollBackKnowledgeFrom and a retraction after a deletion in the middle'
         holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3, messageId: 'm3' }],
     };
 
-    /** The stamped ledger, but message 5 (an out-of-character correction) retracted f2. */
+    /** The ledger with message ids, but message 5 (an out-of-character correction) retracted f2. */
     function storeLedgerWithRetraction() {
-        storeStampedLedger();
+        storeLedgerWithMessageIds();
         const ledger = chat_metadata.story_arc.knowledge;
         ledger.facts = ledger.facts.filter(fact => fact.id !== 'f2');
         ledger.retractedFacts = [{ at: 5, messageId: 'm5', fact: structuredClone(FACT_LATCHES_RETRACTED) }];
@@ -237,7 +237,7 @@ describe('rollBackKnowledgeFrom and a retraction after a deletion in the middle'
 
     beforeEach(() => {
         setSwitches({ tracker: true });
-        fillChat({ stamped: true });
+        fillChat({ withIds: true });
     });
 
     it('a retraction whose correction survives stays, at the correction\'s new index', async () => {
@@ -266,11 +266,11 @@ describe('rollBackKnowledgeFrom and a retraction after a deletion in the middle'
     });
 });
 
-describe('updateKnowledgeAfterSwipe and the stamps', () => {
+describe('updateKnowledgeAfterSwipe and the message ids', () => {
     it('a swiped message no update has read again is read by the next update even after a deletion before it', async () => {
         setSwitches({ tracker: true });
-        fillChat({ stamped: true });
-        storeStampedLedger();
+        fillChat({ withIds: true });
+        storeLedgerWithMessageIds();
         // ST points swipe_id at the slot the generation is about to fill.
         chat[6].swipes = ['Dougal heard you.'];
         chat[6].swipe_id = 1;
@@ -303,8 +303,8 @@ describe('updateKnowledgeAfterSwipe and the stamps', () => {
 
     it('a branch from a swipe whose knowledge a swipe took back reads that swipe again', async () => {
         setSwitches({ tracker: true });
-        fillChat({ stamped: true });
-        storeStampedLedger();
+        fillChat({ withIds: true });
+        storeLedgerWithMessageIds();
         const reply = chat[6];
         reply.swipes = ['Dougal heard you.', 'Dougal was out.'];
         reply.swipe_info = [{ extra: {} }, { extra: {} }];
@@ -353,7 +353,7 @@ describe('updateKnowledgeAfterSwipe and the stamps', () => {
     });
 });
 
-describe('the stamps an update leaves on the messages it read', () => {
+describe('the message ids an update leaves on the messages it read', () => {
     beforeEach(() => {
         setSwitches({ tracker: true });
     });
@@ -383,18 +383,18 @@ describe('the stamps an update leaves on the messages it read', () => {
         })]);
 
         const updated = await updateKnowledgeAfterReply(2);
-        // The greeting was not read, so it carries no stamp; the two read messages carry one each.
-        const userStamp = chat[1].extra.story_arc_message_id;
-        const replyStamp = chat[2].extra.story_arc_message_id;
+        // The greeting was not read, so it carries no message id; the two read messages carry one each.
+        const userMessageId = chat[1].extra.story_arc_message_id;
+        const replyMessageId = chat[2].extra.story_arc_message_id;
         chat.splice(0, 1);
         const rolledBack = await rollBackKnowledgeFrom(chat.length);
 
         assert.equal(updated, true);
         assert.equal(rolledBack, true);
-        assert.equal(chat[0].extra.story_arc_message_id, userStamp);
-        assert.equal(typeof userStamp, 'string');
-        assert.equal(typeof replyStamp, 'string');
-        assert.notEqual(userStamp, replyStamp);
+        assert.equal(chat[0].extra.story_arc_message_id, userMessageId);
+        assert.equal(typeof userMessageId, 'string');
+        assert.equal(typeof replyMessageId, 'string');
+        assert.notEqual(userMessageId, replyMessageId);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: [
                 { id: 'c1', name: 'Noor', aliases: [] },
@@ -403,13 +403,13 @@ describe('the stamps an update leaves on the messages it read', () => {
             facts: [{
                 id: 'f1', text: 'Ellie is Dice', public: false,
                 holders: [
-                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 0, messageId: userStamp },
-                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 0, messageId: userStamp },
+                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 0, messageId: userMessageId },
+                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 0, messageId: userMessageId },
                 ],
             }],
-            scene: { at: 1, messageId: replyStamp, present: ['c1', 'c2'] },
+            scene: { at: 1, messageId: replyMessageId, present: ['c1', 'c2'] },
             lastUpdatedAt: 1,
-            lastUpdatedMessageId: replyStamp,
+            lastUpdatedMessageId: replyMessageId,
         });
     });
 });

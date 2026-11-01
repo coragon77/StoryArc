@@ -266,7 +266,7 @@ function setSwitches({ tracker }) {
     };
 }
 
-/** The live case in four messages: the invented stipend, then both OOC lines. Stamped m0 … m3 already. */
+/** The live case in four messages: the invented stipend, then both OOC lines. With the message ids m0 … m3 already. */
 function fillChat() {
     chat.push(
         { is_user: true, is_system: false, name: 'Ellie', mes: 'So what does SWORD pay me?', extra: { story_arc_message_id: 'm0' } },
