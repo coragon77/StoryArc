@@ -152,7 +152,10 @@ describe('updateKnowledgeAfterReply', () => {
                 },
                 {
                     id: 'f2', text: 'Gabriel wants the gauntlet locked on with titanium latches', public: false,
-                    holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 }],
+                    holders: [
+                        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
+                        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+                    ],
                 },
             ],
             scene: { at: 6, present: ['c1', 'c2'] },
@@ -231,7 +234,10 @@ describe('updateKnowledgeAfterReply', () => {
             },
             {
                 id: 'f3', text: 'Gabriel wants the gauntlet locked on with titanium latches', public: false,
-                holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 }],
+                holders: [
+                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
+                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+                ],
             },
         ]);
     });

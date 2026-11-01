@@ -321,7 +321,10 @@ const ANSWER_EDITED_MESSAGE_3 = JSON.stringify({
 /** Fact f5 as applying ANSWER_EDITED_MESSAGE_3 creates it. */
 const FACT_STEEL_LATCHES = {
     id: 'f5', text: 'Gabriel wants steel latches', public: false,
-    holders: [{ characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 }],
+    holders: [
+        { characterId: 'c2', how: 'witnessed', toldBy: null, at: 3 },
+        { characterId: 'c1', how: 'told', toldBy: 'c2', at: 3 },
+    ],
 };
 
 describe('updateKnowledgeAfterEdit', () => {

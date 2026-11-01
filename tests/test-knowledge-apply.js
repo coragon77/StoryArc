@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyExtractionAnswer } from '../lib/knowledge/ledger.js';
+import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
 import { createEmptyKnowledgeLedger } from '../lib/core/constants.js';
 
 /** The workshop cast after breakfast: Gabriel told Ellie about the titanium latches. */
@@ -61,6 +61,7 @@ describe('applyExtractionAnswer', () => {
                     text: 'The gauntlet session is this afternoon.',
                     public: false,
                     holders: [
+                        { characterId: 'c1', how: 'witnessed', toldBy: null, at: 2080 },
                         { characterId: 'c2', how: 'told', toldBy: 'c1', at: 2080 },
                     ],
                 },
@@ -132,6 +133,7 @@ describe('applyExtractionAnswer', () => {
             text: 'Gabriel Marin is Aegis.',
             public: false,
             holders: [
+                { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2075 },
                 { characterId: 'c1', how: 'told', toldBy: 'c2', at: 2075 },
             ],
         });
@@ -148,5 +150,46 @@ describe('applyExtractionAnswer', () => {
         }, 2090);
 
         assert.deepEqual(before, makeBreakfastLedger());
+    });
+});
+
+describe('applying an extraction answer, then building the block', () => {
+    it('makes the teller of a told fact its holder, so a talked-about teller knows it and has told only the listener', () => {
+        // Breakfast at 2063: Gabriel tells Ellie about the latches. The answer
+        // names only the listener in "who", as the prompt asks.
+        const afterBreakfast = applyExtractionAnswer(createEmptyKnowledgeLedger(), {
+            present: ['Ellie', 'Gabriel Marin'],
+            newCharacters: [
+                { name: 'Ellie', aliases: ['Dice'] },
+                { name: 'Gabriel Marin', aliases: ['Aegis'] },
+            ],
+            learned: [
+                { text: 'Noor should lock the gauntlet on with titanium latches.', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2063 },
+            ],
+        }, 2063);
+        // The workshop at 2079: Ellie arrives at Noor's bench; nobody learns anything.
+        const ledger = applyExtractionAnswer(afterBreakfast, {
+            present: ['Ellie', 'Noor'],
+            newCharacters: [{ name: 'Noor', aliases: [] }],
+            learned: [],
+        }, 2079);
+
+        const messages = [
+            { is_user: true, mes: 'Aegis had some thoughts on the cuff.' },
+            { is_user: false, mes: 'Noor looks up from the bench.' },
+        ];
+        assert.equal(buildKnowledgeBlock(ledger, messages), [
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character speaks and acts only from their own list. Knowledge moves between characters only on-screen.]',
+            '',
+            'ELLIE (present)',
+            '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches.',
+            '',
+            'NOOR (present)',
+            '- Does not know: Noor should lock the gauntlet on with titanium latches.',
+            '',
+            'GABRIEL MARIN (talked about, not present)',
+            '- Knows: Noor should lock the gauntlet on with titanium latches.',
+            '- Has told only Ellie: Noor should lock the gauntlet on with titanium latches.',
+        ].join('\n'));
     });
 });
