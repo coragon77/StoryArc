@@ -373,6 +373,9 @@ StoryArc/
 │   ├── test-knowledge-apply.js # Tests: applyExtractionAnswer (new characters, aliases,
 │   │                           #   unknown names/ids ignored, teller holds a told fact, changed in place,
 │   │                           #   then the card case through buildKnowledgeBlock)
+│   ├── test-knowledge-dedupe.js # Tests: learned items with the same text join one
+│   │                           #   fact (in the answer and with the ledger), no
+│   │                           #   Knows/Does-not-know contradiction in the block
 │   ├── test-knowledge-drop.js  # Tests: dropKnowledgeFrom (holders from N on, user
 │   │                           #   entries kept, scene and lastUpdatedAt reset)
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,

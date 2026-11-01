@@ -110,6 +110,30 @@ describe('extract-knowledge.txt', () => {
             'The text states the fact itself, not who knows it or who does not ("and nobody else knows" belongs in no text): '
             + 'the holders record that.'), 'missing the fact text rule');
     });
+
+    it('records only knowledge a character could act on or wrongly reveal, not sensory detail', () => {
+        // Live: one reply gave 9 facts, mostly sensations ("Amy can feel the vibration of Steve's phone in her throat").
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            'Record only knowledge a character could act on or wrongly reveal: secrets, plans, identities, who did what, '
+            + 'private information, things told in confidence.'), 'missing the actionable-knowledge rule');
+        assert.ok(template.includes(
+            'Do not record small talk, sensations, descriptions, moods or what anyone in the scene can plainly see.'),
+            'missing the noise rule');
+        assert.ok(!template.includes('skip small talk and scenery'), 'the old, weaker noise rule is still there');
+    });
+
+    it('prefers the id of a ledger fact over new text for the same knowledge', () => {
+        // Live: one answer wrote "Mara from the night shift rewrote Amy's diagnostic logs." as two facts.
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            '- "factId" when the fact is already in the ledger, even when the new messages word it differently: '
+            + 'when the same knowledge is meant, use its id, not new text.'), 'missing the prefer-the-id rule');
+        assert.ok(template.includes(
+            'Write each fact once: put everyone who learns it in the same way in one item.'), 'missing the write-once rule');
+    });
 });
 
 /** A well-formed answer for the workshop scene, as the LLM writes it: fenced, with a stray key. */
