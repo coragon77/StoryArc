@@ -266,13 +266,13 @@ function setSwitches({ tracker }) {
     };
 }
 
-/** The live case in four messages: the invented stipend, then both OOC lines. */
+/** The live case in four messages: the invented stipend, then both OOC lines. Stamped m0 … m3 already. */
 function fillChat() {
     chat.push(
-        { is_user: true, is_system: false, name: 'Ellie', mes: 'So what does SWORD pay me?' },
-        { is_user: false, is_system: false, name: 'Gabriel', mes: 'Your yearly stipend, same as every cadet.' },
-        { is_user: true, is_system: false, name: 'Ellie', mes: '(OOC: There was never anything on the page regarding financial compensation.)' },
-        { is_user: false, is_system: false, name: 'Gabriel', mes: '(OOC: You are right, I invented that detail on the spot in the previous turn.)' },
+        { is_user: true, is_system: false, name: 'Ellie', mes: 'So what does SWORD pay me?', extra: { story_arc_message_id: 'm0' } },
+        { is_user: false, is_system: false, name: 'Gabriel', mes: 'Your yearly stipend, same as every cadet.', extra: { story_arc_message_id: 'm1' } },
+        { is_user: true, is_system: false, name: 'Ellie', mes: '(OOC: There was never anything on the page regarding financial compensation.)', extra: { story_arc_message_id: 'm2' } },
+        { is_user: false, is_system: false, name: 'Gabriel', mes: '(OOC: You are right, I invented that detail on the spot in the previous turn.)', extra: { story_arc_message_id: 'm3' } },
     );
 }
 
@@ -323,10 +323,11 @@ describe('the retraction through an update', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: cast,
             facts: [],
-            scene: { at: 3, present: ['c1', 'c2'] },
+            scene: { at: 3, messageId: 'm3', present: ['c1', 'c2'] },
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
             lastUpdatedAt: 3,
-            retractedFacts: [{ at: 2, fact: STIPEND }],
+            lastUpdatedMessageId: 'm3',
+            retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
         });
     });
 
