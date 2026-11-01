@@ -18,7 +18,7 @@ import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
-import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
+import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
 
@@ -147,11 +147,12 @@ async function onMessageSwiped(messageIndex) {
 
 /**
  * When the user switches to a different chat: re-init per-chat state
- * and refresh the progress display.
+ * and refresh the progress display and the knowledge tracker status line.
  */
 function onChatChanged() {
     ensureChatState();
     updateProgress();
+    updateKnowledgeStatus();
 }
 
 // ─── Extension Entry Point ──────────────────────────────────────────────────
