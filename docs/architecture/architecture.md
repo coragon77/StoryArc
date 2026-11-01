@@ -227,6 +227,7 @@ The arc object stored in `chat_metadata.story_arc.arcs[]`:
         content: string,     // the secret the AI knows but must not reveal directly
         revealPhase: string, // earliest phase at which to begin hinting
         disclosed: boolean,
+        holders: string[],   // names of the characters who know it when the arc starts (planner-written; validation gives old arcs and a malformed list [])
     }],
     foreshadowing: [{
         id: string,
