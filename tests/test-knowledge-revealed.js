@@ -129,7 +129,8 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['ellie', 'Nobody Known'] }],
         };
 
-        const ledger = applyExtractionAnswer(makeLedger(), answer, 2071, 2071);
+        const ledger = makeLedger();
+        applyExtractionAnswer(ledger, answer, 2071, 2071);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -144,7 +145,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
 
     it('adds the secret\'s planned holders who are in the ledger as plan holders at the reveal, after the witnesses', () => {
         // Julian planned the crane drop and is not in the scene; Ellie overhears it.
-        const before = {
+        const ledger = {
             characters: [
                 { id: 'c1', name: 'Julian', aliases: ['Jules'] },
                 { id: 'c2', name: 'Ellie', aliases: [] },
@@ -167,7 +168,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             }],
         };
 
-        const ledger = applyExtractionAnswer(before, answer, 2072, 2072);
+        applyExtractionAnswer(ledger, answer, 2072, 2072);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -184,7 +185,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
     });
 
     it('extends the fact a secret already became instead of making a second one', () => {
-        const before = {
+        const ledger = {
             ...makeLedger(),
             facts: [{
                 id: 'f4',
@@ -199,20 +200,24 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['Jules', 'Ellie'] }],
         };
 
-        const ledger = applyExtractionAnswer(before, answer, 2071, 2071);
+        applyExtractionAnswer(ledger, answer, 2071, 2071);
 
         assert.deepEqual(ledger.facts[0].holders, [
             { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2060 },
             { characterId: 'c1', how: 'witnessed', toldBy: null, at: 2071 },
         ]);
         assert.equal(ledger.facts.length, 1);
-        assert.equal(before.facts[0].holders.length, 1, 'the input ledger is not changed');
     });
 
     it('changes no fact when the answer has no revealed secrets or nobody known heard one', () => {
-        assert.deepEqual(applyExtractionAnswer(makeLedger(), emptyAnswer, 2071, 2071).facts, []);
+        const ledgerWithoutReveal = makeLedger();
+        applyExtractionAnswer(ledgerWithoutReveal, emptyAnswer, 2071, 2071);
+        assert.deepEqual(ledgerWithoutReveal.facts, []);
+
+        const ledgerWithUnheardReveal = makeLedger();
         const unheard = { ...emptyAnswer, revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['Brody'] }] };
-        assert.deepEqual(applyExtractionAnswer(makeLedger(), unheard, 2071, 2071).facts, []);
+        applyExtractionAnswer(ledgerWithUnheardReveal, unheard, 2071, 2071);
+        assert.deepEqual(ledgerWithUnheardReveal.facts, []);
     });
 });
 
@@ -245,7 +250,8 @@ describe('a revealed secret, from the answer text to the knowledge block', () =>
         const answer = parseKnowledgeExtractionAnswer(answerText);
         answer.revealedSecrets = resolveRevealedSecrets(answer.revealedSecrets, listShownSecrets(makeArcs()));
 
-        const ledger = applyExtractionAnswer(makeLedger(), answer, 2071, 2071);
+        const ledger = makeLedger();
+        applyExtractionAnswer(ledger, answer, 2071, 2071);
 
         assert.deepEqual(ledger.facts, [{
             id: 'f1',

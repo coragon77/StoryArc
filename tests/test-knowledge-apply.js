@@ -28,7 +28,8 @@ function makeBreakfastLedger() {
 
 describe('applyExtractionAnswer', () => {
     it('adds new characters, creates facts with holders and sets the scene', () => {
-        const ledger = applyExtractionAnswer(createEmptyKnowledgeLedger(), {
+        const ledger = createEmptyKnowledgeLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Noor', 'Ellie'],
             newCharacters: [
                 { name: 'Ellie', aliases: ['Dice'] },
@@ -80,7 +81,8 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('adds a holder to a known fact and does not duplicate one already there', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Ellie'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [
@@ -103,7 +105,8 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('ignores unknown names and unknown fact ids', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Ellie', 'Dougal'],
             newCharacters: [],
             learned: [
@@ -120,7 +123,8 @@ describe('applyExtractionAnswer', () => {
     });
 
     it('resolves an alias in who, in toldBy and in present to its character, ignoring case', () => {
-        const ledger = applyExtractionAnswer(makeBreakfastLedger(), {
+        const ledger = makeBreakfastLedger();
+        applyExtractionAnswer(ledger, {
             present: ['dice', 'Mr. Marin'],
             newCharacters: [],
             learned: [
@@ -141,15 +145,31 @@ describe('applyExtractionAnswer', () => {
         assert.deepEqual(ledger.scene, { at: 2075, present: ['c1', 'c2'] });
     });
 
-    it('does not change the ledger it was given', () => {
-        const before = makeBreakfastLedger();
-        applyExtractionAnswer(before, {
+    it('changes the ledger it was given and says so', () => {
+        const ledger = makeBreakfastLedger();
+        const changed = applyExtractionAnswer(ledger, {
             present: ['Noor'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [{ factId: 'f1', public: false, who: ['Noor'], how: 'witnessed', toldBy: null, at: 2090 }],
         }, 2090, 2090);
 
-        assert.deepEqual(before, makeBreakfastLedger());
+        assert.equal(changed, true);
+        assert.deepEqual(ledger.characters[2], { id: 'c3', name: 'Noor', aliases: [] });
+        assert.deepEqual(ledger.facts[0].holders[2], { characterId: 'c3', how: 'witnessed', toldBy: null, at: 2090 });
+        assert.deepEqual(ledger.scene, { at: 2090, present: ['c3'] });
+        assert.equal(ledger.lastUpdatedAt, 2090);
+    });
+
+    it('says nothing changed when the answer repeats what the ledger already holds', () => {
+        const ledger = makeBreakfastLedger();
+        const changed = applyExtractionAnswer(ledger, {
+            present: ['Ellie', 'Gabriel Marin'],
+            newCharacters: [{ name: 'Dice', aliases: [] }],
+            learned: [{ factId: 'f1', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2063 }],
+        }, 2063, 2063);
+
+        assert.equal(changed, false);
+        assert.deepEqual(ledger, makeBreakfastLedger());
     });
 });
 
@@ -157,7 +177,8 @@ describe('applying an extraction answer, then building the block', () => {
     it('makes the teller of a told fact its holder, so a talked-about teller knows it and has told only the listener', () => {
         // Breakfast at 2063: Gabriel tells Ellie about the latches. The answer
         // names only the listener in "who", as the prompt asks.
-        const afterBreakfast = applyExtractionAnswer(createEmptyKnowledgeLedger(), {
+        const ledger = createEmptyKnowledgeLedger();
+        applyExtractionAnswer(ledger, {
             present: ['Ellie', 'Gabriel Marin'],
             newCharacters: [
                 { name: 'Ellie', aliases: ['Dice'] },
@@ -168,7 +189,7 @@ describe('applying an extraction answer, then building the block', () => {
             ],
         }, 2062, 2063);
         // The workshop at 2079: Ellie arrives at Noor's bench; nobody learns anything.
-        const ledger = applyExtractionAnswer(afterBreakfast, {
+        applyExtractionAnswer(ledger, {
             present: ['Ellie', 'Noor'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [],
