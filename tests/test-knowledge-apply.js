@@ -279,7 +279,7 @@ describe('applying an extraction answer, then building the block', () => {
             { is_user: false, mes: 'Noor looks up from the bench.' },
         ];
         assert.equal(buildKnowledgeBlock(ledger, messages), [
-            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows.]',
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]',
             '',
             'ELLIE (present)',
             '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches. (shared only with Gabriel Marin)',

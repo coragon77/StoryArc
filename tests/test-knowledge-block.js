@@ -6,7 +6,7 @@ import { createEmptyKnowledgeLedger } from '../lib/core/constants.js';
 const HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
     + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
-    + 'A character not listed here knows only what everyone knows.]';
+    + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]';
 
 /** The workshop scene of the spec's appendix, cut down to five facts. */
 function makeWorkshopLedger() {
@@ -260,7 +260,7 @@ describe('buildKnowledgeBlock', () => {
         assert.equal(block.split('Steve is quitting next month').length - 1, 2);
     });
 
-    it('never names a planned holder, also not among those a fact is shared with', () => {
+    it('names a planned holder among those a fact is shared with, never with a section of their own', () => {
         const ledger = {
             characters: [
                 { id: 'ellie', name: 'Ellie', aliases: [] },
@@ -283,7 +283,7 @@ describe('buildKnowledgeBlock', () => {
             HEADER,
             '',
             'ELLIE (present)',
-            '- Knows: Julian means to bring the crane down tonight (shared only with Noor)',
+            '- Knows: Julian means to bring the crane down tonight (shared only with Julian and Noor)',
         ].join('\n');
 
         assert.equal(buildKnowledgeBlock(ledger, []), expected);

@@ -33,7 +33,7 @@ const EXPECTED_BLOCK = [
     '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
         + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
         + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
-        + 'A character not listed here knows only what everyone knows.]',
+        + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]',
     '',
     'NOOR (present)',
     '- Knows: Ellie is Dice (known only to them)',
