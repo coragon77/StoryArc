@@ -116,6 +116,18 @@ describe('parseKnowledgeExtractionAnswer', () => {
         });
     });
 
+    it('reads a null on the key not used as absent', () => {
+        const answer = parseKnowledgeExtractionAnswer(`{"present": [], "newCharacters": [], "learned": [
+            { "factId": null, "text": "Vera's flash drive is locked in Gabriel's loft", "public": false, "who": ["Ellie"], "how": "told", "toldBy": "Gabriel Marin", "at": 2081 },
+            { "factId": "fact-latches", "text": null, "public": false, "who": ["Dougal"], "how": "witnessed", "toldBy": null, "at": 2082 }
+        ]}`);
+
+        assert.deepEqual(answer.learned, [
+            { text: 'Vera\'s flash drive is locked in Gabriel\'s loft', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2081 },
+            { factId: 'fact-latches', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2082 },
+        ]);
+    });
+
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 

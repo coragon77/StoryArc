@@ -33,6 +33,9 @@ Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
   "newCharacters": [{ "name": "name", "aliases": ["other name"] }],
-  "learned": [{ "factId": "fact id", "text": "only for a new fact", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 }]
+  "learned": [
+    { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 },
+    { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": 0 }
+  ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
