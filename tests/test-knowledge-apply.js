@@ -39,7 +39,7 @@ describe('applyExtractionAnswer', () => {
                 { text: 'The gauntlet session is this afternoon.', public: false, who: ['Noor'], how: 'told', toldBy: 'Ellie', at: 2080 },
                 { text: 'Overdrive is Bellweather\'s ringer for Sunday.', public: true, who: ['Ellie'], how: 'witnessed', toldBy: null, at: 2080 },
             ],
-        }, 2080);
+        }, 2079, 2080);
 
         assert.deepEqual(ledger, {
             characters: [
@@ -86,7 +86,7 @@ describe('applyExtractionAnswer', () => {
             learned: [
                 { factId: 'f1', public: false, who: ['Noor', 'Ellie'], how: 'told', toldBy: 'Ellie', at: 2081 },
             ],
-        }, 2081);
+        }, 2081, 2081);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -111,7 +111,7 @@ describe('applyExtractionAnswer', () => {
                 { factId: 'f9', public: false, who: ['Ellie'], how: 'witnessed', toldBy: null, at: 2070 },
                 { text: 'The kiln router logged odd queries.', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2070 },
             ],
-        }, 2070);
+        }, 2070, 2070);
 
         const expected = makeBreakfastLedger();
         expected.scene = { at: 2070, present: ['c1'] };
@@ -126,7 +126,7 @@ describe('applyExtractionAnswer', () => {
             learned: [
                 { text: 'Gabriel Marin is Aegis.', public: false, who: ['DICE'], how: 'told', toldBy: 'aegis', at: 2075 },
             ],
-        }, 2075);
+        }, 2075, 2075);
 
         assert.deepEqual(ledger.facts[1], {
             id: 'f2',
@@ -147,7 +147,7 @@ describe('applyExtractionAnswer', () => {
             present: ['Noor'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [{ factId: 'f1', public: false, who: ['Noor'], how: 'witnessed', toldBy: null, at: 2090 }],
-        }, 2090);
+        }, 2090, 2090);
 
         assert.deepEqual(before, makeBreakfastLedger());
     });
@@ -166,13 +166,13 @@ describe('applying an extraction answer, then building the block', () => {
             learned: [
                 { text: 'Noor should lock the gauntlet on with titanium latches.', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel Marin', at: 2063 },
             ],
-        }, 2063);
+        }, 2062, 2063);
         // The workshop at 2079: Ellie arrives at Noor's bench; nobody learns anything.
         const ledger = applyExtractionAnswer(afterBreakfast, {
             present: ['Ellie', 'Noor'],
             newCharacters: [{ name: 'Noor', aliases: [] }],
             learned: [],
-        }, 2079);
+        }, 2078, 2079);
 
         const messages = [
             { is_user: true, mes: 'Aegis had some thoughts on the cuff.' },

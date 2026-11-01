@@ -98,10 +98,10 @@ describe('parseKnowledgeExtractionAnswer with revealed secrets', () => {
     it('reads the revealed secrets and drops keys outside the shape', () => {
         const answer = parseKnowledgeExtractionAnswer(`{
             "present": ["Julian", "Ellie"], "newCharacters": [], "learned": [],
-            "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"], "why": "he says it" }]
+            "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"], "at": 2071, "why": "he says it" }]
         }`);
 
-        assert.deepEqual(answer.revealedSecrets, [{ secretId: 'the_drop', heardBy: ['Ellie'] }]);
+        assert.deepEqual(answer.revealedSecrets, [{ secretId: 'the_drop', heardBy: ['Ellie'], at: 2071 }]);
     });
 
     it('reads a missing list as no revealed secrets', () => {
@@ -114,7 +114,8 @@ describe('parseKnowledgeExtractionAnswer with revealed secrets', () => {
         const base = '"present": [], "newCharacters": [], "learned": []';
         assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": "the_drop" }`), null);
         assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "", "heardBy": ["Ellie"] }] }`), null);
-        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": "Ellie" }] }`), null);
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": "Ellie", "at": 2071 }] }`), null);
+        assert.equal(parseKnowledgeExtractionAnswer(`{ ${base}, "revealedSecrets": [{ "secretId": "the_drop", "heardBy": ["Ellie"] }] }`), null);
     });
 });
 
@@ -127,7 +128,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['ellie', 'Nobody Known'] }],
         };
 
-        const ledger = applyExtractionAnswer(makeLedger(), answer, 2071);
+        const ledger = applyExtractionAnswer(makeLedger(), answer, 2071, 2071);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -165,7 +166,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             }],
         };
 
-        const ledger = applyExtractionAnswer(before, answer, 2072);
+        const ledger = applyExtractionAnswer(before, answer, 2072, 2072);
 
         assert.deepEqual(ledger.facts, [
             {
@@ -197,7 +198,7 @@ describe('applyExtractionAnswer with revealed secrets', () => {
             revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['Jules', 'Ellie'] }],
         };
 
-        const ledger = applyExtractionAnswer(before, answer, 2071);
+        const ledger = applyExtractionAnswer(before, answer, 2071, 2071);
 
         assert.deepEqual(ledger.facts[0].holders, [
             { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2060 },
@@ -208,9 +209,9 @@ describe('applyExtractionAnswer with revealed secrets', () => {
     });
 
     it('changes no fact when the answer has no revealed secrets or nobody known heard one', () => {
-        assert.deepEqual(applyExtractionAnswer(makeLedger(), emptyAnswer, 2071).facts, []);
+        assert.deepEqual(applyExtractionAnswer(makeLedger(), emptyAnswer, 2071, 2071).facts, []);
         const unheard = { ...emptyAnswer, revealedSecrets: [{ arcId: 'arc-crane', secretId: 'the_drop', text: 'Julian plans to drop the crane on the Annex', heardBy: ['Brody'] }] };
-        assert.deepEqual(applyExtractionAnswer(makeLedger(), unheard, 2071).facts, []);
+        assert.deepEqual(applyExtractionAnswer(makeLedger(), unheard, 2071, 2071).facts, []);
     });
 });
 
@@ -218,15 +219,15 @@ describe('resolveRevealedSecrets', () => {
     it('turns each ref into its arc, secret id and text, and drops a ref the input did not list', () => {
         const revealed = resolveRevealedSecrets(
             [
-                { secretId: 'the_drop_2', heardBy: ['Ellie'] },
-                { secretId: 'vera_drive', heardBy: ['Ellie'] },
-                { secretId: 'made_up', heardBy: ['Julian'] },
+                { secretId: 'the_drop_2', heardBy: ['Ellie'], at: 2071 },
+                { secretId: 'vera_drive', heardBy: ['Ellie'], at: 2071 },
+                { secretId: 'made_up', heardBy: ['Julian'], at: 2071 },
             ],
             listShownSecrets(makeArcs()),
         );
 
         assert.deepEqual(revealed, [
-            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether snaps at the second floor', holders: [], heardBy: ['Ellie'] },
+            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether snaps at the second floor', holders: [], heardBy: ['Ellie'], at: 2071 },
         ]);
     });
 });

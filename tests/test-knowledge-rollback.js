@@ -424,3 +424,87 @@ describe('updateKnowledgeAfterEdit', () => {
         });
     });
 });
+
+describe('an index the answer gives outside the messages it covered', () => {
+    beforeEach(() => {
+        fillChat();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    /** The ledger of storeLedger as it was after message 4: no f3, scene from 4. */
+    function storeLedgerThrough4() {
+        storeLedger();
+        const ledger = chat_metadata.story_arc.knowledge;
+        ledger.facts = ledger.facts.filter(fact => fact.id !== 'f3');
+        ledger.scene = { at: 4, present: ['c1', 'c2'] };
+        ledger.lastUpdatedAt = 4;
+    }
+
+    it('a fact stamped before the covered messages still goes with a regeneration of the reply it came from', async () => {
+        setSwitches({ tracker: true });
+        storeLedgerThrough4();
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Dougal'],
+            newCharacters: [],
+            learned: [{ text: 'Dougal heard about the latches', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 0 }],
+        })]);
+        await updateKnowledgeAfterReply(6);
+
+        const changed = await rollBackKnowledgeFrom(6);
+
+        assert.equal(changed, true);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F4]);
+    });
+
+    it('a fact the edit of a message stamped elsewhere is taken back by the next edit of that message', async () => {
+        setSwitches({ tracker: true });
+        storeLedger();
+        installExtraction([
+            JSON.stringify({
+                present: ['Ellie'],
+                newCharacters: [],
+                learned: [{ text: 'Gabriel wants steel latches', public: false, who: ['Noor'], how: 'told', toldBy: 'Ellie', at: 0 }],
+            }),
+            ANSWER_NOOR_ALONE,
+        ]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        chat[3].mes = 'Gabriel wants latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F3, FACT_F4]);
+    });
+
+    it('a secret revealed early in the covered messages stays when only the last reply is regenerated', async () => {
+        setSwitches({ tracker: true });
+        storeLedgerThrough4();
+        chat_metadata.story_arc.arcs = [{
+            id: 'arc-crane',
+            status: 'active',
+            messageStart: 0,
+            estimatedLength: 40,
+            beats: [{ id: 'b1', status: 'active' }],
+            secrets: [{ id: 'the_drop', content: 'Julian plans to drop the crane on the Annex', revealPhase: 'any', disclosed: false, holders: [] }],
+        }];
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'],
+            newCharacters: [],
+            learned: [],
+            revealedSecrets: [{ secretId: 'the_drop', heardBy: ['Noor'], at: 5 }],
+        })]);
+        await updateKnowledgeAfterReply(6);
+
+        await rollBackKnowledgeFrom(6);
+
+        const revealedFact = chat_metadata.story_arc.knowledge.facts.find(fact => fact.secret);
+        assert.deepEqual(revealedFact?.holders, [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 5 }]);
+    });
+});
