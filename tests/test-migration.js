@@ -148,6 +148,7 @@ describe('ensureChatState — per-chat namespace and settings', () => {
                 characters: [],
                 facts: [],
                 scene: { at: null, present: [] },
+                sceneHistory: [],
                 lastUpdatedAt: null,
             },
         });
@@ -191,6 +192,7 @@ describe('ensureChatState — the knowledge ledger', () => {
             characters: [],
             facts: [],
             scene: { at: null, present: [] },
+            sceneHistory: [],
             lastUpdatedAt: null,
         });
         assert.equal(globalThis.saveMetadataCalls, 0);
@@ -241,6 +243,7 @@ describe('ensureChatState — the knowledge ledger', () => {
             characters: [],
             facts: [],
             scene: { at: null, present: [] },
+            sceneHistory: [],
             lastUpdatedAt: null,
         });
     });

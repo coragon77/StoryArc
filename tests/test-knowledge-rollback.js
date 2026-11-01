@@ -358,6 +358,27 @@ describe('updateKnowledgeAfterEdit', () => {
         });
     });
 
+    it('editing a message between the scene and the end of the ledger leaves the scene and its history as they were', async () => {
+        // After a rollback the scene is from message 4 while the ledger covers through 6.
+        setSwitches({ tracker: true });
+        storeLedger();
+        chat_metadata.story_arc.knowledge.scene = { at: 4, present: ['c1', 'c2'] };
+        chat_metadata.story_arc.knowledge.sceneHistory = [{ at: 2, present: ['c1'] }];
+        installExtraction([ANSWER_NOOR_ALONE]);
+        chat[5].mes = 'Thanks, Noor.';
+
+        const updated = await updateKnowledgeAfterEdit(5);
+
+        assert.equal(updated, true);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            characters: CHARACTERS,
+            facts: [FACT_F1, FACT_F2, FACT_F3, FACT_F4],
+            scene: { at: 4, present: ['c1', 'c2'] },
+            sceneHistory: [{ at: 2, present: ['c1'] }],
+            lastUpdatedAt: 6,
+        });
+    });
+
     it('editing the latest message takes its scene from the new text', async () => {
         setSwitches({ tracker: true });
         storeLedger();

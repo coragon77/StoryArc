@@ -159,6 +159,7 @@ describe('updateKnowledgeAfterReply', () => {
                 },
             ],
             scene: { at: 6, present: ['c1', 'c2'] },
+            sceneHistory: [{ at: 2, present: ['c1', 'c2'] }],
             lastUpdatedAt: 6,
         });
     });
