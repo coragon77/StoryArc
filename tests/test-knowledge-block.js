@@ -319,6 +319,46 @@ describe('buildKnowledgeBlock', () => {
         assert.equal(buildKnowledgeBlock(ledger, []), expected);
     });
 
+    it('gives no section to a character named only inside a status tag of the reply', () => {
+        const ledger = makeWorkshopLedger();
+        ledger.scene.present = ['dougal'];
+        const messages = [
+            message(true, 'I wait by the door.'),
+            message(false, 'The workshop is quiet.\n<svt><bg>Gabriel Marin: <i>on patrol</i></bg>\n<bg>Noor: asleep</bg></svt>\n<trk>Ellie</trk>'),
+        ];
+
+        const expected = [
+            HEADER,
+            '',
+            'DOUGAL (present)',
+            '- Knows: the kiln router logged 42.08 kHz queries overnight (known only to them)',
+        ].join('\n');
+
+        assert.equal(buildKnowledgeBlock(ledger, messages), expected);
+    });
+
+    it('still counts a name in the story text outside the tags', () => {
+        const ledger = makeWorkshopLedger();
+        ledger.scene.present = ['dougal'];
+        const messages = [
+            message(true, 'I wait by the door.'),
+            message(false, '<svt><bg>Noor: asleep</bg></svt>Ellie walks in.<trk>scene 4</trk>'),
+        ];
+
+        const expected = [
+            HEADER,
+            '',
+            'DOUGAL (present)',
+            '- Knows: the kiln router logged 42.08 kHz queries overnight (known only to them)',
+            '',
+            'ELLIE (talked about, not present)',
+            '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches (shared only with Gabriel Marin)',
+            '- Knows: Vera Lin broke into the Annex last night (shared only with Gabriel Marin)',
+        ].join('\n');
+
+        assert.equal(buildKnowledgeBlock(ledger, messages), expected);
+    });
+
     it('gives an empty string when no character is present or talked about', () => {
         const ledger = makeWorkshopLedger();
         ledger.scene.present = [];
