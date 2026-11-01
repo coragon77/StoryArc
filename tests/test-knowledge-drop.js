@@ -42,6 +42,7 @@ describe('dropKnowledgeFrom — what was learned from message N on is taken back
             ],
             scene: { at: 2070, present: ['gabriel', 'ellie'] },
             lastUpdatedAt: 2070,
+            updateLog: [{ kind: 'rollback', from: 2079, factsDropped: [], holdersDropped: 1, factsRestored: [] }],
         });
     });
 
@@ -108,6 +109,7 @@ describe('dropKnowledgeFrom — what was learned from message N on is taken back
             facts: [],
             scene: { at: null, present: [] },
             lastUpdatedAt: 2078,
+            updateLog: [{ kind: 'rollback', from: 2079, factsDropped: [], holdersDropped: 0, factsRestored: [] }],
         });
     });
 
@@ -190,6 +192,7 @@ describe('dropKnowledgeFrom — the scene goes back to the one before the droppe
                 { at: 38, present: ['gabriel'] },
             ],
             lastUpdatedAt: 41,
+            updateLog: [{ kind: 'rollback', from: 42, factsDropped: [], holdersDropped: 0, factsRestored: [] }],
         });
     });
 
@@ -255,6 +258,7 @@ describe('dropKnowledgeFrom — the scene goes back to the one before the droppe
             facts: [],
             scene: { at: null, present: [] },
             lastUpdatedAt: 43,
+            updateLog: [{ kind: 'rollback', from: 44, factsDropped: [], holdersDropped: 0, factsRestored: [] }],
         });
     });
 });

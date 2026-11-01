@@ -151,6 +151,7 @@ describe('dropKnowledgeFrom — rolling back the correction brings the fact back
             sceneHistory: [],
             lastUpdatedAt: 2121,
             retractedFacts: [],
+            updateLog: [{ kind: 'rollback', from: 2122, factsDropped: [], holdersDropped: 0, factsRestored: ['f2'] }],
         });
     });
 
@@ -328,6 +329,11 @@ describe('the retraction through an update', () => {
             lastUpdatedAt: 3,
             lastUpdatedMessageId: 'm3',
             retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
+            updateLog: [{
+                kind: 'update', from: 2, to: 3, messageId: 'm3',
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'],
+            }],
         });
     });
 
@@ -376,6 +382,11 @@ describe('the retraction through an update', () => {
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
             lastUpdatedAt: 3,
             retractedFacts: [],
+            updateLog: [{
+                kind: 'reextract', from: 2, to: 2, messageId: 'm2',
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+            }],
         });
     });
 
@@ -420,6 +431,18 @@ describe('the retraction through an update', () => {
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
             lastUpdatedAt: 3,
             retractedFacts: [],
+            updateLog: [
+                {
+                    kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+                    answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                    factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [],
+                },
+                {
+                    kind: 'reextract', from: 2, to: 2, messageId: 'm2',
+                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                },
+            ],
         });
     });
 });

@@ -166,17 +166,25 @@ describe('updateKnowledgeAfterReply', () => {
             sceneHistory: [{ at: 2, present: ['c1', 'c2'] }],
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6',
+            updateLog: [{
+                kind: 'update', from: 3, to: 6, messageId: 'm6',
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [],
+            }],
         });
     });
 
-    it('leaves the ledger unchanged on an unreadable answer and reads the same messages again next time', async () => {
+    it('changes nothing but the log on an unreadable answer and reads the same messages again next time', async () => {
         setSwitches({ tracker: true, interval: 1 });
         storeLedger(2);
         const sentPrompts = installExtraction(['Sorry, I cannot help with that.', ANSWER_NOOR_LEARNS_LATCHES]);
 
         const updatedFirst = await updateKnowledgeAfterReply(6);
         assert.equal(updatedFirst, false);
-        assert.deepEqual(chat_metadata.story_arc.knowledge, LEDGER_AS_STORED);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            ...LEDGER_AS_STORED,
+            updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'no answer' }],
+        });
 
         const updatedSecond = await updateKnowledgeAfterReply(6);
         assert.equal(updatedSecond, true);
@@ -184,7 +192,7 @@ describe('updateKnowledgeAfterReply', () => {
         assert.equal(chat_metadata.story_arc.knowledge.lastUpdatedAt, 6);
     });
 
-    it('leaves the ledger unchanged when the call fails', async () => {
+    it('changes nothing but the log when the call fails', async () => {
         setSwitches({ tracker: true, interval: 1 });
         storeLedger(2);
         installExtraction([]);
@@ -193,7 +201,10 @@ describe('updateKnowledgeAfterReply', () => {
         const updated = await updateKnowledgeAfterReply(6);
 
         assert.equal(updated, false);
-        assert.deepEqual(chat_metadata.story_arc.knowledge, LEDGER_AS_STORED);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            ...LEDGER_AS_STORED,
+            updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'no answer' }],
+        });
     });
 
     it('reads only the latest exchange of a chat whose ledger was never updated', async () => {
@@ -261,6 +272,9 @@ describe('updateKnowledgeAfterReply', () => {
         const updated = await updateKnowledgeAfterReply(6);
 
         assert.equal(updated, false);
-        assert.deepEqual(chat_metadata.story_arc.knowledge, LEDGER_AS_STORED);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            ...LEDGER_AS_STORED,
+            updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'chat changed' }],
+        });
     });
 });

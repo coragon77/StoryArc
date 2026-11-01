@@ -248,6 +248,8 @@ describe('applyExtractionAnswer — the scene history', () => {
             scene: { at: 42, present: ['c1', 'c2'] },
             sceneHistory: [],
             lastUpdatedAt: 43,
+            // Only the scene and the coverage moved back: nothing was learned.
+            updateLog: [{ kind: 'rollback', from: 44, factsDropped: [], holdersDropped: 0, factsRestored: [] }],
         });
     });
 });
