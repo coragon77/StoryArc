@@ -240,6 +240,11 @@ StoryArc/
 │   │                           #   chat, gives the read messages a message id (extra.
 │   │                           #   story_arc_message_id) and stores messageId;
 │   │                           #   nextLedgerId(prefix, entries);
+│   │                           #   Update log — recordKnowledgeUpdate() keeps the newest
+│   │                           #   KNOWLEDGE_UPDATE_LOG_CAP (20) records in updateLog:
+│   │                           #   update/reextract, skipped (no answer, chat changed,
+│   │                           #   ledger moved), rollback; knowledgeHoldings() +
+│   │                           #   holdingsChange() find what a step added or removed;
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
 │   │                           #   load) via followMessagesById(ledger, chat) (entries
 │   │                           #   with a message id follow their message) and
@@ -398,6 +403,9 @@ StoryArc/
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
+│   ├── test-knowledge-update-log.js # Tests: updateLog records (update, empty answer,
+│   │                           #   skips by reason, nothing for off/interval/other chat,
+│   │                           #   cap 20, rollback drop/restore, re-extraction)
 │   ├── test-knowledge-rollback.js # Tests: rollback on regeneration and branch load,
 │   │                           #   new vs. existing swipe, edit re-extracts one message,
 │   │                           #   late answers dropped, an at outside the covered

@@ -151,6 +151,14 @@ describe('rollBackKnowledgeFrom', () => {
             scene: { at: 6, messageId: 'm6b', present: ['c1'] },
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6b',
+            updateLog: [
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                {
+                    kind: 'update', from: 6, to: 6, messageId: 'm6b',
+                    answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                },
+            ],
         });
     });
 
@@ -168,6 +176,7 @@ describe('rollBackKnowledgeFrom', () => {
             facts: [FACT_F1, FACT_F4],
             scene: { at: null, present: [] },
             lastUpdatedAt: 2,
+            updateLog: [{ kind: 'rollback', from: 3, factsDropped: ['f2', 'f3'], holdersDropped: 2, factsRestored: [] }],
         });
     });
 
@@ -226,6 +235,7 @@ describe('updateKnowledgeAfterSwipe', () => {
             scene: { at: null, present: [] },
             lastUpdatedAt: 5,
             lastUpdatedMessageId: 'm5',
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
         });
     });
 
@@ -254,6 +264,14 @@ describe('updateKnowledgeAfterSwipe', () => {
             scene: { at: 6, messageId: swipeMessageId, present: ['c1'] },
             lastUpdatedAt: 6,
             lastUpdatedMessageId: swipeMessageId,
+            updateLog: [
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                {
+                    kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
+                    answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                    factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [],
+                },
+            ],
         });
     });
 
@@ -366,6 +384,12 @@ describe('updateKnowledgeAfterEdit', () => {
             facts: [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES],
             scene: { at: 6, present: ['c1', 'c2', 'c3'] },
             lastUpdatedAt: 6,
+            // The edit's own drop of message 3 (f2) is no rollback record.
+            updateLog: [{
+                kind: 'reextract', from: 3, to: 3, messageId: 'm3',
+                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [],
+            }],
         });
     });
 
@@ -387,6 +411,11 @@ describe('updateKnowledgeAfterEdit', () => {
             scene: { at: 4, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 2, present: ['c1'] }],
             lastUpdatedAt: 6,
+            updateLog: [{
+                kind: 'reextract', from: 5, to: 5, messageId: 'm5',
+                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+            }],
         });
     });
 
@@ -408,6 +437,11 @@ describe('updateKnowledgeAfterEdit', () => {
             scene: { at: 6, messageId: 'm6', present: ['c1'] },
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6',
+            updateLog: [{
+                kind: 'reextract', from: 6, to: 6, messageId: 'm6',
+                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+            }],
         });
     });
 
@@ -456,6 +490,11 @@ describe('updateKnowledgeAfterEdit', () => {
             facts: [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES],
             scene: { at: 8, present: ['c2'] },
             lastUpdatedAt: 8,
+            updateLog: [{
+                kind: 'reextract', from: 3, to: 3, messageId: 'm3',
+                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [],
+            }],
         });
     });
 });

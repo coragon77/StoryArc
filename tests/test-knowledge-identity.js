@@ -136,6 +136,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             sceneHistory: [],
             lastUpdatedAt: 3,
             lastUpdatedMessageId: 'm6',
+            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f2'], holdersDropped: 1, factsRestored: [] }],
         });
     });
 
@@ -167,6 +168,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             sceneHistory: [],
             lastUpdatedAt: 4,
             lastUpdatedMessageId: 'm4',
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
         });
     });
 
@@ -217,6 +219,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             scene: { at: 3, present: ['c1', 'c2'] },
             sceneHistory: [],
             lastUpdatedAt: 3,
+            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
         });
     });
 });
@@ -298,6 +301,8 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             sceneHistory: [],
             lastUpdatedAt: 4,
             lastUpdatedMessageId: 'm4',
+            // Only the swipe's rollback: the deletion took nothing back, so it adds no record.
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
         });
     });
 
@@ -318,6 +323,8 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
         reply.mes = reply.swipes[1];
         reply.extra = structuredClone(reply.swipe_info[1].extra);
         await updateKnowledgeAfterSwipe(6);
+        // The re-extraction gave swipe 1 a message id; the id itself is opaque.
+        const swipeMessageId = reply.extra.story_arc_message_id;
 
         // A branch at message 6 with swipe 0 chosen: ST's getBranchChatSnapshot
         // copies the chat and syncSwipeToMes shows swipe 0; the branch keeps the
@@ -349,6 +356,15 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             sceneHistory: [],
             lastUpdatedAt: 5,
             lastUpdatedMessageId: 'm5',
+            // The branch load took nothing back, so it adds no record.
+            updateLog: [
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                {
+                    kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
+                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                },
+            ],
         });
     });
 });
@@ -410,6 +426,12 @@ describe('the message ids an update leaves on the messages it read', () => {
             scene: { at: 1, messageId: replyMessageId, present: ['c1', 'c2'] },
             lastUpdatedAt: 1,
             lastUpdatedMessageId: replyMessageId,
+            // Only the update: the deletion moved the entries and took nothing back.
+            updateLog: [{
+                kind: 'update', from: 1, to: 2, messageId: replyMessageId,
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
+                factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [],
+            }],
         });
     });
 });
