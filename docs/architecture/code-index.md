@@ -378,6 +378,9 @@ StoryArc/
 │   │                           #   Knows/Does-not-know contradiction in the block
 │   ├── test-knowledge-drop.js  # Tests: dropKnowledgeFrom (holders from N on, user
 │   │                           #   entries kept, scene and lastUpdatedAt reset)
+│   ├── test-knowledge-retraction.js # Tests: OOC corrections retract facts (user
+│   │                           #   holders kept, unknown ids ignored), rollback of the
+│   │                           #   correction restores them, retracted parsing, template
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
 │   │                           #   talked about by alias, Has told, cap, public and
 │   │                           #   plan facts never printed)

@@ -31,7 +31,7 @@ Each message starts with its index in square brackets.
 - "toldBy": the name of the character who told them, or null for "witnessed".
 - "public": true only when the fact is made known to everyone, such as a broadcast or a news story.
 - "at": the index in square brackets of the message they learn it in, one of the new messages.
-Only what happens on screen counts. A character who is not in the scene learns nothing, even when it would be likely, unless they did, caused or planned what the fact describes. Guesses and suspicions are not facts. Text in square brackets or marked OOC is not the story.
+Only what happens on screen counts. A character who is not in the scene learns nothing, even when it would be likely, unless they did, caused or planned what the fact describes. Guesses and suspicions are not facts. Out-of-character lines (marked OOC, in square brackets, or the narrator stepping out of the story to talk to the player) teach characters nothing: they are corrections, not story.
 
 4. REVEALED SECRETS. For every secret from the secrets list that comes out on screen in the new messages, write one item:
 - "secretId": the id of the secret in square brackets in the secrets list.
@@ -39,6 +39,11 @@ Only what happens on screen counts. A character who is not in the scene learns n
 - "heardBy": every character in the scene when it comes out, including those the arc already names as holders.
 - "at": the index in square brackets of the message it comes out in, one of the new messages.
 A secret counts as revealed only when its content is said or shown plainly on screen, not when it is hinted at. Do not write a revealed secret again under LEARNED.
+
+5. RETRACTED. When an out-of-character line says a fact in the ledger is wrong, invented or not canon, write one item with that fact's id:
+- "factId": the id in square brackets of the fact in the facts list.
+- "at": the index in square brackets of the message with the correction, one of the new messages.
+Retract only a fact the correction is about, not facts that merely touch the same subject. A correction that states the right version is not itself a fact: record the right version under LEARNED only when a later in-story message shows a character learning it.
 
 Answer with ONLY this JSON object, no prose before or after it:
 {
@@ -50,6 +55,9 @@ Answer with ONLY this JSON object, no prose before or after it:
   ],
   "revealedSecrets": [
     { "secretId": "id of a secret in the secrets list", "text": "what comes out, in one short sentence", "heardBy": ["name"], "at": <index of the message> }
+  ],
+  "retracted": [
+    { "factId": "id of a fact in the ledger", "at": <index of the message with the correction> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
