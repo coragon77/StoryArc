@@ -381,6 +381,47 @@ describe('buildKnowledgeBlock', () => {
         assert.equal(buildKnowledgeBlock(ledger, messages), expected);
     });
 
+    describe('which tagged text decides who is talked about', () => {
+        const withoutEllie = [
+            HEADER,
+            '',
+            'DOUGAL (present)',
+            '- Knows: the kiln router logged 42.08 kHz queries overnight (known only to them)',
+        ].join('\n');
+        const withEllie = [
+            withoutEllie,
+            '',
+            'ELLIE (talked about, not present)',
+            '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches (shared only with Gabriel Marin)',
+            '- Knows: Vera Lin broke into the Annex last night (shared only with Gabriel Marin)',
+        ].join('\n');
+        const blockFor = (userText, replyText) => {
+            const ledger = makeWorkshopLedger();
+            ledger.scene.present = ['dougal'];
+            return buildKnowledgeBlock(ledger, [message(true, userText), message(false, replyText)]);
+        };
+
+        it('reads each message on its own, so a tag cannot close across them', () => {
+            assert.equal(blockFor('I check <note> the board', 'Ellie waves. </note>'), withEllie);
+        });
+
+        it('keeps the text inside HTML paragraph and link tags', () => {
+            assert.equal(blockFor('I wait.', '<p>Dougal nods.</p><p><a href="#">Ellie</a> walks in.</p>'), withEllie);
+        });
+
+        it('drops a status block the length limit cut off before its closing tag', () => {
+            assert.equal(blockFor('I wait.', 'The workshop is quiet.\n<svt><bg>Ellie: asleep'), withoutEllie);
+        });
+
+        it('drops a status block whose closing tag is written in other case', () => {
+            assert.equal(blockFor('I wait.', 'The workshop is quiet.\n<SVT>Ellie: asleep</svt>'), withoutEllie);
+        });
+
+        it('keeps two names apart that sit in neighbouring paragraphs', () => {
+            assert.equal(blockFor('I wait.', '<p>Dougal</p><p>Ellie</p>'), withEllie);
+        });
+    });
+
     it('gives an empty string when no character is present or talked about', () => {
         const ledger = makeWorkshopLedger();
         ledger.scene.present = [];

@@ -248,8 +248,10 @@ StoryArc/
 │   │                           #   updateKnowledgeAfterEdit(i);
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
 │   │                           #   in-chat depth 1, system, '' while off;
-│   │                           #   Build — buildKnowledgeBlock(ledger, chat), present +
-│   │                           #   talked-about characters, KNOWLEDGE_LIST_CAP = 5;
+│   │                           #   Build — buildKnowledgeBlock(ledger, chat): EVERYONE KNOWS
+│   │                           #   (public facts), then Knows lines with "shared only with"
+│   │                           #   for present + talked-about characters, KNOWLEDGE_LIST_CAP = 5;
+│   │                           #   withoutTaggedElements drops status blocks before names count;
 │   │                           #   characterName(ledger, id) (also for the popup)
 │   ├── ui/
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
