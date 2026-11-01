@@ -266,7 +266,7 @@ function setSwitches({ tracker }) {
     };
 }
 
-/** The live case in four messages: the invented stipend, then both OOC lines. Stamped m0 … m3 already. */
+/** The live case in four messages: the invented stipend, then both OOC lines. With the message ids m0 … m3 already. */
 function fillChat() {
     chat.push(
         { is_user: true, is_system: false, name: 'Ellie', mes: 'So what does SWORD pay me?', extra: { story_arc_message_id: 'm0' } },
@@ -372,6 +372,50 @@ describe('the retraction through an update', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: cast,
             facts: [STIPEND],
+            scene: { at: 3, present: ['c1', 'c2'] },
+            sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
+            lastUpdatedAt: 3,
+            retractedFacts: [],
+        });
+    });
+
+    it('an edit of the retracted fact\'s message takes its holders out of the retraction too', async () => {
+        fillChat();
+        setSwitches({ tracker: true });
+        chat_metadata.story_arc = {
+            knowledge: {
+                characters: cast,
+                facts: [],
+                scene: { at: 3, present: ['c1', 'c2'] },
+                sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
+                lastUpdatedAt: 3,
+                retractedFacts: [{ at: 2, fact: structuredClone(STIPEND) }],
+            },
+        };
+        // The player rewrites the stipend line, then the correction that no longer fits.
+        chat[1].mes = 'SWORD pays you a monthly wage.';
+        chat[2].mes = 'And when is it paid?';
+        installExtraction([
+            JSON.stringify({
+                present: ['Ellie', 'Gabriel'], newCharacters: [],
+                learned: [{ text: 'SWORD pays Ellie a monthly wage', public: false, who: ['Ellie'], how: 'told', toldBy: 'Gabriel', at: 1 }],
+            }),
+            JSON.stringify({ present: ['Ellie', 'Gabriel'], newCharacters: [], learned: [] }),
+        ]);
+
+        await updateKnowledgeAfterEdit(1);
+        await updateKnowledgeAfterEdit(2);
+
+        // The stipend came only from the old text of message 1: it does not come back.
+        assert.deepEqual(chat_metadata.story_arc.knowledge, {
+            characters: cast,
+            facts: [{
+                id: 'f1', text: 'SWORD pays Ellie a monthly wage', public: false,
+                holders: [
+                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 1, messageId: 'm1' },
+                    { characterId: 'c1', how: 'told', toldBy: 'c2', at: 1, messageId: 'm1' },
+                ],
+            }],
             scene: { at: 3, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
             lastUpdatedAt: 3,

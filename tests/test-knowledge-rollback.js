@@ -35,9 +35,9 @@ function setSwitches({ tracker }) {
 
 /**
  * A workshop chat: greeting, then user and reply in turn, seven messages.
- * Messages 0 to 5 carry the Story Arc stamp m0 … m5 already, so the stamps
+ * Messages 0 to 5 carry the Story Arc message id m0 … m5 already, so the ids
  * an update stores are known in advance. Message 6 carries none: every
- * swipe takes its stamp, and the extraction that reads it gives it a new one.
+ * swipe takes its message id, and the extraction that reads it gives it a new one.
  */
 function fillChat() {
     chat.length = 0;
@@ -236,11 +236,11 @@ describe('updateKnowledgeAfterSwipe', () => {
         showSecondSwipe();
 
         const updated = await updateKnowledgeAfterSwipe(6);
-        // The re-extraction stamped the shown swipe; the stamp itself is an opaque id.
-        const swipeStamp = chat[6].extra.story_arc_message_id;
+        // The re-extraction gave the shown swipe a message id; the id itself is opaque.
+        const swipeMessageId = chat[6].extra.story_arc_message_id;
 
         assert.equal(updated, true);
-        assert.equal(typeof swipeStamp, 'string');
+        assert.equal(typeof swipeMessageId, 'string');
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[6] Noor: It is on the news.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -248,12 +248,12 @@ describe('updateKnowledgeAfterSwipe', () => {
                 FACT_F1, FACT_F2, FACT_F4,
                 {
                     id: 'f5', text: 'The latches are on the news', public: true,
-                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 6, messageId: swipeStamp }],
+                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 6, messageId: swipeMessageId }],
                 },
             ],
-            scene: { at: 6, messageId: swipeStamp, present: ['c1'] },
+            scene: { at: 6, messageId: swipeMessageId, present: ['c1'] },
             lastUpdatedAt: 6,
-            lastUpdatedMessageId: swipeStamp,
+            lastUpdatedMessageId: swipeMessageId,
         });
     });
 
@@ -394,7 +394,7 @@ describe('updateKnowledgeAfterEdit', () => {
         setSwitches({ tracker: true });
         storeLedger();
         const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
-        // The update that read message 6 stamped it; an edit keeps the message's extra.
+        // The update that read message 6 gave it a message id; an edit keeps the message's extra.
         chat[6].extra = { story_arc_message_id: 'm6' };
         chat[6].mes = 'Nobody else heard you.';
 
@@ -482,7 +482,7 @@ describe('an index the answer gives outside the messages it covered', () => {
         ledger.lastUpdatedAt = 4;
     }
 
-    it('a fact stamped before the covered messages still goes with a regeneration of the reply it came from', async () => {
+    it('a fact placed before the covered messages still goes with a regeneration of the reply it came from', async () => {
         setSwitches({ tracker: true });
         storeLedgerThrough4();
         installExtraction([JSON.stringify({
@@ -498,7 +498,7 @@ describe('an index the answer gives outside the messages it covered', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F4]);
     });
 
-    it('a fact the edit of a message stamped elsewhere is taken back by the next edit of that message', async () => {
+    it('a fact the edit of a message placed elsewhere is taken back by the next edit of that message', async () => {
         setSwitches({ tracker: true });
         storeLedger();
         installExtraction([
