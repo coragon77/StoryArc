@@ -35,7 +35,7 @@ Only what happens on screen counts. A character who is not in the scene learns n
 
 4. REVEALED SECRETS. For every secret from the plan list that comes out on screen in the new messages, write one item:
 - "secretId": the id of the secret in square brackets in the plan list.
-- "heardBy": the characters in the scene who see or hear it come out. Leave out characters the plan already names as holders.
+- "heardBy": every character in the scene when it comes out, including those the plan already names as holders.
 A secret counts as revealed only when its content is said or shown plainly on screen, not when it is hinted at. Do not write a revealed secret again under LEARNED.
 
 Answer with ONLY this JSON object, no prose before or after it:
