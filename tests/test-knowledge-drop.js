@@ -219,13 +219,10 @@ describe('dropKnowledgeFrom — the scene goes back to the one before the droppe
             { is_user: true, mes: 'Ellie sits down next to Amy.' },
         ];
         assert.equal(buildKnowledgeBlock(ledger, messages), [
-            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character speaks and acts only from their own list. Knowledge moves between characters only on-screen.]',
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. Rumors, teammates, news reports and "someone told me" carry nothing that is not on a character\'s list. A character not listed here knows only what everyone knows.]',
             '',
             'ELLIE (present)',
-            '- Knows: Amy\'s diagnostic logs were rewritten.',
-            '',
-            'AMY (present)',
-            '- Does not know: Amy\'s diagnostic logs were rewritten.',
+            '- Knows: Amy\'s diagnostic logs were rewritten. (known only to them)',
         ].join('\n'));
     });
 

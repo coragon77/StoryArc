@@ -134,6 +134,18 @@ describe('extract-knowledge.txt', () => {
         assert.ok(template.includes(
             'Write each fact once: put everyone who learns it in the same way in one item.'), 'missing the write-once rule');
     });
+
+    it('records what a crowd watched, a broadcast or a report as a public fact', () => {
+        // Live: a party scene printed no public fact, so bystanders had nothing they were allowed to talk about.
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            '- "public": true when the fact is public knowledge that bystanders may talk about: '
+            + 'what a crowd watched happen, what was broadcast, what was reported in the news. '
+            + 'false for knowledge only some characters hold.'), 'missing the public-knowledge rule');
+        assert.ok(!template.includes('"public": true only when the fact is made known to everyone'),
+            'the old, narrower public rule is still there');
+    });
 });
 
 /** A well-formed answer for the workshop scene, as the LLM writes it: fenced, with a stray key. */

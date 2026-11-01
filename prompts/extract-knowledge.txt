@@ -29,7 +29,7 @@ Each message starts with its index in square brackets.
 - "who": the characters who learn it in that message. Leave out characters who already know it. A character who did, caused or planned what a fact describes knows it, even when they are not in the scene: list them in "who" with "how": "witnessed", in an item of their own when the others were told.
 - "how": "witnessed" when they saw or heard it happen themselves, "told" when another character told them.
 - "toldBy": the name of the character who told them, or null for "witnessed".
-- "public": true only when the fact is made known to everyone, such as a broadcast or a news story.
+- "public": true when the fact is public knowledge that bystanders may talk about: what a crowd watched happen, what was broadcast, what was reported in the news. false for knowledge only some characters hold.
 - "at": the index in square brackets of the message they learn it in, one of the new messages.
 Only what happens on screen counts. A character who is not in the scene learns nothing, even when it would be likely, unless they did, caused or planned what the fact describes. Guesses and suspicions are not facts. Out-of-character lines (marked OOC, in square brackets, or the narrator stepping out of the story to talk to the player) teach characters nothing: they are corrections, not story.
 

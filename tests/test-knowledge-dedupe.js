@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
 
 const HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character speaks and acts only from their own list. '
-    + 'Knowledge moves between characters only on-screen.]';
+    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Rumors, teammates, news reports and "someone told me" carry nothing that is not on a character\'s list. '
+    + 'A character not listed here knows only what everyone knows.]';
 
 /** Amy, Steve and Mara, before anyone learns about the diagnostic logs. */
 function makeNightShiftLedger() {
@@ -55,13 +56,13 @@ describe('applyExtractionAnswer joins learned items with the same text', () => {
             HEADER,
             '',
             'AMY (present)',
-            '- Knows (told by Steve): Mara from the night shift rewrote Amy\'s diagnostic logs.',
+            '- Knows (told by Steve): Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Steve)',
             '',
             'STEVE (present)',
-            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs.',
+            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Amy)',
             '',
             'MARA (talked about, not present)',
-            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs.',
+            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Steve and Amy)',
         ].join('\n'));
     });
 

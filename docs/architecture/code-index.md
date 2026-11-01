@@ -389,8 +389,8 @@ StoryArc/
 │   │                           #   holders kept, unknown ids ignored), rollback of the
 │   │                           #   correction restores them, retracted parsing, template
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
-│   │                           #   talked about by alias, Has told, cap, public and
-│   │                           #   plan facts never printed)
+│   │                           #   talked about by alias, Has told, shared-only-with,
+│   │                           #   cap, EVERYONE KNOWS, plan holders never printed)
 │   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock key, in-chat depth 1,
 │   │                           #   system role; '' while off or empty
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
