@@ -1,8 +1,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MODULE_NAME, defaultSettings, createDefaultArc, TIER_TABLE } from '../lib/core/constants.js';
-import { loadSettings, getSettings, isEnabled } from '../lib/core/settings.js';
+import { MODULE_NAME, defaultSettings, createDefaultArc, TIER_TABLE, KNOWLEDGE_PROMPT_KEY } from '../lib/core/constants.js';
+import { loadSettings, getSettings, isEnabled, getKnowledgeTrackerSettings, isKnowledgeTrackerEnabled } from '../lib/core/settings.js';
 import { calculatePhase } from '../lib/injection/pacing.js';
 import { chat, extension_settings } from './mocks/st-mocks.js';
 
@@ -13,6 +13,10 @@ describe('core/constants', () => {
 
     it('exports defaultSettings with enabled=false', () => {
         assert.equal(defaultSettings.enabled, false);
+    });
+
+    it('reserves story_arc_knowledge as the knowledge block\'s prompt key', () => {
+        assert.equal(KNOWLEDGE_PROMPT_KEY, 'story_arc_knowledge');
     });
 });
 
@@ -107,6 +111,7 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(extension_settings.story_arc, {
             enabled: false,
             defaultConnectionProfile: null,
+            knowledgeTracker: { enabled: false, updateInterval: 1 },
         });
     });
 
@@ -116,7 +121,50 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(extension_settings.story_arc, {
             enabled: false,
             defaultConnectionProfile: 'profile-7',
+            knowledgeTracker: { enabled: false, updateInterval: 1 },
         });
+    });
+
+    it('loadSettings fills a missing tracker key and keeps the stored one', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { updateInterval: 3 } };
+        loadSettings();
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 3 });
+
+        extension_settings.story_arc = { knowledgeTracker: { enabled: true } };
+        loadSettings();
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1 });
+    });
+
+    it('stored tracker settings survive a settings reload', () => {
+        loadSettings();
+        getKnowledgeTrackerSettings().enabled = true;
+        getKnowledgeTrackerSettings().updateInterval = 4;
+        loadSettings();
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 4 });
+    });
+
+    it('changing one install\'s tracker settings leaves the defaults alone', () => {
+        loadSettings();
+        getKnowledgeTrackerSettings().enabled = true;
+        delete extension_settings.story_arc;
+        loadSettings();
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1 });
+    });
+
+    it('getKnowledgeTrackerSettings returns the stored group, or the defaults before loadSettings', () => {
+        assert.deepEqual(getKnowledgeTrackerSettings(), { enabled: false, updateInterval: 1 });
+        extension_settings.story_arc = { knowledgeTracker: { enabled: true, updateInterval: 2 } };
+        assert.equal(getKnowledgeTrackerSettings(), extension_settings.story_arc.knowledgeTracker);
+    });
+
+    it('isKnowledgeTrackerEnabled is true only when the tracker switch is exactly true', () => {
+        assert.equal(isKnowledgeTrackerEnabled(), false);
+        extension_settings.story_arc = { knowledgeTracker: { enabled: true, updateInterval: 1 } };
+        assert.equal(isKnowledgeTrackerEnabled(), true);
+        extension_settings.story_arc = { knowledgeTracker: { enabled: 'yes', updateInterval: 1 } };
+        assert.equal(isKnowledgeTrackerEnabled(), false);
+        extension_settings.story_arc = { enabled: true };
+        assert.equal(isKnowledgeTrackerEnabled(), false);
     });
 
     it('getSettings returns the stored settings object', () => {
@@ -129,6 +177,7 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(getSettings(), {
             enabled: false,
             defaultConnectionProfile: null,
+            knowledgeTracker: { enabled: false, updateInterval: 1 },
         });
     });
 
