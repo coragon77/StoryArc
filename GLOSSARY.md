@@ -105,7 +105,7 @@ _Avoid_: timeout, stuck
 ### Knowledge
 
 **Knowledge ledger**:
-The chat's record of which character knows which fact, and how each one learned it. Optional; it learns from the story only while the player has the tracker switched on, and the player can correct it by hand. It records only who knows; who does not know follows from it.
+The chat's record of which character knows which fact, and how each one learned it. Optional; it learns from the story only while the player has the tracker switched on, and the player can correct it by hand. It records only who knows; the narrator is never told who does not know.
 _Avoid_: memory, knowledge base, lore
 
 **Fact**:
@@ -117,7 +117,7 @@ A character who knows a fact or a secret, together with how they learned it: wit
 _Avoid_: owner, knower, witness
 
 **Present** (character):
-A character in the scene at the latest message. The narrator is told what each present character knows and does not know.
+A character in the scene at the latest message. The narrator is told what each present character knows.
 _Avoid_: active, onstage, in-scene
 
 **Talked about** (character):

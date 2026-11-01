@@ -11,7 +11,7 @@ function setSwitches({ extension, tracker }) {
     extension_settings.story_arc = { enabled: extension, knowledgeTracker: { enabled: tracker, updateInterval: 1 } };
 }
 
-/** Noor in the scene, knowing one fact Dougal (also present) does not. */
+/** Noor in the scene, the only one knowing a fact; Dougal (also present) has no line. */
 function storeLedger() {
     chat_metadata.story_arc = {
         knowledge: {
@@ -31,14 +31,12 @@ function storeLedger() {
 
 const EXPECTED_BLOCK = [
     '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-        + 'Each character speaks and acts only from their own list. '
-        + 'Knowledge moves between characters only on-screen.]',
+        + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+        + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
+        + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]',
     '',
     'NOOR (present)',
-    '- Knows: Ellie is Dice',
-    '',
-    'DOUGAL (present)',
-    '- Does not know: Ellie is Dice',
+    '- Knows: Ellie is Dice (known only to them)',
 ].join('\n');
 
 describe('injectKnowledgeBlock', () => {
