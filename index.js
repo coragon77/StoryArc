@@ -17,6 +17,7 @@ import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
+import { injectKnowledgeBlock } from './lib/knowledge/ledger.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
@@ -25,7 +26,7 @@ import { updateProgress } from './lib/ui/progress.js';
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
 /**
- * Before each LLM call: inject active arc plans into the prompt.
+ * Before each LLM call: inject active arc plans and the knowledge block into the prompt.
  */
 async function onGenerationStarted() {
     // Always set the prompt, empty when disabled or no active arcs —
@@ -53,6 +54,9 @@ async function onGenerationStarted() {
         false,
         extension_prompt_roles.SYSTEM,
     );
+
+    // Who knows what, in-chat at depth 1 — empty while the tracker is off.
+    injectKnowledgeBlock();
 }
 
 /**

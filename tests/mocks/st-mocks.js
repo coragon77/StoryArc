@@ -13,8 +13,11 @@ export const event_types = {};
 /** Call counts tests can assert on — reset them in the test that reads them. */
 export const mockCalls = { saveSettingsDebounced: 0 };
 export function saveSettingsDebounced() { mockCalls.saveSettingsDebounced += 1; }
-export function setExtensionPrompt() {}
-export const extension_prompt_types = { IN_PROMPT: 0 };
+/** Every setExtensionPrompt call as its argument list — clear it in the test that reads it. */
+export const extensionPromptCalls = [];
+export function setExtensionPrompt(...args) { extensionPromptCalls.push(args); }
+// Values as in ST's script.js
+export const extension_prompt_types = { IN_PROMPT: 0, IN_CHAT: 1 };
 export const extension_prompt_roles = { SYSTEM: 0 };
 export function saveMetadata() {}
 export function generateRaw() { return ''; }
