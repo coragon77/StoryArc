@@ -94,7 +94,8 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
     {
       "id": "short_descriptive_slug",
       "content": "The full secret, stated plainly. Include who, what, why, and how. The AI needs to KNOW this to write consistently around it. Example: 'Commander Voss has been feeding troop movements to the Syndicate for three months. His daughter Mira is being held in the Syndicate's Ashford compound. He believes cooperating is the only way to keep her alive. He will attempt to sabotage the bridge crossing during the escalation phase to buy time for a Syndicate ambush.'",
-      "revealPhase": "setup | development | escalation | climax | any"
+      "revealPhase": "setup | development | escalation | climax | any",
+      "holders": ["The characters who know this secret when the arc starts, by name, spelled exactly as in the characters list. Example: ['Commander Voss', 'Mira']. An empty list when nobody in the story knows it yet."]
     }
   ],
 
@@ -155,6 +156,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - Each secret should have at least 1-2 foreshadowing entries pointing to it. More foreshadowing for bigger reveals.
 - Foreshadowing should be subtle enough to miss on first reading but obvious in retrospect. The best foreshadowing is character behavior that has an innocent explanation AND a sinister one.
 - revealPhase controls when the AI is allowed to know the secret. Use "setup" for secrets that inform the AI's writing from the start (like a character's hidden motivation). Use "climax" for secrets that should only be revealed dramatically. Use "any" for secrets the AI should always be aware of but reveal at its discretion.
+- Name the holders of every secret: the characters who already know it when the arc starts. The narrating AI lets only these characters act on the secret, so leave out everyone who would only learn it on-screen later. "Julian and Brody know the crane plan" makes Julian and Brody the holders, not the people the plan is aimed at.
 
 == TRIGGER GUIDELINES ==
 
