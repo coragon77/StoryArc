@@ -140,6 +140,47 @@ describe('applyExtractionAnswer with revealed secrets', () => {
         ]);
     });
 
+    it('adds the secret\'s planned holders who are in the ledger as plan holders at the reveal, after the witnesses', () => {
+        // Julian planned the crane drop and is not in the scene; Ellie overhears it.
+        const before = {
+            characters: [
+                { id: 'c1', name: 'Julian', aliases: ['Jules'] },
+                { id: 'c2', name: 'Ellie', aliases: [] },
+                { id: 'c3', name: 'Noor al-Jamil', aliases: ['Noor'] },
+            ],
+            facts: [],
+            scene: { at: 2070, present: ['c2', 'c3'] },
+            lastUpdatedAt: 2070,
+        };
+        const answer = {
+            present: ['Ellie', 'Noor'],
+            newCharacters: [],
+            learned: [],
+            revealedSecrets: [{
+                arcId: 'arc-crane',
+                secretId: 'the_drop',
+                text: 'Julian plans to drop the crane on the Annex',
+                holders: ['Jules', 'Brody', 'Ellie'],
+                heardBy: ['Ellie'],
+            }],
+        };
+
+        const ledger = applyExtractionAnswer(before, answer, 2072);
+
+        assert.deepEqual(ledger.facts, [
+            {
+                id: 'f1',
+                text: 'Julian plans to drop the crane on the Annex',
+                public: false,
+                secret: { arcId: 'arc-crane', secretId: 'the_drop' },
+                holders: [
+                    { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2072 },
+                    { characterId: 'c1', how: 'plan', toldBy: null, at: 2072 },
+                ],
+            },
+        ]);
+    });
+
     it('extends the fact a secret already became instead of making a second one', () => {
         const before = {
             ...makeLedger(),
@@ -185,7 +226,7 @@ describe('resolveRevealedSecrets', () => {
         );
 
         assert.deepEqual(revealed, [
-            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether snaps at the second floor', heardBy: ['Ellie'] },
+            { arcId: 'arc-tether', secretId: 'the_drop', text: 'The tether snaps at the second floor', holders: [], heardBy: ['Ellie'] },
         ]);
     });
 });
