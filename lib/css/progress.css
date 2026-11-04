@@ -147,6 +147,26 @@
     color: var(--sa-accent);
 }
 
+/* ─── Ruling (the player overruled the plan — re-plan) ───────────────────── */
+
+.story-arc-ruling {
+    margin-top: 4px;
+}
+
+.story-arc-ruling-text {
+    font-size: 0.72em;
+    opacity: 0.85;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.story-arc-ruling-quote {
+    font-style: italic;
+}
+
 /* ─── Focus Indicator ────────────────────────────────────────────────────── */
 
 .story-arc-progress-focus {

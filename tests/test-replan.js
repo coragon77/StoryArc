@@ -453,6 +453,33 @@ describe('applyReplan', () => {
         });
     });
 
+    it('marks each open ruling answered at the chat length, and keeps an answered one\'s mark', () => {
+        const merged = mergedArc();
+        merged.rulings = [
+            { id: 'r1', text: 'Aegis is not her defender.', at: 120, messageId: 'm120', answeredAt: 140 },
+            { id: 'r2', text: 'Comics, not police procedural.', at: 200, messageId: 'm200' },
+            { id: 'r3', text: 'Sundown is a mentor.', at: 210 },
+        ];
+
+        const stored = applyReplan(merged, 250);
+
+        assert.deepEqual(stored.rulings, [
+            { id: 'r1', text: 'Aegis is not her defender.', at: 120, messageId: 'm120', answeredAt: 140 },
+            { id: 'r2', text: 'Comics, not police procedural.', at: 200, messageId: 'm200', answeredAt: 250 },
+            { id: 'r3', text: 'Sundown is a mentor.', at: 210, answeredAt: 250 },
+        ]);
+        assert.equal(merged.rulings[1].answeredAt, undefined);
+    });
+
+    it('keeps the rulings of the arc it re-plans through the merge', () => {
+        const existing = { ...mergedArc(), rulings: [{ id: 'r1', text: 'Aegis is not her defender.', at: 120 }] };
+        const generated = { ...mergedArc(), title: 'Ignored', beats: [], directives: [], antiPatterns: [], characters: [] };
+
+        const stored = applyReplan(mergeReplan(existing, generated), 250);
+
+        assert.deepEqual(stored.rulings, [{ id: 'r1', text: 'Aegis is not her defender.', at: 120, answeredAt: 250 }]);
+    });
+
     it('does not mutate the merged arc, and the result shares nothing with it', () => {
         const merged = mergedArc();
         const stored = applyReplan(merged, 250);
