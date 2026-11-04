@@ -156,7 +156,9 @@ StoryArc/
 │   │                           #   replaces the rest; withUniqueIds() suffixes
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
-│   │                           #   same or larger, never smaller (wizard selector)
+│   │                           #   same or larger, never smaller (wizard selector);
+│   │                           #   applyReplan(merged, chatLength) — the arc "Apply
+│   │                           #   re-plan" stores (today a deep copy of the merged arc)
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
 │   │   │                       #   one section per arc (private builders below), spotlight first,
@@ -412,7 +414,7 @@ StoryArc/
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
 │   │                           #   add-only, id de-collision, tier change, kept
 │   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
-│   │                           #   buildArcSoFar + formatExistingArcs mark
+│   │                           #   buildArcSoFar + formatExistingArcs mark + applyReplan
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
@@ -586,8 +588,8 @@ lib/ui/
 ├── wizard.js        (imports: context/harvester.js, planning/generator.js,
 │                              planning/storage.js, planning/replan.js,
 │                              core/settings.js, core/constants.js, progress.js,
-│                              /scripts/extensions.js, /scripts/popup.js,
-│                              /scripts/utils.js)
+│                              /script.js, /scripts/extensions.js,
+│                              /scripts/popup.js, /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
 │                              wizard.js, arc-manager.js, knowledge-popup.js,
 │                              /scripts/popup.js, /scripts/utils.js)
