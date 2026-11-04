@@ -14,6 +14,10 @@ Each with its id and who already knows it. A public fact is known to everyone.
 Each with its id and the characters the arc says already hold it. Only these secrets can be revealed in the new messages.
 {{SECRETS}}
 
+== DEVELOPMENTS OF THE STORY ARCS ==
+Each with its id. These are developments the story may reach; most will not happen in the new messages. The developments an arc lists under "done" have already happened: they show how far the arc has come and are never reported.
+{{DEVELOPMENTS}}
+
 == NEW MESSAGES ==
 Each message starts with its index in square brackets.
 {{MESSAGES}}
@@ -45,6 +49,11 @@ A secret counts as revealed only when its content is said or shown plainly on sc
 - "at": the index in square brackets of the message with the correction, one of the new messages.
 Retract only a fact the correction is about, not facts that merely touch the same subject. A correction that states the right version is not itself a fact: record the right version under LEARNED only when a later in-story message shows a character learning it.
 
+6. FULFILLED. For every development from the developments list that the new messages bring about on screen, write one item:
+- "developmentId": the id in square brackets of the development in the developments list.
+- "at": the index in square brackets of the message it happens in, one of the new messages.
+Only what happens on screen in the new messages counts, not what is planned, hinted at or likely. A development listed under "done" has already happened and is never reported. When in doubt, leave it out. Out-of-character lines fulfil nothing. Write at most one item per development.
+
 Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
@@ -58,6 +67,9 @@ Answer with ONLY this JSON object, no prose before or after it:
   ],
   "retracted": [
     { "factId": "id of a fact in the ledger", "at": <index of the message with the correction> }
+  ],
+  "fulfilled": [
+    { "developmentId": "id of a development in the developments list", "at": <index of the message> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.

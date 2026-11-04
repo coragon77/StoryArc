@@ -143,7 +143,7 @@ describe('rollBackKnowledgeFrom', () => {
         const updated = await updateKnowledgeAfterReply(6);
 
         assert.equal(rolledBack, true);
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[6] Noor: Nobody else is here.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -155,8 +155,8 @@ describe('rollBackKnowledgeFrom', () => {
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
                 {
                     kind: 'update', from: 6, to: 6, messageId: 'm6b',
-                    answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-                    factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                    answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
                 },
             ],
         });
@@ -227,7 +227,7 @@ describe('updateKnowledgeAfterSwipe', () => {
 
         const updated = await updateKnowledgeAfterSwipe(6);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -249,7 +249,7 @@ describe('updateKnowledgeAfterSwipe', () => {
         // The re-extraction gave the shown swipe a message id; the id itself is opaque.
         const swipeMessageId = chat[6].extra.story_arc_message_id;
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.equal(typeof swipeMessageId, 'string');
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[6] Noor: It is on the news.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
@@ -268,8 +268,8 @@ describe('updateKnowledgeAfterSwipe', () => {
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
                 {
                     kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
-                    answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                    factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [],
+                    answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                    factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0,
                 },
             ],
         });
@@ -286,7 +286,7 @@ describe('updateKnowledgeAfterSwipe', () => {
 
         const updated = await updateKnowledgeAfterSwipe(6);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.equal(chat_metadata.story_arc.knowledge.lastUpdatedAt, 4);
     });
@@ -299,7 +299,7 @@ describe('updateKnowledgeAfterSwipe', () => {
 
         const updated = await updateKnowledgeAfterSwipe(6);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F4]);
         assert.equal(chat_metadata.story_arc.knowledge.lastUpdatedAt, 5);
@@ -377,7 +377,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(3);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[3] Ellie: Gabriel wants steel latches.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -387,8 +387,8 @@ describe('updateKnowledgeAfterEdit', () => {
             // The edit's own drop of message 3 (f2) is no rollback record.
             updateLog: [{
                 kind: 'reextract', from: 3, to: 3, messageId: 'm3',
-                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [],
+                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });
@@ -404,7 +404,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(5);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
             facts: [FACT_F1, FACT_F2, FACT_F3, FACT_F4],
@@ -413,8 +413,8 @@ describe('updateKnowledgeAfterEdit', () => {
             lastUpdatedAt: 6,
             updateLog: [{
                 kind: 'reextract', from: 5, to: 5, messageId: 'm5',
-                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });
@@ -429,7 +429,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(6);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[6] Noor: Nobody else heard you.']);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
@@ -439,8 +439,8 @@ describe('updateKnowledgeAfterEdit', () => {
             lastUpdatedMessageId: 'm6',
             updateLog: [{
                 kind: 'reextract', from: 6, to: 6, messageId: 'm6',
-                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });
@@ -453,7 +453,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(6);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F3, FACT_F4]);
     });
@@ -465,7 +465,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(3);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F3, FACT_F4]);
     });
@@ -484,7 +484,7 @@ describe('updateKnowledgeAfterEdit', () => {
 
         const updated = await updateKnowledgeAfterEdit(3);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: CHARACTERS,
             facts: [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES],
@@ -492,8 +492,8 @@ describe('updateKnowledgeAfterEdit', () => {
             lastUpdatedAt: 8,
             updateLog: [{
                 kind: 'reextract', from: 3, to: 3, messageId: 'm3',
-                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [],
+                answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });

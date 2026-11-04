@@ -59,6 +59,7 @@ describe('buildKnowledgeExtractionVariables', () => {
                 '- [fact-overdrive] Overdrive is Bellweather\'s ringer for Sunday (public)',
             ].join('\n'),
             SECRETS: '(none)',
+            DEVELOPMENTS: '(none)',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
                 '[2066] Narrator: Noor looks up from the bench.',
@@ -76,6 +77,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             CHARACTERS: '(none)',
             FACTS: '(none)',
             SECRETS: '(none)',
+            DEVELOPMENTS: '(none)',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',
         });
     });
@@ -196,6 +198,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
             ],
             revealedSecrets: [],
             retracted: [],
+            fulfilled: [],
         });
     });
 
@@ -214,7 +217,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {

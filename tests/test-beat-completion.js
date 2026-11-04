@@ -1,6 +1,6 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { completeBeats, reopenCompletionsFrom } from '../lib/planning/beat-completion.js';
+import { completeBeats, reopenCompletionsFrom, reopenCompletionsAt } from '../lib/planning/beat-completion.js';
 import { completeBeat } from '../lib/planning/arc-edit.js';
 import { processSignalResults, promoteNextBeats } from '../lib/injection/signals.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
@@ -406,5 +406,74 @@ describe('manual toggle and recorded completions', () => {
         assert.equal(reopenCompletionsFrom(5), true);
         assert.equal(arc.beats[0].status, 'pending');
         assert.equal(arc.beats[0].completion, undefined);
+    });
+});
+
+describe('reopenCompletionsAt — an edit of one message', () => {
+    it('reopens the completion at the edited message and keeps one at a later message', async () => {
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 4 }], [arc]);
+        await completeBeats([{ arcId: 'act00001', beatId: 'm2', at: 6 }], [arc]);
+
+        assert.equal(reopenCompletionsAt(4), true);
+        assert.deepEqual(statuses(arc), ['active', 'completed', 'active']);
+        assert.equal(arc.beats[0].completion, undefined);
+        assert.equal(arc.beats[1].completion.at, 6);
+        // The later completion stays the latest.
+        assert.equal(arc.lastFulfilledAt, 6);
+    });
+
+    it('sets lastFulfilledAt back to the value before the reopened completion', async () => {
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 5 }], [arc]);
+
+        assert.equal(reopenCompletionsAt(5), true);
+        assert.equal(arc.lastFulfilledAt, 2);
+    });
+
+    it('undoes an unlock like a rollback: the unlocked beat is locked again', async () => {
+        const [arc] = storeArcs(episode());
+        await completeBeats([{ arcId: 'epi00001', beatId: 'b1', at: 5 }], [arc]);
+
+        assert.equal(reopenCompletionsAt(5), true);
+        assert.deepEqual(statuses(arc), ['active', 'locked', 'pending', 'pending']);
+    });
+
+    it('changes nothing for an edit of a message without a completion', async () => {
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 4 }], [arc]);
+
+        assert.equal(reopenCompletionsAt(5), false);
+        assert.equal(reopenCompletionsAt(3), false);
+        assert.deepEqual(statuses(arc), ['completed', 'active', 'active']);
+    });
+
+    it('matches the record by message id, not by its stored index', async () => {
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 6 }], [arc]);
+        // A message before it was deleted: the record still says 6, its message m6 is now at 5.
+        chat.splice(2, 1);
+
+        assert.equal(reopenCompletionsAt(6), false);
+        assert.equal(reopenCompletionsAt(5), true);
+        assert.equal(arc.beats[0].status, 'active');
+    });
+
+    it('matches a record without a message id by index', async () => {
+        chat[6] = { mes: 'a reply from a chat with the tracker off' };
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 6 }], [arc]);
+
+        assert.equal(reopenCompletionsAt(6), true);
+        assert.equal(arc.beats[0].status, 'active');
+    });
+
+    it('never touches a completion without a record', () => {
+        const arc = act();
+        arc.beats[0].status = 'completed';
+        storeArcs(arc);
+
+        assert.equal(reopenCompletionsAt(4), false);
+        assert.equal(arc.beats[0].status, 'completed');
     });
 });

@@ -320,7 +320,7 @@ describe('the retraction through an update', () => {
 
         const updated = await updateKnowledgeAfterReply(3);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: cast,
             facts: [],
@@ -331,8 +331,8 @@ describe('the retraction through an update', () => {
             retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
             updateLog: [{
                 kind: 'update', from: 2, to: 3, messageId: 'm3',
-                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'],
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'], beatsCompleted: 0,
             }],
         });
     });
@@ -345,7 +345,7 @@ describe('the retraction through an update', () => {
 
         const updated = await updateKnowledgeAfterReply(3);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: cast,
@@ -374,7 +374,7 @@ describe('the retraction through an update', () => {
 
         const updated = await updateKnowledgeAfterEdit(2);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: cast,
             facts: [STIPEND],
@@ -384,8 +384,8 @@ describe('the retraction through an update', () => {
             retractedFacts: [],
             updateLog: [{
                 kind: 'reextract', from: 2, to: 2, messageId: 'm2',
-                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });
@@ -434,13 +434,13 @@ describe('the retraction through an update', () => {
             updateLog: [
                 {
                     kind: 'reextract', from: 1, to: 1, messageId: 'm1',
-                    answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                    factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [],
+                    answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                    factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
                 },
                 {
                     kind: 'reextract', from: 2, to: 2, messageId: 'm2',
-                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-                    factsCreated: [], holdersAdded: 0, factsRetracted: [],
+                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
                 },
             ],
         });

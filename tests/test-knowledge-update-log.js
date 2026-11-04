@@ -98,8 +98,8 @@ describe('the knowledge update log', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'update', from: 3, to: 6, messageId: 'm6',
-            answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-            factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [],
+            answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+            factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
         }]);
     });
 
@@ -112,8 +112,8 @@ describe('the knowledge update log', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'update', from: 3, to: 6, messageId: 'm6',
-            answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0 },
-            factsCreated: [], holdersAdded: 0, factsRetracted: [],
+            answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
         }]);
     });
 
@@ -231,8 +231,8 @@ describe('the knowledge update log', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [
             {
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
-                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [],
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [] },
         ]);
@@ -279,8 +279,8 @@ describe('the knowledge update log', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'reextract', from: 1, to: 1, messageId: 'm1',
-            answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-            factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [],
+            answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+            factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0,
         }]);
     });
 

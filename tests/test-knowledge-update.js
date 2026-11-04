@@ -124,7 +124,7 @@ describe('updateKnowledgeAfterReply', () => {
 
         const updated = await updateKnowledgeAfterReply(4);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge, LEDGER_AS_STORED);
     });
@@ -136,13 +136,13 @@ describe('updateKnowledgeAfterReply', () => {
         const laterMessages = chat.splice(5);
 
         const updatedAfterFirstReply = await updateKnowledgeAfterReply(4);
-        assert.equal(updatedAfterFirstReply, false);
+        assert.deepEqual(updatedAfterFirstReply, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(sentPrompts, []);
 
         chat.push(...laterMessages);
         const updatedAfterSecondReply = await updateKnowledgeAfterReply(6);
 
-        assert.equal(updatedAfterSecondReply, true);
+        assert.deepEqual(updatedAfterSecondReply, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, [MESSAGES_3_TO_6]);
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             characters: [
@@ -168,8 +168,8 @@ describe('updateKnowledgeAfterReply', () => {
             lastUpdatedMessageId: 'm6',
             updateLog: [{
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
-                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0 },
-                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [],
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
+                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
             }],
         });
     });
@@ -180,14 +180,14 @@ describe('updateKnowledgeAfterReply', () => {
         const sentPrompts = installExtraction(['Sorry, I cannot help with that.', ANSWER_NOOR_LEARNS_LATCHES]);
 
         const updatedFirst = await updateKnowledgeAfterReply(6);
-        assert.equal(updatedFirst, false);
+        assert.deepEqual(updatedFirst, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             ...LEDGER_AS_STORED,
             updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'no answer' }],
         });
 
         const updatedSecond = await updateKnowledgeAfterReply(6);
-        assert.equal(updatedSecond, true);
+        assert.deepEqual(updatedSecond, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, [MESSAGES_3_TO_6, MESSAGES_3_TO_6]);
         assert.equal(chat_metadata.story_arc.knowledge.lastUpdatedAt, 6);
     });
@@ -200,7 +200,7 @@ describe('updateKnowledgeAfterReply', () => {
 
         const updated = await updateKnowledgeAfterReply(6);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             ...LEDGER_AS_STORED,
             updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'no answer' }],
@@ -214,7 +214,7 @@ describe('updateKnowledgeAfterReply', () => {
 
         const updated = await updateKnowledgeAfterReply(6);
 
-        assert.equal(updated, true);
+        assert.deepEqual(updated, { ledgerChanged: true, beatsChanged: false });
         assert.deepEqual(sentPrompts, ['MESSAGES:\n[5] Ellie: Thanks.\n\n[6] Noor: Come back at four.']);
         assert.equal(chat_metadata.story_arc.knowledge.lastUpdatedAt, 6);
     });
@@ -271,7 +271,7 @@ describe('updateKnowledgeAfterReply', () => {
 
         const updated = await updateKnowledgeAfterReply(6);
 
-        assert.equal(updated, false);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
         assert.deepEqual(chat_metadata.story_arc.knowledge, {
             ...LEDGER_AS_STORED,
             updateLog: [{ kind: 'skipped', from: 3, to: 6, reason: 'chat changed' }],

@@ -117,15 +117,18 @@ async function onMessageReceived(messageIndex) {
 
 /**
  * Wait for a knowledge update the caller does not await, then refresh the
- * settings panel's status line when it changed the ledger. A failure is
- * logged, never thrown into ST's event loop.
- * @param {Promise<boolean>} knowledgeUpdate - Resolves true when the ledger changed
+ * settings panel's status line when it changed the ledger, and the progress
+ * display when it completed or reopened beats (the extraction recognises
+ * beats with the tracker on). A failure is logged, never thrown into ST's
+ * event loop.
+ * @param {Promise<{ledgerChanged: boolean, beatsChanged: boolean}>} knowledgeUpdate
  * @param {string} failureText - Log text for a failed update
  */
 function refreshKnowledgeStatusWhenChanged(knowledgeUpdate, failureText) {
     knowledgeUpdate
-        .then(changed => {
-            if (changed) updateKnowledgeStatus();
+        .then(({ ledgerChanged, beatsChanged }) => {
+            if (ledgerChanged) updateKnowledgeStatus();
+            if (beatsChanged) updateProgress();
         })
         .catch(err => console.warn(`[Story Arc] ${failureText}`, err));
 }
@@ -193,7 +196,8 @@ async function onMessageSwiped(messageIndex) {
 
 /**
  * After the user edited a message: re-extract what the knowledge ledger
- * learned from that message, keeping everything learned after it.
+ * learned from that message, keeping everything learned after it, and the
+ * beats completed at it (reopened first, see updateKnowledgeAfterEdit).
  * Not awaited, like the update after a reply.
  * @param {number} messageIndex - Index of the edited message
  */
