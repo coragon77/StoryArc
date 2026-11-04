@@ -75,6 +75,26 @@ function generatedPlan(overrides = {}) {
 }
 
 describe('mergeReplan', () => {
+    it('keeps a completed beat\'s message reference but drops what undoes the old road', () => {
+        const existing = storedEpisode();
+        existing.beats[1] = {
+            ...existing.beats[1],
+            completion: { at: 130, messageId: 'm130', unlocked: ['beat_3'], arcCompleted: true, lastFulfilledBefore: 120 },
+        };
+        const merged = mergeReplan(existing, generatedPlan());
+
+        assert.deepEqual(merged.beats[1], {
+            id: 'beat_2',
+            intention: 'She has confronted the messenger.',
+            status: 'completed',
+            unlockAfter: [],
+            completion: { at: 130, messageId: 'm130', lastFulfilledBefore: 120 },
+        });
+        assert.equal(merged.beats[0].completion, undefined);
+        // The stored arc is not mutated.
+        assert.deepEqual(existing.beats[1].completion.unlocked, ['beat_3']);
+    });
+
     it('keeps identity, focus, status and the edited title/premise/direction', () => {
         const existing = { ...storedEpisode(), title: 'Edited title', premise: 'Edited premise', direction: 'new direction' };
         const merged = mergeReplan(existing, generatedPlan());

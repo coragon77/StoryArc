@@ -153,13 +153,17 @@ describe('completeBeats — completion record', () => {
         assert.equal(arc.beats[2].completion.arcCompleted, true);
     });
 
-    it('gives the message a Story Arc message id when it has none', async () => {
+    it('names a message without a Story Arc message id by index only, and gives it none', async () => {
         chat[5] = { mes: 'a reply from a chat with the tracker off' };
         const [arc] = storeArcs(episode());
         await completeBeats([{ arcId: 'epi00001', beatId: 'b1', at: 5 }], [arc]);
-        const assignedId = chat[5].extra.story_arc_message_id;
-        assert.match(assignedId, /^mock-uuid-\d+$/);
-        assert.equal(arc.beats[0].completion.messageId, assignedId);
+        assert.deepEqual(arc.beats[0].completion, {
+            at: 5,
+            unlocked: ['b2'],
+            arcCompleted: false,
+            lastFulfilledBefore: 2,
+        });
+        assert.equal(chat[5].extra, undefined);
     });
 
     it('names a hidden message by index only', async () => {
@@ -221,6 +225,21 @@ describe('reopenCompletionsFrom — which completions', () => {
         assert.equal(arc.beats[1].completion.at, 5);
         assert.equal(arc.beats[1].completion.messageId, 'm6');
         assert.equal(arc.lastFulfilledAt, 5);
+    });
+
+    it('reopens a completion without a message id by the index rule only', async () => {
+        chat[6] = { mes: 'a reply from a chat with the tracker off' };
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 6 }], [arc]);
+
+        // A deletion before it does not move it: `at` stays 6.
+        chat.splice(2, 1);
+        assert.equal(reopenCompletionsFrom(chat.length), false);
+        assert.equal(arc.beats[0].completion.at, 6);
+
+        // A swipe of index 6 (or a deletion from 6 on) reopens it.
+        assert.equal(reopenCompletionsFrom(6), true);
+        assert.equal(arc.beats[0].status, 'active');
     });
 
     it('changes nothing when every recorded message is still there', async () => {
