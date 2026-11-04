@@ -95,15 +95,15 @@ A condition the model watches for, and the visible reaction it causes when the s
 _Avoid_: event, hook
 
 **Divergence**:
-The story having moved past the state an episode's remaining scene beats assume, so they can no longer be fulfilled. Cannot happen to milestones.
+The story having moved past the state an arc's remaining beats assume, so they can no longer be fulfilled as planned: an episode's scene beats, or an act's or saga's milestones once the story or the player's rulings have closed the road they stand on.
 _Avoid_: derail, drift
 
 **Ruling**:
-An out-of-character line of the player that contradicts an arc's premise or one of its open pressures. Noticed by the knowledge extraction, stored on the arc in the player's words, and shown on its progress card until the arc is re-planned. A request about the current scene, or new direction that contradicts nothing in the plan, is not a ruling. Only noticed while the knowledge tracker is on.
+An out-of-character line of the player that contradicts an arc's premise or one of its open pressures. Noticed by the knowledge extraction, stored on the arc in the player's words, and shown on its progress card until the arc is re-planned. Every re-plan of the arc, the first and every later one, follows its rulings as binding; only the player removes one. A request about the current scene, or new direction that contradicts nothing in the plan, is not a ruling. Only noticed while the knowledge tracker is on.
 _Avoid_: correction (the ledger's word for a retracted fact), OOC note, instruction
 
 **Stall**:
-The measurable sign of divergence: an episode going roughly three times its expected per-beat length without a fulfillment, tangents excluded. Shown to the player as a nudge to re-plan.
+The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment or its last re-plan, whichever is later. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator.
 _Avoid_: timeout, stuck
 
 ### Knowledge

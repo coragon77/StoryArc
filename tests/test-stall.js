@@ -36,16 +36,57 @@ describe('isStalled — threshold', () => {
     });
 });
 
-describe('isStalled — never for paused arcs, acts, sagas', () => {
+describe('isStalled — never for paused or background arcs', () => {
     it('paused episode', () => {
         assert.equal(isStalled(episode({ focus: 'paused', pausedAt: 105 }), 200), false);
     });
-    it('act', () => {
-        assert.equal(isStalled(episode({ tier: 'act' }), 200), false);
+    it('background episode', () => {
+        assert.equal(isStalled(episode({ focus: 'background' }), 200), false);
     });
-    it('saga', () => {
-        assert.equal(isStalled(episode({ tier: 'saga' }), 200), false);
-    });
+});
+
+// The Street act of the Paragon chat: estimatedLength 90 with four
+// non-optional milestones, so a stall is more than 3 × 90 / 4 = 67.5 messages
+// since the latest of its start, last fulfillment and last re-plan.
+function act(overrides = {}) {
+    const beats = Array.from({ length: 4 }, (_, i) => ({ id: `m${i}`, status: 'active', optional: false }));
+    return { id: 'act', tier: 'act', focus: 'normal', status: 'active', messageStart: 2118, lastFulfilledAt: 2225, estimatedLength: 90, beats, ...overrides };
+}
+
+// A saga of 1000 messages with three milestones: a stall is more than
+// 3 × 1000 / 3 = 1000 messages.
+function saga(overrides = {}) {
+    const beats = Array.from({ length: 3 }, (_, i) => ({ id: `s${i}`, status: 'active', optional: false }));
+    return { id: 'saga', tier: 'saga', focus: 'normal', status: 'active', messageStart: 200, lastFulfilledAt: 500, estimatedLength: 1000, beats, ...overrides };
+}
+
+describe('isStalled — acts and sagas', () => {
+    const table = [
+        { name: 'act, 67 messages after its last fulfillment: not stalled', arc: act(), chatLength: 2292, expected: false },
+        { name: 'act, 68 messages after its last fulfillment: stalled', arc: act(), chatLength: 2293, expected: true },
+        { name: 'act never fulfilled, 67 messages after its start: not stalled', arc: act({ lastFulfilledAt: undefined }), chatLength: 2185, expected: false },
+        { name: 'act never fulfilled, 68 messages after its start: stalled', arc: act({ lastFulfilledAt: undefined }), chatLength: 2186, expected: true },
+        { name: 'spotlight act past its allowance: stalled', arc: act({ focus: 'spotlight' }), chatLength: 2293, expected: true },
+        { name: 'paused act past its allowance: not stalled', arc: act({ focus: 'paused', pausedAt: 2230 }), chatLength: 2400, expected: false },
+        { name: 'background act past its allowance: not stalled', arc: act({ focus: 'background' }), chatLength: 2400, expected: false },
+        // Re-planned at 2280: 68 messages after the fulfillment, 13 after the re-plan.
+        { name: 'act re-planned after its last fulfillment: counted from the re-plan', arc: act({ replannedAt: 2280 }), chatLength: 2293, expected: false },
+        { name: 'act re-planned at 2280, 67 messages on: not stalled', arc: act({ replannedAt: 2280 }), chatLength: 2347, expected: false },
+        { name: 'act re-planned at 2280, 68 messages on: stalled', arc: act({ replannedAt: 2280 }), chatLength: 2348, expected: true },
+        { name: 'a re-plan before the last fulfillment: counted from the fulfillment', arc: act({ replannedAt: 2200 }), chatLength: 2293, expected: true },
+        { name: 'act whose re-plan stamp is later than the chat length: not stalled', arc: act({ replannedAt: 2400 }), chatLength: 2300, expected: false },
+        { name: 'act with only optional milestones: never stalled', arc: act({ beats: [{ id: 'o1', status: 'active', optional: true }] }), chatLength: 5000, expected: false },
+        { name: 'act without an estimated length: never stalled', arc: act({ estimatedLength: undefined }), chatLength: 5000, expected: false },
+        { name: 'saga 1000 messages after its last fulfillment: not stalled', arc: saga(), chatLength: 1500, expected: false },
+        { name: 'saga past its allowance: stalled', arc: saga(), chatLength: 1501, expected: true },
+        { name: 'paused saga past its allowance: not stalled', arc: saga({ focus: 'paused', pausedAt: 600 }), chatLength: 3000, expected: false },
+        { name: 'background saga past its allowance: not stalled', arc: saga({ focus: 'background' }), chatLength: 3000, expected: false },
+    ];
+    for (const row of table) {
+        it(row.name, () => {
+            assert.equal(isStalled(row.arc, row.chatLength), row.expected);
+        });
+    }
 });
 
 describe('isStalled — migrated arcs without a usable lastFulfilledAt', () => {
@@ -87,6 +128,30 @@ describe('lastFulfilledAt — set on fulfillment, shifted on resume', () => {
         assert.equal(isStalled(stored, 120), false);
         assert.equal(isStalled(stored, 126), true);
     });
+
+    it('a 15-message pause after a re-plan moves the re-plan stamp by 15', async () => {
+        chat_metadata.story_arc.arcs = [act({ replannedAt: 2280 })];
+        chat.length = 2290;
+        await pauseArc('act');
+        chat.length = 2305;
+        await resumeArc('act');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.equal(stored.replannedAt, 2295);
+        assert.equal(stored.messageStart, 2133);
+        assert.equal(stored.lastFulfilledAt, 2240);
+        // 67 messages after the shifted stamp: not stalled; 68: stalled.
+        assert.equal(isStalled(stored, 2362), false);
+        assert.equal(isStalled(stored, 2363), true);
+    });
+
+    it('resuming an arc never re-planned writes no re-plan stamp', async () => {
+        chat_metadata.story_arc.arcs = [act()];
+        chat.length = 2290;
+        await pauseArc('act');
+        chat.length = 2305;
+        await resumeArc('act');
+        assert.equal('replannedAt' in chat_metadata.story_arc.arcs[0], false);
+    });
 });
 
 describe('renderProgressDisplay — stall nudge', () => {
@@ -95,5 +160,19 @@ describe('renderProgressDisplay — stall nudge', () => {
         const html = renderProgressDisplay([episode({ id: 'stalled' }), episode({ id: 'fresh', lastFulfilledAt: 105 })]);
         assert.match(html, /class="story-arc-stall-btn" data-arc-id="stalled"[^>]*>[^<]*May have drifted — re-plan\?/);
         assert.doesNotMatch(html, /data-arc-id="fresh"/);
+    });
+
+    it('shows the re-plan nudge for a stalled act, not for a fresh one', () => {
+        chat.length = 2293;
+        const html = renderProgressDisplay([act({ id: 'stalled-act' }), act({ id: 'fresh-act', replannedAt: 2290 })]);
+        assert.match(html, /class="story-arc-stall-btn" data-arc-id="stalled-act"[^>]*>May have drifted — re-plan\?<\/div>/);
+        assert.doesNotMatch(html, /data-arc-id="fresh-act"/);
+    });
+
+    it('shows only the ruling line on a stalled act with an open ruling', () => {
+        chat.length = 2293;
+        const html = renderProgressDisplay([act({ title: 'Streets', rulings: [{ id: 'r1', text: 'Aegis is not her defender.', at: 2250 }] })]);
+        assert.equal(html.includes('May have drifted'), false);
+        assert.match(html, /data-arc-id="act"[^>]*>You overruled the plan — re-plan\?</);
     });
 });

@@ -8,6 +8,8 @@ Each FULFILLMENT is how a beat is recognised as done: it is checked against a me
 These are public to the narrator and are what the author asked for. Never rewrite something because it carries them out.
 Premise: {{PREMISE}}
 Direction: {{DIRECTION}}
+Rulings:
+{{RULINGS}}
 
 {{STORY_BLOCK}}== SECRETS ==
 {{SECRETS}}
