@@ -152,7 +152,9 @@ StoryArc/
 │   │   │                       #   swipe, branch load; records follow their message id;
 │   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions and
-│   │   │                       #   arc completion; restoreLastFulfilledAt()
+│   │   │                       #   arc completion; restoreLastFulfilledAt();
+│   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
+│   │   │                       #   load; removeRulingsAt(messageIndex) — edit (#45)
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   carries the model's premise as proposedPremise,
@@ -512,6 +514,9 @@ StoryArc/
 │   │                           #   (delete, swipe, branch, id follow, what reopening
 │   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
 │   │                           #   hand toggle carries no record
+│   ├── test-ruling-rollback.js # Tests: a ruling goes with its message on delete
+│   │                           #   (by id, index rule), branch load and edit (stored
+│   │                           #   again by the re-extraction); a swipe keeps it
 │   ├── test-knowledge-beats.js # Tests: DEVELOPMENTS input, fulfilled parsing (lenient)
 │   │                           #   and resolving, beat completion by the update after a
 │   │                           #   reply, a swipe switch and an edit; marks flushed on a
@@ -658,7 +663,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
 | Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
-| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler) |
+| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`removeRulingsFrom`, `removeRulingsAt`: the rollback), `index.js` (delete, chat change) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |

@@ -314,14 +314,22 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: rulings', () =
     });
 
     it('a second report of the same message and text, as after a re-extraction, is skipped', async () => {
+        // Through a swipe switch: an edit removes the message's rulings
+        // before its re-extraction (test-ruling-rollback.js), a swipe does not.
         const arc = sirenAct();
         arc.rulings = [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 }];
         storeChat({ arcs: [arc] });
-        chat_metadata.story_arc.knowledge.lastUpdatedAt = 4;
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 3;
+        chat.length = 4;
         chat[3].extra = { story_arc_message_id: 'm3' };
-        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Aegis is NOT her defender.', at: 3 }])]);
+        chat[3].swipes = ['I head home.', '[OOC: Aegis is NOT her defender.]'];
+        chat[3].swipe_id = 1;
+        chat[3].mes = '[OOC: Aegis is NOT her defender.]';
+        const sentPrompts = installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Aegis is NOT her defender.', at: 3 }])]);
 
-        await updateKnowledgeAfterEdit(3);
+        await updateKnowledgeAfterSwipe(3);
+
+        assert.equal(sentPrompts.length, 1);
 
         assert.deepEqual(arcOf('siren001-full-id').rulings, [
             { id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 },
