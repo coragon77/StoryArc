@@ -481,7 +481,7 @@ describe('applyReplan', () => {
             { id: 'r3', text: 'Sundown is a mentor.', at: 210 },
         ];
 
-        const { arc: stored } = applyReplan(merged, 250, { premise: 'A debt comes due.' });
+        const { arc: stored } = applyReplan(merged, 250, { premise: 'A debt comes due.', storedRulings: structuredClone(merged.rulings) });
 
         assert.deepEqual(stored.rulings, [
             { id: 'r1', text: 'Aegis is not her defender.', at: 120, messageId: 'm120', answeredAt: 140 },
@@ -495,7 +495,8 @@ describe('applyReplan', () => {
         const existing = { ...mergedArc(), rulings: [{ id: 'r1', text: 'Aegis is not her defender.', at: 120 }] };
         const generated = { ...mergedArc(), title: 'Ignored', beats: [], directives: [], antiPatterns: [], characters: [] };
 
-        const { arc: stored } = applyReplan(mergeReplan(existing, generated), 250, { premise: 'A debt comes due.' });
+        const storedRulings = [{ id: 'r1', text: 'Aegis is not her defender.', at: 120 }];
+        const { arc: stored } = applyReplan(mergeReplan(existing, generated), 250, { premise: 'A debt comes due.', storedRulings });
 
         assert.deepEqual(stored.rulings, [{ id: 'r1', text: 'Aegis is not her defender.', at: 120, answeredAt: 250 }]);
     });

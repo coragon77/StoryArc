@@ -118,24 +118,104 @@ describe('mergeReplan with rulings', () => {
     });
 });
 
-describe('applyReplan: rulings the player removed', () => {
-    it('removes the removed rulings, marks the open ones answered and keeps answered marks', () => {
-        const merged = {
-            ...storedAct(),
-            rulings: [
-                { id: 'r1', text: 'Aegis is not her defender.', at: 2406, answeredAt: 2500 },
-                { id: 'r2', text: 'Comics, not police procedural.', at: 2408 },
-                { id: 'r3', text: 'Gabriel saves her.', at: 2410 },
-                { id: 'r4', text: 'Old answered mistake.', at: 2300, answeredAt: 2400 },
-            ],
-        };
+describe('applyReplan: the rulings come from the stored arc at apply', () => {
+    /** The merged arc with the rulings the generation saw. */
+    function mergedWithRulings(rulings) {
+        return { ...storedAct(), rulings };
+    }
 
-        const { arc, error } = applyReplan(merged, 2664, { premise: 'Sundown mentors her.', removedRulingIds: ['r3', 'r4'] });
+    it('drops the rulings removed in step 2, marks the ones the generation saw answered and keeps an earlier answeredAt', () => {
+        const seenRulings = [
+            { id: 'r1', text: 'Aegis is not her defender.', at: 2406, answeredAt: 2500 },
+            { id: 'r2', text: 'Comics, not police procedural.', at: 2408 },
+        ];
+        const storedRulingsAtApply = [
+            { id: 'r1', text: 'Aegis is not her defender.', at: 2406, answeredAt: 2500 },
+            { id: 'r2', text: 'Comics, not police procedural.', at: 2408 },
+            { id: 'r3', text: 'Gabriel saves her.', at: 2410 },
+            { id: 'r4', text: 'Old answered mistake.', at: 2300, answeredAt: 2400 },
+        ];
+
+        const { arc, error } = applyReplan(mergedWithRulings(seenRulings), 2664, {
+            premise: 'Sundown mentors her.', removedRulingIds: ['r3', 'r4'], storedRulings: storedRulingsAtApply,
+        });
 
         assert.equal(error, null);
         assert.deepEqual(arc.rulings, [
             { id: 'r1', text: 'Aegis is not her defender.', at: 2406, answeredAt: 2500 },
             { id: 'r2', text: 'Comics, not police procedural.', at: 2408, answeredAt: 2664 },
         ]);
+    });
+
+    it('keeps a ruling stored after Generate open: the planner never saw it', () => {
+        const seenRulings = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }];
+        const storedRulingsAtApply = [
+            { id: 'r1', text: 'Comics, not police procedural.', at: 2408 },
+            { id: 'r2', text: 'Sundown is a mentor, not a partner.', at: 2660, messageId: 'm2660' },
+        ];
+
+        const { arc } = applyReplan(mergedWithRulings(seenRulings), 2664, {
+            premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: storedRulingsAtApply,
+        });
+
+        assert.deepEqual(arc.rulings, [
+            { id: 'r1', text: 'Comics, not police procedural.', at: 2408, answeredAt: 2664 },
+            { id: 'r2', text: 'Sundown is a mentor, not a partner.', at: 2660, messageId: 'm2660' },
+        ]);
+    });
+
+    it('keeps a ruling gone from the stored arc gone, though the generation saw it', () => {
+        const seenRulings = [
+            { id: 'r1', text: 'Comics, not police procedural.', at: 2408 },
+            { id: 'r2', text: 'Aegis is not her defender.', at: 2410, messageId: 'm2410' },
+        ];
+        const storedRulingsAtApply = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }];
+
+        const { arc } = applyReplan(mergedWithRulings(seenRulings), 2664, {
+            premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: storedRulingsAtApply,
+        });
+
+        assert.deepEqual(arc.rulings, [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408, answeredAt: 2664 }]);
+    });
+
+    it('a new ruling that took a deleted ruling\'s id stays open', () => {
+        const seenRulings = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }];
+        const storedRulingsAtApply = [{ id: 'r1', text: 'Gabriel never saves her.', at: 2662 }];
+
+        const { arc } = applyReplan(mergedWithRulings(seenRulings), 2664, {
+            premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: storedRulingsAtApply,
+        });
+
+        assert.deepEqual(arc.rulings, [{ id: 'r1', text: 'Gabriel never saves her.', at: 2662 }]);
+    });
+
+    it('takes a ruling\'s message index from the stored arc: a deletion during the wizard moved it', () => {
+        const seenRulings = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408, messageId: 'm2408' }];
+        const storedRulingsAtApply = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2407, messageId: 'm2408' }];
+
+        const { arc } = applyReplan(mergedWithRulings(seenRulings), 2663, {
+            premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: storedRulingsAtApply,
+        });
+
+        assert.deepEqual(arc.rulings, [{ id: 'r1', text: 'Comics, not police procedural.', at: 2407, messageId: 'm2408', answeredAt: 2663 }]);
+    });
+
+    it('an arc from before rulings stays without them', () => {
+        const merged = storedAct();
+        delete merged.rulings;
+
+        const { arc } = applyReplan(merged, 2664, { premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: undefined });
+
+        assert.equal('rulings' in arc, false);
+    });
+
+    it('does not mutate the stored rulings it was given', () => {
+        const storedRulingsAtApply = [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }];
+
+        applyReplan(mergedWithRulings([{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }]), 2664, {
+            premise: 'Sundown mentors her.', removedRulingIds: [], storedRulings: storedRulingsAtApply,
+        });
+
+        assert.deepEqual(storedRulingsAtApply, [{ id: 'r1', text: 'Comics, not police procedural.', at: 2408 }]);
     });
 });
