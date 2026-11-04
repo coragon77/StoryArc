@@ -79,6 +79,16 @@ describe('buildTakenNamesBlock — derivation', () => {
         assert.equal(buildTakenNamesBlock(ledgerOf(['Noor Al-Jamil'])), blockListing('Al, Jamil, Noor'));
     });
 
+    it('skips an alias that is a lowercase description: "the night-shift tech" adds no name', () => {
+        const ledger = ledgerOf(['Mara', ['the night-shift tech']], ['Unknown Caller', ['the intruder at the hallway junction box']]);
+        assert.equal(buildTakenNamesBlock(ledger), blockListing('Caller, Mara, Unknown'));
+    });
+
+    it('keeps the capitalised words of a description that names someone: "the Brown-Haired Junior"', () => {
+        assert.equal(buildTakenNamesBlock(ledgerOf(['Tessa', ['the Brown-Haired Junior']])),
+            blockListing('Brown, Haired, Junior, Tessa'));
+    });
+
     it('sorts by the folded form, not by case or accent', () => {
         const ledger = ledgerOf(['zoe'], ['Émile'], ['Bram'], ['adler'], ['Ezra']);
         assert.equal(buildTakenNamesBlock(ledger), blockListing('adler, Bram, Émile, Ezra, zoe'));
