@@ -610,7 +610,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Arc storage | `lib/planning/storage.js` | `lib/core/settings.js` |
 | Prompt injection | `lib/injection/builder.js` (`buildArcSection` and the section builders) | `pacing.js`, `signals.js` |
 | Tier (shape at generation) | `lib/planning/validation.js` | `lib/planning/generator.js` (`buildTierBlock`), `lib/core/constants.js` (`TIER_TABLE`), `prompts/generate-arc.txt` |
-| Milestones (act/saga injection + recognition) | `lib/injection/builder.js` (`buildMilestoneSection`) | `builder.js` (`buildSignalDirective`), `signals.js` (`promoteNextBeats`) |
+| Milestones (act/saga injection + recognition) | `lib/injection/builder.js` (`buildMilestoneSection`) | `builder.js` (`buildSignalDirective`, tracker off), `ledger.js` (the extraction, tracker on), `beat-completion.js` (`completeBeats`), `signals.js` (`promoteNextBeats`) |
 | Focus: pause / resume | `lib/injection/clock.js` | `builder.js` (`buildPausedSection`), `lib/ui/arc-manager.js` |
 | Focus: background | `lib/injection/builder.js` (`buildBackgroundSection`) | `lib/ui/arc-manager.js` (no background for episodes), `lib/planning/replan.js` (`replanTiers`: re-plan never shrinks an act or saga into an episode) |
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |

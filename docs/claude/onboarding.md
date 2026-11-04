@@ -6,7 +6,7 @@ Story Arc is a SillyTavern extension that plans new story arcs for existing,
 long-running RP stories. It harvests context from the current chat (lorebook,
 chat history, character card), generates a structured arc plan via LLM, injects
 the active plan into ST's prompt pipeline, and tracks beat progress through
-AI-emitted signals. It acts as an automated dungeon master — plans are secret
+the knowledge extraction (tracker on) or AI-emitted signals (tracker off). It acts as an automated dungeon master — plans are secret
 from the user by default.
 
 **Tech stack:** Vanilla JavaScript (ES6 modules, no build step), jQuery,

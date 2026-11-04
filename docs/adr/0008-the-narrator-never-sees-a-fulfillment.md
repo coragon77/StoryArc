@@ -6,7 +6,7 @@ So, with the knowledge tracker on, beats are recognised by the knowledge extract
 
 Two changes follow from it:
 
-- A completion records the message it happened in. Deleting or swiping that message, or loading a branch that ends before it, reopens the beat and undoes what the completion did: the beats it unlocked are locked again, a scene beat promoted after it goes back to pending, an arc it completed is active again, and `lastFulfilledAt` is recomputed. Before this, a completed beat was never reopened.
+- A completion records the message it happened in. Deleting or swiping that message, loading a branch that ends before it, or (with the tracker on) editing it, reopens the beat and undoes what the completion did: the beats it unlocked are locked again, a scene beat promoted after it goes back to pending, an arc it completed is active again, and `lastFulfilledAt` is recomputed. Before this, a completed beat was never reopened.
 - Every fulfillment is one on-screen moment at which the development shows (ADR-0006 amendment). The extraction reads only the messages since its last update. A tally of many scenes ("has completed her first patrols") or a chain of separate events joined by "and" cannot be recognised there, and the narrator did not recognise such a beat either: one stayed active for 439 messages with the whole chat in context. Existing arcs get one-moment fulfillments when they are re-planned. Marking beats complete by hand is not a recognition path: "a requirement for the user to hand mark stuff as completed defeats the purpose of the extension" (Stefan, 2026-11-04). The manual toggle stays an override.
 
 ## Considered options

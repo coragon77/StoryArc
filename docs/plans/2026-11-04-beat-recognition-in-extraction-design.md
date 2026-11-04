@@ -203,9 +203,10 @@ beat still active. This is harmless: the pressure stays one message longer.
 2. **Rolling back completions.** *Decided 2026-11-04 by Stefan: a, in
    scope.* Because chats with the tracker off keep the in-prompt marker
    (question 1 a), the rollback covers completions from both paths. The
-   shared completion function gives the message at `at` a Story Arc message
-   id if it has none yet, since a tracker-off chat has no extraction that
-   would assign one.
+   shared completion function records the message id of `at` only when the
+   message already has one (implementation, 2026-11-04: only the extraction
+   gives messages ids, and the ledger's rollback relies on that), so
+   tracker-off completions roll back by index alone.
    Today a completed beat is never reopened:
    `onMessageSwiped` and `onMessageDeleted` drop queued marks and roll back
    the ledger, but leave beats untouched. So a swiped-away reply that
