@@ -429,6 +429,45 @@ describe('updateKnowledgeAfterReply: a ruling given as a bare pick', () => {
         assert.equal(arcOf('siren001-full-id').rulings, undefined);
     });
 
+    it('drops the ruling when the option is found only in a narrator message after the pick', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Aegis watches from a rooftop', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.equal(arcOf('siren001-full-id').rulings, undefined);
+    });
+
+    it('stores a second "Option one" that picks another option than the open one', async () => {
+        const arc = sirenAct();
+        arc.rulings = [{ id: 'r1', text: 'Option one', chose: 'Siren takes the day shift.', at: 1, messageId: 'm1' }];
+        storeChat({ arcs: [arc] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Siren works the strip alone.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(arcOf('siren001-full-id').rulings, [
+            { id: 'r1', text: 'Option one', chose: 'Siren takes the day shift.', at: 1, messageId: 'm1' },
+            { id: 'r2', text: 'Option one', chose: 'Siren works   the strip alone.', at: 3, messageId: chat[3].extra.story_arc_message_id },
+        ]);
+    });
+
+    it('skips a pick that repeats an open pick and its option', async () => {
+        const arc = sirenAct();
+        arc.rulings = [{ id: 'r1', text: 'Option one', chose: 'Siren works the strip alone.', at: 1, messageId: 'm1' }];
+        storeChat({ arcs: [arc] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'option one', chose: 'Siren works the strip alone.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(arcOf('siren001-full-id').rulings, [
+            { id: 'r1', text: 'Option one', chose: 'Siren works the strip alone.', at: 1, messageId: 'm1' },
+        ]);
+    });
+
     it('drops the ruling when the option is found only in a hidden message before the window', async () => {
         storeChat({ arcs: [sirenAct()] });
         chat[2].mes = optionsText;
