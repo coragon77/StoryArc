@@ -147,7 +147,7 @@ function refreshKnowledgeStatusWhenChanged(knowledgeUpdate, failureText) {
 /**
  * After the user sends a message: activate the next beat in any arc that has
  * none. Promotion waits for the user's turn so the AI cannot chain its own
- * aftermath prose into the next objective — the player reacts to a development
+ * aftermath prose into the next pressure — the player reacts to a development
  * before the model learns what comes after it.
  *
  * MESSAGE_RECEIVED only fires for AI messages; user messages fire
