@@ -39,6 +39,14 @@ const EXPECTED_BLOCK = [
     '- Knows: Ellie is Dice (known only to them)',
 ].join('\n');
 
+/** The taken-names block for Noor and Dougal. */
+const EXPECTED_NAMES = [
+    '[NAMES ALREADY IN THIS STORY — first names, surnames and codenames of characters who have appeared. '
+        + 'A new character gets none of these names, as a first name or as a surname, unless the new character is related to the character who has it. '
+        + 'Characters already in the story keep their names.]',
+    'Dougal, Noor',
+].join('\n');
+
 describe('injectKnowledgeBlock', () => {
     beforeEach(() => {
         extensionPromptCalls.length = 0;
@@ -53,37 +61,40 @@ describe('injectKnowledgeBlock', () => {
         chat.length = 0;
     });
 
-    it('sets the block in-chat at depth 1 with the system role while the tracker is on', () => {
+    it('sets the knowledge block and the taken names in-chat at depth 1 with the system role while the tracker is on', () => {
         setSwitches({ extension: true, tracker: true });
 
         injectKnowledgeBlock();
 
         assert.deepEqual(extensionPromptCalls, [
             ['story_arc_knowledge', EXPECTED_BLOCK, IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
     });
 
-    it('sets the key to an empty string while the tracker is off', () => {
+    it('sets both keys to an empty string while the tracker is off', () => {
         setSwitches({ extension: true, tracker: false });
 
         injectKnowledgeBlock();
 
         assert.deepEqual(extensionPromptCalls, [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
     });
 
-    it('sets the key to an empty string while Story Arc itself is off', () => {
+    it('sets both keys to an empty string while Story Arc itself is off', () => {
         setSwitches({ extension: false, tracker: true });
 
         injectKnowledgeBlock();
 
         assert.deepEqual(extensionPromptCalls, [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
     });
 
-    it('sets the key to an empty string when the ledger has nothing to show', () => {
+    it('sets the knowledge key empty but keeps the taken names when the ledger has no fact to show', () => {
         setSwitches({ extension: true, tracker: true });
         chat_metadata.story_arc.knowledge.facts = [];
 
@@ -91,6 +102,40 @@ describe('injectKnowledgeBlock', () => {
 
         assert.deepEqual(extensionPromptCalls, [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
+        ]);
+    });
+
+    it('sets the names key to an empty string when the ledger has no character', () => {
+        setSwitches({ extension: true, tracker: true });
+        chat_metadata.story_arc.knowledge.characters = [];
+        chat_metadata.story_arc.knowledge.facts = [];
+        chat_metadata.story_arc.knowledge.scene = { at: null, present: [] };
+
+        injectKnowledgeBlock();
+
+        assert.deepEqual(extensionPromptCalls, [
+            ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+        ]);
+    });
+
+    it('sets the same names text byte for byte when the scene and the facts changed in between', () => {
+        setSwitches({ extension: true, tracker: true });
+        injectKnowledgeBlock();
+        const knowledge = chat_metadata.story_arc.knowledge;
+        knowledge.scene = { at: 5, present: ['c2'] };
+        knowledge.facts.push({
+            id: 'f2', text: 'Dougal fixed the drone', public: true,
+            holders: [{ characterId: 'c2', how: 'witnessed', toldBy: null, at: 5 }],
+        });
+
+        injectKnowledgeBlock();
+
+        const namesCalls = extensionPromptCalls.filter(call => call[0] === 'story_arc_names');
+        assert.deepEqual(namesCalls, [
+            ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
     });
 });
