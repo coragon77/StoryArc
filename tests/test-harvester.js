@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { harvestContext } from '../lib/context/harvester.js';
-import { chat, chat_metadata } from './mocks/st-mocks.js';
+import { chat, chat_metadata, extension_settings } from './mocks/st-mocks.js';
 
 describe('harvestContext — story messages only', () => {
     async function withChat(messages, arcs, fn) {
@@ -50,5 +50,52 @@ describe('harvestContext — story messages only', () => {
         const context = await withChat([pastedPrompt, marker, story], [], () => harvestContext());
 
         assert.deepEqual(context.chatHistory.map(message => message.content), ['The freight elevator clanked to a halt.']);
+    });
+});
+
+describe('harvestContext — the cast', () => {
+    const storedLedger = {
+        characters: [
+            { id: 'c1', name: 'Julian Sterling', aliases: ['Jules'] },
+            { id: 'c2', name: 'Priya', aliases: [] },
+        ],
+        facts: [],
+        scene: { at: 0, present: [] },
+        lastUpdatedAt: 0,
+    };
+
+    async function harvestWithTracker(trackerOn) {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: trackerOn } };
+        chat_metadata.story_arc = { version: 1, arcs: [], settings: {}, pendingMarks: [], knowledge: storedLedger };
+        try {
+            return await harvestContext();
+        } finally {
+            delete chat_metadata.story_arc;
+            delete extension_settings.story_arc;
+        }
+    }
+
+    it('is the ledger\'s characters with their aliases, in ledger order, while the tracker is on', async () => {
+        const context = await harvestWithTracker(true);
+
+        assert.deepEqual(context.cast, [
+            { name: 'Julian Sterling', aliases: ['Jules'] },
+            { name: 'Priya', aliases: [] },
+        ]);
+    });
+
+    it('is empty while the tracker is off', async () => {
+        const context = await harvestWithTracker(false);
+
+        assert.deepEqual(context.cast, []);
+    });
+
+    it('counts the cast in the token estimate', async () => {
+        const withCast = await harvestWithTracker(true);
+        const withoutCast = await harvestWithTracker(false);
+
+        // "Julian Sterling Jules\nPriya" is 27 characters, 28 with the joining newline:
+        // 7 more tokens at four characters per token.
+        assert.equal(withCast.estimatedTokens - withoutCast.estimatedTokens, 7);
     });
 });
