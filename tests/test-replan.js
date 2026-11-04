@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeReplan, replanTiers } from '../lib/planning/replan.js';
+import { applyReplan, mergeReplan, replanTiers } from '../lib/planning/replan.js';
 import { buildArcSoFar } from '../lib/planning/generator.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
@@ -407,5 +407,58 @@ describe('formatExistingArcs', () => {
     it('is unchanged when not re-planning', () => {
         assert.equal(formatExistingArcs(arcs), '[NORMAL] "One" — First premise\n[PAUSED] "Two" — Second premise');
         assert.equal(formatExistingArcs([]), '(No existing arcs)');
+    });
+});
+
+describe('applyReplan', () => {
+    /** A checked merged arc, written out by hand. */
+    function mergedArc() {
+        return {
+            id: 'arc-1',
+            title: 'The Quiet Debt',
+            status: 'active',
+            tier: 'act',
+            premise: 'A debt comes due.',
+            direction: 'new direction',
+            messageStart: 100,
+            lastFulfilledAt: 130,
+            secrets: [{ id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true }],
+            beats: [
+                { id: 'beat_1', status: 'completed', completion: { messageId: 120 } },
+                { id: 'beat_2', status: 'active', unlockAfter: ['beat_1'] },
+            ],
+            foreshadowing: [],
+            triggers: [],
+        };
+    }
+
+    it('returns the arc to store equal to the merged arc, field for field', () => {
+        const stored = applyReplan(mergedArc(), 250);
+        assert.deepEqual(stored, {
+            id: 'arc-1',
+            title: 'The Quiet Debt',
+            status: 'active',
+            tier: 'act',
+            premise: 'A debt comes due.',
+            direction: 'new direction',
+            messageStart: 100,
+            lastFulfilledAt: 130,
+            secrets: [{ id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true }],
+            beats: [
+                { id: 'beat_1', status: 'completed', completion: { messageId: 120 } },
+                { id: 'beat_2', status: 'active', unlockAfter: ['beat_1'] },
+            ],
+            foreshadowing: [],
+            triggers: [],
+        });
+    });
+
+    it('does not mutate the merged arc, and the result shares nothing with it', () => {
+        const merged = mergedArc();
+        const stored = applyReplan(merged, 250);
+        stored.beats[1].status = 'completed';
+        stored.secrets.push({ id: 'secret_2' });
+        assert.deepEqual(merged, mergedArc());
+        assert.notEqual(stored, merged);
     });
 });
