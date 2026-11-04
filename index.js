@@ -13,11 +13,12 @@ import {
     saveMetadata,
 } from '/script.js';
 
-import { loadSettings, isEnabled, ensureChatState } from './lib/core/settings.js';
+import { loadSettings, isEnabled, ensureChatState, getKnowledgeLedger } from './lib/core/settings.js';
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
 import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
 import { injectKnowledgeBlock, updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
+import { listCharactersWithNames } from './lib/knowledge/names.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { reopenCompletionsFrom, removeRulingsFrom } from './lib/planning/beat-completion.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
@@ -130,18 +131,38 @@ async function onMessageReceived(messageIndex) {
  * Wait for a knowledge update the caller does not await, then refresh the
  * settings panel's status line when it changed the ledger, and the progress
  * display when it completed or reopened beats (the extraction recognises
- * beats with the tracker on). A failure is logged, never thrown into ST's
+ * beats with the tracker on). A character the update added with a taken
+ * name gets one notice, now. A failure is logged, never thrown into ST's
  * event loop.
- * @param {Promise<{ledgerChanged: boolean, beatsChanged: boolean}>} knowledgeUpdate
+ * @param {Promise<import('./lib/knowledge/ledger.js').KnowledgeUpdateResult>} knowledgeUpdate
  * @param {string} failureText - Log text for a failed update
  */
 function refreshKnowledgeStatusWhenChanged(knowledgeUpdate, failureText) {
     knowledgeUpdate
-        .then(({ ledgerChanged, beatsChanged }) => {
+        .then(({ ledgerChanged, beatsChanged, flaggedCharacters = [] }) => {
             if (ledgerChanged) updateKnowledgeStatus();
             if (beatsChanged) updateProgress();
+            for (const flaggedCharacter of flaggedCharacters) showNameClashNotice(flaggedCharacter);
         })
         .catch(err => console.warn(`[Story Arc] ${failureText}`, err));
+}
+
+/**
+ * Tell the player that the extraction added a character whose name another
+ * character has. Who has the shared names is looked up in the ledger now.
+ * @param {{id: string, name: string}} flaggedCharacter
+ */
+function showNameClashNotice(flaggedCharacter) {
+    const ledger = getKnowledgeLedger();
+    const character = ledger.characters.find(candidate => candidate.id === flaggedCharacter.id);
+    if (!character?.nameClash) return;
+    const otherNames = listCharactersWithNames(ledger, character.nameClash.names, character.id)
+        .map(otherCharacter => otherCharacter.name);
+    if (otherNames.length === 0) return;
+    const joinedNames = otherNames.length === 1
+        ? otherNames[0]
+        : `${otherNames.slice(0, -1).join(', ')} and ${otherNames[otherNames.length - 1]}`;
+    toastr.info(`New character ${character.name} shares a name with ${joinedNames}. Check it in the Knowledge popup.`, 'Story Arc');
 }
 
 /**

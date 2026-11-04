@@ -76,6 +76,7 @@ describe('setupSettingsPanelEvents', () => {
             'click #story-arc-create-preset-btn',
             'click #story-arc-manage-btn',
             'click #story-arc-plan-btn',
+            'click .story-arc-knowledge-names-btn',
             'click .story-arc-stall-btn',
             'mousedown #story-arc-profile',
         ]);
