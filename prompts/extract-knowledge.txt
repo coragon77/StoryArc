@@ -22,6 +22,10 @@ Each with its id. These are developments the story may reach; most will not happ
 Each arc with its id, its premise and its pressures: where the story arc is headed. They are listed only so you can tell when the player overrules them; they are never reported as anything else.
 {{PLANS}}
 
+== MESSAGE BEFORE THE NEW MESSAGES ==
+Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, when a new message of the player answers options offered in it.
+{{CONTEXT_MESSAGE}}
+
 == NEW MESSAGES ==
 Each message starts with its index in square brackets.
 {{MESSAGES}}
@@ -61,6 +65,7 @@ Only what happens on screen in the new messages counts, not what is planned, hin
 7. OVERRULED. For every out-of-character line of the player in the new messages that says the story must differ from a premise or a pressure in the plans list, write one item:
 - "arcs": the ids in square brackets of the arcs in the plans list whose premise or pressure it contradicts.
 - "quote": the player's words that state the ruling, copied exactly from the message, the shortest span that states it whole.
+- "chose": only when the player's line is a bare pick of an option the narrator offered out of character ("Option one", "Lets go with 3"): the option it picks, copied exactly from the narrator's message, which is the message before the new messages or one of the new messages. Leave it out otherwise.
 - "at": the index in square brackets of the player's message, one of the new messages.
 Only the player's own out-of-character lines count, never the narrator's. A ruling contradicts something the plans list says. A request about the current scene (rewrite that, change an outfit, stop and report back) contradicts no plan and is not a ruling. New direction that contradicts nothing in the plans list is not a ruling either. When in doubt, leave it out.
 
@@ -82,7 +87,7 @@ Answer with ONLY this JSON object, no prose before or after it:
     { "developmentId": "id of a development in the developments list", "at": <index of the message> }
   ],
   "rulings": [
-    { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "at": <index of the player's message> }
+    { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "chose": "only for a bare pick: the option it picks, copied exactly", "at": <index of the player's message> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
