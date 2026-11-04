@@ -88,7 +88,10 @@ StoryArc/
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
 │   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
 │   │   │                       #   (also the open beats' fulfillments, rewrites
-│   │   │                       #   of completed beats ignored);
+│   │   │                       #   of completed beats ignored; with a cast the
+│   │   │                       #   {{NAMES_BLOCK}} and the renames, applied by
+│   │   │                       #   applyPlanRenames to every text field under
+│   │   │                       #   its guards, #49);
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
 │   │   │                       #   marks the re-planned arc (its rulings under it as
 │   │   │                       #   "Overruled by the player:") in phase 1,
@@ -293,7 +296,8 @@ StoryArc/
 │   │   │                       #   also the planner's cast block); listTakenNames(ledger)
 │   │   │                       #   (folded form → first spelling, hyphenated words
 │   │   │                       #   whole and by part), nameWords(name), foldName();
-│   │   │                       #   reused by the name flag (#35) and planner (#36);
+│   │   │                       #   reused by the name flag (#35), the planner (#36)
+│   │   │                       #   and the plan check's rename guards (#49);
 │   │   │                       #   listCharactersWithNames(ledger, names, exceptId)
 │   │   │                       #   → who has the flagged names now (the notice)
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
@@ -564,7 +568,13 @@ StoryArc/
 │   │                           #   the cast while the tracker is on, [] while off
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
-│   │                           #   outline prompt with and without a cast, three calls
+│   │                           #   outline prompt with and without a cast, three calls;
+│   │                           #   a check rename reaches the stored arc, the check
+│   │                           #   prompt with and without the names block
+│   ├── test-plan-check-renames.js # Tests: applyPlanCheck renames (#49): every text
+│   │                           #   field, completed beats / fired triggers / direction /
+│   │                           #   genre kept, whole names (possessive matches), longest
+│   │                           #   first, each guard, malformed items; the names block
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
 │   │                           #   templates, GENRE: line per section, latestGenre,
 │   │                           #   mergeReplan keeps the edited genre

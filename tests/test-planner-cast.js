@@ -61,7 +61,7 @@ describe('generateArc: the outline prompt carries the cast', () => {
     const MINIMAL_TEMPLATES = {
         'analyze-context.txt': 'ANALYSE',
         'generate-arc.txt': 'ANALYSIS: {{PHASE1_ANALYSIS}}\n{{GENRE_BLOCK}}{{CAST_BLOCK}}== DIRECTION ==\n{{USER_DIRECTION}}\n- [ ] Existing characters are named exactly as the story names them{{CAST_CHECKLIST}}\n',
-        'check-plan.txt': 'CHECK',
+        'check-plan.txt': 'CHECK\nSECRETS:\n{{SECRETS}}\n\n{{NAMES_BLOCK}}ANSWER',
     };
 
     const generatedPlan = JSON.stringify({
@@ -132,6 +132,62 @@ Two rules for every name in the plan:
 She pays.
 - [ ] Existing characters are named exactly as the story names them, spelled as the CAST block lists them; no new character has a taken name as a first name or surname unless the plan makes them related and says so
 `);
+    });
+
+    it('the plan check renames a new character with a taken name everywhere; the check prompt carries the names block; three calls', async () => {
+        const planWithCollision = JSON.stringify({
+            title: 'The Quiet Debt',
+            premise: 'A debt comes due.',
+            beats: [{ id: 'ledger', pressure: 'Julian Hale wants the ledger by dawn.', intention: 'She has read the ledger.' }],
+            secrets: [{ id: 'forged', content: 'Julian Hale forged the ledger.', revealPhase: 'climax', holders: ['Julian Hale'] }],
+            triggers: [],
+            characters: ['Julian Hale', 'Priya'],
+        });
+        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
+        const sentPrompts = installBackend(['The story stands still.', planWithCollision, renamingAnswer]);
+
+        const result = await generateArc(harvestedContext(CAST_OF_TWO), 'She pays.');
+
+        assert.equal(result.error, null);
+        assert.equal(sentPrompts.length, 3);
+        assert.equal(result.arc.secrets[0].content, 'Owen Hale forged the ledger.');
+        assert.deepEqual(result.arc.secrets[0].holders, ['Owen Hale']);
+        assert.equal(result.arc.beats[0].pressure, 'Owen Hale wants the ledger by dawn.');
+        assert.deepEqual(result.arc.characters, ['Owen Hale', 'Priya']);
+        assert.equal(sentPrompts[2], `CHECK
+SECRETS:
+- [forged] (climax) Julian Hale forged the ledger.
+
+== NAMES ==
+The cast, the characters already in the story. Each line gives the name, then the aliases:
+
+- Julian Sterling (aliases: Jules)
+- Priya
+
+Names already taken: Jules, Julian, Priya, Sterling
+
+The plan's own list of characters. It can be incomplete: the secrets, triggers, pressures and fulfillments above name characters too.
+
+- Julian Hale
+- Priya
+
+RENAMES. For each character the plan names, decide whether it is a cast member or a new character.
+- A cast member named differently from the cast (a changed surname, another spelling) is renamed to the cast's name.
+- A new character whose first name or surname is a taken name, and whom the plan does not make related to the character who has it, is renamed to a full name that uses no taken name.
+- A name that extends a cast name by one more name ("Julian Vance" for the cast's "Vance") may be that cast member. Leave it unless the plan makes clear it is someone else.
+- Never rename a character the author's direction names.
+- Give one pair for each form the plan uses for the character: the full name, and any short form that means that character alone in this plan.
+Answer the renames as one more key of the JSON object below: "renames": [{ "from": "the name as the plan writes it", "to": "the new name" }]. An empty list is fine.
+
+ANSWER`);
+    });
+
+    it('with an empty cast, the check prompt is today\'s', async () => {
+        const sentPrompts = installBackend(['The story stands still.', generatedPlan, planCheckAnswer]);
+
+        await generateArc(harvestedContext([]), 'She pays.');
+
+        assert.equal(sentPrompts[2], 'CHECK\nSECRETS:\n(none)\n\nANSWER');
     });
 
     it('with an empty cast, the outline prompt is today\'s; three calls', async () => {
