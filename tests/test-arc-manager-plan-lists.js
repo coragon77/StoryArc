@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlanItemLists, buildReportsWaitingLine } from '../lib/ui/arc-manager.js';
+import { buildPlanItemLists, buildReportsWaitingLine, buildTitleAndPremiseEditor } from '../lib/ui/arc-manager.js';
 
 /** The <li> of the item with this id. */
 function rowOf(html, itemId) {
@@ -115,5 +115,50 @@ describe('buildReportsWaitingLine', () => {
     it('is empty without waiting reports and for an arc that is not active', () => {
         assert.equal(buildReportsWaitingLine(makeAct(), []), '');
         assert.equal(buildReportsWaitingLine(makeAct({ status: 'completed' }), marks), '');
+    });
+});
+
+describe('buildTitleAndPremiseEditor', () => {
+    const arcWithPlan = () => makeAct({
+        title: 'The "Long" Winter',
+        premise: 'Aegis is <not> her "defender".',
+        beats: [
+            { id: 'cold', pressure: 'The cold keeps coming.', intention: 'The granary has been opened.', status: 'active', unlockAfter: [] },
+        ],
+    });
+
+    it('holds the title and the premise, escaped', () => {
+        const html = buildTitleAndPremiseEditor(arcWithPlan());
+
+        assert.ok(html.includes('value="The &quot;Long&quot; Winter"'), html);
+        assert.ok(html.includes('>Aegis is &lt;not&gt; her &quot;defender&quot;.</textarea>'), html);
+        assert.equal(html.includes('<not>'), false);
+    });
+
+    it('holds none of the plan: no pressure, fulfillment, secret, trigger or clue', () => {
+        const html = buildTitleAndPremiseEditor(arcWithPlan());
+
+        for (const planText of [
+            'The cold keeps coming.',
+            'The granary has been opened.',
+            'The guild emptied the granary.',
+            'The quartermaster sells to the Syndicate.',
+            'she pays the debt',
+            'the debt doubles',
+            'the player accuses Voss',
+            'Voss answers with cold anger',
+            'anyone counts the sacks',
+            'the clerk goes pale',
+            'Carts leave at night with covered lamps.',
+            'A torn sack by the gate.',
+        ]) {
+            assert.equal(html.includes(planText), false, planText);
+        }
+    });
+
+    it('sits outside the spoiler group', () => {
+        const html = buildTitleAndPremiseEditor(arcWithPlan());
+
+        assert.equal(html.includes('story-arc-spoiler'), false);
     });
 });

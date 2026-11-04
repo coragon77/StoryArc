@@ -66,7 +66,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 {
   "title": "A compelling, evocative title (2-6 words). Not generic ('The Dark Secret') but specific to THIS story ('The Valdris Gambit', 'Ashes of the Thornfield Pact').",
 
-  "premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, what forces are in collision, what question the arc is exploring. This should make someone want to read the story.",
+  "premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, what forces are in collision, what question the arc is exploring. This should make someone want to read the story. It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores.",
 
   "themes": ["List 2-4 thematic currents this arc explores. Be specific: not 'good vs evil' but 'the cost of loyalty when the institution you serve has become corrupt' or 'the relief of finding people who are as strange as you are'."],
 

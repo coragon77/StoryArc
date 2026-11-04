@@ -45,7 +45,8 @@ StoryArc/
 │   │   │                       #   beatCount, lengthBand per tier), ARC_FOCUS,
 │   │   │                       #   createDefaultArc(); knowledge tracker:
 │   │   │                       #   defaultKnowledgeTrackerSettings (off, interval 1),
-│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'), HOLDER_HOW,
+│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'),
+│   │   │                       #   NAMES_PROMPT_KEY ('story_arc_names'), HOLDER_HOW,
 │   │   │                       #   createEmptyKnowledgeLedger() — the ledger's schema
 │   │   └── settings.js         # loadSettings(), getSettings(), isEnabled(),
 │   │                           #   ensureChatState() (runs migrateArc() over arcs
@@ -98,8 +99,9 @@ StoryArc/
 │   │   │                       #   with beat kind, beat count, length band and the
 │   │   │                       #   milestone rules (a fulfillment is one on-screen
 │   │   │                       #   moment), all from TIER_TABLE;
-│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
-│   │   │                       #   secrets (add-only), escalation, fulfilled beats as
+│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
+│   │   │                       #   premise + "write a premise for the arc as it stands
+│   │   │                       #   now", secrets (add-only), escalation, fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
 │   │   │                       #   callLlm() exported for the knowledge extraction
@@ -127,6 +129,11 @@ StoryArc/
 │   │   │                       #   deleteArc();
 │   │   │                       #   latestGenre(arcs) — wizard default for a new arc
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
+│   │   │                       #   applyTitleAndPremiseEdit(stored, edit) — trimmed
+│   │   │                       #   title + premise as the only updates, same blank
+│   │   │                       #   rule and messages as applyArcEdit;
+│   │   │                       #   checkTitleAndPremise(title, premise) — that blank
+│   │   │                       #   rule, also used by applyReplan;
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
@@ -148,6 +155,7 @@ StoryArc/
 │   │   │                       #   arc completion; restoreLastFulfilledAt()
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
+│   │                           #   carries the model's premise as proposedPremise,
 │   │                           #   secrets (add-only, content-deduped), completed
 │   │                           #   beats (their completion records without unlocked
 │   │                           #   and arcCompleted: withoutRoadInRecord), planted
@@ -156,8 +164,10 @@ StoryArc/
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
-│   │                           #   applyReplan(merged, chatLength) — the arc "Apply
-│   │                           #   re-plan" stores: a deep copy of the merged arc with
+│   │                           #   applyReplan(merged, chatLength, { premise }) →
+│   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
+│   │                           #   deep copy with the chosen premise trimmed, no
+│   │                           #   proposedPremise; a blank premise refused
 │   │                           #   each open ruling marked answeredAt = chatLength
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
@@ -260,6 +270,12 @@ StoryArc/
 │   │   │                       #   from, last) gives one to every read message,
 │   │   │                       #   messageIdOf(message) reads it; shared by the
 │   │   │                       #   ledger and planning/beat-completion.js
+│   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
+│   │   │                       #   the rule header + every name word on one line,
+│   │   │                       #   sorted by folded form; listTakenNames(ledger)
+│   │   │                       #   (folded form → first spelling, hyphenated words
+│   │   │                       #   whole and by part), nameWords(name), foldName();
+│   │   │                       #   reused by the name flag (#35) and planner (#36)
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
 │   │                           #   the order it runs, helpers after their first caller;
 │   │                           #   every ledger operation changes the stored ledger in
@@ -301,7 +317,8 @@ StoryArc/
 │   │                           #   first, autoTrack on); the re-extraction completes
 │   │                           #   beats like the update after a reply;
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
-│   │                           #   in-chat depth 1, system, '' while off;
+│   │                           #   then story_arc_names (names.js), both in-chat
+│   │                           #   depth 1, system, '' while off;
 │   │                           #   Build — buildKnowledgeBlock(ledger, chat): EVERYONE KNOWS
 │   │                           #   (public facts), then Knows lines with "shared only with"
 │   │                           #   for present + talked-about characters, KNOWLEDGE_LIST_CAP = 5;
@@ -329,13 +346,17 @@ StoryArc/
 │   │   │                       #   times, live streamed-chars ticker, active profile
 │   │   │                       #   name) → review. Revise mode: tier/direction/title/
 │   │   │                       #   premise pre-filled, reviseArcWithEdits() feeds
-│   │   │                       #   generateArc, "Apply re-plan" writes via updateArc;
+│   │   │                       #   generateArc; review shows the Premise choice
+│   │   │                       #   (buildPremiseChoice(), current vs. proposed, plain
+│   │   │                       #   view), "Apply re-plan" writes via updateArc;
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
 │   │   │                       #   badges, focus <select> (paused / background / normal
 │   │   │                       #   / spotlight via clock.js; no background for an
 │   │   │                       #   episode), Re-plan (closes, then opens
-│   │   │                       #   showWizard(arcId)), complete, abandon; per beat an
+│   │   │                       #   showWizard(arcId)), Edit title and premise
+│   │   │                       #   (buildTitleAndPremiseEditor(), outside the
+│   │   │                       #   spoilers), complete, abandon; per beat an
 │   │   │                       #   inline editor (pressure + intention, delete with a
 │   │   │                       #   second click) and an Edit arc JSON editor (via
 │   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
@@ -394,7 +415,10 @@ StoryArc/
 │   │                           #   + triggers tied to a secret (hidden until shown)
 │   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
 │   │                           #   blocks byte-identical as messages accumulate)
+│   │                           #   + an edited premise changes only its own line
 │   ├── test-arc-edit.js        # Tests: applyArcEdit (kept fields, save checks) +
+│   │                           #   applyTitleAndPremiseEdit (trim, blank refused,
+│   │                           #   no other field stored) +
 │   │                           #   checkBeatEdit (empty intention, milestone
 │   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock)
 │   ├── test-background.js      # Tests: background focus — section text, no premise or
@@ -410,6 +434,12 @@ StoryArc/
 │   │                           #   add-only, id de-collision, tier change, kept
 │   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
 │   │                           #   buildArcSoFar + formatExistingArcs mark + applyReplan
+│   │                           #   (premise choice stored trimmed, blank refused)
+│   ├── test-generator-replan.js # Tests: generateArc through the profile mock with the
+│   │                           #   real templates: a re-plan's Phase 2 asks for a premise,
+│   │                           #   the result keeps the stored one with the proposal,
+│   │                           #   the plan check reads the proposal; a new plan's
+│   │                           #   premise contract
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
@@ -428,7 +458,8 @@ StoryArc/
 │   │                           #   generateArc stream routes, plan check applied or
 │   │                           #   skipped on an unreadable answer
 │   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
-│   │                           #   waiting state, reports-waiting line
+│   │                           #   waiting state, reports-waiting line, title and
+│   │                           #   premise editor (escaped, no plan text)
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
@@ -450,8 +481,12 @@ StoryArc/
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
 │   │                           #   talked about by alias, Has told, shared-only-with,
 │   │                           #   cap, EVERYONE KNOWS, plan holders never printed)
-│   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock key, in-chat depth 1,
-│   │                           #   system role; '' while off or empty
+│   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock keys (knowledge, names),
+│   │                           #   in-chat depth 1, system role; '' while off or empty;
+│   │                           #   names text unchanged when scene and facts change
+│   ├── test-knowledge-names.js # Tests: buildTakenNamesBlock literal lists (titles,
+│   │                           #   hyphenated parts, aliases, repeats, diacritics,
+│   │                           #   particles, sort), byte stability; listTakenNames
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
@@ -562,7 +597,8 @@ lib/injection/
 
 lib/knowledge/
 ├── message-ids.js (imports: /scripts/utils.js uuidv4)
-└── ledger.js   (imports: message-ids.js, core/constants.js, core/settings.js,
+├── names.js    (imports: none)
+└── ledger.js   (imports: message-ids.js, names.js, core/constants.js, core/settings.js,
                  injection/pacing.js, injection/signals.js flushPendingMarks,
                  planning/beat-completion.js completeBeats + reopenCompletionsAt,
                  planning/storage.js, planning/generator.js callLlm + templates,
@@ -634,5 +670,5 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
-| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |

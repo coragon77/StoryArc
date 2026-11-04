@@ -756,3 +756,40 @@ describe('triggers tied to a secret', () => {
         assert.ok(plan.includes('- IF she is pressed alone → her composure cracks'));
     });
 });
+
+describe('buildInjection — an edited title and premise', () => {
+    const OLD_PREMISE = 'Aegis stands by her as her defender.';
+    const NEW_PREMISE = 'Aegis is not her defender.';
+
+    function makeAct(premise) {
+        return makeArc({
+            id: 'act00001-full-id',
+            title: 'The Street',
+            tier: 'act',
+            premise,
+            beats: [{ id: 'crowd', pressure: 'The crowd grows restless.', intention: 'x', status: 'active', optional: false }],
+        });
+    }
+
+    it('prints the new premise line in an act, and nothing else of the prompt changes', () => {
+        const before = withChatLength(0, () => buildInjection([makeAct(OLD_PREMISE)]));
+        const after = withChatLength(0, () => buildInjection([makeAct(NEW_PREMISE)]));
+
+        assert.ok(after.includes('=== ACT: "The Street" ===\nPREMISE: Aegis is not her defender.\n'));
+        assert.equal(after.includes(OLD_PREMISE), false);
+        assert.equal(after, before.replace('PREMISE: Aegis stands by her as her defender.\n', 'PREMISE: Aegis is not her defender.\n'));
+    });
+
+    it('prints the new premise in a paused arc\'s line, and nothing else of the prompt changes', () => {
+        const pausedArc = premise => makeArc({ id: 'p1', title: 'Paused One', focus: 'paused', premise });
+        const before = withChatLength(0, () => buildInjection([makeAct(NEW_PREMISE), pausedArc(OLD_PREMISE)]));
+        const after = withChatLength(0, () => buildInjection([makeAct(NEW_PREMISE), pausedArc(NEW_PREMISE)]));
+
+        assert.ok(after.includes('=== PAUSED: "Paused One" ===\nAegis is not her defender. — pending, not being pursued right now.\n'));
+        assert.equal(after.includes(OLD_PREMISE), false);
+        assert.equal(after, before.replace(
+            '=== PAUSED: "Paused One" ===\nAegis stands by her as her defender. — pending',
+            '=== PAUSED: "Paused One" ===\nAegis is not her defender. — pending',
+        ));
+    });
+});
