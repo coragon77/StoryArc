@@ -37,7 +37,7 @@ Direction: {{DIRECTION}}
 
 4. LINKS. A linked trigger stays hidden from the narrator until its secret's phase, so link sparingly. Link a trigger only when it belongs to the moment a secret comes out: before then it makes no sense, or even after your rewrite it would point at the secret. A trigger that only shows a character reacting to suspicion or pressure gets no link, whatever secret explains the reaction.
 
-Answer with ONLY this JSON object, no prose before or after it:
+{{NAMES_BLOCK}}Answer with ONLY this JSON object, no prose before or after it:
 {
   "revealed": ["secret id"],
   "rewrites": [{ "kind": "trigger | pressure | fulfillment", "id": "the item's id", "text": "the replacement text" }],
