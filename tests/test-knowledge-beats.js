@@ -5,7 +5,7 @@ import {
     listRecognisableBeats,
     buildKnowledgeExtractionVariables,
     parseKnowledgeExtractionAnswer,
-    resolveFulfilledDevelopments,
+    resolveFulfilledBeats,
     updateKnowledgeAfterReply,
     updateKnowledgeAfterSwipe,
     updateKnowledgeAfterEdit,
@@ -126,16 +126,16 @@ describe('parseKnowledgeExtractionAnswer: fulfilled', () => {
     });
 });
 
-describe('resolveFulfilledDevelopments', () => {
+describe('resolveFulfilledBeats', () => {
     const developments = listRecognisableBeats([craneAct(), driveAct(), pausedAct()]);
 
     it('resolves a listed active beat to its full arc id and beat id', () => {
-        const resolved = resolveFulfilledDevelopments([{ developmentId: 'drive002:drive_handed', at: 4 }], developments, 3, 4);
+        const resolved = resolveFulfilledBeats([{ developmentId: 'drive002:drive_handed', at: 4 }], developments, 3, 4);
         assert.deepEqual(resolved, [{ arcId: 'drive002-full-id', beatId: 'drive_handed', at: 4 }]);
     });
 
     it('drops an unknown id, a done, a pending and a paused arc\'s beat', () => {
-        const resolved = resolveFulfilledDevelopments([
+        const resolved = resolveFulfilledBeats([
             { developmentId: 'crane001:no_such_beat', at: 4 },
             { developmentId: 'crane001:permit_shown', at: 4 },
             { developmentId: 'crane001:crane_falls', at: 4 },
@@ -145,7 +145,7 @@ describe('resolveFulfilledDevelopments', () => {
     });
 
     it('drops an `at` outside the messages the call read', () => {
-        const resolved = resolveFulfilledDevelopments([
+        const resolved = resolveFulfilledBeats([
             { developmentId: 'crane001:brody_refuses', at: 2 },
             { developmentId: 'crane001:crane_moved', at: 5 },
             { developmentId: 'drive002:drive_handed', at: 3 },
