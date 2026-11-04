@@ -23,7 +23,8 @@ StoryArc/
 │   │                           #   of scenes or a chain of events) plus breather
 │   │                           #   beats and unresolved threads; {{TIER_BLOCK}} sets beat kind, count and
 │   │                           #   length band ("Scene beats only" tags the episode-only
-│   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; renders enabled
+│   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; {{CAST_BLOCK}}
+│   │                           #   and {{CAST_CHECKLIST}} with the tracker on; renders enabled
 │   │                           #   arc directives as a STANDING CONSTRAINTS section
 │   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
 │   │                           #   and pressures, list revealed secrets (re-plan),
@@ -67,7 +68,10 @@ StoryArc/
 │   │   │                       #   categorizeEntries() — read World Info entries,
 │   │   │                       #   classify into constants / arcSummaries / recent;
 │   │   │                       #   getCharacterData(), getPersonaData() (private) —
-│   │   │                       #   character card fields + user persona
+│   │   │                       #   character card fields + user persona;
+│   │   │                       #   harvestCast() (private, #44) — the ledger's
+│   │   │                       #   characters { name, aliases } while Story Arc and
+│   │   │                       #   the knowledge tracker are on, else []
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
@@ -76,6 +80,9 @@ StoryArc/
 │   │   │                       #   tier, direction, genre, messageStart, lastFulfilledAt;
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
 │   │   │                       #   in both phases (ADR-0004);
+│   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
+│   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
+│   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
 │   │   │                       #   merges with mergeReplan(reviseArc, arc), then
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
@@ -152,7 +159,9 @@ StoryArc/
 │   │   │                       #   swipe, branch load; records follow their message id;
 │   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions and
-│   │   │                       #   arc completion; restoreLastFulfilledAt()
+│   │   │                       #   arc completion; restoreLastFulfilledAt();
+│   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
+│   │   │                       #   load; removeRulingsAt(messageIndex) — edit (#45)
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   carries the model's premise as proposedPremise,
@@ -272,7 +281,8 @@ StoryArc/
 │   │   │                       #   ledger and planning/beat-completion.js
 │   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
 │   │   │                       #   the rule header + every name word on one line,
-│   │   │                       #   sorted by folded form; listTakenNames(ledger)
+│   │   │                       #   sorted by folded form (printTakenNames(ledger),
+│   │   │                       #   also the planner's cast block); listTakenNames(ledger)
 │   │   │                       #   (folded form → first spelling, hyphenated words
 │   │   │                       #   whole and by part), nameWords(name), foldName();
 │   │   │                       #   reused by the name flag (#35) and planner (#36);
@@ -387,7 +397,9 @@ StoryArc/
 │   │                           #   while the message count holds the phase back,
 │   │                           #   never in resolution; isStalled(arc, chatLength) —
 │   │                           #   the stall rule behind the "May have drifted —
-│   │                           #   re-plan?" button (episodes only, not while paused)
+│   │                           #   re-plan?" button (every tier; not while paused or in
+│   │                           #   background; counted from the latest of messageStart,
+│   │                           #   lastFulfilledAt, replannedAt)
 │   └── css/
 │       ├── core.css            # CSS custom properties, base layout, badges incl.
 │       │                       #   the tier badge
@@ -449,9 +461,10 @@ StoryArc/
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
 │   ├── test-stall.js           # Tests: isStalled threshold (hand-computed boundary),
-│   │                           #   never for paused/act/saga, migrated arcs,
-│   │                           #   lastFulfilledAt set on fulfillment and shifted on
-│   │                           #   resume, nudge rendering
+│   │                           #   acts and sagas, paused/background, re-plan stamp,
+│   │                           #   migrated arcs,
+│   │                           #   lastFulfilledAt set on fulfillment, it and
+│   │                           #   replannedAt shifted on resume, nudge rendering
 │   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
 │   │                           #   (numbering, old positions unchanged as the chat
 │   │                           #   grows, foreign-entry and rewritten-text handling,
@@ -521,12 +534,19 @@ StoryArc/
 │   │                           #   (delete, swipe, branch, id follow, what reopening
 │   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
 │   │                           #   hand toggle carries no record
+│   ├── test-ruling-rollback.js # Tests: a ruling goes with its message on delete
+│   │                           #   (by id, index rule), branch load and edit (stored
+│   │                           #   again by the re-extraction); a swipe keeps it
 │   ├── test-knowledge-beats.js # Tests: DEVELOPMENTS input, fulfilled parsing (lenient)
 │   │                           #   and resolving, beat completion by the update after a
 │   │                           #   reply, a swipe switch and an edit; marks flushed on a
 │   │                           #   completion; autoTrack off; log counts only
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
-│   │                           #   the injection header or markers, keeps OOC direction
+│   │                           #   the injection header or markers, keeps OOC direction;
+│   │                           #   the cast while the tracker is on, [] while off
+│   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
+│   │                           #   generate-arc.txt, generateArc over a scripted profile:
+│   │                           #   outline prompt with and without a cast, three calls
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
 │   │                           #   templates, GENRE: line per section, latestGenre,
 │   │                           #   mergeReplan keeps the edited genre
@@ -577,7 +597,8 @@ lib/core/
 lib/context/
 ├── chat-history.js  (imports: /script.js)
 └── harvester.js     (imports: chat-history.js, planning/storage.js,
-                      injection/signals.js arcInternalIds, core/constants.js, /script.js,
+                      injection/signals.js arcInternalIds, core/constants.js,
+                      core/settings.js (tracker switch, ledger), /script.js,
                       /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
@@ -591,7 +612,8 @@ lib/planning/
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
 └── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
-                    core/constants.js, /script.js, /scripts/utils.js;
+                    core/constants.js, knowledge/names.js printTakenNames,
+                    /script.js, /scripts/utils.js;
                     dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js,
                     /scripts/sse-stream.js; templates are fetched from prompts/)
 
@@ -666,8 +688,8 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
-| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (both shifted on resume) |
+| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`removeRulingsFrom`, `removeRulingsAt`: the rollback), `index.js` (delete, chat change) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |

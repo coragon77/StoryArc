@@ -66,7 +66,7 @@ describe('prompt templates carry the genre slot', () => {
 
     it('outline: after the analysis, before the creative direction', () => {
         const text = read('generate-arc.txt');
-        assert.ok(text.includes('{{PHASE1_ANALYSIS}}\n\n{{GENRE_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
+        assert.ok(text.includes('{{PHASE1_ANALYSIS}}\n\n{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
     });
 
     it('outline: secrets are optional', () => {
