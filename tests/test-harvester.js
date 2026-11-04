@@ -94,7 +94,8 @@ describe('harvestContext — the cast', () => {
         const withCast = await harvestWithTracker(true);
         const withoutCast = await harvestWithTracker(false);
 
-        // "Julian Sterling Jules\nPriya" is 27 characters: 7 tokens at four characters per token.
+        // "Julian Sterling Jules\nPriya" is 27 characters, 28 with the joining newline:
+        // 7 more tokens at four characters per token.
         assert.equal(withCast.estimatedTokens - withoutCast.estimatedTokens, 7);
     });
 });
