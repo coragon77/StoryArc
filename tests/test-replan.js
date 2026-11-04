@@ -4,6 +4,9 @@ import { applyReplan, mergeReplan, replanTiers } from '../lib/planning/replan.js
 import { buildArcSoFar } from '../lib/planning/generator.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
+import { reopenCompletionsFrom } from '../lib/planning/beat-completion.js';
+import { isStalled } from '../lib/ui/progress.js';
+import { chat, chat_metadata } from './mocks/st-mocks.js';
 
 /** An episode with two fulfilled beats, one planted clue, one fired trigger. */
 function storedEpisode() {
@@ -447,7 +450,7 @@ describe('applyReplan', () => {
         };
     }
 
-    it('returns the arc to store equal to the merged arc, field for field', () => {
+    it('returns the arc to store equal to the merged arc, field for field, plus the re-plan stamp', () => {
         const { arc: stored, error } = applyReplan(mergedArc(), 250, { premise: 'A debt comes due.' });
         assert.equal(error, null);
         assert.deepEqual(stored, {
@@ -459,6 +462,7 @@ describe('applyReplan', () => {
             direction: 'new direction',
             messageStart: 100,
             lastFulfilledAt: 130,
+            replannedAt: 250,
             secrets: [{ id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true }],
             beats: [
                 { id: 'beat_1', status: 'completed', completion: { messageId: 120 } },
@@ -534,5 +538,57 @@ describe('applyReplan', () => {
     it('refuses a blank premise with the JSON editor\'s message', () => {
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, { premise: '   ' }), { arc: null, error: 'premise cannot be empty.' });
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, {}), { arc: null, error: 'premise cannot be empty.' });
+    });
+});
+
+describe('applyReplan — the re-plan stamp restarts the stall count', () => {
+    /**
+     * The merged arc of a re-planned act: estimatedLength 90 with four
+     * non-optional milestones, so a stall is more than 3 × 90 / 4 = 67.5
+     * messages. m0 was completed at 2225 and kept by the re-plan, with its
+     * completion record; before it the arc's lastFulfilledAt was its start, 2118.
+     */
+    function mergedAct() {
+        return {
+            id: 'act00001-full-id',
+            title: 'Streets of the Jackpot Siren',
+            status: 'active',
+            tier: 'act',
+            focus: 'normal',
+            premise: 'Patrols on the Strip.',
+            messageStart: 2118,
+            lastFulfilledAt: 2225,
+            estimatedLength: 90,
+            beats: [
+                { id: 'm0', intention: 'First patrol', status: 'completed', completion: { at: 2225, unlocked: [], arcCompleted: false, lastFulfilledBefore: 2118 } },
+                { id: 'm1', intention: 'A rival', status: 'active' },
+                { id: 'm2', intention: 'A favour owed', status: 'active' },
+                { id: 'm3', intention: 'The Siren speaks', status: 'active' },
+            ],
+            secrets: [],
+            foreshadowing: [],
+            triggers: [],
+        };
+    }
+
+    it('stores the chat length at apply as replannedAt; the stored act is not stalled one message on', () => {
+        // 2300 would stall counted from the last fulfillment (2300 - 2225 = 75 > 67.5).
+        const { arc: stored } = applyReplan(mergedAct(), 2300, { premise: 'Patrols on the Strip.' });
+
+        assert.equal(stored.replannedAt, 2300);
+        assert.equal(isStalled(stored, 2301), false);
+    });
+
+    it('a kept completion reopened afterwards leaves the act not stalled', () => {
+        const { arc: stored } = applyReplan(mergedAct(), 2300, { premise: 'Patrols on the Strip.' });
+        chat.length = 0;
+        chat_metadata.story_arc = { version: 1, arcs: [stored], settings: {} };
+
+        assert.equal(reopenCompletionsFrom(2225), true);
+
+        assert.equal(stored.beats[0].status, 'active');
+        assert.equal(stored.lastFulfilledAt, 2118);
+        assert.equal(stored.replannedAt, 2300);
+        assert.equal(isStalled(stored, 2301), false);
     });
 });

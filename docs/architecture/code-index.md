@@ -382,7 +382,9 @@ StoryArc/
 │   │                           #   while the message count holds the phase back,
 │   │                           #   never in resolution; isStalled(arc, chatLength) —
 │   │                           #   the stall rule behind the "May have drifted —
-│   │                           #   re-plan?" button (episodes only, not while paused)
+│   │                           #   re-plan?" button (every tier; not while paused or in
+│   │                           #   background; counted from the latest of messageStart,
+│   │                           #   lastFulfilledAt, replannedAt)
 │   └── css/
 │       ├── core.css            # CSS custom properties, base layout, badges incl.
 │       │                       #   the tier badge
@@ -444,9 +446,10 @@ StoryArc/
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
 │   ├── test-stall.js           # Tests: isStalled threshold (hand-computed boundary),
-│   │                           #   never for paused/act/saga, migrated arcs,
-│   │                           #   lastFulfilledAt set on fulfillment and shifted on
-│   │                           #   resume, nudge rendering
+│   │                           #   acts and sagas, paused/background, re-plan stamp,
+│   │                           #   migrated arcs,
+│   │                           #   lastFulfilledAt set on fulfillment, it and
+│   │                           #   replannedAt shifted on resume, nudge rendering
 │   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
 │   │                           #   (numbering, old positions unchanged as the chat
 │   │                           #   grows, foreign-entry and rewritten-text handling,
@@ -657,7 +660,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (both shifted on resume) |
 | Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
