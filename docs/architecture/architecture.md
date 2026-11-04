@@ -74,7 +74,7 @@ Beat Recognition and Progress Tracking  (lib/injection/signals.js,
                                         lib/planning/beat-completion.js)
   ├── On MESSAGE_RECEIVED: scan AI message for [ARC_SIGNAL:arcId:itemId:VERB]
   │     (emitted HTML-comment-wrapped; bare form still parsed for old messages);
-  │     COMPLETE markers arrive only while the knowledge tracker is off
+  │     COMPLETE markers are asked for only while the knowledge tracker is off
   ├── completeBeats (both recognition paths): mark the named beats completed
   │     (active only; at most one per arc per message); stamp arc.lastFulfilledAt
   │     with the fulfilling message's chat index; unlock gated beats whose
