@@ -98,8 +98,9 @@ StoryArc/
 │   │   │                       #   with beat kind, beat count, length band and the
 │   │   │                       #   milestone rules (a fulfillment is one on-screen
 │   │   │                       #   moment), all from TIER_TABLE;
-│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
-│   │   │                       #   secrets (add-only), escalation, fulfilled beats as
+│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
+│   │   │                       #   premise + "write a premise for the arc as it stands
+│   │   │                       #   now", secrets (add-only), escalation, fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
 │   │   │                       #   callLlm() exported for the knowledge extraction
@@ -130,6 +131,8 @@ StoryArc/
 │   │   │                       #   applyTitleAndPremiseEdit(stored, edit) — trimmed
 │   │   │                       #   title + premise as the only updates, same blank
 │   │   │                       #   rule and messages as applyArcEdit;
+│   │   │                       #   checkTitleAndPremise(title, premise) — that blank
+│   │   │                       #   rule, also used by applyReplan;
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
@@ -151,6 +154,7 @@ StoryArc/
 │   │   │                       #   arc completion; restoreLastFulfilledAt()
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
+│   │                           #   carries the model's premise as proposedPremise,
 │   │                           #   secrets (add-only, content-deduped), completed
 │   │                           #   beats (their completion records without unlocked
 │   │                           #   and arcCompleted: withoutRoadInRecord), planted
@@ -159,8 +163,10 @@ StoryArc/
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
-│   │                           #   applyReplan(merged, chatLength) — the arc "Apply
-│   │                           #   re-plan" stores (today a deep copy of the merged arc)
+│   │                           #   applyReplan(merged, chatLength, { premise }) →
+│   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
+│   │                           #   deep copy with the chosen premise trimmed, no
+│   │                           #   proposedPremise; a blank premise refused
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
 │   │   │                       #   one section per arc (private builders below), spotlight first,
@@ -329,7 +335,9 @@ StoryArc/
 │   │   │                       #   times, live streamed-chars ticker, active profile
 │   │   │                       #   name) → review. Revise mode: tier/direction/title/
 │   │   │                       #   premise pre-filled, reviseArcWithEdits() feeds
-│   │   │                       #   generateArc, "Apply re-plan" writes via updateArc;
+│   │   │                       #   generateArc; review shows the Premise choice
+│   │   │                       #   (buildPremiseChoice(), current vs. proposed, plain
+│   │   │                       #   view), "Apply re-plan" writes via updateArc;
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
 │   │   │                       #   badges, focus <select> (paused / background / normal
@@ -415,6 +423,12 @@ StoryArc/
 │   │                           #   add-only, id de-collision, tier change, kept
 │   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
 │   │                           #   buildArcSoFar + formatExistingArcs mark + applyReplan
+│   │                           #   (premise choice stored trimmed, blank refused)
+│   ├── test-generator-replan.js # Tests: generateArc through the profile mock with the
+│   │                           #   real templates: a re-plan's Phase 2 asks for a premise,
+│   │                           #   the result keeps the stored one with the proposal,
+│   │                           #   the plan check reads the proposal; a new plan's
+│   │                           #   premise contract
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock

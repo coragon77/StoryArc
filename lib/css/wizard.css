@@ -323,3 +323,18 @@
     padding-top: 12px;
     border-top: 1px solid var(--SmartThemeBorderColor);
 }
+
+/* Re-plan premise choice (step 3, plain view) */
+.story-arc-premise-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85em;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.story-arc-premise-option input {
+    margin-top: 4px;
+}

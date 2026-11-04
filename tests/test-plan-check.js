@@ -212,6 +212,13 @@ describe('buildPlanCheckVariables', () => {
         assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
     });
 
+    it('reads a re-plan\'s proposed premise as the premise, the stored one otherwise', () => {
+        const arc = { ...makeReplannedAct(), proposedPremise: 'Vanguard wants the rookie broken before the final.' };
+
+        assert.equal(buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] }).PREMISE, 'Vanguard wants the rookie broken before the final.');
+        assert.equal(buildPlanCheckVariables(makeReplannedAct(), null).PREMISE, 'Vanguard wants the rookie humiliated.');
+    });
+
     it('passes the fulfillments of open beats only — a re-plan\'s kept completed beat stays out', () => {
         const arc = makeReplannedAct();
         arc.beats.push({ id: 'rookie_drills', pressure: 'Shifts pile up.', intention: 'Ellie has completed her first patrols and training shifts.', status: 'pending' });

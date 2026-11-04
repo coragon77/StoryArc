@@ -306,6 +306,14 @@ describe('mergeReplan', () => {
         assert.deepEqual(existing, existingBefore);
         assert.deepEqual(generated, generatedBefore);
     });
+
+    it('keeps the stored premise and carries the generated one as the proposal', () => {
+        const merged = mergeReplan(storedEpisode(), generatedPlan({ premise: 'The brother is the creditor, and he is dying.' }));
+
+        assert.equal(merged.premise, 'A debt comes due.');
+        assert.equal(merged.proposedPremise, 'The brother is the creditor, and he is dying.');
+        assert.equal(merged.title, 'The Quiet Debt');
+    });
 });
 
 describe('replanTiers — an arc may grow, never shrink', () => {
@@ -387,7 +395,14 @@ describe('buildArcSoFar', () => {
 
         assert.ok(text.startsWith('== ARC SO FAR ==\nYou are RE-PLANNING an arc that is already running'));
         assert.ok(text.includes('your "secrets" output may only ADD new ones'));
-        assert.ok(text.includes('\n\nPremise: A debt comes due.\n\n'));
+        assert.ok(text.includes('\n\nCurrent premise: A debt comes due.\n\n'));
+    });
+
+    it('asks for a premise for the arc as it stands now instead of keeping it', () => {
+        const text = buildArcSoFar(storedEpisode());
+
+        assert.ok(!text.includes('Keep the premise as given'));
+        assert.ok(text.includes('Write a premise for the arc as it stands now, keeping what the current premise says that is still true.'));
     });
 });
 
@@ -433,7 +448,8 @@ describe('applyReplan', () => {
     }
 
     it('returns the arc to store equal to the merged arc, field for field', () => {
-        const stored = applyReplan(mergedArc(), 250);
+        const { arc: stored, error } = applyReplan(mergedArc(), 250, { premise: 'A debt comes due.' });
+        assert.equal(error, null);
         assert.deepEqual(stored, {
             id: 'arc-1',
             title: 'The Quiet Debt',
@@ -454,11 +470,42 @@ describe('applyReplan', () => {
     });
 
     it('does not mutate the merged arc, and the result shares nothing with it', () => {
-        const merged = mergedArc();
-        const stored = applyReplan(merged, 250);
+        const merged = mergedWithProposal();
+        const { arc: stored } = applyReplan(merged, 250, { premise: 'The brother is the creditor, and he is dying.' });
         stored.beats[1].status = 'completed';
         stored.secrets.push({ id: 'secret_2' });
-        assert.deepEqual(merged, mergedArc());
+        assert.deepEqual(merged, mergedWithProposal());
         assert.notEqual(stored, merged);
+    });
+
+    /** The merged arc of a re-plan whose Phase 2 proposed a premise. */
+    function mergedWithProposal() {
+        return { ...mergedArc(), proposedPremise: 'The brother is the creditor, and he is dying.' };
+    }
+
+    it('stores the proposal when the player chooses it, and no proposal field', () => {
+        const { arc, error } = applyReplan(mergedWithProposal(), 250, { premise: 'The brother is the creditor, and he is dying.' });
+
+        assert.equal(error, null);
+        assert.equal(arc.premise, 'The brother is the creditor, and he is dying.');
+        assert.equal('proposedPremise' in arc, false);
+    });
+
+    it('keeps the current premise when the player chooses it, and drops the proposal', () => {
+        const { arc } = applyReplan(mergedWithProposal(), 250, { premise: 'A debt comes due.' });
+
+        assert.equal(arc.premise, 'A debt comes due.');
+        assert.equal('proposedPremise' in arc, false);
+    });
+
+    it('stores an edited premise as typed, trimmed', () => {
+        const { arc } = applyReplan(mergedWithProposal(), 250, { premise: '  The brother is dying, and the debt is his.\n' });
+
+        assert.equal(arc.premise, 'The brother is dying, and the debt is his.');
+    });
+
+    it('refuses a blank premise with the JSON editor\'s message', () => {
+        assert.deepEqual(applyReplan(mergedWithProposal(), 250, { premise: '   ' }), { arc: null, error: 'premise cannot be empty.' });
+        assert.deepEqual(applyReplan(mergedWithProposal(), 250, {}), { arc: null, error: 'premise cannot be empty.' });
     });
 });
