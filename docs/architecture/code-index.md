@@ -275,12 +275,16 @@ StoryArc/
 │   │   │                       #   sorted by folded form; listTakenNames(ledger)
 │   │   │                       #   (folded form → first spelling, hyphenated words
 │   │   │                       #   whole and by part), nameWords(name), foldName();
-│   │   │                       #   reused by the name flag (#35) and planner (#36)
+│   │   │                       #   reused by the name flag (#35) and planner (#36);
+│   │   │                       #   listCharactersWithNames(ledger, names, exceptId)
+│   │   │                       #   → who has the flagged names now (the notice)
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
 │   │                           #   the order it runs, helpers after their first caller;
 │   │                           #   every ledger operation changes the stored ledger in
 │   │                           #   place and returns true when it changed; the update
-│   │                           #   functions return { ledgerChanged, beatsChanged }:
+│   │                           #   functions return { ledgerChanged, beatsChanged,
+│   │                           #   flaggedCharacters? } (new characters with a taken
+│   │                           #   name; applyExtractionAnswer sets their nameClash):
 │   │                           #   Update after a reply — updateKnowledgeAfterReply(i),
 │   │                           #   every N replies, one at a time, stale answers dropped;
 │   │                           #   completeFulfilledBeats() after the apply →
@@ -333,7 +337,8 @@ StoryArc/
 │   │   │                       #   setupSettingsPanelEvents() also wires the stall
 │   │   │                       #   nudge (.story-arc-stall-btn → showWizard(arcId));
 │   │   │                       #   knowledge tracker switch, update interval and
-│   │   │                       #   status line (updateKnowledgeStatus())
+│   │   │                       #   status line (updateKnowledgeStatus(): + "N new names
+│   │   │                       #   to check" and a Knowledge popup button)
 │   │   ├── wand-menu.js        # registerWandMenuEntry() — adds a "Story Arc" item to
 │   │   │                       #   #extensionsMenu (the wand next to the chat bar);
 │   │   │                       #   showWandPopup() reopens itself after the wizard or
@@ -487,6 +492,10 @@ StoryArc/
 │   ├── test-knowledge-names.js # Tests: buildTakenNamesBlock literal lists (titles,
 │   │                           #   hyphenated parts, aliases, repeats, diacritics,
 │   │                           #   particles, sort), byte stability; listTakenNames
+│   ├── test-knowledge-name-clash.js # Tests: the reused-name flag (#43) at the apply
+│   │                           #   (hyphens, titles, aliases, same-answer family),
+│   │                           #   through the update after a reply and an edit,
+│   │                           #   cleared by a popup save; the status line count
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
