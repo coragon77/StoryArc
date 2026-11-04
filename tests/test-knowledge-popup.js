@@ -343,14 +343,15 @@ describe('buildKnowledgeContent: names to check', () => {
         assert.ok(!text.includes('"Julian"'));
     });
 
-    it('says the clash is gone when no one else has a shared name, and offers only to clear the flag', () => {
+    it('says the clash is gone when no one else has a shared name, and offers only "Not a clash"', () => {
         const ledger = makeFlaggedLedger();
         ledger.characters[0].name = 'Solomon Vance';
         const section = namesToCheckOf(buildKnowledgeContent(ledger, []));
         const text = textOf(section);
         assert.ok(text.includes('Julian Stern'));
         assert.ok(text.includes('No other character has this name any more: the clash is gone.'));
-        assert.ok(text.includes('Clear the flag'));
+        assert.ok(text.includes('Not a clash'));
+        assert.ok(!text.includes('flag'));
         assert.ok(!section.includes('story-arc-name-rename-btn'));
         assert.ok(!text.includes('Keep the name'));
         assert.ok(!text.includes('is also a name of'));

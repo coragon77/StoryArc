@@ -127,3 +127,15 @@ _Avoid_: active, onstage, in-scene
 **Talked about** (character):
 A character who is not present but is named, by name or alias, in the latest message of the player or the narrator. The narrator is also told whom such a character has told.
 _Avoid_: mentioned, referenced, offscreen
+
+**Cast**:
+The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Empty while the knowledge tracker is off.
+_Avoid_: roster, character list, NPCs
+
+**Taken name**:
+A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
+_Avoid_: used name, reserved name, blacklist
+
+**Name clash**:
+A new character the knowledge extraction added with a taken name: the record keeps which names it shares and the message it was named in. Shown to the player under "Names to check" in the Knowledge popup until the player renames the character or keeps the name; once no other character has the shared names, the player clears it with "Not a clash". Only a character added by the extraction is checked, once, when it is added.
+_Avoid_: flag, duplicate, collision
