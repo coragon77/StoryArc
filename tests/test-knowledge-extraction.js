@@ -60,6 +60,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             ].join('\n'),
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
+            PLANS: '(none)',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
                 '[2066] Narrator: Noor looks up from the bench.',
@@ -78,6 +79,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             FACTS: '(none)',
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
+            PLANS: '(none)',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',
         });
     });
@@ -87,7 +89,7 @@ describe('extract-knowledge.txt', () => {
     it('holds a placeholder for every template variable', () => {
         const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
 
-        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{SECRETS}}', '{{MESSAGES}}']) {
+        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{SECRETS}}', '{{PLANS}}', '{{MESSAGES}}']) {
             assert.ok(template.includes(placeholder), `missing ${placeholder}`);
         }
     });
@@ -199,6 +201,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
             revealedSecrets: [],
             retracted: [],
             fulfilled: [],
+            rulings: [],
         });
     });
 
@@ -217,7 +220,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {

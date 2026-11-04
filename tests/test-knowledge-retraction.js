@@ -331,8 +331,8 @@ describe('the retraction through an update', () => {
             retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
             updateLog: [{
                 kind: 'update', from: 2, to: 3, messageId: 'm3',
-                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0, fulfilled: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'], beatsCompleted: 0,
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'], beatsCompleted: 0, rulingsStored: 0,
             }],
         });
     });
@@ -384,8 +384,8 @@ describe('the retraction through an update', () => {
             retractedFacts: [],
             updateLog: [{
                 kind: 'reextract', from: 2, to: 2, messageId: 'm2',
-                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
-                factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
+                answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             }],
         });
     });
@@ -434,13 +434,13 @@ describe('the retraction through an update', () => {
             updateLog: [
                 {
                     kind: 'reextract', from: 1, to: 1, messageId: 'm1',
-                    answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
-                    factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
+                    answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                    factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
                 },
                 {
                     kind: 'reextract', from: 2, to: 2, messageId: 'm2',
-                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
-                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0,
+                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
                 },
             ],
         });

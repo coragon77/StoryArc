@@ -168,8 +168,8 @@ describe('updateKnowledgeAfterReply', () => {
             lastUpdatedMessageId: 'm6',
             updateLog: [{
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
-                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0 },
-                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0,
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             }],
         });
     });

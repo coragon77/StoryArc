@@ -175,6 +175,7 @@ StoryArc/
 │   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
 │   │                           #   deep copy with the chosen premise trimmed, no
 │   │                           #   proposedPremise; a blank premise refused
+│   │                           #   each open ruling marked answeredAt = chatLength
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
 │   │   │                       #   one section per arc (private builders below), spotlight first,
@@ -295,7 +296,9 @@ StoryArc/
 │   │                           #   Extraction — extractKnowledge(ledger, chat, fromIndex,
 │   │                           #   persona) → parsed answer or null; listShownSecrets(arcs),
 │   │                           #   listRecognisableBeats(arcs) → {{DEVELOPMENTS}}
-│   │                           #   (autoTrack on only), buildKnowledgeExtractionVariables(),
+│   │                           #   (autoTrack on only), listArcPlans(arcs) → {{PLANS}},
+│   │                           #   resolveRulings() → storeRulings() (rulings on the arc),
+│   │                           #   buildKnowledgeExtractionVariables(),
 │   │                           #   parseKnowledgeExtractionAnswer() (all or nothing,
 │   │                           #   except the fulfilled list: broken items dropped),
 │   │                           #   resolveRevealedSecrets() (keeps the heard text),
@@ -669,6 +672,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
 | Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
+| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
