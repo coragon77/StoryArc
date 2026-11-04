@@ -15,3 +15,7 @@ The ledger stays inside Story Arc, as its own module, and does not become a sepa
 ## Consequences
 
 When the tracker is on, every reply costs one more call, unless testing shows that updates can be spaced out over several messages; how often to update is still open. A fact in the ledger has to record which message and swipe it came from, so that a regeneration, deletion or edit can take it back. The extraction is itself an LLM, so it can record a leak as a fact; the edit UI is the correction path. The ledger shows what characters know about the plan's secrets, so its UI needs the same spoiler protection as the Arc Manager.
+
+## Amendment 2026-11-04: the extraction also recognises beats
+
+With the tracker on, the extraction call also reports which active beats the new messages fulfilled, and the narration prompt no longer carries the beat check (ADR-0008). The tracker's on/off switch therefore also decides where beats are recognised: in the extraction when it is on, in the narration prompt when it is off.

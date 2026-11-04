@@ -34,7 +34,7 @@ The arc is set aside for a tangent. The model is told it exists and is not being
 _Avoid_: shelved, backgrounded, dormant
 
 **Background** (focus):
-An act or saga that goes on off-screen. The model sees only its title and an instruction to leave it out of scenes unless the user's character goes to it or brings it up; no premise, no pressures. Its milestones stay in the beat check, so one still completes when the user plays the thread. Episodes have no background focus. Not the pre-tier `background` value, which meant paused and migrates to it.
+An act or saga that goes on off-screen. The model sees only its title and an instruction to leave it out of scenes unless the user's character goes to it or brings it up; no premise, no pressures. Its milestones are still recognised, so one still completes when the user plays the thread. Episodes have no background focus. Not the pre-tier `background` value, which meant paused and migrates to it.
 _Avoid_: lurking, simmering, offscreen
 
 **Spotlight** (focus):
@@ -78,11 +78,11 @@ The face of a beat the model sees before it is fulfilled: a force acting on the 
 _Avoid_: objective, goal, intention
 
 **Fulfillment**:
-The face of a beat used only for recognition: what has already happened on screen once the beat is complete, in past tense.
+The face of a beat used only for recognition: the one on-screen moment at which the development shows, in past tense. Never a tally of many scenes or a chain of separate events. With the knowledge tracker on, the narrator never sees it.
 _Avoid_: intention, completion condition, outcome
 
 **Recognition**:
-The model's own report, via a hidden marker, that the story has already fulfilled a beat. The only way a beat completes.
+The report that the story has already fulfilled a beat: from the knowledge extraction when the knowledge tracker is on, from the narrator via a hidden marker when it is off. The only automatic way a beat completes; a completion is reopened when the message it happened in is deleted or swiped.
 _Avoid_: signal, tracking, advancement
 
 ### Story state

@@ -1,0 +1,22 @@
+# The narrator never sees a fulfillment
+
+The beat check printed every active beat's fulfillment into the narration prompt as its recognition condition ("If the story has already brought this about — "<fulfillment>" — output exactly: …"), with the warning "They are not instructions — do not steer the scene toward them". The narrator read them as goals anyway. In the Paragon chat (2026-11-04, OOC reply at message 2663) the model explained why it kept forcing tests onto the user's character by quoting the act's "standing pressures". The text it quoted joined a milestone's pressure with its fulfillment ("learning urban recon, non-lethal takedowns, and crowd control while busting low-level criminals"), and the fulfillment was printed only in the beat check. The same prompt held 10 beat-check lines, 7 from arcs in background focus, while the narrative block told the model to keep those arcs off screen.
+
+So, with the knowledge tracker on, beats are recognised by the knowledge extraction instead of the narrator. The extraction already runs after each reply, reads the new messages against arc data (revealed secrets), and is rolled back on swipe, edit, delete and branch load. Its prompt lists the active beats of every arc that is not paused, with ids, and each arc's completed beats as context; its answer reports the fulfilled ones with the message they happened in. The narration prompt keeps the pressures, the continuation guard, the confidentiality clause and the plant check, and loses the beat check. No call is added. With the tracker off, the beat check stays in the narration prompt as before (Stefan, 2026-11-04). `autoTrack` switches automatic recognition only, on both paths; the continuation guard and the confidentiality clause no longer depend on it.
+
+Two changes follow from it:
+
+- A completion records the message it happened in. Deleting or swiping that message, or loading a branch that ends before it, reopens the beat and undoes what the completion did: the beats it unlocked are locked again, a scene beat promoted after it goes back to pending, an arc it completed is active again, and `lastFulfilledAt` is recomputed. Before this, a completed beat was never reopened.
+- Every fulfillment is one on-screen moment at which the development shows (ADR-0006 amendment). The extraction reads only the messages since its last update. A tally of many scenes ("has completed her first patrols") or a chain of separate events joined by "and" cannot be recognised there, and the narrator did not recognise such a beat either: one stayed active for 439 messages with the whole chat in context. Existing arcs get one-moment fulfillments when they are re-planned. Marking beats complete by hand is not a recognition path: "a requirement for the user to hand mark stuff as completed defeats the purpose of the extension" (Stefan, 2026-11-04). The manual toggle stays an override.
+
+## Considered options
+
+- Keep the beat check and rephrase the fulfillments as neutral observations: the content stays a destination, whatever the grammar.
+- Drop only the background arcs' lines from the beat check: their milestones could then complete only by hand.
+- A separate recognition call after each reply: rejected for the extra call ("We allready got lots of small calls - is that really necessary?").
+- A recognition-only extraction call when the tracker is off: rejected in favour of keeping the in-prompt beat check there.
+- A wider extraction window for stalled arcs: deferred until re-plan proves not to be enough.
+
+## Consequences
+
+With the tracker on, a completion arrives a few seconds after the reply, or up to `updateInterval` replies later; an episode's next scene beat waits for the first user message after it. An unreadable extraction answer loses both the knowledge update and the completions for that window, and the next update reads the same messages again. The extraction judges messages it did not write and does not see the plan, so a single-event beat may be recognised more strictly than before. Chats with the tracker off keep the old exposure. Their completions carry no message id, because only the extraction gives messages ids (the ledger relies on that), so their rollback follows the message index alone; a deletion in the middle of the chat before the completing message leaves the record one message off. An arc that is never re-planned keeps its old tally and chain fulfillments, which the extraction will not recognise.

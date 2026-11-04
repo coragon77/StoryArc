@@ -14,3 +14,7 @@ So every generated plan goes through a third, narrow LLM call before it is store
 ## Consequences
 
 Every plan costs one more call on the generation profile. The check judges meaning, so it can still miss a give-away or rewrite something harmless; one live run before and one after the direction fix are the evidence so far. Milestone and beat intentions are not checked: they are printed in the beat check, and rewriting one would change what "fulfilled" means.
+
+## Amendment 2026-11-04: the check also rewrites fulfillments that can never be recognised
+
+Beats are recognised from a message or two at a time (ADR-0008), so a fulfillment that is a tally of many scenes or a chain of separate events joined by "and" never shows in one message, and its beat stays open for good. The generator now asks for one on-screen moment per fulfillment, and the check is the second line, as it is for give-aways: it receives the plan's open fulfillments and rewrites a tally or a chain into the one moment at which the development shows, keeping the beat id and its meaning. The reason given above for leaving intentions alone ("rewriting one would change what 'fulfilled' means") holds only for beats already in play. The check runs before the plan is stored, so nothing has been recognised against the new text yet. On a re-plan the check runs after the merge, and completed beats the merge kept are not passed to it. Still one call.
