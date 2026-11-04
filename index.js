@@ -19,6 +19,7 @@ import { buildInjection, buildSignalInjection } from './lib/injection/builder.js
 import { stampPromptMessages } from './lib/injection/stamping.js';
 import { injectKnowledgeBlock, updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
+import { reopenCompletionsFrom } from './lib/planning/beat-completion.js';
 import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
@@ -152,29 +153,42 @@ async function onUserMessageRendered() {
 /**
  * After messages were deleted, including the last reply before a
  * regeneration: ST passes the new chat length, so every message from that
- * index on is gone, and so is what its queued marks report and what the
- * knowledge ledger learned from it.
+ * index on is gone, and so is what its queued marks report, the beats it
+ * completed and what the knowledge ledger learned from it. A completion
+ * from a message deleted in the middle of the chat goes by its message id.
  * @param {number} chatLength - Chat length after the deletion
  */
 async function onMessageDeleted(chatLength) {
-    if (dropPendingMarksFrom(chatLength)) await saveMetadata();
+    const marksDropped = dropPendingMarksFrom(chatLength);
+    const completionsReopened = reopenCompletionsFrom(chatLength);
+    if (completionsReopened) updateProgress();
+    if (marksDropped || completionsReopened) await saveMetadata();
     if (await rollBackKnowledgeFrom(chatLength)) updateKnowledgeStatus();
 }
 
 /**
  * When the user swipes a reply: the shown text is replaced, so its queued
- * marks and what the knowledge ledger learned from it no longer match the
- * story. A newly generated swipe arrives through MESSAGE_RECEIVED and queues
- * its own marks and knowledge update; switching to an existing swipe
- * re-extracts that message's knowledge.
+ * marks, the beats it completed and what the knowledge ledger learned from
+ * it no longer match the story. ST awaits this handler before it generates
+ * a new swipe, so the new reply's prompt shows the reopened beats; the new
+ * reply arrives through MESSAGE_RECEIVED and queues its own marks,
+ * completions and knowledge update. Switching to an existing swipe
+ * re-extracts that message's knowledge; its markers were stripped when it
+ * arrived, so the in-prompt path does not complete its beats again.
  * @param {number} messageIndex - Index of the swiped message
  */
 async function onMessageSwiped(messageIndex) {
-    if (dropPendingMarksFrom(messageIndex)) await saveMetadata();
+    const swipedIndex = Number(messageIndex);
+    const marksDropped = dropPendingMarksFrom(swipedIndex);
+    // Before the knowledge rollback below, which takes the swiped message's
+    // message id; on a swipe the index rule reopens the completion anyway.
+    const completionsReopened = reopenCompletionsFrom(swipedIndex);
+    if (completionsReopened) updateProgress();
+    if (marksDropped || completionsReopened) await saveMetadata();
     // Not awaited: the re-extraction must not hold up the swipe. The drop
     // inside runs before the first await, so a new swipe's reply update
     // always sees the rolled-back ledger.
-    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterSwipe(Number(messageIndex)), 'Knowledge rollback after a swipe failed:');
+    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterSwipe(swipedIndex), 'Knowledge rollback after a swipe failed:');
 }
 
 /**
@@ -190,11 +204,13 @@ function onMessageEdited(messageIndex) {
 /**
  * When the user switches to a different chat: re-init per-chat state
  * and refresh the progress display and the knowledge tracker status line.
- * ST copies the chat metadata whole when it branches, so the knowledge
- * ledger drops what it learned past the loaded chat's end.
+ * ST copies the chat metadata whole when it branches, so the beats completed
+ * past the loaded chat's end are reopened and the knowledge ledger drops
+ * what it learned there.
  */
 async function onChatChanged() {
     ensureChatState();
+    if (reopenCompletionsFrom(chat.length)) await saveMetadata();
     updateProgress();
     await rollBackKnowledgeFrom(chat.length);
     updateKnowledgeStatus();
