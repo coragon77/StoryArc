@@ -5,7 +5,7 @@ Think like a NOVELIST, not a quest designer. You are not making a to-do list. Yo
 == STORY ANALYSIS (from Phase 1) ==
 {{PHASE1_ANALYSIS}}
 
-{{GENRE_BLOCK}}== AUTHOR'S CREATIVE DIRECTION ==
+{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR'S CREATIVE DIRECTION ==
 The author has provided the following guidance for what they want this arc to explore. Honor their intent while using your narrative judgment to make it work within the existing story.
 
 {{USER_DIRECTION}}
@@ -179,7 +179,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] Every foreshadowing entry points to a specific secret or beat
 - [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only
 - [ ] No `pressure` states the content of a secret
-- [ ] Existing characters are named exactly as the story names them
+- [ ] Existing characters are named exactly as the story names them{{CAST_CHECKLIST}}
 - [ ] Every beat has both a `pressure` (a force with no completion state) and an `intention` (a past-tense fulfillment condition: one on-screen moment, not a tally of scenes or a chain of events)
 - [ ] No `pressure` reads as an objective, a task, or something to be achieved
 - [ ] Scene beats only: at least one breather beat advances no plot
