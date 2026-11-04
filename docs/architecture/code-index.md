@@ -23,7 +23,8 @@ StoryArc/
 │   │                           #   of scenes or a chain of events) plus breather
 │   │                           #   beats and unresolved threads; {{TIER_BLOCK}} sets beat kind, count and
 │   │                           #   length band ("Scene beats only" tags the episode-only
-│   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; renders enabled
+│   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; {{CAST_BLOCK}}
+│   │                           #   and {{CAST_CHECKLIST}} with the tracker on; renders enabled
 │   │                           #   arc directives as a STANDING CONSTRAINTS section
 │   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
 │   │                           #   and pressures, list revealed secrets (re-plan),
@@ -67,7 +68,10 @@ StoryArc/
 │   │   │                       #   categorizeEntries() — read World Info entries,
 │   │   │                       #   classify into constants / arcSummaries / recent;
 │   │   │                       #   getCharacterData(), getPersonaData() (private) —
-│   │   │                       #   character card fields + user persona
+│   │   │                       #   character card fields + user persona;
+│   │   │                       #   harvestCast() (private, #44) — the ledger's
+│   │   │                       #   characters { name, aliases } while Story Arc and
+│   │   │                       #   the knowledge tracker are on, else []
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
@@ -76,6 +80,9 @@ StoryArc/
 │   │   │                       #   tier, direction, genre, messageStart, lastFulfilledAt;
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
 │   │   │                       #   in both phases (ADR-0004);
+│   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
+│   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
+│   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
 │   │   │                       #   merges with mergeReplan(reviseArc, arc), then
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
@@ -272,7 +279,8 @@ StoryArc/
 │   │   │                       #   ledger and planning/beat-completion.js
 │   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
 │   │   │                       #   the rule header + every name word on one line,
-│   │   │                       #   sorted by folded form; listTakenNames(ledger)
+│   │   │                       #   sorted by folded form (printTakenNames(ledger),
+│   │   │                       #   also the planner's cast block); listTakenNames(ledger)
 │   │   │                       #   (folded form → first spelling, hyphenated words
 │   │   │                       #   whole and by part), nameWords(name), foldName();
 │   │   │                       #   reused by the name flag (#35) and planner (#36)
@@ -520,7 +528,11 @@ StoryArc/
 │   │                           #   reply, a swipe switch and an edit; marks flushed on a
 │   │                           #   completion; autoTrack off; log counts only
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
-│   │                           #   the injection header or markers, keeps OOC direction
+│   │                           #   the injection header or markers, keeps OOC direction;
+│   │                           #   the cast while the tracker is on, [] while off
+│   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
+│   │                           #   generate-arc.txt, generateArc over a scripted profile:
+│   │                           #   outline prompt with and without a cast, three calls
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
 │   │                           #   templates, GENRE: line per section, latestGenre,
 │   │                           #   mergeReplan keeps the edited genre
@@ -571,7 +583,8 @@ lib/core/
 lib/context/
 ├── chat-history.js  (imports: /script.js)
 └── harvester.js     (imports: chat-history.js, planning/storage.js,
-                      injection/signals.js arcInternalIds, core/constants.js, /script.js,
+                      injection/signals.js arcInternalIds, core/constants.js,
+                      core/settings.js (tracker switch, ledger), /script.js,
                       /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
@@ -585,7 +598,8 @@ lib/planning/
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
 └── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
-                    core/constants.js, /script.js, /scripts/utils.js;
+                    core/constants.js, knowledge/names.js printTakenNames,
+                    /script.js, /scripts/utils.js;
                     dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js,
                     /scripts/sse-stream.js; templates are fetched from prompts/)
 
