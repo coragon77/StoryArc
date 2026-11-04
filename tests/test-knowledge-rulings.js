@@ -446,15 +446,17 @@ describe('parseKnowledgeExtractionAnswer: rulings', () => {
         assert.deepEqual(answer.rulings, [{ arcs: ['siren001'], quote: 'Aegis is not her defender', at: 3 }]);
     });
 
-    it('reads the chosen option of a bare pick; a null one reads as none, one of the wrong type drops the item', () => {
+    it('reads the chosen option of a bare pick; a null or blank one reads as none, one of the wrong type drops the item', () => {
         const answer = parseKnowledgeExtractionAnswer(`{ ${base}, "rulings": [
             { "arcs": ["siren001"], "quote": "Option one", "chose": "Siren works the strip alone.", "at": 3 },
             { "arcs": ["siren001"], "quote": "Aegis is not her defender", "chose": null, "at": 3 },
+            { "arcs": ["siren001"], "quote": "Comics, not police procedural", "chose": "  ", "at": 3 },
             { "arcs": ["siren001"], "quote": "Lets go with 3", "chose": 3, "at": 3 }
         ] }`);
         assert.deepEqual(answer.rulings, [
             { arcs: ['siren001'], quote: 'Option one', chose: 'Siren works the strip alone.', at: 3 },
             { arcs: ['siren001'], quote: 'Aegis is not her defender', at: 3 },
+            { arcs: ['siren001'], quote: 'Comics, not police procedural', at: 3 },
         ]);
     });
 
