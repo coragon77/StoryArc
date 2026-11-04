@@ -217,6 +217,19 @@
     color: var(--sa-status-queued);
 }
 
+/* ─── Title and Premise Editor ───────────────────────────────────────────── */
+
+.story-arc-title-premise-editor {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.story-arc-row.editing-title-premise .story-arc-title-premise-editor {
+    display: flex;
+}
+
 /* ─── Arc Editor (JSON) ──────────────────────────────────────────────────── */
 
 .story-arc-arc-editor {

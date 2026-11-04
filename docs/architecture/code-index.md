@@ -127,6 +127,9 @@ StoryArc/
 │   │   │                       #   deleteArc();
 │   │   │                       #   latestGenre(arcs) — wizard default for a new arc
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
+│   │   │                       #   applyTitleAndPremiseEdit(stored, edit) — trimmed
+│   │   │                       #   title + premise as the only updates, same blank
+│   │   │                       #   rule and messages as applyArcEdit;
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
@@ -330,7 +333,9 @@ StoryArc/
 │   │   │                       #   badges, focus <select> (paused / background / normal
 │   │   │                       #   / spotlight via clock.js; no background for an
 │   │   │                       #   episode), Re-plan (closes, then opens
-│   │   │                       #   showWizard(arcId)), complete, abandon; per beat an
+│   │   │                       #   showWizard(arcId)), Edit title and premise
+│   │   │                       #   (buildTitleAndPremiseEditor(), outside the
+│   │   │                       #   spoilers), complete, abandon; per beat an
 │   │   │                       #   inline editor (pressure + intention, delete with a
 │   │   │                       #   second click) and an Edit arc JSON editor (via
 │   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
@@ -389,7 +394,10 @@ StoryArc/
 │   │                           #   + triggers tied to a secret (hidden until shown)
 │   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
 │   │                           #   blocks byte-identical as messages accumulate)
+│   │                           #   + an edited premise changes only its own line
 │   ├── test-arc-edit.js        # Tests: applyArcEdit (kept fields, save checks) +
+│   │                           #   applyTitleAndPremiseEdit (trim, blank refused,
+│   │                           #   no other field stored) +
 │   │                           #   checkBeatEdit (empty intention, milestone
 │   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock)
 │   ├── test-background.js      # Tests: background focus — section text, no premise or
@@ -423,7 +431,8 @@ StoryArc/
 │   │                           #   generateArc stream routes, plan check applied or
 │   │                           #   skipped on an unreadable answer
 │   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
-│   │                           #   waiting state, reports-waiting line
+│   │                           #   waiting state, reports-waiting line, title and
+│   │                           #   premise editor (escaped, no plan text)
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer

@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArcEdit, checkBeatEdit, completeBeat, removeBeat } from '../lib/planning/arc-edit.js';
+import { applyArcEdit, applyTitleAndPremiseEdit, checkBeatEdit, completeBeat, removeBeat } from '../lib/planning/arc-edit.js';
+import { getArcById, updateArc } from '../lib/planning/storage.js';
+import { chat_metadata } from './mocks/st-mocks.js';
 
 /** A small stored episode with every field the editor sees. */
 function storedArc() {
@@ -141,6 +143,75 @@ describe('applyArcEdit', () => {
         const stored = { ...storedArc(), tier: 'act' };
         const edited = { ...stored, beats: [{ id: 'beat_1', pressure: '', intention: 'Done.', unlockAfter: [] }] };
         assert.equal(applyArcEdit(stored, JSON.stringify(edited)).error, 'Beat "beat_1": A milestone needs a pressure.');
+    });
+});
+
+describe('applyTitleAndPremiseEdit', () => {
+    it('returns the trimmed title and premise as the only updates', () => {
+        const { updates, error } = applyTitleAndPremiseEdit(storedArc(), {
+            title: '  The Paid Debt \n',
+            premise: '\tAegis is not her defender.  ',
+        });
+        assert.equal(error, null);
+        assert.deepEqual(updates, { title: 'The Paid Debt', premise: 'Aegis is not her defender.' });
+    });
+
+    it('does not mutate the stored arc', () => {
+        const arc = storedArc();
+        applyTitleAndPremiseEdit(arc, { title: 'The Paid Debt', premise: 'Aegis is not her defender.' });
+        assert.deepEqual(arc, storedArc());
+    });
+
+    it('refuses a blank title with the JSON editor\'s message', () => {
+        const { updates, error } = applyTitleAndPremiseEdit(storedArc(), { title: '', premise: 'Aegis is not her defender.' });
+        assert.equal(updates, null);
+        assert.equal(error, 'title cannot be empty.');
+    });
+
+    it('refuses a whitespace-only title', () => {
+        const { error } = applyTitleAndPremiseEdit(storedArc(), { title: ' \n\t ', premise: 'Aegis is not her defender.' });
+        assert.equal(error, 'title cannot be empty.');
+    });
+
+    it('refuses a blank premise with the JSON editor\'s message', () => {
+        const { updates, error } = applyTitleAndPremiseEdit(storedArc(), { title: 'The Paid Debt', premise: '' });
+        assert.equal(updates, null);
+        assert.equal(error, 'premise cannot be empty.');
+    });
+
+    it('refuses a whitespace-only premise', () => {
+        const { error } = applyTitleAndPremiseEdit(storedArc(), { title: 'The Paid Debt', premise: '   ' });
+        assert.equal(error, 'premise cannot be empty.');
+    });
+
+    it('leaves every other field as stored once the updates are stored', async () => {
+        const arc = {
+            ...storedArc(),
+            rulings: [{ id: 'ruling_1', text: 'Aegis does not defend her.' }],
+            stalledSince: 140,
+        };
+        chat_metadata.story_arc = { arcs: [arc] };
+        try {
+            const { updates } = applyTitleAndPremiseEdit(arc, { title: 'The Paid Debt', premise: 'Aegis is not her defender.' });
+            await updateArc('arc-1', updates);
+
+            assert.deepEqual(getArcById('arc-1'), {
+                ...storedArc(),
+                title: 'The Paid Debt',
+                premise: 'Aegis is not her defender.',
+                rulings: [{ id: 'ruling_1', text: 'Aegis does not defend her.' }],
+                stalledSince: 140,
+            });
+        } finally {
+            delete chat_metadata.story_arc;
+        }
+    });
+
+    it('refuses the same blank fields in the JSON editor with the same messages', () => {
+        const blankTitle = applyArcEdit(storedArc(), JSON.stringify({ ...storedArc(), title: '  ' }));
+        const blankPremise = applyArcEdit(storedArc(), JSON.stringify({ ...storedArc(), premise: '  ' }));
+        assert.equal(blankTitle.error, 'title cannot be empty.');
+        assert.equal(blankPremise.error, 'premise cannot be empty.');
     });
 });
 
