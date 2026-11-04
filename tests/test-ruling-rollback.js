@@ -234,7 +234,7 @@ describe('onMessageSwiped — a swipe removes no ruling', () => {
     });
 });
 
-describe('updateKnowledgeAfterEdit — the edit removes the message\'s rulings before the re-extraction', () => {
+describe('updateKnowledgeAfterEdit — the edit removes the rulings whose quote is gone from the message', () => {
     beforeEach(() => fillChat());
 
     it('a re-extraction quoting the edited line stores it again; a ruling of another message stays', async () => {
@@ -265,14 +265,43 @@ describe('updateKnowledgeAfterEdit — the edit removes the message\'s rulings b
         assert.equal(result.beatsChanged, true);
     });
 
-    it('an answered ruling goes too, and comes back open when the edited text still states it', async () => {
+    it('an answered ruling whose quote is still in the edited text stays answered, and the re-extraction does not store it again', async () => {
         storeChat({ arcs: [sirenAct([{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 }])] });
         chat[3].mes = '[OOC: Aegis is NOT her defender.] Siren walks the strip alone.';
         installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Aegis is NOT her defender.', at: 3 }])]);
 
         await updateKnowledgeAfterEdit(3);
 
-        assert.deepEqual(storedRulings(), [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3' }]);
+        assert.deepEqual(storedRulings(), [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 }]);
+    });
+
+    it('a typo fix elsewhere in the message keeps an answered pick with its option, even when the re-extraction reports nothing', async () => {
+        storeChat({ arcs: [sirenAct([
+            { id: 'r1', text: 'Option one', chose: 'Sundown trains her.', at: 3, messageId: 'm3', answeredAt: 4 },
+        ])] });
+        chat[3].mes = 'Option one. Siren walks alone.';
+        installExtraction([answerWithRulings([])]);
+
+        const result = await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(storedRulings(), [
+            { id: 'r1', text: 'Option one', chose: 'Sundown trains her.', at: 3, messageId: 'm3', answeredAt: 4 },
+        ]);
+        assert.equal(result.beatsChanged, false);
+    });
+
+    it('of two rulings in the edited message, only the one whose quote is gone is removed', async () => {
+        storeChat({ arcs: [sirenAct([
+            { id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 },
+            { id: 'r2', text: 'Siren walks alone.', at: 3, messageId: 'm3' },
+        ])] });
+        chat[3].mes = '[OOC: Aegis is NOT her defender.] Siren walks with Sundown.';
+        installExtraction([answerWithRulings([])]);
+
+        const result = await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(storedRulings(), [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3', answeredAt: 4 }]);
+        assert.equal(result.beatsChanged, true);
     });
 
     it('a ruling without a message id goes by the edited message\'s index', async () => {
