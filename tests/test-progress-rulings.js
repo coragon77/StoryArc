@@ -48,6 +48,18 @@ describe('renderProgressDisplay — rulings', () => {
         assert.equal(html.includes('<b>'), false);
     });
 
+    it('shows a bare pick with the option it picked, both escaped, in the text and the tooltip', () => {
+        const html = renderProgressDisplay([act({ rulings: [
+            { id: 'r1', text: 'Option <1>', chose: 'Siren works the strip "alone" & free.', at: 3, messageId: 'm3' },
+        ] })]);
+
+        assert.ok(html.includes(
+            '<span class="story-arc-ruling-quote">“Option &lt;1&gt;”</span>'
+            + ' <span class="story-arc-ruling-chose">picked “Siren works the strip &quot;alone&quot; &amp; free.”</span>'), html);
+        assert.ok(html.includes('title="Option &lt;1&gt; — picked: Siren works the strip &quot;alone&quot; &amp; free."'), html);
+        assert.equal(html.includes('<1>'), false);
+    });
+
     it('shows the newest of three open rulings and "and 2 earlier"', () => {
         const html = renderProgressDisplay([act({ rulings: [
             { id: 'r1', text: 'Comics, not police procedural.', at: 3 },

@@ -61,6 +61,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            CONTEXT_MESSAGE: '[2063] Gabriel Marin: Lock it on with titanium latches.',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
                 '[2066] Narrator: Noor looks up from the bench.',
@@ -80,6 +81,8 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            // 2065 is hidden: the context message is the one before it.
+            CONTEXT_MESSAGE: '[2064] Ellie: I head to the workshop.',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',
         });
     });
@@ -89,7 +92,7 @@ describe('extract-knowledge.txt', () => {
     it('holds a placeholder for every template variable', () => {
         const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
 
-        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{SECRETS}}', '{{PLANS}}', '{{MESSAGES}}']) {
+        for (const placeholder of ['{{PERSONA}}', '{{CHARACTERS}}', '{{FACTS}}', '{{SECRETS}}', '{{PLANS}}', '{{CONTEXT_MESSAGE}}', '{{MESSAGES}}']) {
             assert.ok(template.includes(placeholder), `missing ${placeholder}`);
         }
     });

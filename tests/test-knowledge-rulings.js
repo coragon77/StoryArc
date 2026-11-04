@@ -8,6 +8,7 @@ import {
     updateKnowledgeAfterSwipe,
     updateKnowledgeAfterEdit,
 } from '../lib/knowledge/ledger.js';
+import { clearTemplateCache } from '../lib/planning/generator.js';
 
 const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
@@ -51,14 +52,16 @@ function pausedAct() {
 }
 
 /**
- * Replace the extraction template with one that shows only the plans, and
- * the transport with one that records each prompt and answers with the next
- * queued answer.
+ * Replace the extraction template with one that shows only the plans (or
+ * the given template), and the transport with one that records each prompt
+ * and answers with the next queued answer.
  */
-function installExtraction(answers) {
+function installExtraction(answers, template = 'PLANS:\n{{PLANS}}') {
+    // The generator caches templates by name; each test brings its own.
+    clearTemplateCache();
     const sentPrompts = [];
     globalThis.fetch = async (url) => {
-        if (String(url).endsWith('extract-knowledge.txt')) return new Response('PLANS:\n{{PLANS}}');
+        if (String(url).endsWith('extract-knowledge.txt')) return new Response(template);
         throw new Error(`unexpected fetch ${url}`);
     };
     ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
@@ -343,6 +346,93 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: rulings', () =
     });
 });
 
+describe('the context message before the window in the extraction input', () => {
+    beforeEach(() => fillChat());
+    afterEach(resetChat);
+
+    it('lists the latest message before the new messages with its index', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        const sentPrompts = installExtraction([answerWithRulings([])], 'BEFORE:\n{{CONTEXT_MESSAGE}}');
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(sentPrompts, ['BEFORE:\n[2] Narrator: Neon hums overhead.']);
+    });
+
+    it('skips a hidden message for the next earlier one', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].is_system = true;
+        const sentPrompts = installExtraction([answerWithRulings([])], 'BEFORE:\n{{CONTEXT_MESSAGE}}');
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(sentPrompts, ['BEFORE:\n[1] Siren: I head out.']);
+    });
+});
+
+describe('updateKnowledgeAfterReply: a ruling given as a bare pick', () => {
+    const optionsText = '[OOC: Two ways on. 1) Siren works   the strip alone. 2) Aegis rides along as her defender.]';
+    beforeEach(() => fillChat('[OOC: Option one] Siren heads out.'));
+    afterEach(resetChat);
+
+    it('stores the pick with the option it picks, found in the context message before the window', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'siren works the strip alone.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(arcOf('siren001-full-id').rulings, [
+            { id: 'r1', text: 'Option one', chose: 'Siren works   the strip alone.', at: 3, messageId: chat[3].extra.story_arc_message_id },
+        ]);
+    });
+
+    it('accepts an option found in a narrator message inside the window', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 1;
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Siren works the strip alone.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(arcOf('siren001-full-id').rulings, [
+            { id: 'r1', text: 'Option one', chose: 'Siren works   the strip alone.', at: 3, messageId: chat[3].extra.story_arc_message_id },
+        ]);
+    });
+
+    it('drops the ruling when the option is found nowhere', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Siren leaves the city', at: 3 }])]);
+
+        const result = await updateKnowledgeAfterReply(4);
+
+        assert.equal(arcOf('siren001-full-id').rulings, undefined);
+        assert.deepEqual(result, { ledgerChanged: true, beatsChanged: false });
+    });
+
+    it('drops the ruling when the option is found only in a player\'s message', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].mes = optionsText;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Siren heads out.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.equal(arcOf('siren001-full-id').rulings, undefined);
+    });
+
+    it('drops the ruling when the option is found only in a hidden message before the window', async () => {
+        storeChat({ arcs: [sirenAct()] });
+        chat[2].mes = optionsText;
+        chat[2].is_system = true;
+        installExtraction([answerWithRulings([{ arcs: ['siren001'], quote: 'Option one', chose: 'Siren works the strip alone.', at: 3 }])]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.equal(arcOf('siren001-full-id').rulings, undefined);
+    });
+});
+
 describe('parseKnowledgeExtractionAnswer: rulings', () => {
     const base = '"present": ["Siren"], "newCharacters": [], "learned": []';
 
@@ -354,6 +444,18 @@ describe('parseKnowledgeExtractionAnswer: rulings', () => {
             { "arcs": ["siren001"], "quote": "no index" }
         ] }`);
         assert.deepEqual(answer.rulings, [{ arcs: ['siren001'], quote: 'Aegis is not her defender', at: 3 }]);
+    });
+
+    it('reads the chosen option of a bare pick; a null one reads as none, one of the wrong type drops the item', () => {
+        const answer = parseKnowledgeExtractionAnswer(`{ ${base}, "rulings": [
+            { "arcs": ["siren001"], "quote": "Option one", "chose": "Siren works the strip alone.", "at": 3 },
+            { "arcs": ["siren001"], "quote": "Aegis is not her defender", "chose": null, "at": 3 },
+            { "arcs": ["siren001"], "quote": "Lets go with 3", "chose": 3, "at": 3 }
+        ] }`);
+        assert.deepEqual(answer.rulings, [
+            { arcs: ['siren001'], quote: 'Option one', chose: 'Siren works the strip alone.', at: 3 },
+            { arcs: ['siren001'], quote: 'Aegis is not her defender', at: 3 },
+        ]);
     });
 
     it('reads a list of the wrong type as empty and keeps the rest of the answer', () => {
@@ -382,5 +484,22 @@ describe('extract-knowledge.txt: rulings', () => {
         'missing the exact quote');
         assert.ok(template.includes('Only the player\'s own out-of-character lines count, never the narrator\'s.'), 'missing the player-only rule');
         assert.ok(template.includes('"rulings": ['), 'missing the rulings list in the answer');
+    });
+
+    it('names the message before the window as already read, for the options a ruling picks from only', () => {
+        assert.ok(template.includes(
+            '== MESSAGE BEFORE THE NEW MESSAGES ==\n'
+            + 'Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, '
+            + 'when a new message of the player answers options offered in it.\n{{CONTEXT_MESSAGE}}\n\n== NEW MESSAGES =='),
+        'missing the read-only context message');
+    });
+
+    it('describes the chosen option of a bare pick, copied exactly from the narrator\'s message', () => {
+        assert.ok(template.includes(
+            '- "chose": only when the player\'s line is a bare pick of an option the narrator offered out of character ("Option one", "Lets go with 3"): '
+            + 'the option it picks, copied exactly from the narrator\'s message, which is the message before the new messages or one of the new messages. '
+            + 'Leave it out otherwise.'),
+        'missing the chosen option in task 7');
+        assert.ok(template.includes('"chose": "only for a bare pick: the option it picks, copied exactly"'), 'missing chose in the answer shape');
     });
 });
