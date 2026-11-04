@@ -45,7 +45,8 @@ StoryArc/
 │   │   │                       #   beatCount, lengthBand per tier), ARC_FOCUS,
 │   │   │                       #   createDefaultArc(); knowledge tracker:
 │   │   │                       #   defaultKnowledgeTrackerSettings (off, interval 1),
-│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'), HOLDER_HOW,
+│   │   │                       #   KNOWLEDGE_PROMPT_KEY ('story_arc_knowledge'),
+│   │   │                       #   NAMES_PROMPT_KEY ('story_arc_names'), HOLDER_HOW,
 │   │   │                       #   createEmptyKnowledgeLedger() — the ledger's schema
 │   │   └── settings.js         # loadSettings(), getSettings(), isEnabled(),
 │   │                           #   ensureChatState() (runs migrateArc() over arcs
@@ -257,6 +258,12 @@ StoryArc/
 │   │   │                       #   from, last) gives one to every read message,
 │   │   │                       #   messageIdOf(message) reads it; shared by the
 │   │   │                       #   ledger and planning/beat-completion.js
+│   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
+│   │   │                       #   the rule header + every name word on one line,
+│   │   │                       #   sorted by folded form; listTakenNames(ledger)
+│   │   │                       #   (folded form → first spelling, hyphenated words
+│   │   │                       #   whole and by part), nameWords(name), foldName();
+│   │   │                       #   reused by the name flag (#35) and planner (#36)
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
 │   │                           #   the order it runs, helpers after their first caller;
 │   │                           #   every ledger operation changes the stored ledger in
@@ -296,7 +303,8 @@ StoryArc/
 │   │                           #   first, autoTrack on); the re-extraction completes
 │   │                           #   beats like the update after a reply;
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
-│   │                           #   in-chat depth 1, system, '' while off;
+│   │                           #   then story_arc_names (names.js), both in-chat
+│   │                           #   depth 1, system, '' while off;
 │   │                           #   Build — buildKnowledgeBlock(ledger, chat): EVERYONE KNOWS
 │   │                           #   (public facts), then Knows lines with "shared only with"
 │   │                           #   for present + talked-about characters, KNOWLEDGE_LIST_CAP = 5;
@@ -445,8 +453,12 @@ StoryArc/
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
 │   │                           #   talked about by alias, Has told, shared-only-with,
 │   │                           #   cap, EVERYONE KNOWS, plan holders never printed)
-│   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock key, in-chat depth 1,
-│   │                           #   system role; '' while off or empty
+│   ├── test-knowledge-inject.js # Tests: injectKnowledgeBlock keys (knowledge, names),
+│   │                           #   in-chat depth 1, system role; '' while off or empty;
+│   │                           #   names text unchanged when scene and facts change
+│   ├── test-knowledge-names.js # Tests: buildTakenNamesBlock literal lists (titles,
+│   │                           #   hyphenated parts, aliases, repeats, diacritics,
+│   │                           #   particles, sort), byte stability; listTakenNames
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
@@ -557,7 +569,8 @@ lib/injection/
 
 lib/knowledge/
 ├── message-ids.js (imports: /scripts/utils.js uuidv4)
-└── ledger.js   (imports: message-ids.js, core/constants.js, core/settings.js,
+├── names.js    (imports: none)
+└── ledger.js   (imports: message-ids.js, names.js, core/constants.js, core/settings.js,
                  injection/pacing.js, injection/signals.js flushPendingMarks,
                  planning/beat-completion.js completeBeats + reopenCompletionsAt,
                  planning/storage.js, planning/generator.js callLlm + templates,
@@ -628,5 +641,5 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
-| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |
