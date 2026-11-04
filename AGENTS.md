@@ -59,6 +59,7 @@ StoryArc/
 │   │   ├── storage.js          # Arc CRUD on chat_metadata
 │   │   ├── replan.js           # mergeReplan: keep the situation, replace the road
 │   │   ├── arc-edit.js         # applyArcEdit, checkBeatEdit, removeBeat: hand edits in the Arc Manager
+│   │   ├── beat-completion.js  # completeBeats for both recognition paths; reopen on delete, swipe, edit, branch
 │   │   └── arc-preset.js       # The arc generation preset and connection profile
 │   ├── injection/
 │   │   ├── builder.js          # Every prompt section per arc by (tier, focus), budget trim, beat check
@@ -67,6 +68,7 @@ StoryArc/
 │   │   ├── pacing.js           # Phase calculation + directives
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
 │   ├── knowledge/
+│   │   ├── message-ids.js      # Story Arc message id on a chat message (ledger + beat completions)
 │   │   └── ledger.js           # The whole knowledge tracker: update, extraction, apply, rollback, block
 │   ├── ui/
 │   │   ├── settings-panel.js   # Extension drawer content

@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-01
+- **Last Updated:** 2026-11-04
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -19,18 +19,24 @@ StoryArc/
 │   │                           #   explains the [BEING RE-PLANNED] mark on existing arcs
 │   ├── generate-arc.txt        # Phase 2 prompt: produce JSON arc plan from analysis;
 │   │                           #   asks for both faces of each beat (pressure +
-│   │                           #   fulfillment) plus breather beats and unresolved
-│   │                           #   threads; {{TIER_BLOCK}} sets beat kind, count and
+│   │                           #   fulfillment, one on-screen moment: never a tally
+│   │                           #   of scenes or a chain of events) plus breather
+│   │                           #   beats and unresolved threads; {{TIER_BLOCK}} sets beat kind, count and
 │   │                           #   length band ("Scene beats only" tags the episode-only
 │   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; renders enabled
 │   │                           #   arc directives as a STANDING CONSTRAINTS section
 │   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
 │   │                           #   and pressures, list revealed secrets (re-plan),
-│   │                           #   link triggers to secrets; answers JSON (ADR-0006)
+│   │                           #   rewrite tally/chain fulfillments ({{FULFILLMENTS}},
+│   │                           #   kind "fulfillment") into one moment, link triggers
+│   │                           #   to secrets; answers JSON (ADR-0006)
 │   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
 │   │                           #   new characters, who learned which fact and how,
-│   │                           #   revealed secrets with what was heard; answers JSON
-│   └── detail-pass.txt         # Old detail-pass draft (not loaded)
+│   │                           #   revealed secrets with what was heard, and (task 6)
+│   │                           #   the {{DEVELOPMENTS}} the messages fulfilled
+│   │                           #   (ADR-0008); answers JSON
+│   └── detail-pass.txt         # Old detail-pass draft (not loaded); carries the
+│                               #   one-moment fulfillment rule too
 ├── lib/
 │   ├── core/
 │   │   ├── constants.js        # MODULE_NAME, INJECTION_HEADER, defaultSettings,
@@ -72,7 +78,9 @@ StoryArc/
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
 │   │   │                       #   merges with mergeReplan(reviseArc, arc), then
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
-│   │   │                       #   buildPlanCheckVariables() / applyPlanCheck();
+│   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
+│   │   │                       #   (also the open beats' fulfillments, rewrites
+│   │   │                       #   of completed beats ignored);
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId) marks the
 │   │   │                       #   re-planned arc in phase 1, omits it in phase 2;
 │   │   │                       #   callViaProfile() streams via
@@ -88,7 +96,8 @@ StoryArc/
 │   │   │                       #   callbacks report steps and streamed chars;
 │   │   │                       #   buildTierBlock(tier) → {{TIER_BLOCK}}: "== TIER: … =="
 │   │   │                       #   with beat kind, beat count, length band and the
-│   │   │                       #   milestone rules, all from TIER_TABLE;
+│   │   │                       #   milestone rules (a fulfillment is one on-screen
+│   │   │                       #   moment), all from TIER_TABLE;
 │   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: premise,
 │   │   │                       #   secrets (add-only), escalation, fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
@@ -120,11 +129,29 @@ StoryArc/
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
-│   │   │                       #   unlockAfter and unlocks beats with nothing left open
+│   │   │                       #   unlockAfter and unlocks beats with nothing left open;
+│   │   │                       #   completeBeat(beats, id) — completes and unlocks,
+│   │   │                       #   drops any completion record (hand toggle and
+│   │   │                       #   completeBeats)
+│   │   ├── beat-completion.js  # Beat completion by recognition and its rollback
+│   │   │                       #   (ADR-0008): completeBeats(completions, arcs) — the
+│   │   │                       #   rules both paths share (in-prompt marker, knowledge
+│   │   │                       #   extraction): active arc and beat only, one per arc
+│   │   │                       #   per message, lastFulfilledAt, unlocks, arc
+│   │   │                       #   completion, no promotion; records beat.completion
+│   │   │                       #   { at, messageId?, unlocked, arcCompleted,
+│   │   │                       #   lastFulfilledBefore } (message id read, never given);
+│   │   │                       #   reopenCompletionsFrom(firstGoneIndex) — delete,
+│   │   │                       #   swipe, branch load; records follow their message id;
+│   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
+│   │   │                       #   reopenCompletion() undoes unlocks, promotions and
+│   │   │                       #   arc completion; restoreLastFulfilledAt()
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   secrets (add-only, content-deduped), completed
-│   │                           #   beats, planted foreshadowing, fired triggers;
+│   │                           #   beats (their completion records without unlocked
+│   │                           #   and arcCompleted: withoutRoadInRecord), planted
+│   │                           #   foreshadowing, fired triggers;
 │   │                           #   replaces the rest; withUniqueIds() suffixes
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
@@ -136,8 +163,10 @@ StoryArc/
 │   │   │                       #   budget. buildSignalInjection(arcs) — separate injection
 │   │   │                       #   (IN_CHAT depth 0): ARC PACING phase brake for the
 │   │   │                       #   pacing clock (clock.js) always,
-│   │   │                       #   continuation guard + confidentiality when autoTrack,
-│   │   │                       #   BEAT CHECK + markers only while a beat is active.
+│   │   │                       #   continuation guard + confidentiality always,
+│   │   │                       #   PLANT CHECK with autoTrack on, BEAT CHECK with
+│   │   │                       #   autoTrack on and the knowledge tracker off, and
+│   │   │                       #   only while a beat is active (ADR-0008).
 │   │   │                       #   Every line here must be byte-identical from message
 │   │   │                       #   to message within a phase — the block sits at the end
 │   │   │                       #   of the prompt and any churn costs the whole cached
@@ -174,9 +203,10 @@ StoryArc/
 │   │   │                       #   act/saga → milestone section under BRING TO A HEAD
 │   │   │                       #   + one trailer sentence, no milestone named;
 │   │   │                       #   buildSignalDirective(arcs) — continuation guard,
-│   │   │                       #   confidentiality clause, BEAT CHECK listing every
-│   │   │                       #   active beat (all unfulfilled milestones on an
-│   │   │                       #   act/saga); paused arcs get no recognition lines;
+│   │   │                       #   confidentiality clause, BEAT CHECK (tracker off
+│   │   │                       #   only) listing every active beat (all unfulfilled
+│   │   │                       #   milestones on an act/saga); paused arcs get no
+│   │   │                       #   recognition lines; autoTrack gates both checks;
 │   │   │                       #   PLANT CHECK with :PLANTED / :FIRED lines for the
 │   │   │                       #   clues and triggers the arc's section shows
 │   │   │                       #   (showsPlanLists(arc) decides which arcs show them)
@@ -212,10 +242,9 @@ StoryArc/
 │   │                           #   dropPendingMark() for the Arc Manager's hand toggle
 │   │                           #   (bare or HTML-comment-wrapped);
 │   │                           #   processSignalResults(signals, arcs, messageIndex) —
-│   │                           #   marks ACTIVE beats complete (max one per arc per
-│   │                           #   message), stamps lastFulfilledAt = messageIndex,
-│   │                           #   unlocks gated beats, marks arcs complete; does NOT
-│   │                           #   promote;
+│   │                           #   queues marks, hands COMPLETE markers to
+│   │                           #   completeBeats (planning/beat-completion.js) with
+│   │                           #   at = messageIndex; does NOT promote;
 │   │                           #   promoteNextBeats(arcs) — episode: activates the next
 │   │                           #   pending beat; act/saga: activates every pending
 │   │                           #   milestone; called on USER_MESSAGE_RENDERED (one
@@ -223,17 +252,29 @@ StoryArc/
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── knowledge/
+│   │   ├── message-ids.js      # Story Arc's message id in a message's extra
+│   │   │                       #   (MESSAGE_ID_KEY): assignCoveredMessageIds(chat,
+│   │   │                       #   from, last) gives one to every read message,
+│   │   │                       #   messageIdOf(message) reads it; shared by the
+│   │   │                       #   ledger and planning/beat-completion.js
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
 │   │                           #   the order it runs, helpers after their first caller;
 │   │                           #   every ledger operation changes the stored ledger in
-│   │                           #   place and returns true when it changed:
+│   │                           #   place and returns true when it changed; the update
+│   │                           #   functions return { ledgerChanged, beatsChanged }:
 │   │                           #   Update after a reply — updateKnowledgeAfterReply(i),
 │   │                           #   every N replies, one at a time, stale answers dropped;
+│   │                           #   completeFulfilledBeats() after the apply →
+│   │                           #   completeBeats, then flushPendingMarks(i, true);
 │   │                           #   Extraction — extractKnowledge(ledger, chat, fromIndex,
 │   │                           #   persona) → parsed answer or null; listShownSecrets(arcs),
-│   │                           #   buildKnowledgeExtractionVariables(),
-│   │                           #   parseKnowledgeExtractionAnswer() (all or nothing),
-│   │                           #   resolveRevealedSecrets() (keeps the heard text);
+│   │                           #   listRecognisableBeats(arcs) → {{DEVELOPMENTS}}
+│   │                           #   (autoTrack on only), buildKnowledgeExtractionVariables(),
+│   │                           #   parseKnowledgeExtractionAnswer() (all or nothing,
+│   │                           #   except the fulfilled list: broken items dropped),
+│   │                           #   resolveRevealedSecrets() (keeps the heard text),
+│   │                           #   resolveFulfilledDevelopments() (listed active beats,
+│   │                           #   at inside the read messages);
 │   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
 │   │                           #   last): the teller of a told fact holds it too, an
 │   │                           #   at outside from..last falls back to last; given the
@@ -242,7 +283,8 @@ StoryArc/
 │   │                           #   nextLedgerId(prefix, entries);
 │   │                           #   Update log — recordKnowledgeUpdate() keeps the newest
 │   │                           #   KNOWLEDGE_UPDATE_LOG_CAP (20) records in updateLog:
-│   │                           #   update/reextract, skipped (no answer, chat changed,
+│   │                           #   update/reextract (beats as counts only: fulfilled,
+│   │                           #   beatsCompleted), skipped (no answer, chat changed,
 │   │                           #   ledger moved), rollback; knowledgeHoldings() +
 │   │                           #   holdingsChange() find what a step added or removed;
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
@@ -250,7 +292,9 @@ StoryArc/
 │   │                           #   with a message id follow their message) and
 │   │                           #   dropKnowledgeFrom(ledger, N) (user entries,
 │   │                           #   at null, stay), updateKnowledgeAfterSwipe(i),
-│   │                           #   updateKnowledgeAfterEdit(i);
+│   │                           #   updateKnowledgeAfterEdit(i) (reopenCompletionsAt
+│   │                           #   first, autoTrack on); the re-extraction completes
+│   │                           #   beats like the update after a reply;
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
 │   │                           #   in-chat depth 1, system, '' while off;
 │   │                           #   Build — buildKnowledgeBlock(ledger, chat): EVERYONE KNOWS
@@ -338,7 +382,9 @@ StoryArc/
 │   ├── test-builder.js         # Tests: plan-section beat visibility (active-only,
 │   │                           #   pressure w/ intention fallback, linger) + dispatch
 │   │                           #   by tier × focus + signal directive (recognition
-│   │                           #   phrasing, linger survival, paused arcs skipped)
+│   │                           #   phrasing, linger survival, paused arcs skipped,
+│   │                           #   autoTrack × tracker: guard and clause always,
+│   │                           #   no fulfillment text with the tracker on)
 │   │                           #   + section order and line-boundary trimming
 │   │                           #   + triggers tied to a secret (hidden until shown)
 │   │                           #   + prefix-cache stability (IN_PROMPT and in-chat
@@ -356,7 +402,8 @@ StoryArc/
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
-│   │                           #   add-only, id de-collision, tier change) + replanTiers +
+│   │                           #   add-only, id de-collision, tier change, kept
+│   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
 │   │                           #   buildArcSoFar + formatExistingArcs mark
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
@@ -418,7 +465,17 @@ StoryArc/
 │   ├── test-knowledge-settings.js # Tests: tracker switch, interval and status line in
 │   │                           #   the settings panel
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
-│   │                           #   only, links, echoed IF line) + buildPlanCheckVariables
+│   │                           #   only, links, echoed IF line, fulfillment rewrites of
+│   │                           #   open beats only) + buildPlanCheckVariables
+│   ├── test-beat-completion.js # Tests: completeBeats rules and completion record
+│   │                           #   (message id read, never given), reopenCompletionsFrom
+│   │                           #   (delete, swipe, branch, id follow, what reopening
+│   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
+│   │                           #   hand toggle carries no record
+│   ├── test-knowledge-beats.js # Tests: DEVELOPMENTS input, fulfilled parsing (lenient)
+│   │                           #   and resolving, beat completion by the update after a
+│   │                           #   reply, a swipe switch and an edit; marks flushed on a
+│   │                           #   completion; autoTrack off; log counts only
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
 │   │                           #   the injection header or markers, keeps OOC direction
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
@@ -441,11 +498,12 @@ StoryArc/
 │                               #   pressure-less milestone rejected)
 ├── CONTEXT.md                  # Glossary — the words for tier, focus, beats, recognition
 └── docs/
-    ├── adr/                    # Decision records 0001–0007 (tier/focus split,
+    ├── adr/                    # Decision records 0001–0008 (tier/focus split,
     │                           #   spotlight names no target, re-plan keeps the situation,
     │                           #   genre binds generation, marks wait for a prompt change,
     │                           #   plans are checked for give-aways, Story Arc tracks
-    │                           #   who knows what as an optional feature)
+    │                           #   who knows what as an optional feature, the narrator
+    │                           #   never sees a fulfillment)
     ├── architecture/
     │   ├── architecture.md     # System design documentation
     │   ├── code-index.md       # This file
@@ -477,6 +535,9 @@ lib/planning/
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
 ├── arc-edit.js    (imports: core/constants.js)
+├── beat-completion.js (imports: arc-edit.js completeBeat, storage.js,
+│                   core/settings.js, injection/pacing.js selectNonOptionalBeats,
+│                   knowledge/message-ids.js messageIdOf, /script.js)
 ├── replan.js      (imports: core/constants.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
@@ -489,12 +550,16 @@ lib/injection/
 ├── pacing.js   (imports: core/constants.js, core/settings.js, /script.js)
 ├── clock.js    (imports: planning/storage.js, core/settings.js, /script.js)
 ├── stamping.js (imports: clock.js, core/constants.js, core/settings.js, /script.js)
-├── signals.js  (imports: planning/storage.js, core/settings.js, pacing.js, /script.js)
+├── signals.js  (imports: planning/storage.js, planning/beat-completion.js completeBeats,
+│                core/settings.js, /script.js)
 └── builder.js  (imports: pacing.js, clock.js, core/settings.js,
                  core/constants.js, context/chat-history.js)
 
 lib/knowledge/
-└── ledger.js   (imports: core/constants.js, core/settings.js, injection/pacing.js,
+├── message-ids.js (imports: /scripts/utils.js uuidv4)
+└── ledger.js   (imports: message-ids.js, core/constants.js, core/settings.js,
+                 injection/pacing.js, injection/signals.js flushPendingMarks,
+                 planning/beat-completion.js completeBeats + reopenCompletionsAt,
                  planning/storage.js, planning/generator.js callLlm + templates,
                  planning/validation.js parseLlmJson, /script.js,
                  /scripts/extensions.js)
@@ -527,7 +592,8 @@ lib/ui/
 │                              /scripts/utils.js)
 └── spoiler-group.js (imports: nothing)
 
-index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
+index.js  (imports: core/settings.js, planning/storage.js,
+                    planning/beat-completion.js reopenCompletionsFrom, injection/builder.js,
                     injection/stamping.js, injection/signals.js,
                     knowledge/ledger.js, ui/settings-panel.js, ui/wand-menu.js,
                     ui/progress.js, /script.js)
@@ -550,15 +616,17 @@ index.js  (imports: core/settings.js, planning/storage.js, injection/builder.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/injection/signals.js` (`lastFulfilledAt`) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
-| Signal tracking | `lib/injection/signals.js` | `lib/planning/storage.js` |
+| Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
+| Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutRoadInRecord`) |
+| One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |
 | Arc manager | `lib/ui/arc-manager.js` | `lib/planning/storage.js`, `lib/injection/clock.js`, `wizard.js` |
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
-| Knowledge tracker | `lib/knowledge/ledger.js` | `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |
