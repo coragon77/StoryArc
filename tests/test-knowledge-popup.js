@@ -7,6 +7,7 @@ import {
     buildKnowledgeContent,
     deleteFact,
     editFactText,
+    keepCharacterName,
     removeFactHolder,
     renameCharacter,
     setCharacterAliases,
@@ -257,5 +258,148 @@ describe('buildKnowledgeContent', () => {
     it('shows each character with their aliases', () => {
         const text = textOf(buildKnowledgeContent(makeLedger()));
         assert.ok(text.includes('Gabriel Marin also: Aegis, Mr. Marin'));
+    });
+});
+
+/** Solomon Stern and Vera Chen, and Julian Stern, added at message 12 with a name Solomon has. */
+function makeFlaggedLedger() {
+    return {
+        characters: [
+            { id: 'solomon', name: 'Solomon Stern', aliases: ['Sol'] },
+            { id: 'vera', name: 'Vera Chen', aliases: [] },
+            {
+                id: 'julian',
+                name: 'Julian Stern',
+                aliases: [],
+                nameClash: { names: ['Stern'], at: 12, messageId: 'msg-julian' },
+            },
+        ],
+        facts: [
+            {
+                id: 'vault',
+                text: 'The vault code is 4471',
+                public: false,
+                holders: [{ characterId: 'solomon', how: 'witnessed', toldBy: null, at: 10 }],
+            },
+        ],
+        scene: { at: 12, present: ['solomon', 'julian'] },
+        lastUpdatedAt: 12,
+    };
+}
+
+/** The markup of the "Names to check" section, or '' when there is none. */
+function namesToCheckOf(html) {
+    const start = html.indexOf('id="story-arc-knowledge-names"');
+    if (start === -1) return '';
+    const end = html.indexOf('story-arc-spoiler-group', start);
+    return html.slice(start, end);
+}
+
+describe('buildKnowledgeContent: names to check', () => {
+    it('lists the flagged character, the shared name, who has it now and the message, before the spoiler groups', () => {
+        const html = buildKnowledgeContent(makeFlaggedLedger(), []);
+
+        const sectionStart = html.indexOf('id="story-arc-knowledge-names"');
+        assert.ok(sectionStart !== -1);
+        assert.ok(sectionStart < html.indexOf('story-arc-spoiler-group'));
+        const text = textOf(namesToCheckOf(html));
+        assert.ok(text.includes('Names to check'));
+        assert.ok(text.includes('Rename here first, then edit the chat text'));
+        assert.ok(text.includes('Julian Stern'));
+        assert.ok(text.includes('"Stern" is also a name of Solomon Stern'));
+        assert.ok(text.includes('named in message #12'));
+        assert.ok(text.includes('Rename'));
+        assert.ok(text.includes('Keep the name'));
+    });
+
+    it('shows no fact and no other character in the section', () => {
+        const text = textOf(namesToCheckOf(buildKnowledgeContent(makeFlaggedLedger(), [])));
+        assert.ok(!text.includes('vault'));
+        assert.ok(!text.includes('Vera'));
+    });
+
+    it('has no section when nothing is flagged', () => {
+        const html = buildKnowledgeContent(makeLedger(), []);
+        assert.ok(!html.includes('story-arc-knowledge-names'));
+        assert.ok(!textOf(html).includes('Names to check'));
+    });
+
+    it('escapes the names', () => {
+        const ledger = makeFlaggedLedger();
+        ledger.characters[0].name = 'Solomon <Stern>';
+        ledger.characters[2].name = 'Julian & Stern';
+        const section = namesToCheckOf(buildKnowledgeContent(ledger, []));
+        assert.ok(section.includes('Solomon &lt;Stern&gt;'));
+        assert.ok(section.includes('Julian &amp; Stern'));
+        assert.ok(!section.includes('<Stern>'));
+    });
+
+    it('lists every character who has the shared name now, and not a stored name nobody has any more', () => {
+        const ledger = makeFlaggedLedger();
+        ledger.characters.push({ id: 'ava', name: 'Ava Stern', aliases: [] });
+        ledger.characters[2].nameClash.names = ['Stern', 'Julian'];
+        const text = textOf(namesToCheckOf(buildKnowledgeContent(ledger, [])));
+        assert.ok(text.includes('"Stern" is also a name of Solomon Stern and Ava Stern'));
+        assert.ok(!text.includes('"Julian"'));
+    });
+
+    it('says the clash is gone when no one else has a shared name, and offers only to clear the flag', () => {
+        const ledger = makeFlaggedLedger();
+        ledger.characters[0].name = 'Solomon Vance';
+        const section = namesToCheckOf(buildKnowledgeContent(ledger, []));
+        const text = textOf(section);
+        assert.ok(text.includes('Julian Stern'));
+        assert.ok(text.includes('No other character has this name any more: the clash is gone.'));
+        assert.ok(text.includes('Clear the flag'));
+        assert.ok(!section.includes('story-arc-name-rename-btn'));
+        assert.ok(!text.includes('Keep the name'));
+        assert.ok(!text.includes('is also a name of'));
+    });
+
+    it('shows the message where it is now, found by its message id', () => {
+        const chatMessages = [];
+        for (let index = 0; index < 10; index++) chatMessages.push({ mes: `message ${index}`, extra: {} });
+        chatMessages[9].extra.story_arc_message_id = 'msg-julian';
+        const text = textOf(namesToCheckOf(buildKnowledgeContent(makeFlaggedLedger(), chatMessages)));
+        assert.ok(text.includes('named in message #9'));
+        assert.ok(!text.includes('#12'));
+    });
+
+    it('shows the stored message index when the message is no longer in the chat', () => {
+        const chatMessages = [{ mes: 'hello', extra: { story_arc_message_id: 'msg-other' } }];
+        const text = textOf(namesToCheckOf(buildKnowledgeContent(makeFlaggedLedger(), chatMessages)));
+        assert.ok(text.includes('named in message #12'));
+    });
+
+    it('marks the flagged row in the Characters group, and only that row', () => {
+        const html = buildKnowledgeContent(makeFlaggedLedger(), []);
+        const charactersGroup = html.slice(html.indexOf('id="story-arc-knowledge-characters"'), html.indexOf('id="story-arc-knowledge-facts"'));
+        const rows = charactersGroup.split('<li ').slice(1);
+        const julianRow = rows.find(row => row.includes('data-character-id="julian"'));
+        const solomonRow = rows.find(row => row.includes('data-character-id="solomon"'));
+        assert.ok(textOf(julianRow).includes('Julian Stern name to check'));
+        assert.ok(!textOf(solomonRow).includes('name to check'));
+    });
+});
+
+describe('keepCharacterName', () => {
+    it('removes the flag and keeps the name, the aliases and the other characters', () => {
+        const { ledger, error } = keepCharacterName(makeFlaggedLedger(), 'julian');
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters, [
+            { id: 'solomon', name: 'Solomon Stern', aliases: ['Sol'] },
+            { id: 'vera', name: 'Vera Chen', aliases: [] },
+            { id: 'julian', name: 'Julian Stern', aliases: [] },
+        ]);
+    });
+
+    it('leaves the ledger it was given untouched', () => {
+        const before = makeFlaggedLedger();
+        keepCharacterName(before, 'julian');
+        assert.deepEqual(before, makeFlaggedLedger());
+    });
+
+    it('refuses an unknown character', () => {
+        assert.equal(keepCharacterName(makeFlaggedLedger(), 'dougal').error, 'This character is no longer in the ledger.');
     });
 });

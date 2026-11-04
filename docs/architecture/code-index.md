@@ -392,10 +392,12 @@ StoryArc/
 │   │   │                       #   Knowledge button (tracker on) opens the knowledge popup
 │   │   ├── knowledge-popup.js  # showKnowledgePopup() — the knowledge ledger behind two
 │   │   │                       #   closed spoiler drawers (Characters, Facts):
-│   │   │                       #   buildKnowledgeContent(); pure ledger edits
+│   │   │                       #   buildKnowledgeContent(ledger, chatMessages), with the
+│   │   │                       #   "Names to check" section above the drawers while a
+│   │   │                       #   character carries nameClash; pure ledger edits
 │   │   │                       #   (addCharacter, renameCharacter, setCharacterAliases,
-│   │   │                       #   addFact, editFactText, deleteFact, setFactPublic,
-│   │   │                       #   addFactHolder, removeFactHolder) return
+│   │   │                       #   keepCharacterName, addFact, editFactText, deleteFact,
+│   │   │                       #   setFactPublic, addFactHolder, removeFactHolder) return
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
@@ -494,7 +496,8 @@ StoryArc/
 │   │                           #   waiting state, reports-waiting line, title and
 │   │                           #   premise editor (escaped, no plan text)
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
-│   │                           #   after ledgers), spoiler drawers start closed
+│   │                           #   after ledgers), spoiler drawers start closed, the
+│   │                           #   "Names to check" section and keepCharacterName (#48)
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
 │   │                           #   parsing (all or nothing, null keys)
 │   ├── test-knowledge-apply.js # Tests: applyExtractionAnswer (new characters, aliases,
@@ -672,10 +675,13 @@ lib/ui/
 │                              core/constants.js, progress.js, wizard.js,
 │                              knowledge-popup.js, spoiler-group.js, /scripts/popup.js,
 │                              /scripts/utils.js)
-├── knowledge-popup.js (imports: /script.js saveMetadata, core/settings.js,
+├── knowledge-popup.js (imports: /script.js chat + saveMetadata, core/settings.js,
 │                              core/constants.js HOLDER_HOW,
 │                              knowledge/ledger.js characterName + nextLedgerId,
-│                              spoiler-group.js, /scripts/popup.js,
+│                              knowledge/names.js listCharactersWithNames,
+│                              knowledge/message-ids.js messageIdOf,
+│                              spoiler-group.js, settings-panel.js
+│                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)
 └── spoiler-group.js (imports: nothing)
 
