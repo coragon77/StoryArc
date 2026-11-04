@@ -144,6 +144,20 @@ describe('lastFulfilledAt — set on fulfillment, shifted on resume', () => {
         assert.equal(isStalled(stored, 2363), true);
     });
 
+    it('a re-plan during the pause stamps the resume point: only the pause after the stamp counts', async () => {
+        chat_metadata.story_arc.arcs = [act()];
+        chat.length = 2290;
+        await pauseArc('act');
+        // Re-planned while paused, at chat length 2300.
+        chat_metadata.story_arc.arcs[0].replannedAt = 2300;
+        chat.length = 2305;
+        await resumeArc('act');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.equal(stored.replannedAt, 2305);
+        // The whole 15-message pause still shifts messageStart.
+        assert.equal(stored.messageStart, 2133);
+    });
+
     it('resuming an arc never re-planned writes no re-plan stamp', async () => {
         chat_metadata.story_arc.arcs = [act()];
         chat.length = 2290;
