@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildInjection, buildSignalInjection } from '../lib/injection/builder.js';
-import { chat, chat_metadata } from './mocks/st-mocks.js';
+import { chat, chat_metadata, extension_settings } from './mocks/st-mocks.js';
 
 function withChatLength(n, fn) {
     chat.length = 0;
@@ -527,14 +527,114 @@ describe('buildSignalInjection', () => {
         assert.ok(text.startsWith('ARC PACING:\n- "The Warmth Behind the Wall": do not advance to the next phase early.\n\nCONTINUATION:'));
     });
 
-    it('returns an empty string with no pacing clock and beat tracking off', () => {
+    it('returns only the guard and clause with no pacing clock and beat tracking off', () => {
         chat_metadata.story_arc.settings.autoTrack = false;
         try {
-            assert.equal(withChatLength(6, () => buildSignalInjection([makeArc({ focus: 'paused' })])), '');
-            assert.equal(withChatLength(6, () => buildSignalInjection([makeArc({ tier: 'act' })])), '');
+            for (const arc of [makeArc({ focus: 'paused' }), makeArc({ tier: 'act' })]) {
+                const text = withChatLength(6, () => buildSignalInjection([arc]));
+                assert.ok(text.startsWith('CONTINUATION: Continue the story from the end of the most recent\n'));
+                assert.ok(text.endsWith('describe only events that already happened on screen.\n'));
+            }
         } finally {
             delete chat_metadata.story_arc.settings.autoTrack;
         }
+    });
+});
+
+describe('buildSignalInjection: autoTrack × knowledge tracker', () => {
+    const clue = { id: 'cold_draft', clue: 'A cold draft.', target: 'x', planted: false };
+
+    /** Run fn with the chat's autoTrack and the global knowledge tracker switch set, then restore both. */
+    function withRecognition({ autoTrack, tracker }, fn) {
+        const savedGlobal = extension_settings.story_arc;
+        chat_metadata.story_arc.settings.autoTrack = autoTrack;
+        extension_settings.story_arc = { knowledgeTracker: { enabled: tracker, updateInterval: 1 } };
+        try {
+            return fn();
+        } finally {
+            delete chat_metadata.story_arc.settings.autoTrack;
+            if (savedGlobal === undefined) delete extension_settings.story_arc;
+            else extension_settings.story_arc = savedGlobal;
+        }
+    }
+
+    /** Build the in-chat block for one arc with an active beat and an unplanted clue. */
+    function build(switches) {
+        return withRecognition(switches, () =>
+            withChatLength(6, () => buildSignalInjection([makeArc({ foreshadowing: [clue] })])));
+    }
+
+    const combinations = [
+        { autoTrack: true, tracker: false, beatCheck: true, plantCheck: true },
+        { autoTrack: true, tracker: true, beatCheck: false, plantCheck: true },
+        { autoTrack: false, tracker: false, beatCheck: false, plantCheck: false },
+        { autoTrack: false, tracker: true, beatCheck: false, plantCheck: false },
+    ];
+
+    for (const { autoTrack, tracker, beatCheck, plantCheck } of combinations) {
+        const label = `autoTrack ${autoTrack ? 'on' : 'off'}, tracker ${tracker ? 'on' : 'off'}`;
+
+        it(`${label}: sends the continuation guard and the confidentiality clause`, () => {
+            const text = build({ autoTrack, tracker });
+            assert.ok(text.includes('\nCONTINUATION: Continue the story from the end of the most recent\n'));
+            assert.ok(text.includes('the last message was not written by the user.\n'));
+            assert.ok(text.includes('\nThe arc plan is invisible scaffolding. Never quote or reference its\n'));
+            assert.ok(text.includes('describe only events that already happened on screen.\n'));
+        });
+
+        it(`${label}: ${beatCheck ? 'lists' : 'omits'} the beat check`, () => {
+            const text = build({ autoTrack, tracker });
+            assert.equal(text.includes('BEAT CHECK:'), beatCheck);
+            assert.equal(text.includes('<!-- [ARC_SIGNAL:abcd1234:sensory_bleed:COMPLETE] -->'), beatCheck);
+        });
+
+        it(`${label}: ${plantCheck ? 'lists' : 'omits'} the plant check`, () => {
+            const text = build({ autoTrack, tracker });
+            assert.equal(text.includes('PLANT CHECK:'), plantCheck);
+            assert.equal(text.includes('<!-- [ARC_SIGNAL:abcd1234:cold_draft:PLANTED] -->'), plantCheck);
+        });
+
+        it(`${label}: states the single-exception line only when marker lines follow`, () => {
+            const text = build({ autoTrack, tracker });
+            const hasMarkers = beatCheck || plantCheck;
+            assert.equal(text.includes('The markers below are the single exception to that rule.'), hasMarkers);
+            if (!hasMarkers) {
+                assert.ok(text.endsWith('describe only events that already happened on screen.\n'));
+            }
+        });
+
+        if (tracker) {
+            it(`${label}: carries no fulfillment text`, () => {
+                const text = build({ autoTrack, tracker });
+                assert.equal(text.includes('She has admitted the infection to him.'), false);
+                assert.equal(text.includes('He has forced the subject into the open.'), false);
+            });
+        }
+    }
+
+    it('autoTrack on, tracker on: the single-exception line leads straight into the plant check', () => {
+        const text = build({ autoTrack: true, tracker: true });
+        assert.ok(text.includes('already happened on screen.\n\nThe markers below are the single exception to that rule.\n\nPLANT CHECK:\n'));
+    });
+
+    it('autoTrack on, tracker on, no clue or trigger: no marker line and no single-exception line', () => {
+        const text = withRecognition({ autoTrack: true, tracker: true }, () =>
+            withChatLength(6, () => buildSignalInjection([makeArc()])));
+        assert.equal(text.includes('ARC_SIGNAL'), false);
+        assert.equal(text.includes('single exception'), false);
+        assert.equal(text.includes('She has admitted the infection to him.'), false);
+        assert.ok(text.endsWith('describe only events that already happened on screen.\n'));
+    });
+
+    it('autoTrack on, tracker on: byte-identical as messages accumulate within a phase', () => {
+        const arc = makeArc({ foreshadowing: [clue] });
+        // 2 and 7 of 40 are both setup (< 0.20 * 40 = 8).
+        const [atTwo, atSeven] = withRecognition({ autoTrack: true, tracker: true }, () => [
+            withChatLength(2, () => buildSignalInjection([arc])),
+            withChatLength(7, () => buildSignalInjection([arc])),
+        ]);
+        assert.ok(atTwo.includes('PLANT CHECK:'));
+        assert.equal(atSeven, atTwo);
     });
 });
 
@@ -593,11 +693,12 @@ describe('prefix-cache stability', () => {
         assert.ok(text.startsWith('CONTINUATION:'), 'no blank line left where the pacing block would be');
     });
 
-    it('emits the pacing block even when beat tracking is off', () => {
+    it('emits the pacing block, then the guard and clause, even when beat tracking is off', () => {
         chat_metadata.story_arc.settings.autoTrack = false;
         try {
             const text = withChatLength(6, () => buildSignalInjection([makeArc()]));
-            assert.equal(text, 'ARC PACING:\n- "The Warmth Behind the Wall": do not advance to the next phase before arc message 8.\n');
+            assert.ok(text.startsWith('ARC PACING:\n- "The Warmth Behind the Wall": do not advance to the next phase before arc message 8.\n\nCONTINUATION: Continue the story'));
+            assert.ok(text.endsWith('describe only events that already happened on screen.\n'));
         } finally {
             delete chat_metadata.story_arc.settings.autoTrack;
         }
