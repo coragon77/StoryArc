@@ -453,7 +453,7 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 4 }], [arc]);
         await completeBeats([{ arcId: 'act00001', beatId: 'm2', at: 6 }], [arc]);
 
-        assert.equal(reopenCompletionsAt(4), true);
+        assert.deepEqual(reopenCompletionsAt(4), [{ arcId: 'act00001-full-id', beatId: 'm1' }]);
         assert.deepEqual(statuses(arc), ['active', 'completed', 'active']);
         assert.equal(arc.beats[0].completion, undefined);
         assert.equal(arc.beats[1].completion.at, 6);
@@ -465,7 +465,7 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         const [arc] = storeArcs(act());
         await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 5 }], [arc]);
 
-        assert.equal(reopenCompletionsAt(5), true);
+        assert.deepEqual(reopenCompletionsAt(5), [{ arcId: 'act00001-full-id', beatId: 'm1' }]);
         assert.equal(arc.lastFulfilledAt, 2);
     });
 
@@ -473,7 +473,7 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         const [arc] = storeArcs(episode());
         await completeBeats([{ arcId: 'epi00001', beatId: 'b1', at: 5 }], [arc]);
 
-        assert.equal(reopenCompletionsAt(5), true);
+        assert.deepEqual(reopenCompletionsAt(5), [{ arcId: 'epi00001-full-id', beatId: 'b1' }]);
         assert.deepEqual(statuses(arc), ['active', 'locked', 'pending', 'pending']);
     });
 
@@ -481,8 +481,8 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         const [arc] = storeArcs(act());
         await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 4 }], [arc]);
 
-        assert.equal(reopenCompletionsAt(5), false);
-        assert.equal(reopenCompletionsAt(3), false);
+        assert.deepEqual(reopenCompletionsAt(5), []);
+        assert.deepEqual(reopenCompletionsAt(3), []);
         assert.deepEqual(statuses(arc), ['completed', 'active', 'active']);
     });
 
@@ -492,8 +492,8 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         // A message before it was deleted: the record still says 6, its message m6 is now at 5.
         chat.splice(2, 1);
 
-        assert.equal(reopenCompletionsAt(6), false);
-        assert.equal(reopenCompletionsAt(5), true);
+        assert.deepEqual(reopenCompletionsAt(6), []);
+        assert.deepEqual(reopenCompletionsAt(5), [{ arcId: 'act00001-full-id', beatId: 'm1' }]);
         assert.equal(arc.beats[0].status, 'active');
     });
 
@@ -502,7 +502,7 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         const [arc] = storeArcs(act());
         await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 6 }], [arc]);
 
-        assert.equal(reopenCompletionsAt(6), true);
+        assert.deepEqual(reopenCompletionsAt(6), [{ arcId: 'act00001-full-id', beatId: 'm1' }]);
         assert.equal(arc.beats[0].status, 'active');
     });
 
@@ -511,7 +511,7 @@ describe('reopenCompletionsAt — an edit of one message', () => {
         arc.beats[0].status = 'completed';
         storeArcs(arc);
 
-        assert.equal(reopenCompletionsAt(4), false);
+        assert.deepEqual(reopenCompletionsAt(4), []);
         assert.equal(arc.beats[0].status, 'completed');
     });
 });

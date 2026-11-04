@@ -439,6 +439,69 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: beat recogniti
         assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 0);
     });
 
+    it('an edit of an older message with nothing reopened offers no beats', async () => {
+        chat.push(
+            { is_user: true, is_system: false, name: 'Ellie', mes: 'Then we wait.', extra: { story_arc_message_id: 'm5' } },
+            { is_user: false, is_system: false, name: 'Noor', mes: 'At midnight the crane rolls.', extra: { story_arc_message_id: 'm6' } },
+        );
+        storeChat({ arcs: [craneAct(), driveAct()], lastUpdatedAt: 6 });
+        const sentPrompts = installExtraction([answerFulfilling({ developmentId: 'crane001:brody_refuses', at: 4 })]);
+
+        const result = await updateKnowledgeAfterEdit(4);
+
+        assert.deepEqual(sentPrompts, ['DEVELOPMENTS:\n(none)']);
+        assert.deepEqual(result, { ledgerChanged: true, beatsChanged: false });
+        // Active now, but the answer cannot complete it at the older message.
+        assert.equal(beatOf('crane001-full-id', 'brody_refuses').status, 'active');
+    });
+
+    it('an edit of an older message offers only the beats reopened at it', async () => {
+        chat.push(
+            { is_user: true, is_system: false, name: 'Ellie', mes: 'Then we wait.', extra: { story_arc_message_id: 'm5' } },
+            { is_user: false, is_system: false, name: 'Noor', mes: 'At midnight the crane rolls.', extra: { story_arc_message_id: 'm6' } },
+        );
+        storeChat({ arcs: [craneAct(), driveAct()], lastUpdatedAt: 6 });
+        await completeBeats([{ arcId: 'crane001', beatId: 'brody_refuses', at: 4 }], chat_metadata.story_arc.arcs);
+        const sentPrompts = installExtraction([answerFulfilling(
+            { developmentId: 'crane001:crane_moved', at: 4 },
+            { developmentId: 'drive002:drive_handed', at: 4 },
+        )]);
+
+        await updateKnowledgeAfterEdit(4);
+
+        assert.deepEqual(sentPrompts, [[
+            'DEVELOPMENTS:',
+            'Arc "The Crane Drop":',
+            '- [crane001:brody_refuses] Brody refuses an order from Julian in front of the crew',
+            '  done:',
+            '  - Julian has shown the crew the forged permit',
+        ].join('\n')]);
+        // Beats that were not reopened cannot complete at the edited message.
+        assert.equal(beatOf('crane001-full-id', 'crane_moved').status, 'active');
+        assert.equal(beatOf('drive002-full-id', 'drive_handed').status, 'active');
+    });
+
+    it('an edit of the last message offers every active beat', async () => {
+        storeChat({ arcs: [craneAct(), driveAct()], lastUpdatedAt: 4 });
+        const sentPrompts = installExtraction([answerFulfilling({ developmentId: 'drive002:drive_handed', at: 4 })]);
+
+        const result = await updateKnowledgeAfterEdit(4);
+
+        assert.deepEqual(sentPrompts, [[
+            'DEVELOPMENTS:',
+            'Arc "The Crane Drop":',
+            '- [crane001:brody_refuses] Brody refuses an order from Julian in front of the crew',
+            '- [crane001:crane_moved] The crane is moved at night',
+            '  done:',
+            '  - Julian has shown the crew the forged permit',
+            '',
+            'Arc "The Drive":',
+            '- [drive002:drive_handed] Vera hands Ellie the flash drive',
+        ].join('\n')]);
+        assert.deepEqual(result, { ledgerChanged: true, beatsChanged: true });
+        assert.equal(beatOf('drive002-full-id', 'drive_handed').status, 'completed');
+    });
+
     it('with autoTrack off an edit keeps the completion', async () => {
         storeChat({ arcs: [craneAct()], autoTrack: false, lastUpdatedAt: 4 });
         await completeBeats([{ arcId: 'crane001', beatId: 'brody_refuses', at: 4 }], chat_metadata.story_arc.arcs);
