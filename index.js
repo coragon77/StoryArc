@@ -21,7 +21,8 @@ import { injectKnowledgeBlock, updateKnowledgeAfterReply, rollBackKnowledgeFrom,
 import { listCharactersWithNames } from './lib/knowledge/names.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { reopenCompletionsFrom, removeRulingsFrom } from './lib/planning/beat-completion.js';
-import { renderSettingsPanel, setupSettingsPanelEvents, updateKnowledgeStatus } from './lib/ui/settings-panel.js';
+import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
+import { updateKnowledgeStatus } from './lib/ui/knowledge-status.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
 

@@ -70,12 +70,14 @@ function createFakeJquery() {
 const fake = createFakeJquery();
 let settingsPanel;
 let loadSettings;
+let updateKnowledgeStatus;
 
 before(async () => {
     globalThis.$ = fake.fakeJquery;
     globalThis.document = fake.fakeDocument;
     settingsPanel = await import('../lib/ui/settings-panel.js');
     ({ loadSettings } = await import('../lib/core/settings.js'));
+    ({ updateKnowledgeStatus } = await import('../lib/ui/knowledge-status.js'));
 });
 
 after(() => {
@@ -174,7 +176,7 @@ describe('knowledge tracker status line', () => {
         loadSettings();
         chat_metadata.story_arc = { arcs: [], knowledge: knowledgeLedger({ lastUpdatedAt: 41 }) };
 
-        settingsPanel.updateKnowledgeStatus();
+        updateKnowledgeStatus();
 
         assert.equal(fake.textById[statusId], 'Knowledge tracker is off.');
     });
@@ -184,7 +186,7 @@ describe('knowledge tracker status line', () => {
         loadSettings();
         chat_metadata.story_arc = { arcs: [], knowledge: knowledgeLedger({ lastUpdatedAt: 41 }) };
 
-        settingsPanel.updateKnowledgeStatus();
+        updateKnowledgeStatus();
 
         assert.equal(fake.textById[statusId], 'Ledger last updated at message #41.');
     });
@@ -194,7 +196,7 @@ describe('knowledge tracker status line', () => {
         loadSettings();
         chat_metadata.story_arc = { arcs: [] };
 
-        settingsPanel.updateKnowledgeStatus();
+        updateKnowledgeStatus();
 
         assert.equal(fake.textById[statusId], 'Ledger is empty: not updated yet.');
     });
@@ -203,11 +205,11 @@ describe('knowledge tracker status line', () => {
         extension_settings.story_arc = { knowledgeTracker: { enabled: true, updateInterval: 1 } };
         loadSettings();
         chat_metadata.story_arc = { arcs: [], knowledge: knowledgeLedger({ lastUpdatedAt: 41 }) };
-        settingsPanel.updateKnowledgeStatus();
+        updateKnowledgeStatus();
 
         // ST replaces chat_metadata's contents when another chat loads.
         chat_metadata.story_arc = { arcs: [], knowledge: knowledgeLedger({ lastUpdatedAt: 7 }) };
-        settingsPanel.updateKnowledgeStatus();
+        updateKnowledgeStatus();
 
         assert.equal(fake.textById[statusId], 'Ledger last updated at message #7.');
     });

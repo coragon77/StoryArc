@@ -263,7 +263,7 @@ describe('updateKnowledgeStatus counts the names to check', () => {
             text(value) { status.text = value; status.html = null; },
             html(value) { status.html = value; status.text = null; },
         });
-        ({ updateKnowledgeStatus } = await import('../lib/ui/settings-panel.js'));
+        ({ updateKnowledgeStatus } = await import('../lib/ui/knowledge-status.js'));
     });
 
     after(() => {

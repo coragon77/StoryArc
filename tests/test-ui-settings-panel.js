@@ -1,5 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 /**
  * A stand-in for jQuery that keeps only what setupSettingsPanelEvents touches:
@@ -80,5 +81,12 @@ describe('setupSettingsPanelEvents', () => {
             'click .story-arc-stall-btn',
             'mousedown #story-arc-profile',
         ]);
+    });
+});
+
+describe('the Knowledge popup and the settings panel import no cycle', () => {
+    it('knowledge-popup.js imports nothing from settings-panel.js, which opens the popup', () => {
+        const popupSource = readFileSync(new URL('../lib/ui/knowledge-popup.js', import.meta.url), 'utf8');
+        assert.equal(popupSource.includes('from \'./settings-panel.js\''), false);
     });
 });

@@ -77,6 +77,7 @@ StoryArc/
 │   │   ├── wizard.js           # Arc planning wizard popup
 │   │   ├── arc-manager.js      # Arc list + controls popup
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
+│   │   ├── knowledge-status.js # The tracker's status line in the drawer (popup, panel, index.js)
 │   │   ├── spoiler-group.js    # The collapsed spoiler drawer (Arc Manager, Knowledge popup)
 │   │   └── progress.js         # Compact progress display
 │   └── css/
