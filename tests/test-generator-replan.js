@@ -136,3 +136,94 @@ describe('generateArc: a re-plan proposes the premise', () => {
         assert.equal('proposedPremise' in result.arc, false);
     });
 });
+
+describe('generateArc: a re-plan follows the stored rulings', () => {
+    beforeEach(() => {
+        clearTemplateCache();
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        clearTemplateCache();
+    });
+
+    /** The stored episode with two rulings, one answered by an earlier re-plan. */
+    function episodeWithRulings() {
+        return {
+            ...storedEpisode(),
+            rulings: [
+                { id: 'r1', text: 'Mira never pays alone.', at: 120, answeredAt: 125 },
+                { id: 'r2', text: 'The creditor stays offscreen.', at: 128, messageId: 'm128' },
+            ],
+        };
+    }
+
+    it('sends both rulings to Phase 1, Phase 2 and the plan check, with no call added', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+        const context = { ...harvestedContext, existingArcs: [storedEpisode()] };
+
+        const result = await generateArc(context, 'She pays what she owes.', {}, { reviseArc: episodeWithRulings() });
+
+        assert.equal(result.error, null);
+        assert.equal(sentPrompts.length, 3);
+
+        const [phase1Prompt, phase2Prompt, planCheckPrompt] = sentPrompts;
+        assert.ok(phase1Prompt.includes(
+            '[SPOTLIGHT] [BEING RE-PLANNED] "The Quiet Debt" — A debt comes due, and Mira must pay it alone.\n'
+            + 'Overruled by the player:\n'
+            + '- "Mira never pays alone."\n'
+            + '- "The creditor stays offscreen."',
+        ));
+        assert.ok(phase1Prompt.includes('Its premise is established too, except where the player\'s rulings listed under it ("Overruled by the player:") overrule it'));
+
+        assert.ok(phase2Prompt.includes(
+            'The player\'s rulings (binding: they override the premise and the earlier plan):\n'
+            + '- "Mira never pays alone."\n'
+            + '- "The creditor stays offscreen."',
+        ));
+        assert.ok(phase2Prompt.includes('Write a premise for the arc as it stands now that follows every one of the player\'s rulings below'));
+
+        assert.ok(planCheckPrompt.includes(
+            'Never rewrite something because it carries them out.\n'
+            + 'Premise: Mira no longer pays alone: her sister stands with her against the debt.\n'
+            + 'Direction: She pays what she owes.\n'
+            + 'Rulings:\n'
+            + '- "Mira never pays alone."\n'
+            + '- "The creditor stays offscreen."\n',
+        ));
+        // The plan check still runs and its rewrites still apply.
+        assert.equal(result.arc.triggers.find(trigger => trigger.id === 'flees').action, 'the guard follows at a distance');
+        assert.deepEqual(result.arc.rulings, [
+            { id: 'r1', text: 'Mira never pays alone.', at: 120, answeredAt: 125 },
+            { id: 'r2', text: 'The creditor stays offscreen.', at: 128, messageId: 'm128' },
+        ]);
+    });
+
+    it('sends a ruling the player removed in step 2 to no call', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+        // The wizard hands the re-plan arc over without the removed ruling.
+        const reviseArc = { ...episodeWithRulings(), rulings: [{ id: 'r2', text: 'The creditor stays offscreen.', at: 128 }] };
+        const context = { ...harvestedContext, existingArcs: [episodeWithRulings()] };
+
+        const result = await generateArc(context, '', {}, { reviseArc });
+
+        assert.equal(result.error, null);
+        assert.equal(sentPrompts.length, 3);
+        for (const prompt of sentPrompts) {
+            assert.ok(!prompt.includes('Mira never pays alone.'));
+            assert.ok(prompt.includes('"The creditor stays offscreen."'));
+        }
+    });
+
+    it('lets the plan check of a new arc read no rulings', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        await generateArc(harvestedContext, '');
+
+        assert.ok(sentPrompts[2].includes('Rulings:\n(none)\n'));
+        assert.ok(!sentPrompts[1].includes('rulings'));
+    });
+});

@@ -82,8 +82,12 @@ StoryArc/
 │   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
 │   │   │                       #   (also the open beats' fulfillments, rewrites
 │   │   │                       #   of completed beats ignored);
-│   │   │                       #   formatExistingArcs(arcs, reviseArcId) marks the
-│   │   │                       #   re-planned arc in phase 1, omits it in phase 2;
+│   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
+│   │   │                       #   marks the re-planned arc (its rulings under it as
+│   │   │                       #   "Overruled by the player:") in phase 1,
+│   │   │                       #   omits it in phase 2; formatRulings() prints
+│   │   │                       #   rulings for all three calls (also {{RULINGS}}
+│   │   │                       #   in the plan check);
 │   │   │                       #   callViaProfile() streams via
 │   │   │                       #   ConnectionManagerRequestService when a profile
 │   │   │                       #   is set; callBackendDirectly() POSTs
@@ -101,7 +105,9 @@ StoryArc/
 │   │   │                       #   moment), all from TIER_TABLE;
 │   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
 │   │   │                       #   premise + "write a premise for the arc as it stands
-│   │   │                       #   now", secrets (add-only), escalation, fulfilled beats as
+│   │   │                       #   now" (following every ruling, listed as binding,
+│   │   │                       #   when the arc has rulings), secrets (add-only),
+│   │   │                       #   escalation, fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
 │   │   │                       #   callLlm() exported for the knowledge extraction
@@ -164,11 +170,13 @@ StoryArc/
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
-│   │                           #   applyReplan(merged, chatLength, { premise }) →
+│   │                           #   applyReplan(merged, chatLength, { premise,
+│   │                           #   removedRulingIds }) →
 │   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
 │   │                           #   deep copy with the chosen premise trimmed, no
 │   │                           #   proposedPremise; a blank premise refused
-│   │                           #   each open ruling marked answeredAt = chatLength
+│   │                           #   the removed rulings dropped, each open ruling
+│   │                           #   marked answeredAt = chatLength, answered ones kept
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
 │   │   │                       #   one section per arc (private builders below), spotlight first,
@@ -345,9 +353,12 @@ StoryArc/
 │   │   │                       #   generation view (append-only step log with elapsed
 │   │   │                       #   times, live streamed-chars ticker, active profile
 │   │   │                       #   name) → review. Revise mode: tier/direction/title/
-│   │   │                       #   premise pre-filled, reviseArcWithEdits() feeds
+│   │   │                       #   premise pre-filled, "Your rulings" list with remove
+│   │   │                       #   controls (buildRulingsList(), removals held until
+│   │   │                       #   apply), reviseArcWithEdits() feeds
 │   │   │                       #   generateArc; review shows the Premise choice
-│   │   │                       #   (buildPremiseChoice(), current vs. proposed, plain
+│   │   │                       #   (buildPremiseChoice(), current vs. proposed, the
+│   │   │                       #   proposal pre-selected when rulings were passed, plain
 │   │   │                       #   view), "Apply re-plan" writes via updateArc;
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
@@ -435,11 +446,15 @@ StoryArc/
 │   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
 │   │                           #   buildArcSoFar + formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)
+│   ├── test-replan-rulings.js  # Tests: the rulings in formatExistingArcs, buildArcSoFar,
+│   │                           #   buildPlanCheckVariables; mergeReplan carries them;
+│   │                           #   applyReplan drops removed ones, answers open ones
 │   ├── test-generator-replan.js # Tests: generateArc through the profile mock with the
 │   │                           #   real templates: a re-plan's Phase 2 asks for a premise,
 │   │                           #   the result keeps the stored one with the proposal,
 │   │                           #   the plan check reads the proposal; a new plan's
-│   │                           #   premise contract
+│   │                           #   premise contract; the rulings reach Phase 1, Phase 2
+│   │                           #   and the plan check, a removed one none
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
@@ -658,7 +673,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
 | Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored) |
-| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them), `lib/ui/settings-panel.js` (click handler) |
+| Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `resolveRulings`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, task 7), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them, drops the removed ones), `lib/planning/generator.js` (`formatRulings`: the re-plan's three calls), `lib/ui/wizard.js` (`buildRulingsList`, step 2), `lib/ui/settings-panel.js` (click handler) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |

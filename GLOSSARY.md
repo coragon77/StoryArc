@@ -99,7 +99,7 @@ The story having moved past the state an episode's remaining scene beats assume,
 _Avoid_: derail, drift
 
 **Ruling**:
-An out-of-character line of the player that contradicts an arc's premise or one of its open pressures. Noticed by the knowledge extraction, stored on the arc in the player's words, and shown on its progress card until the arc is re-planned. A request about the current scene, or new direction that contradicts nothing in the plan, is not a ruling. Only noticed while the knowledge tracker is on.
+An out-of-character line of the player that contradicts an arc's premise or one of its open pressures. Noticed by the knowledge extraction, stored on the arc in the player's words, and shown on its progress card until the arc is re-planned. Every re-plan of the arc, the first and every later one, follows its rulings as binding; only the player removes one. A request about the current scene, or new direction that contradicts nothing in the plan, is not a ruling. Only noticed while the knowledge tracker is on.
 _Avoid_: correction (the ledger's word for a retracted fact), OOC note, instruction
 
 **Stall**:
