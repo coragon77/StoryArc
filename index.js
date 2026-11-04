@@ -30,6 +30,17 @@ import { updateProgress } from './lib/ui/progress.js';
  * Before each LLM call: inject active arc plans and the knowledge block into the prompt.
  */
 async function onGenerationStarted() {
+    injectStoryArcPrompts();
+}
+
+/**
+ * Set every Story Arc prompt from the current chat and arc state: the arc
+ * plan, the in-chat signal directive and the knowledge block. Before each
+ * generation, and again after messages were deleted (onMessageDeleted),
+ * because a regenerate deletes the old reply only after GENERATION_STARTED.
+ * Exported for the tests.
+ */
+export function injectStoryArcPrompts() {
     // Always set the prompt, empty when disabled or no active arcs —
     // otherwise a previously set injection would linger after the last
     // arc completes or the extension is turned off.
@@ -159,14 +170,25 @@ async function onUserMessageRendered() {
  * index on is gone, and so is what its queued marks report, the beats it
  * completed and what the knowledge ledger learned from it. A completion
  * from a message deleted in the middle of the chat goes by its message id.
+ * Then the prompts are set again from the state after the deletion.
+ * Exported for the tests.
  * @param {number} chatLength - Chat length after the deletion
  */
-async function onMessageDeleted(chatLength) {
+export async function onMessageDeleted(chatLength) {
     const marksDropped = dropPendingMarksFrom(chatLength);
     const completionsReopened = reopenCompletionsFrom(chatLength);
     if (completionsReopened) updateProgress();
     if (marksDropped || completionsReopened) await saveMetadata();
     if (await rollBackKnowledgeFrom(chatLength)) updateKnowledgeStatus();
+
+    // A regenerate fires GENERATION_STARTED, where the prompts are built,
+    // while the old reply is still in the chat, and deletes that reply only
+    // after (script.js, Generate). ST awaits each MESSAGE_DELETED listener
+    // before it assembles the prompt, so the rebuild runs here, inside the
+    // handler and after the drops and rollbacks above: the new reply's prompt
+    // shows the reopened beats, the rolled-back knowledge and the chat
+    // length without the deleted reply.
+    injectStoryArcPrompts();
 }
 
 /**

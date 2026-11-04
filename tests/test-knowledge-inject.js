@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, chat_metadata, chat, extensionPromptCalls } from '../tests/mocks/st-mocks.js';
-import { injectKnowledgeBlock, rollBackKnowledgeFrom } from '../lib/knowledge/ledger.js';
+import { injectKnowledgeBlock } from '../lib/knowledge/ledger.js';
 
 /** ST's extension_prompt_types.IN_CHAT and extension_prompt_roles.SYSTEM */
 const IN_CHAT = 1;
@@ -77,25 +77,6 @@ describe('injectKnowledgeBlock', () => {
         setSwitches({ extension: false, tracker: true });
 
         injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
-            ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
-        ]);
-    });
-
-    it('builds the block again after a rollback, so a regenerated reply does not see what the replaced reply taught', async () => {
-        // ST fires GENERATION_STARTED (where the block is first built) before a
-        // regenerate deletes the old reply; the rollback runs after it, but
-        // before ST assembles the prompt (Paragon 2283, 2026-11-01).
-        setSwitches({ extension: true, tracker: true });
-        chat.length = 0;
-        chat.push(
-            { is_user: false, is_system: false, name: 'Noor', mes: 'The bay is quiet.' },
-            { is_user: true, is_system: false, name: 'Ellie', mes: 'I wave at Noor.' },
-            { is_user: false, is_system: false, name: 'Noor', mes: 'Noor waves back.' },
-        );
-
-        await rollBackKnowledgeFrom(3);
 
         assert.deepEqual(extensionPromptCalls, [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
