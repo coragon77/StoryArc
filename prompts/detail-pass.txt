@@ -8,7 +8,7 @@ You are refining a narrative arc plan for a long-running collaborative roleplay 
 Review the arc outline above and improve it in the following ways:
 
 1. ADD SPECIFICITY TO VAGUE BEATS
-If any beat's intention is generic or abstract, make it concrete. "The party discovers a clue" should become "The party finds a coded ledger in the merchant's quarters -- the cipher matches symbols they've seen on Syndicate communications, confirming organized activity in the region." The more specific the beat, the better the AI can execute it while still having creative latitude.
+If any beat's intention is generic or abstract, make it concrete. "The party discovers a clue" should become "The party finds a coded ledger in the merchant's quarters -- the cipher matches symbols they've seen on Syndicate communications, confirming organized activity in the region." The more specific the beat, the better the AI can execute it while still having creative latitude. An intention stays ONE on-screen moment at which the development shows: sharpening it never turns it into a tally of many scenes or a chain of separate events joined by "and".
 
 2. STRENGTHEN FORESHADOWING
 For each secret, ensure there are at least 2 foreshadowing entries. If a secret only has one clue, add another from a different angle -- perhaps a behavioral clue AND an environmental clue, or a dialogue hint AND a physical detail. Good foreshadowing works on multiple channels so observant players can piece things together.

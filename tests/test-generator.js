@@ -183,13 +183,16 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
         triggers: [{ id: 'sacks_counted', condition: 'anyone counts the sacks', action: 'the clerk admits the guild emptied the granary' }],
     });
 
-    it('sends the plan to the plan check and applies its rewrite and link', async () => {
+    it('sends the plan to the plan check and applies its rewrites and link', async () => {
         const backendRequests = installFetch([
             replyWith('The story stands at a crossroads.'),
             replyWith(plan),
             replyWith(JSON.stringify({
                 revealed: [],
-                rewrites: [{ kind: 'trigger', id: 'sacks_counted', text: 'the clerk goes pale and changes the subject' }],
+                rewrites: [
+                    { kind: 'trigger', id: 'sacks_counted', text: 'the clerk goes pale and changes the subject' },
+                    { kind: 'fulfillment', id: 'empty_carts', text: 'Someone has caught a cart leaving the granary at night.' },
+                ],
                 links: [{ trigger: 'sacks_counted', secret: 'guild_theft' }],
             })),
         ]);
@@ -200,6 +203,7 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
         assert.deepEqual(result.arc.triggers.map(trigger => [trigger.action, trigger.secret]), [
             ['the clerk goes pale and changes the subject', 'guild_theft'],
         ]);
+        assert.equal(result.arc.beats[0].intention, 'Someone has caught a cart leaving the granary at night.');
     });
 
     it('keeps the plan as generated when the plan check does not answer JSON', async () => {
@@ -213,5 +217,6 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
 
         assert.equal(result.error, null);
         assert.equal(result.arc.triggers[0].action, 'the clerk admits the guild emptied the granary');
+        assert.equal(result.arc.beats[0].intention, 'The tally was found short.');
     });
 });

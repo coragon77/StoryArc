@@ -68,7 +68,7 @@ describe('buildTierBlock', () => {
         assert.equal(text.includes('SAGA'), false);
         assert.equal(text.includes('whole roleplay'), false);
         assert.ok(text.includes('pressure is a standing force in the world'));
-        assert.ok(text.includes('names a STATE the story has reached'));
+        assert.ok(text.includes('names the on-screen moment at which the story shows it has reached a STATE; any scene may show it. Never a specific scene, place or encounter, never a tally of many scenes, never a chain of separate events.'));
     });
 
     it('saga: milestones, 2-4 of them, 400-1500 messages', () => {

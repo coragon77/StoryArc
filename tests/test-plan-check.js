@@ -125,12 +125,67 @@ describe('applyPlanCheck', () => {
         assert.deepEqual(wrongShape, arc);
     });
 
+    it('replaces only the fulfillment of the beat the rewrite names', () => {
+        const arc = makeReplannedAct();
+        arc.beats.push({ id: 'rookie_drills', pressure: 'Shifts pile up.', intention: 'Ellie has completed her first patrols and training shifts.', status: 'active' });
+
+        const checked = applyPlanCheck(arc, {
+            rewrites: [{ kind: 'fulfillment', id: 'rookie_drills', text: 'Someone in authority has treated Ellie as a working Ward rather than a viral act.' }],
+        }, []);
+
+        assert.deepEqual(checked.beats.map(beat => [beat.id, beat.pressure, beat.intention]), [
+            ['old_milestone', 'The card is still out there.', 'The card was destroyed.'],
+            ['pier_stage', 'The stage is rigged with Julian\'s gauntlet tether.', 'The scrimmage was played.'],
+            ['rookie_drills', 'Shifts pile up.', 'Someone in authority has treated Ellie as a working Ward rather than a viral act.'],
+        ]);
+    });
+
+    it('rewrites a pressure and a fulfillment of the same beat together', () => {
+        const checked = applyPlanCheck(makeReplannedAct(), {
+            rewrites: [
+                { kind: 'pressure', id: 'pier_stage', text: 'The handlers prepare the stage.' },
+                { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
+            ],
+        }, []);
+
+        assert.deepEqual([checked.beats[1].pressure, checked.beats[1].intention], ['The handlers prepare the stage.', 'The crowd has seen Ellie hold the stage.']);
+    });
+
+    it('ignores and logs a fulfillment rewrite for a completed beat, an unknown beat or with empty text', () => {
+        const arc = makeReplannedAct();
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = message => warnings.push(message);
+        let checked;
+        try {
+            checked = applyPlanCheck(arc, {
+                rewrites: [
+                    { kind: 'fulfillment', id: 'old_milestone', text: 'A rewrite of a completed milestone.' },
+                    { kind: 'fulfillment', id: 'no_such_beat', text: 'Nowhere to go.' },
+                    { kind: 'fulfillment', id: 'pier_stage', text: '  ' },
+                ],
+            }, []);
+        } finally {
+            console.warn = originalWarn;
+        }
+
+        assert.deepEqual(checked.beats.map(beat => beat.intention), ['The card was destroyed.', 'The scrimmage was played.']);
+        assert.deepEqual(warnings, [
+            '[Story Arc] Plan check rewrote the fulfillment of unknown or completed beat "old_milestone"; ignored',
+            '[Story Arc] Plan check rewrote the fulfillment of unknown or completed beat "no_such_beat"; ignored',
+            '[Story Arc] Plan check answered an empty fulfillment for beat "pier_stage"; ignored',
+        ]);
+    });
+
     it('does not mutate the arc it is given', () => {
         const arc = makeReplannedAct();
 
         applyPlanCheck(arc, {
             revealed: ['brother_leash'],
-            rewrites: [{ kind: 'trigger', id: 'usb_accepted', text: 'Her composure cracks.' }],
+            rewrites: [
+                { kind: 'trigger', id: 'usb_accepted', text: 'Her composure cracks.' },
+                { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
+            ],
             links: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
         }, ['brother_leash']);
 
@@ -154,6 +209,20 @@ describe('buildPlanCheckVariables', () => {
         ].join('\n'));
         assert.equal(variables.TRIGGERS, '- [usb_accepted] IF Ellie takes the drive → Vera breaks down and swears to feed Ellie updates from inside.');
         assert.equal(variables.PRESSURES, '- [pier_stage] The stage is rigged with Julian\'s gauntlet tether.');
+        assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
+    });
+
+    it('passes the fulfillments of open beats only — a re-plan\'s kept completed beat stays out', () => {
+        const arc = makeReplannedAct();
+        arc.beats.push({ id: 'rookie_drills', pressure: 'Shifts pile up.', intention: 'Ellie has completed her first patrols and training shifts.', status: 'pending' });
+
+        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+
+        assert.equal(variables.FULFILLMENTS, [
+            '- [pier_stage] The scrimmage was played.',
+            '- [rookie_drills] Ellie has completed her first patrols and training shifts.',
+        ].join('\n'));
+        assert.equal(variables.FULFILLMENTS.includes('The card was destroyed.'), false);
     });
 
     it('on a re-plan, hides the old disclosure mark so the check judges from the story alone', () => {
@@ -181,6 +250,6 @@ describe('buildPlanCheckVariables', () => {
 
         const variables = buildPlanCheckVariables(arc, null);
 
-        assert.deepEqual([variables.SECRETS, variables.TRIGGERS, variables.PRESSURES], ['(none)', '(none)', '(none)']);
+        assert.deepEqual([variables.SECRETS, variables.TRIGGERS, variables.PRESSURES, variables.FULFILLMENTS], ['(none)', '(none)', '(none)', '(none)']);
     });
 });
