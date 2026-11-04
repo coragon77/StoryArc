@@ -61,6 +61,15 @@ describe('applyArcEdit', () => {
         assert.equal(arc.pausedAt, null);
     });
 
+    it('keeps the re-plan stamp as stored, and adds none to an arc never re-planned', () => {
+        const replanned = { ...storedArc(), replannedAt: 2300 };
+        const editedStamp = { ...replanned, replannedAt: 10 };
+        assert.equal(applyArcEdit(replanned, JSON.stringify(editedStamp)).arc.replannedAt, 2300);
+
+        const typedStamp = { ...storedArc(), replannedAt: 10 };
+        assert.equal('replannedAt' in applyArcEdit(storedArc(), JSON.stringify(typedStamp)).arc, false);
+    });
+
     it('stores estimatedLength as a number', () => {
         const edited = { ...storedArc(), estimatedLength: '30' };
         assert.equal(applyArcEdit(storedArc(), JSON.stringify(edited)).arc.estimatedLength, 30);
