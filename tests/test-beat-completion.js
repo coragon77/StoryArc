@@ -360,6 +360,44 @@ describe('reopenCompletionsFrom — what reopening undoes', () => {
         assert.equal(arc.beats[0].status, 'completed');
     });
 
+    it('sets lastFulfilledAt back to the value before both completions of one answer that lists the later message first', async () => {
+        chatWithIds(12);
+        const arc = act();
+        arc.lastFulfilledAt = 5;
+        storeArcs(arc);
+        await completeBeats([
+            { arcId: 'act00001', beatId: 'm2', at: 11 },
+            { arcId: 'act00001', beatId: 'm1', at: 10 },
+        ], [arc]);
+        assert.equal(arc.lastFulfilledAt, 11);
+
+        // A branch that ends at message 9.
+        chat.length = 9;
+        reopenCompletionsFrom(9);
+        assert.deepEqual(statuses(arc), ['active', 'active', 'active']);
+        assert.equal(arc.lastFulfilledAt, 5);
+    });
+
+    it('sets lastFulfilledAt back to the value before an earlier message that an edit completed again', async () => {
+        chatWithIds(21);
+        const arc = act();
+        arc.lastFulfilledAt = 5;
+        storeArcs(arc);
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 10 }], [arc]);
+        await completeBeats([{ arcId: 'act00001', beatId: 'm2', at: 20 }], [arc]);
+        // The user edits message 10, and the extraction completes m1 there again.
+        reopenCompletionsAt(10);
+        assert.equal(arc.lastFulfilledAt, 20);
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 10 }], [arc]);
+        assert.equal(arc.lastFulfilledAt, 20);
+
+        // Every message from 8 on is deleted.
+        chat.length = 8;
+        reopenCompletionsFrom(8);
+        assert.deepEqual(statuses(arc), ['active', 'active', 'active']);
+        assert.equal(arc.lastFulfilledAt, 5);
+    });
+
     it('falls back to messageStart for a record without the earlier lastFulfilledAt', () => {
         const arc = act();
         arc.beats[0].status = 'completed';
