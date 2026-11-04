@@ -182,6 +182,29 @@ Answer the renames as one more key of the JSON object below: "renames": [{ "from
 ANSWER`);
     });
 
+    it('a re-plan never renames the player\'s title: a rename of a name in it is dropped everywhere', async () => {
+        const planWithCollision = JSON.stringify({
+            title: 'Generated Title',
+            premise: 'Julian Hale wants the ledger.',
+            beats: [{ id: 'ledger', pressure: 'Julian Hale wants the ledger by dawn.', intention: 'She has read the ledger.' }],
+            secrets: [],
+            triggers: [],
+        });
+        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
+        installBackend(['The story stands still.', planWithCollision, renamingAnswer]);
+        const reviseArc = {
+            id: 'arc-debt', title: 'The Julian Hale Affair', premise: 'A debt comes due.', direction: '',
+            status: 'active', tier: 'episode', focus: 'normal', messageStart: 0, lastFulfilledAt: 0, estimatedLength: 20,
+            secrets: [], foreshadowing: [], triggers: [], beats: [], rulings: [],
+        };
+
+        const result = await generateArc(harvestedContext(CAST_OF_TWO), '', {}, { reviseArc });
+
+        assert.equal(result.error, null);
+        assert.equal(result.arc.title, 'The Julian Hale Affair');
+        assert.equal(result.arc.beats[0].pressure, 'Julian Hale wants the ledger by dawn.');
+    });
+
     it('with an empty cast, the check prompt is today\'s', async () => {
         const sentPrompts = installBackend(['The story stands still.', generatedPlan, planCheckAnswer]);
 

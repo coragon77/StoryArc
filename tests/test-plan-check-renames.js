@@ -183,6 +183,48 @@ describe('applyPlanCheck: renames', () => {
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Marsh" ignored: the author\'s direction or premise names it']);
     });
 
+    it('drops a rename of a name a ruling quotes', () => {
+        const arc = {
+            ...makePlannedAct(),
+            premise: 'The docks change hands.',
+            rulings: [{ id: 'r1', text: 'Julian Hale is not her father.', at: 40, answeredAt: 50 }],
+        };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+
+        assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
+        assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Hale" ignored: a ruling of the player names it']);
+    });
+
+    it('drops a rename of a name in the option a bare pick chose', () => {
+        const arc = {
+            ...makePlannedAct(),
+            premise: 'The docks change hands.',
+            rulings: [{ id: 'r1', text: 'Option two', chose: 'Hale walks away from the docks.', at: 40 }],
+        };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Hale', to: 'Marsh' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+
+        assert.equal(checked.escalation, 'Hale tightens his grip.');
+        assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Hale" → "Marsh" ignored: a ruling of the player names it']);
+    });
+
+    it('drops a rename of a name in the title a re-plan keeps', () => {
+        const arc = { ...makePlannedAct(), premise: 'The docks change hands.' };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Hale', to: 'Marsh' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Hale Street' });
+
+        assert.equal(checked.title, 'Hale Street');
+        assert.equal(checked.escalation, 'Hale tightens his grip.');
+        assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Hale" → "Marsh" ignored: the player\'s title names it']);
+    });
+
     it('drops a rename to a name with a taken name', () => {
         const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Julian Hale', to: 'Owen Sterling' }] }, [], { cast: CAST });
 
