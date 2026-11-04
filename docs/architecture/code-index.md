@@ -170,7 +170,8 @@ StoryArc/
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions and
 │   │   │                       #   arc completion; restoreLastFulfilledAt();
 │   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
-│   │   │                       #   load; removeRulingsAt(messageIndex) — edit (#45)
+│   │   │                       #   load; removeRulingsAt(messageIndex, isStillStated)
+│   │   │                       #   — edit: only rulings whose quote is gone (#45)
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   carries the model's premise as proposedPremise,
@@ -183,12 +184,14 @@ StoryArc/
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
 │   │                           #   applyReplan(merged, chatLength, { premise,
-│   │                           #   removedRulingIds }) →
+│   │                           #   removedRulingIds, storedRulings }) →
 │   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
 │   │                           #   deep copy with the chosen premise trimmed, no
 │   │                           #   proposedPremise; a blank premise refused
-│   │                           #   the removed rulings dropped, each open ruling
-│   │                           #   marked answeredAt = chatLength, answered ones kept
+│   │                           #   the rulings built from the stored ones at apply:
+│   │                           #   removed ones dropped, those the generation saw
+│   │                           #   answered (an earlier answeredAt kept), later ones
+│   │                           #   open, gone ones gone
 │   ├── injection/
 │   │   ├── builder.js          # buildInjection(arcs) — dispatcher keyed by (tier, focus):
 │   │   │                       #   one section per arc (private builders below), spotlight first,
@@ -248,7 +251,8 @@ StoryArc/
 │   │   │                       #   stamping.js;
 │   │   │                       #   pauseArc(id) freezes the clock (pausedAt = chat.length);
 │   │   │                       #   resumeArc(id, focus) shifts messageStart/lastFulfilledAt
-│   │   │                       #   by the paused span, no-op on the clock if never paused;
+│   │   │                       #   by the paused span, replannedAt by the pause after
+│   │   │                       #   the stamp; no-op on the clock if never paused;
 │   │   │                       #   spotlightArc(id) — one arc in the spotlight, the
 │   │   │                       #   previous spotlit arc goes back to normal
 │   │   ├── pacing.js           # calculatePhase(arc), selectNonOptionalBeats(beats),
@@ -359,8 +363,7 @@ StoryArc/
 │   │   │                       #   setupSettingsPanelEvents() also wires the stall
 │   │   │                       #   nudge (.story-arc-stall-btn → showWizard(arcId));
 │   │   │                       #   knowledge tracker switch, update interval and
-│   │   │                       #   status line (updateKnowledgeStatus(): + "N new names
-│   │   │                       #   to check" and a Knowledge popup button)
+│   │   │                       #   status line (refreshed by knowledge-status.js)
 │   │   ├── wand-menu.js        # registerWandMenuEntry() — adds a "Story Arc" item to
 │   │   │                       #   #extensionsMenu (the wand next to the chat bar);
 │   │   │                       #   showWandPopup() reopens itself after the wizard or
@@ -405,6 +408,10 @@ StoryArc/
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
+│   │   ├── knowledge-status.js # updateKnowledgeStatus() — the drawer's status line:
+│   │   │                       #   last update, + "N new names to check" and a
+│   │   │                       #   Knowledge popup button; called by index.js, the
+│   │   │                       #   panel and the popup (own file: no import cycle)
 │   │   ├── spoiler-group.js    # buildSpoilerGroup(id, label, warning, body) — the
 │   │   │                       #   collapsed spoiler drawer of the Arc Manager and
 │   │   │                       #   the Knowledge popup
@@ -471,7 +478,8 @@ StoryArc/
 │   │                           #   (premise choice stored trimmed, blank refused)
 │   ├── test-replan-rulings.js  # Tests: the rulings in formatExistingArcs, buildArcSoFar,
 │   │                           #   buildPlanCheckVariables; mergeReplan carries them;
-│   │                           #   applyReplan drops removed ones, answers open ones
+│   │                           #   applyReplan builds them from the stored rulings at
+│   │                           #   apply (removed, seen, stored later, gone)
 │   ├── test-generator-replan.js # Tests: generateArc through the profile mock with the
 │   │                           #   real templates: a re-plan's Phase 2 asks for a premise,
 │   │                           #   the result keeps the stored one with the proposal,
@@ -557,8 +565,9 @@ StoryArc/
 │   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
 │   │                           #   hand toggle carries no record
 │   ├── test-ruling-rollback.js # Tests: a ruling goes with its message on delete
-│   │                           #   (by id, index rule), branch load and edit (stored
-│   │                           #   again by the re-extraction); a swipe keeps it
+│   │                           #   (by id, index rule), branch load and edit (only a
+│   │                           #   ruling whose quote is gone; a kept one stays
+│   │                           #   answered); a swipe keeps it
 │   ├── test-knowledge-beats.js # Tests: DEVELOPMENTS input, fulfilled parsing (lenient)
 │   │                           #   and resolving, beat completion by the update after a
 │   │                           #   reply, a swipe switch and an edit; marks flushed on a
@@ -669,7 +678,9 @@ lib/ui/
 │                              core/settings.js, /script.js, /scripts/utils.js)
 ├── settings-panel.js (imports: core/constants.js, core/settings.js,
 │                              planning/arc-preset.js, wizard.js, arc-manager.js,
+│                              knowledge-popup.js, knowledge-status.js,
 │                              /script.js, /scripts/extensions.js, /scripts/popup.js)
+├── knowledge-status.js (imports: core/settings.js)
 ├── wizard.js        (imports: context/harvester.js, planning/generator.js,
 │                              planning/storage.js, planning/replan.js,
 │                              core/settings.js, core/constants.js, progress.js,
@@ -690,7 +701,7 @@ lib/ui/
 │                              knowledge/ledger.js characterName + nextLedgerId,
 │                              knowledge/names.js listCharactersWithNames,
 │                              knowledge/message-ids.js messageIdOf,
-│                              spoiler-group.js, settings-panel.js
+│                              spoiler-group.js, knowledge-status.js
 │                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)
 └── spoiler-group.js (imports: nothing)
@@ -698,7 +709,8 @@ lib/ui/
 index.js  (imports: core/settings.js, planning/storage.js,
                     planning/beat-completion.js reopenCompletionsFrom, injection/builder.js,
                     injection/stamping.js, injection/signals.js,
-                    knowledge/ledger.js, ui/settings-panel.js, ui/wand-menu.js,
+                    knowledge/ledger.js, ui/settings-panel.js, ui/knowledge-status.js,
+                    ui/wand-menu.js,
                     ui/progress.js, /script.js)
 ```
 
@@ -732,5 +744,5 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
-| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval, status), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |

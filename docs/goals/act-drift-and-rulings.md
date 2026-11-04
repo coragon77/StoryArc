@@ -111,6 +111,7 @@ Records this work changes:
 Status log:
 
 - 2026-11-04: opened after the discussion in an Opus session and a Fable session. Stefan re-planned the Street act twice with the rulings typed by hand. The Street act experiment is running.
+- 2026-11-04: all chapters are implemented on `integration/act-drift-npc-names` as tickets #37–#49, with a review fix pass on top. Not merged into main and not live-checked; no chapter is ticked until its last ticket closes.
 
 ## Chapters
 

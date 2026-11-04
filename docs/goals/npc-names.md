@@ -81,6 +81,7 @@ Out of scope:
 Status log:
 
 - 2026-11-04: opened after the discussion in a Fable session, right after the act-drift goals document.
+- 2026-11-04: all chapters are implemented on `integration/act-drift-npc-names` as tickets #37–#49, with a review fix pass on top. Not merged into main and not live-checked; no chapter is ticked until its last ticket closes.
 
 ## Chapters
 
