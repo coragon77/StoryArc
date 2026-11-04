@@ -2,9 +2,9 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { MODULE_NAME, defaultSettings, createDefaultArc, TIER_TABLE, KNOWLEDGE_PROMPT_KEY } from '../lib/core/constants.js';
-import { loadSettings, getSettings, isEnabled, getKnowledgeTrackerSettings, isKnowledgeTrackerEnabled } from '../lib/core/settings.js';
+import { loadSettings, getSettings, isEnabled, getKnowledgeTrackerSettings, isKnowledgeTrackerEnabled, beatRecognitionPath } from '../lib/core/settings.js';
 import { calculatePhase } from '../lib/injection/pacing.js';
-import { chat, extension_settings } from './mocks/st-mocks.js';
+import { chat, chat_metadata, extension_settings } from './mocks/st-mocks.js';
 
 describe('core/constants', () => {
     it('exports MODULE_NAME as story_arc', () => {
@@ -98,6 +98,35 @@ describe('createDefaultArc', () => {
         assert.deepEqual(Object.keys(TIER_TABLE), ['episode', 'act', 'saga']);
         assert.deepEqual(TIER_TABLE.episode.lengthBand, [8, 20]);
         assert.deepEqual(TIER_TABLE.saga.lengthBand, [400, 1500]);
+    });
+});
+
+describe('beatRecognitionPath — where beats are recognised', () => {
+    function setSwitches({ autoTrack, tracker }) {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: tracker, updateInterval: 1 } };
+        chat_metadata.story_arc = { version: 1, arcs: [], settings: { autoTrack } };
+    }
+
+    beforeEach(() => {
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+    });
+
+    it('is off while the chat\'s autoTrack is off, whatever the tracker says', () => {
+        setSwitches({ autoTrack: false, tracker: true });
+        assert.equal(beatRecognitionPath(), 'off');
+        setSwitches({ autoTrack: false, tracker: false });
+        assert.equal(beatRecognitionPath(), 'off');
+    });
+
+    it('is the extraction while autoTrack and the knowledge tracker are on', () => {
+        setSwitches({ autoTrack: true, tracker: true });
+        assert.equal(beatRecognitionPath(), 'extraction');
+    });
+
+    it('is the narrator\'s marker while autoTrack is on and the knowledge tracker off', () => {
+        setSwitches({ autoTrack: true, tracker: false });
+        assert.equal(beatRecognitionPath(), 'marker');
     });
 });
 
