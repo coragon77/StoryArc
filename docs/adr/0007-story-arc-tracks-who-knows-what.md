@@ -19,3 +19,7 @@ When the tracker is on, every reply costs one more call, unless testing shows th
 ## Amendment 2026-11-04: the extraction also recognises beats
 
 With the tracker on, the extraction call also reports which active beats the new messages fulfilled, and the narration prompt no longer carries the beat check (ADR-0008). The tracker's on/off switch therefore also decides where beats are recognised: in the extraction when it is on, in the narration prompt when it is off.
+
+## Amendment 2026-11-04: the tracker also injects the taken names
+
+With the tracker on, Story Arc injects a second block next to the knowledge block: the taken names, every first name, surname and codename the ledger's characters use, derived in code from the ledger with no extra call (spec #34, issue #39). Long chats are compacted by Summaryception, and the narrator then gives a new character the name of one it can no longer see. With the tracker off, Story Arc injects neither block.

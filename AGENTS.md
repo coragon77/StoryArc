@@ -69,6 +69,7 @@ StoryArc/
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
 │   ├── knowledge/
 │   │   ├── message-ids.js      # Story Arc message id on a chat message (ledger + beat completions)
+│   │   ├── names.js            # Taken names: derivation from the ledger + the names block
 │   │   └── ledger.js           # The whole knowledge tracker: update, extraction, apply, rollback, block
 │   ├── ui/
 │   │   ├── settings-panel.js   # Extension drawer content
