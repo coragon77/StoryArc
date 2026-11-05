@@ -49,6 +49,33 @@ describe('buildKnowledgeContent: character details', () => {
         const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c1');
         assert.ok(!rowHtml.includes('story-arc-knowledge-details'));
     });
+
+    it('hides the details, the details editor and the unnamed relative form while character details are off', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], false);
+        const rowHtml = characterRowOf(html, 'c2');
+
+        assert.ok(!rowHtml.includes('cleaner'), rowHtml);
+        assert.ok(!rowHtml.includes('story-arc-detail-input'), rowHtml);
+        assert.ok(!rowHtml.includes('story-arc-details-save-btn'), rowHtml);
+        assert.ok(!html.includes('story-arc-relative-add-btn'));
+        assert.ok(rowHtml.includes('Ama Osei'));
+    });
+
+    it('keeps an unnamed relative\'s display name while character details are off', () => {
+        const ledger = makeLedger();
+        ledger.characters.push({ id: 'c3', name: '', aliases: [], details: { relation: [{ value: { kind: 'father', of: 'c1' }, at: null, by: 'record' }] } });
+
+        const rowText = textOf(characterRowOf(buildKnowledgeContent(ledger, [], false), 'c3'));
+
+        assert.ok(rowText.includes('data-character-id="c3"> Kendra Osei&#39;s father Name'), rowText);
+    });
+
+    it('shows the details editor and the unnamed relative form while character details are on', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true);
+
+        assert.ok(characterRowOf(html, 'c2').includes('story-arc-details-save-btn'));
+        assert.ok(html.includes('story-arc-relative-add-btn'));
+    });
 });
 
 /** What the details editor of Ama's row shows before the player types anything. */

@@ -25,7 +25,7 @@ function setSwitches({ tracker = true, interval = 1 } = {}) {
     extension_settings.story_arc = {
         enabled: true,
         defaultConnectionProfile: 'profile-1',
-        knowledgeTracker: { enabled: tracker, updateInterval: interval },
+        knowledgeTracker: { enabled: tracker, updateInterval: interval, characterDetails: true },
     };
 }
 

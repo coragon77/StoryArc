@@ -45,9 +45,12 @@ function makeChat() {
 
 describe('buildKnowledgeExtractionVariables', () => {
     it('lists the messages from the given index with their indices, the characters with aliases, the facts with holders and the persona', () => {
-        const variables = buildKnowledgeExtractionVariables(makeLedger(), makeChat(), 2064, 'Ellie');
+        const variables = buildKnowledgeExtractionVariables(makeLedger(), makeChat(), 2064, 'Ellie', [], [], [], false);
 
         assert.deepEqual(variables, {
+            CHARACTERS_DETAILS_NOTE: '',
+            DETAILS_TASK: '',
+            DETAILS_SCHEMA: '',
             PERSONA: 'Ellie',
             CHARACTERS: [
                 '- Gabriel Marin (also: Aegis, Mr. Marin)',
@@ -72,9 +75,12 @@ describe('buildKnowledgeExtractionVariables', () => {
     it('writes (none) for an empty ledger and (no persona) for a missing persona name', () => {
         const emptyLedger = { characters: [], facts: [], scene: { at: null, present: [] }, lastUpdatedAt: null };
 
-        const variables = buildKnowledgeExtractionVariables(emptyLedger, makeChat(), 2066, '');
+        const variables = buildKnowledgeExtractionVariables(emptyLedger, makeChat(), 2066, '', [], [], [], false);
 
         assert.deepEqual(variables, {
+            CHARACTERS_DETAILS_NOTE: '',
+            DETAILS_TASK: '',
+            DETAILS_SCHEMA: '',
             PERSONA: '(no persona)',
             CHARACTERS: '(none)',
             FACTS: '(none)',

@@ -118,7 +118,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1 });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -128,7 +128,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-interval', { value: '4' });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4 });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4, characterDetails: false });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -143,8 +143,27 @@ describe('knowledge tracker controls in the settings panel', () => {
             assert.equal(intervalField.value, '2', `input ${JSON.stringify(badInput)}`);
         }
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2 });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2, characterDetails: false });
         assert.equal(mockCalls.saveSettingsDebounced, 0);
+    });
+
+    it('shows the character details switch off for a settings file from before it, on once stored', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1 } };
+        loadSettings();
+        assert.match(settingsPanel.renderSettingsPanel(), /<input type="checkbox" id="story-arc-knowledge-details"  \/>/);
+
+        extension_settings.story_arc.knowledgeTracker.characterDetails = true;
+        assert.match(settingsPanel.renderSettingsPanel(), /<input type="checkbox" id="story-arc-knowledge-details" checked \/>/);
+    });
+
+    it('stores the character details switch in extension_settings and saves it', () => {
+        loadSettings();
+        settingsPanel.setupSettingsPanelEvents();
+
+        fake.trigger('change', '#story-arc-knowledge-details', { checked: true });
+
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: true });
+        assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
     it('shows a stored switch and interval again after a reload', () => {
