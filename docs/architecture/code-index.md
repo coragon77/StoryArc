@@ -330,6 +330,9 @@ StoryArc/
 │   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
 │   │                           #   last): new names first (newNames → aliases of the
 │   │                           #   named record, a name another record has refused),
+│   │                           #   a shared name word (isSharedNameWord over
+│   │                           #   listNameWordCarriers) resolves to nobody, is
+│   │                           #   refused as a new name, dropped as an alias,
 │   │                           #   then the teller of a told fact holds it too, an
 │   │                           #   at outside from..last falls back to last; given the
 │   │                           #   chat, gives the read messages a message id (extra.
@@ -538,6 +541,9 @@ StoryArc/
 │   ├── test-knowledge-retraction.js # Tests: OOC corrections retract facts (user
 │   │                           #   holders kept, unknown ids ignored), rollback of the
 │   │                           #   correction restores them, retracted parsing, template
+│   ├── test-knowledge-shared-name-words.js # Tests: a shared one-word name points
+│   │                           #   at nobody (talked about, answer names), refused as
+│   │                           #   a new name, dropped as an alias; Paragon names
 │   ├── test-knowledge-block.js # Tests: buildKnowledgeBlock literal lines (present,
 │   │                           #   talked about by alias, Has told, shared-only-with,
 │   │                           #   cap, EVERYONE KNOWS, plan holders never printed)
