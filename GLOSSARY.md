@@ -125,7 +125,7 @@ A character in the scene at the latest message. The narrator is told what each p
 _Avoid_: active, onstage, in-scene
 
 **Talked about** (character):
-A character who is not present but is named, by name or alias, in the latest message of the player or the narrator. The narrator is also told whom such a character has told.
+A character who is not present but is named, by name or alias, in the latest message of the player or the narrator. The narrator is also told whom such a character has told. A shared name word does not count.
 _Avoid_: mentioned, referenced, offscreen
 
 **Cast**:
@@ -141,8 +141,12 @@ A cast member the story knows only through their kinship to another cast member 
 _Avoid_: anonymous character
 
 **New name** (of a character):
-A name the story gives a character the knowledge ledger already has, such as a codename, a first name or a nickname. The knowledge extraction reports it only when the text makes plain both names belong to one person, and it becomes an alias of that character's record instead of a second record. A secret identity is still one character in the ledger once the text has shown it, even while the characters in the scene know only one of the names. A name another character already has is not added.
+A name the story gives a character the knowledge ledger already has, such as a codename, a first name or a nickname. The knowledge extraction reports it only when the text makes plain both names belong to one person, and it becomes an alias of that character's record instead of a second record. A secret identity is still one character in the ledger once the text has shown it, even while the characters in the scene know only one of the names. A name another character already has is not added, nor is a shared name word.
 _Avoid_: rename, duplicate
+
+**Shared name word**:
+A name or alias that is one single name word ("Sterling", "Marcus"; titles and surname particles are not name words, so "Mr. Sterling" is not one) while another named character in the knowledge ledger carries the same word in a name or alias (Julian Sterling next to Arthur Sterling's alias "Sterling"). It points at nobody: a mention of it makes no one talked about, and an extraction answer using it names no one. Whole names and names of several words ("Julian Sterling", "Mrs. Osei", "Agent Cross") still point at their character, and a one-word name only one character carries keeps working. The extraction adds no such name as a new name and drops it from a new character's aliases; the player may still give it by hand in the Knowledge popup. Relatives sharing a surname is the common case.
+_Avoid_: duplicate alias, ambiguous name
 
 **Taken name**:
 A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
