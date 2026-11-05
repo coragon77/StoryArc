@@ -328,7 +328,9 @@ StoryArc/
 │   │                           #   resolveFulfilledDevelopments() (listed active beats,
 │   │                           #   at inside the read messages);
 │   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
-│   │                           #   last): the teller of a told fact holds it too, an
+│   │                           #   last): new names first (newNames → aliases of the
+│   │                           #   named record, a name another record has refused),
+│   │                           #   then the teller of a told fact holds it too, an
 │   │                           #   at outside from..last falls back to last; given the
 │   │                           #   chat, gives the read messages a message id (extra.
 │   │                           #   story_arc_message_id) and stores messageId;
@@ -541,6 +543,10 @@ StoryArc/
 │   ├── test-knowledge-names.js # Tests: buildTakenNamesBlock literal lists (titles,
 │   │                           #   hyphenated parts, aliases, repeats, diacritics,
 │   │                           #   particles, sort), byte stability; listTakenNames
+│   ├── test-knowledge-new-names.js # Tests: new names of a known character (#60):
+│   │                           #   parser, alias added / refused / unknown, applied
+│   │                           #   before new characters and the rest of the answer,
+│   │                           #   prompt with details on and off, update-log counts
 │   ├── test-knowledge-name-clash.js # Tests: the reused-name flag (#43) at the apply
 │   │                           #   (hyphens, titles, aliases, same-answer family),
 │   │                           #   through the update after a reply and an edit,

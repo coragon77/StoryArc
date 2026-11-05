@@ -140,6 +140,10 @@ _Avoid_: character profile, attributes, character sheet, stats
 A cast member the story knows only through their kinship to another cast member ("Kendra Osei's mother"): a record without a name, called after its relation wherever a name is printed. It adds no taken name and is never a name clash. When the story names them on screen, the record takes the name and keeps its details.
 _Avoid_: anonymous character
 
+**New name** (of a character):
+A name the story gives a character the knowledge ledger already has, such as a codename, a first name or a nickname. The knowledge extraction reports it only when the text makes plain both names belong to one person, and it becomes an alias of that character's record instead of a second record. A secret identity is still one character in the ledger once the text has shown it, even while the characters in the scene know only one of the names. A name another character already has is not added.
+_Avoid_: rename, duplicate
+
 **Taken name**:
 A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
 _Avoid_: used name, reserved name, blacklist
