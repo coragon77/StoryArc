@@ -102,6 +102,7 @@ describe('the knowledge update log', () => {
             factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
         }]);
     });
 
@@ -118,6 +119,7 @@ describe('the knowledge update log', () => {
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
         }]);
     });
 
@@ -239,6 +241,7 @@ describe('the knowledge update log', () => {
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [], detailsDropped: 0 },
         ]);
@@ -289,6 +292,7 @@ describe('the knowledge update log', () => {
             factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c1', messageId: 'm1' }], details: [], names: [], scene: null },
         }]);
     });
 
@@ -318,6 +322,7 @@ describe('the knowledge update log', () => {
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 2, detailsChanged: 1, restatementsIgnored: 1, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [{ characterId: 'c1', kind: 'role', messageId: 'm4' }, { characterId: 'c1', kind: 'gender', messageId: 'm4' }, { characterId: 'c2', kind: 'gender', messageId: 'm3' }], names: [], scene: null },
         }]);
     });
 
@@ -404,6 +409,7 @@ describe('the knowledge update log: details the player locked', () => {
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 2,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [{ characterId: 'c2', kind: 'age', messageId: 'm5' }], names: [], scene: null },
         }]);
     });
 
@@ -425,6 +431,7 @@ describe('the knowledge update log: details the player locked', () => {
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 1,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
         }]);
     });
 });

@@ -344,6 +344,12 @@ StoryArc/
 │   │                           #   beatsCompleted), skipped (no answer, chat changed,
 │   │                           #   ledger moved), rollback; knowledgeHoldings() +
 │   │                           #   holdingsChange() find what a step added or removed;
+│   │                           #   createdChangeItems() lists the change items of an
+│   │                           #   update/reextract record (#67); listChangeItems(record)
+│   │                           #   gives each its item key; dropReviewedMarksOfGoneItems()
+│   │                           #   + changeItemExists() drop the reviewed marks of items
+│   │                           #   a rollback removed (dropKnowledgeFrom,
+│   │                           #   dropKnowledgeLearnedAt);
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
 │   │                           #   load) via followMessagesById(ledger, chat) (entries
 │   │                           #   with a message id follow their message) and
@@ -413,7 +419,9 @@ StoryArc/
 │   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
 │   │   │                       #   saveCharacterDetails: player detail entries that
 │   │   │                       #   lock the kind, #54; mergeCharacters: one
-│   │   │                       #   record into another, #60) return
+│   │   │                       #   record into another, #60;
+│   │   │                       #   markChangeItemReviewed, unmarkChangeItemReviewed:
+│   │   │                       #   reviewed marks by item key, #67) return
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
@@ -564,6 +572,9 @@ StoryArc/
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
+│   ├── test-knowledge-change-items.js # Tests: change items of update/reextract records,
+│   │                           #   item keys, rollback dropping reviewed marks (delete,
+│   │                           #   swipe, edit), old ledgers, mark/unmark, save (#67)
 │   ├── test-knowledge-update-log.js # Tests: updateLog records (update, empty answer,
 │   │                           #   skips by reason, nothing for off/interval/other chat,
 │   │                           #   cap 20, rollback drop/restore, re-extraction)

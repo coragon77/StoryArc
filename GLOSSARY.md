@@ -159,3 +159,11 @@ _Avoid_: flag, duplicate name
 **Merge** (characters):
 Joining two character records the ledger holds for one person (a codename and a civilian name) in the Knowledge popup: the player picks the record that stays, the other record's names become its aliases, everything the other record knew and every detail of a kind the staying record does not have moves to it (a kind only the other record has set by the player moves too, replacing the staying record's), and the other record goes. Renaming stays a separate edit.
 _Avoid_: combine, link
+
+**Change item**:
+One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's message id, the record's kind, the item's kind and its ids (`m6:update:holder:f2:c1`), stable across reloads. Records from before the items list counts only and have none.
+_Avoid_: change entry, delta
+
+**Reviewed mark**:
+The player's note on a change item that they have looked at it, stored on the knowledge ledger by item key. A rollback that removes the item drops its mark.
+_Avoid_: seen flag, read mark
