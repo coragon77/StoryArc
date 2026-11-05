@@ -1,0 +1,261 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildKnowledgeContent, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
+
+/**
+ * Kendra Osei and her mother Ama in the Paragon chat: the story stated Ama's
+ * role at message 12 and her relation at message 14; the player set her age.
+ */
+function makeLedger() {
+    return {
+        characters: [
+            { id: 'c1', name: 'Kendra Osei', aliases: ['Kendra'] },
+            {
+                id: 'c2',
+                name: 'Ama Osei',
+                aliases: ['Ama'],
+                details: {
+                    age: [{ value: '40s', at: null, by: 'user' }],
+                    role: [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }],
+                    relation: [{ value: { kind: 'mother', of: 'c1' }, at: 14, messageId: 'm14' }],
+                },
+            },
+        ],
+        facts: [],
+        scene: { at: 14, present: ['c1'] },
+        lastUpdatedAt: 14,
+    };
+}
+
+/** The visible text of rendered HTML: tags dropped, whitespace collapsed. */
+function textOf(html) {
+    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** The markup of the character row with this id, up to its closing tag. */
+function characterRowOf(html, characterId) {
+    const rowChunk = html.split('<li ').find(chunk => chunk.includes(`data-character-id="${characterId}"`)) || '';
+    return rowChunk.split('</li>')[0];
+}
+
+describe('buildKnowledgeContent: character details', () => {
+    it('shows each known detail of a character by its kind, and marks the ones the player set', () => {
+        const rowText = textOf(characterRowOf(buildKnowledgeContent(makeLedger()), 'c2'));
+        assert.ok(rowText.includes(
+            'age: 40s (set by you); role: cleaner, double shifts, Oakland; relation: Kendra Osei&#39;s mother'), rowText);
+    });
+
+    it('shows no details line for a character with none known', () => {
+        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c1');
+        assert.ok(!rowHtml.includes('story-arc-knowledge-details'));
+    });
+});
+
+/** What the details editor of Ama's row shows before the player types anything. */
+function amaAsShown() {
+    return { gender: '', age: '40s', role: 'cleaner, double shifts, Oakland', relation: { kind: 'mother', of: 'c1' }, status: '' };
+}
+
+/** What the details editor of Kendra's row shows: every field empty. */
+function kendraAsShown() {
+    return { gender: '', age: '', role: '', relation: { kind: '', of: '' }, status: '' };
+}
+
+describe('saveCharacterDetails', () => {
+    it('writes a detail the player sets as a player entry, which locks the kind', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), gender: ' female ' }, amaAsShown());
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[1].details, {
+            gender: [{ value: 'female', at: null, by: 'user' }],
+            age: [{ value: '40s', at: null, by: 'user' }],
+            role: [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }],
+            relation: [{ value: { kind: 'mother', of: 'c1' }, at: 14, messageId: 'm14' }],
+        });
+    });
+
+    it('puts a corrected story detail after the story\'s entry, which stays in the history', () => {
+        const { ledger } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), role: 'night cleaner, Highland Hospital' }, amaAsShown());
+
+        assert.deepEqual(ledger.characters[1].details.role, [
+            { value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' },
+            { value: 'night cleaner, Highland Hospital', at: null, by: 'user' },
+        ]);
+    });
+
+    it('changes nothing for the fields left as shown, so saving locks no story detail', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', amaAsShown(), amaAsShown());
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger, makeLedger());
+    });
+
+    it('replaces the player\'s own entry instead of adding a second one', () => {
+        const { ledger } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), age: '45' }, amaAsShown());
+
+        assert.deepEqual(ledger.characters[1].details.age, [{ value: '45', at: null, by: 'user' }]);
+    });
+
+    it('clearing a player value removes the player entry; the story\'s entries count again', () => {
+        const before = makeLedger();
+        before.characters[1].details.role.push({ value: 'retired', at: null, by: 'user' });
+
+        const { ledger } = saveCharacterDetails(before, 'c2', { ...amaAsShown(), age: ' ', role: '' }, amaAsShown());
+
+        assert.deepEqual(ledger.characters[1].details, {
+            role: [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }],
+            relation: [{ value: { kind: 'mother', of: 'c1' }, at: 14, messageId: 'm14' }],
+        });
+    });
+
+    it('clearing the last player value leaves a record without details', () => {
+        const before = makeLedger();
+        before.characters[0].details = { status: [{ value: 'alive', at: null, by: 'user' }] };
+
+        const { ledger } = saveCharacterDetails(before, 'c1', { gender: '', age: '', role: '', relation: { kind: '', of: '' }, status: '' }, { ...kendraAsShown(), status: 'alive' });
+
+        assert.deepEqual(ledger.characters[0], { id: 'c1', name: 'Kendra Osei', aliases: ['Kendra'] });
+    });
+
+    it('leaves a story detail whose field the player emptied, since only a rollback takes it back', () => {
+        const { ledger } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), role: '', relation: { kind: '', of: '' } }, amaAsShown());
+
+        assert.deepEqual(ledger, makeLedger());
+    });
+
+    it('sets a relation as a kinship word and the other character\'s id, and a status', () => {
+        const { ledger } = saveCharacterDetails(makeLedger(), 'c1', {
+            gender: '', age: '', role: '', relation: { kind: ' daughter ', of: 'c2' }, status: 'dead',
+        }, kendraAsShown());
+
+        assert.deepEqual(ledger.characters[0].details, {
+            relation: [{ value: { kind: 'daughter', of: 'c2' }, at: null, by: 'user' }],
+            status: [{ value: 'dead', at: null, by: 'user' }],
+        });
+    });
+
+    it('refuses a relation without a kinship word or without the other character', () => {
+        assert.equal(
+            saveCharacterDetails(makeLedger(), 'c1', { ...amaAsShown(), age: '', role: '', relation: { kind: 'daughter', of: '' } }, kendraAsShown()).error,
+            'A relation needs a kinship word and another character.');
+        assert.equal(
+            saveCharacterDetails(makeLedger(), 'c1', { ...amaAsShown(), age: '', role: '', relation: { kind: '', of: 'c2' } }, kendraAsShown()).error,
+            'A relation needs a kinship word and another character.');
+    });
+
+    it('refuses a relation to the character themselves or to someone not in the ledger', () => {
+        const toSelf = saveCharacterDetails(makeLedger(), 'c1', { gender: '', age: '', role: '', relation: { kind: 'sister', of: 'c1' }, status: '' }, kendraAsShown());
+        const toStranger = saveCharacterDetails(makeLedger(), 'c1', { gender: '', age: '', role: '', relation: { kind: 'sister', of: 'c9' }, status: '' }, kendraAsShown());
+
+        assert.deepEqual(toSelf, { ledger: null, error: 'A relation needs another character.' });
+        assert.deepEqual(toStranger, { ledger: null, error: 'A relation needs another character.' });
+    });
+
+    it('refuses a status other than alive or dead', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c1', { gender: '', age: '', role: '', relation: { kind: '', of: '' }, status: 'missing' }, kendraAsShown());
+
+        assert.equal(ledger, null);
+        assert.equal(error, 'A status is alive or dead.');
+    });
+
+    it('leaves the ledger it was given untouched', () => {
+        const before = makeLedger();
+        saveCharacterDetails(before, 'c2', { ...amaAsShown(), gender: 'female', age: '' }, amaAsShown());
+        assert.deepEqual(before, makeLedger());
+    });
+
+    it('refuses an unknown character', () => {
+        assert.equal(saveCharacterDetails(makeLedger(), 'c9', amaAsShown(), amaAsShown()).error, 'This character is no longer in the ledger.');
+    });
+});
+
+describe('saveCharacterDetails: the ledger changed while the popup was open', () => {
+    it('writes no player entry for a field left as shown when an extraction changed its detail meanwhile', () => {
+        const ledgerNow = makeLedger();
+        ledgerNow.characters[1].details.role.push({ value: 'nurse, Highland Hospital', at: 20, messageId: 'm20' });
+
+        const { ledger, error } = saveCharacterDetails(ledgerNow, 'c2', { ...amaAsShown(), age: '45' }, amaAsShown());
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[1].details, {
+            age: [{ value: '45', at: null, by: 'user' }],
+            role: [
+                { value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' },
+                { value: 'nurse, Highland Hospital', at: 20, messageId: 'm20' },
+            ],
+            relation: [{ value: { kind: 'mother', of: 'c1' }, at: 14, messageId: 'm14' }],
+        });
+    });
+
+    it('does not write back a detail a rollback removed meanwhile', () => {
+        const ledgerNow = makeLedger();
+        delete ledgerNow.characters[1].details.role;
+
+        const { ledger } = saveCharacterDetails(ledgerNow, 'c2', { ...amaAsShown(), age: '45' }, amaAsShown());
+
+        assert.deepEqual(ledger.characters[1].details, {
+            age: [{ value: '45', at: null, by: 'user' }],
+            relation: [{ value: { kind: 'mother', of: 'c1' }, at: 14, messageId: 'm14' }],
+        });
+    });
+
+    it('does not lock a story detail the player retyped in other letter case', () => {
+        const before = makeLedger();
+        before.characters[1].details.gender = [{ value: 'female', at: 12, messageId: 'm12' }];
+
+        const { ledger } = saveCharacterDetails(before, 'c2', { ...amaAsShown(), gender: 'Female' }, { ...amaAsShown(), gender: 'female' });
+
+        assert.deepEqual(ledger.characters[1].details.gender, [{ value: 'female', at: 12, messageId: 'm12' }]);
+    });
+
+    it('does not count a relation retyped in other letter case as a change', () => {
+        const { ledger } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), relation: { kind: 'Mother', of: 'c1' } }, amaAsShown());
+
+        assert.deepEqual(ledger, makeLedger());
+    });
+});
+
+describe('saveCharacterDetails: the display name of an unnamed relative', () => {
+    it('refuses a relation that gives a nameless record the display name of another record', () => {
+        const before = {
+            characters: [
+                { id: 'c1', name: 'Kendra Osei', aliases: [] },
+                { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }] } },
+                { id: 'c3', name: '', aliases: [], details: { relation: [{ value: { kind: 'aunt', of: 'c1' }, at: null, by: 'record' }] } },
+            ],
+            facts: [],
+            scene: { at: null, present: [] },
+            lastUpdatedAt: null,
+        };
+        const shown = { ...kendraAsShown(), relation: { kind: 'aunt', of: 'c1' } };
+
+        const result = saveCharacterDetails(before, 'c3', { ...shown, relation: { kind: 'MOTHER', of: 'c1' } }, shown);
+
+        assert.deepEqual(result, { ledger: null, error: "Kendra Osei's MOTHER is already in the ledger." });
+    });
+});
+
+describe('buildKnowledgeContent: the details editor', () => {
+    it('stores in each field the value it shows, which saving compares with', () => {
+        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c2');
+
+        assert.ok(rowHtml.includes('data-detail-kind="age" value="40s" data-shown-value="40s">'), rowHtml);
+        assert.ok(rowHtml.includes('data-detail-kind="gender" value="" data-shown-value="">'));
+        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-relation-kind" value="mother" data-shown-value="mother">'));
+        assert.ok(rowHtml.includes('<select class="text_pole story-arc-detail-relation-of" data-shown-value="c1">'));
+        assert.ok(rowHtml.includes('<select class="text_pole story-arc-detail-status" data-shown-value="">'));
+    });
+
+    it('fills each field with the current detail, and offers the other characters for the relation', () => {
+        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c2');
+
+        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-input" data-detail-kind="gender" value="" data-shown-value="">'));
+        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-input" data-detail-kind="age" value="40s" data-shown-value="40s">'));
+        assert.ok(rowHtml.includes('data-detail-kind="role" value="cleaner, double shifts, Oakland" data-shown-value="cleaner, double shifts, Oakland">'));
+        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-relation-kind" value="mother" data-shown-value="mother">'));
+        assert.ok(rowHtml.includes('<option value="c1" selected>Kendra Osei</option>'));
+        assert.ok(!rowHtml.includes('<option value="c2"'), 'a character is no relative of themselves');
+        assert.ok(rowHtml.includes('<option value="" selected>unknown</option><option value="alive">alive</option><option value="dead">dead</option>'));
+        assert.ok(rowHtml.includes('story-arc-details-save-btn'));
+    });
+});

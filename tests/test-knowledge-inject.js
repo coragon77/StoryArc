@@ -83,6 +83,21 @@ describe('injectKnowledgeBlock', () => {
         ]);
     });
 
+    it('sets both keys to an empty string while the tracker is off, even when the ledger holds character details', () => {
+        setSwitches({ extension: true, tracker: false });
+        chat_metadata.story_arc.knowledge.characters[0].details = {
+            role: [{ value: 'mechanic, the Annex workshop', at: 3 }],
+            status: [{ value: 'dead', at: 3 }],
+        };
+
+        injectKnowledgeBlock();
+
+        assert.deepEqual(extensionPromptCalls, [
+            ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+            ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
+        ]);
+    });
+
     it('sets both keys to an empty string while Story Arc itself is off', () => {
         setSwitches({ extension: false, tracker: true });
 

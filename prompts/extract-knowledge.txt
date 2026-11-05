@@ -3,7 +3,7 @@ You keep the knowledge ledger of a long-running roleplay: which character knows 
 The player writes as the persona {{PERSONA}}. The persona is a character like any other: it knows only what it witnessed or was told on screen.
 
 == CHARACTERS IN THE LEDGER ==
-Each with the other names they go by.
+Each with the other names they go by, and after a dash the details the ledger knows about them.
 {{CHARACTERS}}
 
 == FACTS IN THE LEDGER ==
@@ -35,6 +35,8 @@ Each message starts with its index in square brackets.
 1. PRESENT. List the characters who are in the scene at the end of the new messages. Use the names from the ledger where the character is in it.
 
 2. NEW CHARACTERS. List every character who appears or is talked about in the new messages and is not in the ledger under any name, with the other names the messages give them. Do not list a character the ledger already has under another name.
+- A relative of a character in the ledger or in your new characters whom the messages do not name ("her mother", "Kendra's brother") is an unnamed relative: leave "name" empty and give "relation", the kinship word ("mother", "brother", "husband"), and "of", the name of the other character. Elsewhere in your answer call them by the name the characters list would show: the other character's name, "'s" and the kinship word ("Kendra Osei's mother"). List an unnamed relative only when the messages make them a character of the story, not for a passing mention.
+- The characters list marks an unnamed relative "(unnamed)". When the new messages give one of them a name on screen, list them here with that name and "wasUnnamed", the name the characters list shows for them ("Kendra Osei's mother"), and use the new name in the rest of your answer.
 
 3. LEARNED. Record only knowledge a character could act on or wrongly reveal: secrets, plans, identities, who did what, private information, things told in confidence. Do not record small talk, sensations, descriptions, moods or what anyone in the scene can plainly see. For every such fact a character learns in the new messages, write one item. One fact holds one piece of knowledge: knowledge that different characters can learn at different times goes into separate facts, not into one sentence joined by "and". Write each fact once: put everyone who learns it in the same way in one item.
 - "factId" when the fact is already in the ledger, even when the new messages word it differently: when the same knowledge is meant, use its id, not new text. Otherwise "text", the fact in one short sentence that names who and what ("Gabriel wants Noor's gauntlet locked on with titanium latches"). The text states the fact itself, not who knows it or who does not ("and nobody else knows" belongs in no text): the holders record that.
@@ -69,10 +71,23 @@ Only what happens on screen in the new messages counts, not what is planned, hin
 - "at": the index in square brackets of the player's message, one of the new messages.
 Only the player's own out-of-character lines count, never the narrator's. A ruling contradicts something the plans list says. A request about the current scene (rewrite that, change an outfit, stop and report back) contradicts no plan and is not a ruling. New direction that contradicts nothing in the plans list is not a ruling either. When in doubt, leave it out.
 
+8. DETAILS. The characters list shows the details the ledger knows about each character. For a character from the ledger, report a detail only when the ledger does not know that kind of detail for the character yet and the new messages state it, or when the new messages show it changing on screen: an event the text shows happening, such as a transfer, a new job, a death, or a dead character seen alive again. A new character from task 2 may carry details too. Write one item per detail:
+- "character": the character's name from the ledger or from your new characters.
+- "kind": "gender"; "age" (as exact or as vague as the text puts it: "18", "twenty-something"); "role" (the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland"); "relation" (kinship to another character in the ledger or in your new characters: "mother", "brother", "husband"); or "status" ("alive" or "dead").
+- "value": the detail in a few words, always as a string. For a relation the kinship word only; for a status "alive" or "dead".
+- "of": only for a relation, the name of the other character ("Kendra Osei" for Kendra Osei's mother).
+- "change": only for a detail the ledger already knows, the on-screen event that changes it, in one short sentence ("Vera transfers to the Wards."). Leave it out for a detail the ledger does not know yet.
+- "at": the index in square brackets of the message that states it, one of the new messages.
+Record only what the text states. Never guess a detail from a name, a look, a trope or what would be likely. A detail the ledger already knows is not reported again unless the new messages show it changing. A different value merely stated, with no such event, is not a change: do not report it. The ledger's value stays, and the narrator stated it wrongly. Out-of-character lines set no detail.
+
 Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
-  "newCharacters": [{ "name": "name", "aliases": ["other name"] }],
+  "newCharacters": [
+    { "name": "name", "aliases": ["other name"] },
+    { "name": "", "aliases": [], "relation": "kinship word, only for an unnamed relative", "of": "name of the other character" },
+    { "name": "the name given on screen", "aliases": [], "wasUnnamed": "the name the characters list shows for an unnamed relative" }
+  ],
   "learned": [
     { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> },
     { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> }
@@ -88,6 +103,9 @@ Answer with ONLY this JSON object, no prose before or after it:
   ],
   "rulings": [
     { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "chose": "only for a bare pick: the option it picks, copied exactly", "at": <index of the player's message> }
+  ],
+  "details": [
+    { "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "change": "only for a changed detail: the on-screen event", "at": <index of the message> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.

@@ -170,6 +170,7 @@ describe('updateKnowledgeAfterReply', () => {
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             }],
         });
     });
