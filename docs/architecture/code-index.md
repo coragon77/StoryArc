@@ -424,7 +424,8 @@ StoryArc/
 │   │   │                       #   lock the kind, #54; mergeCharacters: one
 │   │   │                       #   record into another, #60; moveFactHolder,
 │   │   │                       #   deleteCharacter (+ removed), restoreRetractedFact,
-│   │   │                       #   lockCharacterDetail, #66;
+│   │   │                       #   lockCharacterDetail, #66; retractFact,
+│   │   │                       #   unnameCharacter, #70;
 │   │   │                       #   markChangeItemReviewed, unmarkChangeItemReviewed:
 │   │   │                       #   reviewed marks by item key, #67) return
 │   │   │                       #   { ledger, error }; saveLedgerEdit stores one and
@@ -538,7 +539,7 @@ StoryArc/
 │   ├── test-knowledge-popup-view.js # Tests: What changed (#70): listChangeLines, lines
 │   │                           #   per change, reviewed folding, earlier records, plan
 │   │                           #   holders hidden, the empty log
-│   ├── test-knowledge-hand-edits.js # Tests: move holder, delete character, restore a
+│   ├── test-knowledge-hand-edits.js # Tests: retractFact, unnameCharacter (#70); move holder, delete character, restore a
 │   │                           #   retracted fact, lock a detail (#66), refusals,
 │   │                           #   rollback after a move, restore and lock
 │   ├── test-knowledge-undo.js  # Tests: undo of hand edits (#68): exact restore, one
