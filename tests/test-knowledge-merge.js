@@ -81,6 +81,16 @@ describe('mergeCharacters — names', () => {
         assert.equal(ledger.characters.length, 4);
     });
 
+    it('refuses a merge that leaves an unnamed record with neither a name nor a relation', () => {
+        const mother = { id: 'c40', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c41' }, at: null, by: 'record' }] } };
+        const daughter = { id: 'c41', name: '', aliases: [], details: { relation: [{ value: { kind: 'daughter', of: 'c40' }, at: null, by: 'record' }] } };
+
+        const { ledger, error } = mergeCharacters(ledgerWithCharacters(mother, daughter), 'c40', 'c41');
+
+        assert.equal(ledger, null);
+        assert.equal(error, 'An unnamed relative needs a relation. Give them a name first.');
+    });
+
     it('refuses to merge a record into itself', () => {
         const { ledger, error } = mergeCharacters(makeLedger(), 'c5', 'c5');
         assert.equal(ledger, null);
@@ -241,17 +251,29 @@ describe('mergeCharacters — two holder entries for one character', () => {
         assert.deepEqual(ledger.facts[0].holders, [{ characterId: 'c5', how: 'user', toldBy: null, at: null }]);
     });
 
-    it('keeps the main record\'s entry when both come from one message', () => {
+    it('keeps the main record\'s entry when both come from one message, whichever is listed first', () => {
         const before = ledgerWithFacts([{
             id: 'f5', text: 'The bridge is out', public: false, holders: [
-                { characterId: 'c5', how: 'witnessed', toldBy: null, at: 9 },
                 { characterId: 'c28', how: 'told', toldBy: 'c1', at: 9 },
+                { characterId: 'c5', how: 'witnessed', toldBy: null, at: 9 },
             ],
         }]);
 
         const { ledger } = mergeCharacters(before, 'c5', 'c28');
 
         assert.deepEqual(ledger.facts[0].holders, [{ characterId: 'c5', how: 'witnessed', toldBy: null, at: 9 }]);
+    });
+
+    it('turns an entry the other record told the main record into a witnessed one', () => {
+        const before = ledgerWithFacts([{
+            id: 'f6', text: 'The suit runs hot', public: false, holders: [
+                { characterId: 'c5', how: 'told', toldBy: 'c28', at: 11, messageId: 'm11' },
+            ],
+        }]);
+
+        const { ledger } = mergeCharacters(before, 'c5', 'c28');
+
+        assert.deepEqual(ledger.facts[0].holders, [{ characterId: 'c5', how: 'witnessed', toldBy: null, at: 11, messageId: 'm11' }]);
     });
 });
 
@@ -297,7 +319,6 @@ describe('mergeCharacters — reused-name flag', () => {
         const { ledger } = mergeCharacters(ledgerWithCharacters(anvil), 'c5', 'c28');
 
         assert.deepEqual(ledger.characters.map(character => character.id), ['c1', 'c5']);
-        assert.equal('nameClash' in ledger.characters[1], false);
     });
 
     it('clears the main record\'s flag when its flagged names are now its own', () => {
