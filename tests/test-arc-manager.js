@@ -217,7 +217,7 @@ describe('buildLastBeatCell', () => {
 
     it('a paused arc: where it was paused, and that its clock stands still', () => {
         const arc = makeEpisode({ focus: 'paused', pausedAt: 2090 });
-        assert.equal(textOf(buildLastBeatCell(arc)), 'Paused at #2,090 clock stands still · last beat #2,085');
+        assert.equal(textOf(buildLastBeatCell(arc)), 'Paused at #2,090 clock stands still last scene beat #2,085');
     });
 
     it('a reactivated arc says where it was reactivated', () => {
@@ -294,6 +294,13 @@ describe('buildManagerContent', () => {
         assert.ok(text.includes('No arc is steering the story'), text);
         assert.ok(text.includes('Or bring one back: 1 past arc below can be reactivated. Show past arcs'), text);
         assert.ok(text.includes('Past arcs (1 · 0 completed, 1 abandoned)'), text);
+    });
+
+    it('names the beats with the tier word of the arcs the table lists, beat when tiers mix', () => {
+        const actsOnly = textOf(buildManagerContent([makeAct()], [], view()));
+        assert.ok(actsOnly.includes('Phase Milestones Last milestone landed'), actsOnly);
+        const mixed = textOf(buildManagerContent([makeAct(), makeEpisode()], [], { ...view(), activeOrder: ['act-1', 'ep-1'] }));
+        assert.ok(mixed.includes('Phase Beats Last beat landed'), mixed);
     });
 
     it('the Knowledge button only while the tracker is on', () => {
