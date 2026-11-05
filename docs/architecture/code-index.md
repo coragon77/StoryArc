@@ -467,8 +467,8 @@ StoryArc/
 │   │                           #   isStallNudgeShown(arc, chatLength) — stalled and
 │   │                           #   not the ignored stall (the card's check)
 │   └── css/
-│       ├── core.css            # CSS custom properties, base layout, badges incl.
-│       │                       #   the tier badge
+│       ├── core.css            # CSS custom properties, base layout, buttons,
+│       │                       #   inputs (the badges went with the old Arc Manager)
 │       ├── spoiler.css         # Spoiler toggle (hidden arc content)
 │       ├── wizard.css          # Wizard popup layout, step indicators, tier row and
 │       │                       #   hint, generation step log and streamed-chars ticker

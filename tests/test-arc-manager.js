@@ -258,6 +258,19 @@ describe('describeWhatNarratorGets', () => {
     });
 });
 
+describe('buildManagerContent — the pacing clock in the narrator line', () => {
+    it('names the first normal episode in storage order, not the first row of the table', () => {
+        const older = makeEpisode({ id: 'ep-old', title: 'Older', createdAt: '2026-10-01T00:00:00.000Z' });
+        const newer = makeEpisode({ id: 'ep-new', title: 'Newer', createdAt: '2026-10-25T00:00:00.000Z' });
+        const arcs = [older, newer];
+        const tableView = { activeOrder: ['ep-new', 'ep-old'], expanded: new Set(['ep-old', 'ep-new']), revealed: new Set(), trackerOn: true };
+        const html = buildManagerContent(arcs, [], tableView);
+        const getsOf = id => textOf(html.split(`data-gets="${id}">`)[1].split('</p>')[0]);
+        assert.ok(getsOf('ep-old').endsWith('It is the pacing clock, so the phase brake counts its messages.'), getsOf('ep-old'));
+        assert.equal(getsOf('ep-new').includes('pacing clock'), false);
+    });
+});
+
 describe('buildArcDetail — the plan behind the Reveal switch', () => {
     it('marks every piece of plan text plan-only, and starts hidden', () => {
         const html = buildArcDetail(makeAct(), { activeArcs: [], pendingMarks: [], view: view() });
