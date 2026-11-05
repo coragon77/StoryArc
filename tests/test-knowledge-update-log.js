@@ -100,6 +100,7 @@ describe('the knowledge update log', () => {
             kind: 'update', from: 3, to: 6, messageId: 'm6',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0,
         }]);
     });
 
@@ -114,6 +115,7 @@ describe('the knowledge update log', () => {
             kind: 'update', from: 3, to: 6, messageId: 'm6',
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0,
         }]);
     });
 
@@ -233,6 +235,7 @@ describe('the knowledge update log', () => {
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0,
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [] },
         ]);
@@ -281,7 +284,55 @@ describe('the knowledge update log', () => {
             kind: 'reextract', from: 1, to: 1, messageId: 'm1',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0,
         }]);
+    });
+
+    it('counts the details an update set, changed and ignored as restatements, without their values', async () => {
+        setSwitches();
+        storeLedger();
+        chat_metadata.story_arc.knowledge.characters[0].details = {
+            role: [{ value: 'mechanic, Halstead bay', at: 1, messageId: 'm1' }],
+            age: [{ value: '30s', at: 1, messageId: 'm1' }],
+        };
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'], newCharacters: [], learned: [],
+            details: [
+                { character: 'Ellie', kind: 'gender', value: 'female', at: 3 },
+                { character: 'Noor', kind: 'role', value: 'head mechanic, Halstead bay', change: 'Gabriel promotes her.', at: 4 },
+                { character: 'Noor', kind: 'age', value: '50s', at: 4 },
+                { character: 'Noor', kind: 'gender', value: 'female', at: 4 },
+                { character: 'Noor', kind: 'gender', value: 'female', at: 6 },
+            ],
+        })]);
+
+        await updateKnowledgeAfterReply(6);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
+            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 2, detailsChanged: 1, restatementsIgnored: 1,
+        }]);
+    });
+
+    it('counts the details of a re-extraction', async () => {
+        setSwitches();
+        storeLedger();
+        chat_metadata.story_arc.knowledge.characters[1].details = { age: [{ value: '17', at: 0, messageId: 'm0' }] };
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'], newCharacters: [], learned: [],
+            details: [{ character: 'Ellie', kind: 'age', value: 19, at: 1 }],
+        })]);
+
+        await updateKnowledgeAfterEdit(1);
+
+        const record = chat_metadata.story_arc.knowledge.updateLog[0];
+        assert.equal(record.kind, 'reextract');
+        assert.deepEqual(
+            { detailsSet: record.detailsSet, detailsChanged: record.detailsChanged, restatementsIgnored: record.restatementsIgnored },
+            { detailsSet: 0, detailsChanged: 0, restatementsIgnored: 1 },
+        );
     });
 
     it('records a failed re-extraction as a skip', async () => {

@@ -185,7 +185,6 @@ describe('parseKnowledgeExtractionAnswer — details', () => {
             '"no object"',
             '{ "kind": "age", "value": "17", "at": 12 }',
             '{ "character": "Ama", "kind": "job", "value": "cleaner", "at": 12 }',
-            '{ "character": "Ama", "kind": "age", "value": 17, "at": 12 }',
             '{ "character": "Ama", "kind": "age", "value": " ", "at": 12 }',
             '{ "character": "Ama", "kind": "age", "value": "17", "at": "12" }',
             '{ "character": "Ama", "kind": "relation", "value": "mother", "at": 12 }',
@@ -238,7 +237,7 @@ describe('extract-knowledge.txt — details', () => {
 
     it('asks for a details list in the answer, with the value always a string', () => {
         assert.ok(template.includes('"details": ['), 'missing the details list in the answer');
-        assert.ok(template.includes('{ "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "at": <index of the message> }'));
+        assert.ok(template.includes('{ "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "change": "only for a changed detail: the on-screen event", "at": <index of the message> }'));
     });
 
     it('lets a new character from task 2 carry details', () => {
