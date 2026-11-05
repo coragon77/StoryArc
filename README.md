@@ -11,7 +11,9 @@ What it does:
 - **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
 - **Plans an arc** in three LLM passes: an analysis of the story's current state, a structured plan with beats, secrets, foreshadowing and triggers, and a check that rewrites anything in the plan that would give a secret away. On a re-plan the check also notices which secrets the story has already revealed.
 - **Steers the chat** by injecting the plan into the prompt. The model sees only the current pressure on the scene, never a checklist of goals, so it does not race through the plan.
-- **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat.
+- **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat. With the knowledge tracker on, a separate extraction call recognises fulfilled beats instead.
+- **Tracks who knows what** (optional). A knowledge ledger records which character learned which fact and how, so the model stops letting characters know what they never learned. It also keeps the names already in the story, so new characters do not get them again.
+- **Tracks character details** (optional). Gender, age, role, kinship and alive or dead for every character, as the story established them, so the model stops reinventing a side character's job or family.
 - **Keeps the plan secret.** Everything that would spoil the story sits behind spoiler toggles.
 
 Story Arc was scaffolded from [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode). Story Mode plans a story from scratch; Story Arc continues one that already exists.
@@ -45,6 +47,7 @@ Open the **Extensions** drawer and expand **Story Arc**.
 1. **Enable Story Arc.** The extension does nothing until this is checked.
 2. **Generation profile.** Choose which Connection Manager profile plans the arcs. "Current API" uses whatever the chat is using. Planning sends a large prompt (often 20,000+ characters) and expects a long JSON answer, so a capable model with a generous response length works best.
 3. **Create arc preset** (optional, recommended). This creates a preset named `Story Arc Generation`, tuned for planning (high reasoning effort, 20,000 response tokens, temperature 0.8), plus a connection profile of the same name, cloned from the selected profile. Select that profile as the generation profile afterwards.
+4. **Track who knows what** (optional, off by default). Switches on the [knowledge tracker](#the-knowledge-tracker). Each update is one extra LLM call through the generation profile, after an AI reply; **Update every N replies** sets how often. **Character details** (off by default) adds character details to the same call; it works only while the tracker is on.
 
 The arc preset also holds two **standing directives** as ordinary prompt entries. You edit and toggle them in SillyTavern's own prompt manager:
 
@@ -167,6 +170,47 @@ Story Arc reads the lorebook entries SillyTavern itself would scan for the chat:
 - **Arc summaries**: entries whose comment (title) contains `[ARC ` followed by text, for example `[ARC 3] The Harbour Heist`. Use this to give the planner summaries of earlier arcs.
 - **Recent**: everything else.
 
+## The knowledge tracker
+
+The narrator writes every character from one context that holds the whole chat, so nothing stops it from letting a character know what only someone else was told, or from inventing an off-screen phone call to explain it. A rule against omniscience names no fact and loses to the scene. The knowledge tracker names the facts instead.
+
+### Who knows what
+
+After an AI reply, an extraction call reads the new messages and records in the **knowledge ledger** who learned which fact, and whether they saw it happen or were told (and by whom). Just above the newest message, the model then gets a short block with what everyone knows and what each character in the scene, and each character the scene talks about, knows. A private fact appears only under the characters who hold it.
+
+- **Out-of-character corrections** take knowledge back: when you say out of character that a fact is wrong or invented, the extraction retracts it.
+- **Deleting, swiping, regenerating or editing** a message takes back what that message taught. A branch carries only what its own messages taught.
+- **Taken names.** The model is told every first name, surname and codename the story already uses, so a new character does not get one of them unless they are related. A new character who gets a taken name anyway shows up under **Names to check** in the Knowledge popup, where you rename it or keep the name.
+- **Beats and rulings.** With the tracker on, the extraction call also recognises fulfilled beats, so the narrator's prompt carries no beat check. It also notices when you say out of character that the story must differ from an arc's premise or pressures, and stores that as a ruling on the arc; a re-plan follows the arc's rulings.
+
+### Character details
+
+With **Character details** on, the same extraction call records for every character:
+
+| Detail | Example |
+|---|---|
+| Gender | female |
+| Age | 52, or as vague as the story puts it: "twenty-something" |
+| Role | the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland" |
+| Relation | kinship to another character: "Kendra Osei's mother" |
+| Status | dead (being alive needs no entry) |
+
+The rules:
+
+- **Only what the story states.** A detail the text has not stated stays unknown; the extraction never guesses.
+- **A stated detail is binding.** It changes only when the story shows the change happening (a transfer, a new job, a death). When the narrator just states a different value, the stored one stays, and the model sees the right one again on the next turn.
+- **The model sees the details** of the characters in the scene and the characters being talked about, in the same block as their knowledge.
+- **Unnamed relatives** ("Kendra Osei's mother") are characters of their own, called after their relation. They add no taken name.
+- **Rollback** works as for knowledge: a deleted or swiped message takes its details back, and an earlier value returns.
+
+### The Knowledge popup
+
+The Knowledge popup opens from the Arc Manager header and the wand popup while the tracker is on. It lists the characters (add, rename, aliases) and the facts with their holders (add, edit, delete, mark public), behind spoiler toggles, because the ledger shows who holds the arcs' secrets. Your edits survive every rollback; this is how you correct the ledger and enter facts the story never wrote down.
+
+With character details on, each character's details are shown and editable there, and you can add an unnamed relative. A detail you edit is **locked**: the extraction no longer changes it. Empty the field to unlock it.
+
+The status line in the Extensions drawer shows the last message the ledger covers, so you can see whether it is behind.
+
 ## How it works
 
 In a long RP the narrator model has no idea where the story is going. So it improvises, invents mysteries without answers, and resolves every tension in two or three messages. Story Arc acts as an automated dungeon master. It reads the story, writes a novelist's plan for what comes next, and slips that plan into the narrator's prompt, while you stay a player who gets surprised. The rule that makes this work is "Starve the solver". The narrator gets facts and forces, never a goal or an outcome, because a visible goal gets solved. In one line: prompt clauses steer, but only withholding information guarantees. In that frame, a leaked secret and a rushed scene are the same failure: the narrator was shown an outcome and went straight for it.
@@ -186,8 +230,9 @@ The injected text changes only when the plan changes, never per message. This ke
 
 Everything is stored per chat in the chat file's metadata (`chat_metadata.story_arc`). Story Arc only reads your lorebook, character card and persona. It writes:
 
-- its own chat metadata and its global settings;
+- its own chat metadata and its global settings, including the knowledge ledger (`chat_metadata.story_arc.knowledge`) while the tracker is on;
 - AI replies, but only to remove its own markers and any leaked plan ids;
+- a message id of its own on each message the knowledge tracker has read (`extra.story_arc_message_id`), so its knowledge follows the message when messages are deleted;
 - the `Story Arc Generation` preset and connection profile, and only when you click **Create arc preset**.
 
 Deleting the extension leaves your chats readable; the arc data simply stays unused in the metadata.
