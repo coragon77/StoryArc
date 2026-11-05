@@ -151,7 +151,7 @@ describe('dropKnowledgeFrom — rolling back the correction brings the fact back
             sceneHistory: [],
             lastUpdatedAt: 2121,
             retractedFacts: [],
-            updateLog: [{ kind: 'rollback', from: 2122, factsDropped: [], holdersDropped: 0, factsRestored: ['f2'] }],
+            updateLog: [{ kind: 'rollback', from: 2122, factsDropped: [], holdersDropped: 0, factsRestored: ['f2'], detailsDropped: 0 }],
         });
     });
 

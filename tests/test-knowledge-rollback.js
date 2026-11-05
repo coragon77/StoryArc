@@ -152,7 +152,7 @@ describe('rollBackKnowledgeFrom', () => {
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6b',
             updateLog: [
-                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
                     kind: 'update', from: 6, to: 6, messageId: 'm6b',
                     answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
@@ -176,7 +176,7 @@ describe('rollBackKnowledgeFrom', () => {
             facts: [FACT_F1, FACT_F4],
             scene: { at: null, present: [] },
             lastUpdatedAt: 2,
-            updateLog: [{ kind: 'rollback', from: 3, factsDropped: ['f2', 'f3'], holdersDropped: 2, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 3, factsDropped: ['f2', 'f3'], holdersDropped: 2, factsRestored: [], detailsDropped: 0 }],
         });
     });
 
@@ -235,7 +235,7 @@ describe('updateKnowledgeAfterSwipe', () => {
             scene: { at: null, present: [] },
             lastUpdatedAt: 5,
             lastUpdatedMessageId: 'm5',
-            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 }],
         });
     });
 
@@ -265,7 +265,7 @@ describe('updateKnowledgeAfterSwipe', () => {
             lastUpdatedAt: 6,
             lastUpdatedMessageId: swipeMessageId,
             updateLog: [
-                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
                     kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
                     answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },

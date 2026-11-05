@@ -234,7 +234,7 @@ describe('the knowledge update log', () => {
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             },
-            { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [] },
+            { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [], detailsDropped: 0 },
         ]);
     });
 
@@ -253,7 +253,7 @@ describe('the knowledge update log', () => {
         await rollBackKnowledgeFrom(5);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [
-            { kind: 'rollback', from: 5, factsDropped: [], holdersDropped: 0, factsRestored: ['f2'] },
+            { kind: 'rollback', from: 5, factsDropped: [], holdersDropped: 0, factsRestored: ['f2'], detailsDropped: 0 },
         ]);
     });
 
