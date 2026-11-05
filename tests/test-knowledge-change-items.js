@@ -181,7 +181,7 @@ describe('the item keys of a record', () => {
             'm6:update:detail:c2:gender',
             'm6:update:name:c1:Wrench',
             'm6:update:retracted:f1',
-            'm6:update:scene',
+            'm6:update:scene:c1:c3',
         ]);
         assert.deepEqual(listChangeItems(record)[2], {
             key: 'm6:update:detail:c2:gender', kind: 'detail', detailKind: 'gender', characterId: 'c2', messageId: 'm4',
@@ -206,7 +206,7 @@ const EVERYTHING_KEYS = {
     detail: 'm6:update:detail:c2:gender',
     name: 'm6:update:name:c1:Wrench',
     retracted: 'm6:update:retracted:f1',
-    scene: 'm6:update:scene',
+    scene: 'm6:update:scene:c1:c2:c3',
 };
 
 describe('a rollback drops the reviewed marks of the items it removes', () => {
@@ -242,7 +242,7 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
             'm6:update:character:c3', 'm6:update:holder:f2:c1', 'm6:update:name:c1:Wrench',
-            'm6:update:retracted:f1', 'm6:update:scene',
+            'm6:update:retracted:f1', 'm6:update:scene:c1:c2:c3',
         ]);
     });
 
@@ -263,7 +263,7 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
             'm6:update:character:c3', 'm6:update:detail:c2:gender', 'm6:update:name:c1:Wrench',
-            'm6:update:retracted:f1', 'm6:update:scene',
+            'm6:update:retracted:f1', 'm6:update:scene:c1:c2:c3',
         ]);
     });
 });
@@ -302,6 +302,39 @@ describe('the reviewed marks on ledgers from before them', () => {
                 { kind: 'rollback', from: 4, factsDropped: ['f1'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
             ],
         });
+    });
+
+    it('a rollback keeps the mark of a scene that left the scene history long before it', () => {
+        const ledger = {
+            characters: [{ id: 'c1', name: 'Noor', aliases: [] }],
+            facts: [{
+                id: 'f1', text: 'Ellie is Dice', public: false,
+                holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 40, messageId: 'm40' }],
+            }],
+            // The scene of m6 left the history ten updates ago.
+            scene: { at: 40, messageId: 'm40', present: ['c1'] },
+            sceneHistory: [{ at: 30, messageId: 'm30', present: ['c1'] }],
+            lastUpdatedAt: 40,
+            updateLog: [{
+                kind: 'update', from: 3, to: 6, messageId: 'm6', factsRetracted: [],
+                items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
+            }],
+            reviewedMarks: ['m6:update:scene:c1'],
+        };
+
+        dropKnowledgeFrom(ledger, 40);
+
+        assert.deepEqual(ledger.reviewedMarks, ['m6:update:scene:c1']);
+    });
+
+    it('two scene changes of the same message have two keys', () => {
+        const reextract = scene => ({
+            kind: 'reextract', from: 6, to: 6, messageId: 'm6', factsRetracted: [],
+            items: { characters: [], holders: [], details: [], names: [], scene },
+        });
+
+        assert.deepEqual(listChangeItems(reextract(['c1'])).map(item => item.key), ['m6:reextract:scene:c1']);
+        assert.deepEqual(listChangeItems(reextract(['c1', 'c2'])).map(item => item.key), ['m6:reextract:scene:c1:c2']);
     });
 
     it('a rollback drops a mark whose record is no longer in the log', () => {

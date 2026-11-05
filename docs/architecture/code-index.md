@@ -347,7 +347,7 @@ StoryArc/
 │   │                           #   createdChangeItems() lists the change items of an
 │   │                           #   update/reextract record (#67); listChangeItems(record)
 │   │                           #   gives each its item key; dropReviewedMarksOfGoneItems()
-│   │                           #   + changeItemExists() drop the reviewed marks of items
+│   │                           #   + presentChangeItemKeys() drop the reviewed marks of items
 │   │                           #   a rollback removed (dropKnowledgeFrom,
 │   │                           #   dropKnowledgeLearnedAt);
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
