@@ -190,4 +190,4 @@ _Avoid_: seen flag, read mark
 
 **What changed** (Knowledge popup):
 The Knowledge popup's opening view: the change items of the newest updates, one line per change, newest first, each with its fixes and "Fine" on the line. "Fine" sets the reviewed marks of the line's items, and a reviewed line folds away. Updates recorded before change items existed show as counts only.
-_Avoid_: feed, history (the update log is the ledger's own record)
+_Avoid_: feed
