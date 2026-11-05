@@ -139,10 +139,29 @@ describe('character details switch off — the extraction prompt', () => {
         return fillTemplate(TEMPLATE, variables);
     }
 
-    it('lists the characters without details, the unnamed relative still by its display name', () => {
+    it('lists the characters without details, the unnamed relative by its display name without the unnamed mark', () => {
         const variables = buildKnowledgeExtractionVariables(makeLedger(true), makeChat(), 11, 'Ellie', [], [], [], false);
 
-        assert.equal(variables.CHARACTERS, "- Kendra Osei (also: Kendra)\n- Ama Osei (also: Ama)\n- Kendra Osei's father (unnamed)");
+        assert.equal(variables.CHARACTERS, "- Kendra Osei (also: Kendra)\n- Ama Osei (also: Ama)\n- Kendra Osei's father");
+    });
+
+    it('has task 2 and the newCharacters schema as before character details, with no unnamed relative', () => {
+        const prompt = filledPrompt(makeLedger(true), false);
+
+        assert.ok(prompt.includes('Do not list a character the ledger already has under another name.\n\n3. LEARNED.'));
+        assert.ok(prompt.includes('  "present": ["name"],\n  "newCharacters": [{ "name": "name", "aliases": ["other name"] }],\n  "learned": ['));
+        assert.ok(!prompt.includes('unnamed'));
+        assert.ok(!prompt.includes('wasUnnamed'));
+        assert.ok(!prompt.includes('kinship'));
+    });
+
+    it('asks for unnamed relatives while the switch is on', () => {
+        const prompt = filledPrompt(makeLedger(true), true);
+
+        assert.ok(prompt.includes("- Kendra Osei's father (unnamed) — role: night porter; relation: Kendra Osei's father\n"));
+        assert.ok(prompt.includes('Do not list a character the ledger already has under another name.\n- A relative of a character in the ledger or in your new characters whom the messages do not name'));
+        assert.ok(prompt.includes('and use the new name in the rest of your answer.\n\n3. LEARNED.'));
+        assert.ok(prompt.includes('  "newCharacters": [\n    { "name": "name", "aliases": ["other name"] },\n    { "name": "", "aliases": [], "relation": "kinship word, only for an unnamed relative", "of": "name of the other character" },\n    { "name": "the name given on screen", "aliases": [], "wasUnnamed": "the name the characters list shows for an unnamed relative" }\n  ],\n  "learned": ['));
     });
 
     it('is the same prompt as for the ledger without details', () => {
@@ -189,16 +208,18 @@ describe('character details switch — the extraction answer', () => {
     });
 
     const sentPrompts = [];
+    let currentAnswer;
 
     beforeEach(() => {
         sentPrompts.length = 0;
+        currentAnswer = ANSWER_NOOR_IS_THIRTY;
         globalThis.fetch = async (url) => {
             if (String(url).endsWith('extract-knowledge.txt')) return new Response(TEMPLATE);
             throw new Error(`unexpected fetch ${url}`);
         };
         ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
             sentPrompts.push(messages[0].content);
-            const text = ANSWER_NOOR_IS_THIRTY;
+            const text = currentAnswer;
             return () => (async function* () { yield { text }; })();
         };
         chat.length = 0;
@@ -226,6 +247,50 @@ describe('character details switch — the extraction answer', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.characters, [{ id: 'c1', name: 'Noor', aliases: [] }]);
         assert.equal(sentPrompts.length, 1);
         assert.ok(!sentPrompts[0].includes('8. DETAILS.'));
+    });
+
+    /** An answer that adds Noor's unnamed mother and names her unnamed brother Kwame. */
+    const ANSWER_WITH_RELATIVES = JSON.stringify({
+        present: ['Noor'],
+        newCharacters: [
+            { name: '', aliases: [], relation: 'mother', of: 'Noor' },
+            { name: 'Kwame', aliases: [], wasUnnamed: "Noor's brother" },
+        ],
+        learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [],
+    });
+
+    /** Noor's unnamed brother joins the stored ledger. */
+    function addUnnamedBrother() {
+        chat_metadata.story_arc.knowledge.characters.push(
+            { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'brother', of: 'c1' }, at: null, by: 'record' }] } });
+    }
+
+    it('creates no unnamed relative and names none while the switch is off', async () => {
+        setSwitches({ characterDetails: false });
+        addUnnamedBrother();
+        currentAnswer = ANSWER_WITH_RELATIVES;
+
+        await updateKnowledgeAfterReply(2);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.characters, [
+            { id: 'c1', name: 'Noor', aliases: [] },
+            { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'brother', of: 'c1' }, at: null, by: 'record' }] } },
+            { id: 'c3', name: 'Kwame', aliases: [] },
+        ]);
+    });
+
+    it('creates and names unnamed relatives while the switch is on', async () => {
+        setSwitches({ characterDetails: true });
+        addUnnamedBrother();
+        currentAnswer = ANSWER_WITH_RELATIVES;
+
+        await updateKnowledgeAfterReply(2);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.characters, [
+            { id: 'c1', name: 'Noor', aliases: [] },
+            { id: 'c2', name: 'Kwame', aliases: [], details: { relation: [{ value: { kind: 'brother', of: 'c1' }, at: null, by: 'record' }] } },
+            { id: 'c3', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }] } },
+        ]);
     });
 
     it('records the answer\'s details while the switch is on', async () => {

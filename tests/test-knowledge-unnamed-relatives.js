@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fillTemplate } from '../lib/planning/generator.js';
 import { chat_metadata, extension_settings } from './mocks/st-mocks.js';
 import {
     applyExtractionAnswer,
@@ -143,7 +144,11 @@ describe('unnamed relative: taken names', () => {
 });
 
 describe('unnamed relative: the extraction prompt', () => {
-    const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+    // The prompt as sent while character details are on.
+    const emptyLedger = { characters: [], facts: [], scene: { at: null, present: [] }, lastUpdatedAt: null };
+    const template = fillTemplate(
+        readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8'),
+        buildKnowledgeExtractionVariables(emptyLedger, [], 0, 'Ellie', [], [], [], true));
 
     it('lets a new character be an unnamed relative and a later answer name one', () => {
         assert.ok(template.includes('leave "name" empty and give "relation", the kinship word'), 'missing the unnamed relative');

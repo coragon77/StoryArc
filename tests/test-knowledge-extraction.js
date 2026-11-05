@@ -49,6 +49,8 @@ describe('buildKnowledgeExtractionVariables', () => {
 
         assert.deepEqual(variables, {
             CHARACTERS_DETAILS_NOTE: '',
+            UNNAMED_RELATIVES_TASK: '',
+            NEW_CHARACTERS_SCHEMA: '[{ "name": "name", "aliases": ["other name"] }]',
             DETAILS_TASK: '',
             DETAILS_SCHEMA: '',
             PERSONA: 'Ellie',
@@ -79,6 +81,8 @@ describe('buildKnowledgeExtractionVariables', () => {
 
         assert.deepEqual(variables, {
             CHARACTERS_DETAILS_NOTE: '',
+            UNNAMED_RELATIVES_TASK: '',
+            NEW_CHARACTERS_SCHEMA: '[{ "name": "name", "aliases": ["other name"] }]',
             DETAILS_TASK: '',
             DETAILS_SCHEMA: '',
             PERSONA: '(no persona)',
