@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-05
+- **Last Updated:** 2026-11-06
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -362,32 +362,34 @@ StoryArc/
 │   │                           #   characterName(ledger, id) (also for the popup), characterDisplayName(ledger, character): an unnamed relative reads "<other>'s <kinship>" (#55)
 │   ├── ui/
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
-│   │   │                       #   enable toggle, generation profile dropdown
-│   │   │                       #   (Connection Manager profiles), 'Create arc preset'
-│   │   │                       #   button (handleCreateArcPreset(), no base-preset
-│   │   │                       #   dropdown), plan/manage buttons, progress container;
-│   │   │                       #   setupSettingsPanelEvents() also wires the stall
-│   │   │                       #   nudge (.story-arc-stall-btn → showWizard(arcId));
-│   │   │                       #   knowledge tracker switch, update interval and
-│   │   │                       #   status line (refreshed by knowledge-status.js)
+│   │   │                       #   actions row first (Plan / Manage / Knowledge),
+│   │   │                       #   progress container, then groups Arcs (enable),
+│   │   │                       #   Knowledge tracker (switch, details, interval,
+│   │   │                       #   status line from knowledge-status.js; details,
+│   │   │                       #   interval and Knowledge disabled while it is off),
+│   │   │                       #   Connection (generation profile dropdown, 'Create
+│   │   │                       #   arc preset' → handleCreateArcPreset());
+│   │   │                       #   setupSettingsPanelEvents() also wires the drawer's
+│   │   │                       #   stall nudge (#story-arc-settings .story-arc-stall-btn
+│   │   │                       #   → showWizard(arcId))
 │   │   ├── wand-menu.js        # registerWandMenuEntry() — adds a "Story Arc" item to
 │   │   │                       #   #extensionsMenu (the wand next to the chat bar);
-│   │   │                       #   showWandPopup() reopens itself after the wizard or
-│   │   │                       #   the manager resolves, so the progress cards rebuild;
-│   │   │                       #   says the extension is disabled instead of offering
-│   │   │                       #   dead buttons; Knowledge action while the tracker is on
-│   │   ├── wizard.js           # showWizard(reviseArcId?) — multi-step arc planning popup:
-│   │   │                       #   context preview → tier selector + direction →
-│   │   │                       #   generation view (append-only step log with elapsed
-│   │   │                       #   times, live streamed-chars ticker, active profile
-│   │   │                       #   name) → review. Revise mode: tier/direction/title/
-│   │   │                       #   premise pre-filled, "Your rulings" list with remove
-│   │   │                       #   controls (buildRulingsList(), removals held until
-│   │   │                       #   apply), reviseArcWithEdits() feeds
-│   │   │                       #   generateArc; review shows the Premise choice
-│   │   │                       #   (buildPremiseChoice(), current vs. proposed, the
-│   │   │                       #   proposal pre-selected when rulings were passed, plain
-│   │   │                       #   view), "Apply re-plan" writes via updateArc;
+│   │   │                       #   showWandPopup() closes itself before the wizard,
+│   │   │                       #   manager, Knowledge popup or a stall nudge's re-plan
+│   │   │                       #   opens, and reopens after it resolves, so the progress
+│   │   │                       #   cards rebuild; buildWandContent() (exported) says the
+│   │   │                       #   extension is off instead of offering dead buttons;
+│   │   │                       #   Knowledge action while the tracker is on
+│   │   ├── wizard.js           # showWizard(reviseArcId?) — two-step arc planning popup:
+│   │   │                       #   Direction (context summary strip with Retry on a
+│   │   │                       #   failed harvest, tier, genre, direction; re-plan:
+│   │   │                       #   title, premise, "Your rulings" with remove buttons)
+│   │   │                       #   → Review (generation log with a polite status line
+│   │   │                       #   and a visible Cancel, then the plan behind one
+│   │   │                       #   Reveal switch, foreshadowing shown as Clues; re-plan:
+│   │   │                       #   buildPremiseChoice(), "Apply re-plan" via updateArc).
+│   │   │                       #   Back from a generated plan asks inline first. The
+│   │   │                       #   build* view functions are exported (tests, shots);
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
 │   │   │                       #   badges, focus <select> (paused / background / normal
@@ -437,8 +439,13 @@ StoryArc/
 │       ├── core.css            # CSS custom properties, base layout, badges incl.
 │       │                       #   the tier badge
 │       ├── spoiler.css         # Spoiler toggle (hidden arc content)
-│       ├── wizard.css          # Wizard popup layout, step indicators, tier row and
-│       │                       #   hint, generation step log and streamed-chars ticker
+│       ├── wizard.css          # Two-step wizard: head and step indicator, context
+│       │                       #   strip, form, generation log, plan with the Reveal
+│       │                       #   switch; ST theme variables only (#72). Keeps the
+│       │                       #   old .story-arc-wizard-footer row for the old
+│       │                       #   Arc Manager and Knowledge popup
+│       ├── settings-panel.css  # Settings drawer (action row, grouped settings) and
+│       │                       #   the wand popup; ST theme variables only (#72)
 │       ├── arc-manager.css     # Arc list, beat rows, status badges
 │       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
 │       └── progress.css        # Compact sidebar progress widget, incl. the
@@ -449,7 +456,9 @@ StoryArc/
 │   ├── setup.js                # Registers ESM loader before test files load
 │   ├── loader.js               # Custom ESM loader — intercepts ST imports, returns mocks
 │   ├── mocks/
-│   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.
+│   │   └── st-mocks.js         # Mock exports for /script.js, /scripts/extensions.js, etc.;
+│   │                           #   Popup records each popup (mockPopups) and, with
+│   │                           #   mockPopupState.holdOpen, stays open until complete()
 │   ├── test-core.js            # Tests: core/constants (phases, defaults, arc factory)
 │   ├── test-lorebook.js        # Tests: fetchLorebookEntries (filter/sort), categorizeEntries
 │   ├── test-arc-preset.js      # Tests: pinned preset keys, directive entry defaults
@@ -577,7 +586,15 @@ StoryArc/
 │   ├── test-knowledge-secrets.js # Tests: SECRETS holder suffix on, injection as
 │   │                           #   before with the tracker off, budget trim
 │   ├── test-knowledge-settings.js # Tests: tracker switch, interval and status line in
-│   │                           #   the settings panel
+│   │                           #   the settings panel; the settings that depend on the
+│   │                           #   tracker disabled while it is off, following the switch
+│   ├── test-ui-wizard.js       # Tests: the wizard through showWizard with a fake
+│   │                           #   jQuery: Direction with the context strip, Retry on a
+│   │                           #   failed harvest, Cancel during generation, polite
+│   │                           #   status line, Clues in Review, Back asks before
+│   │                           #   discarding a plan
+│   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
+│   │                           #   the wizard opens; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line, fulfillment rewrites of
 │   │                           #   open beats only) + buildPlanCheckVariables

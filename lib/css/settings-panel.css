@@ -1,0 +1,159 @@
+/* ============================================================================
+   STORY ARC - SETTINGS DRAWER AND WAND POPUP
+   The extension drawer (actions first, then grouped settings) and the wand
+   popup, which shares its action row. ST theme variables only.
+   ============================================================================ */
+
+.story-arc-drawer,
+.story-arc-wand {
+    --dr-muted: color-mix(in srgb, var(--SmartThemeBodyColor) 72%, transparent);
+    --dr-line: color-mix(in srgb, var(--SmartThemeBodyColor) 12%, transparent);
+}
+
+/* ─── Action row: Plan, Manage, Knowledge ────────────────────────────────── */
+
+.story-arc-drawer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.story-arc-drawer-actions .menu_button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 30px;
+    margin: 0;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.story-arc-drawer-primary {
+    background-color: color-mix(in srgb, var(--SmartThemeEmColor) 26%, var(--SmartThemeBlurTintColor));
+    border-color: color-mix(in srgb, var(--SmartThemeEmColor) 60%, transparent);
+    font-weight: 600;
+}
+
+.story-arc-drawer-primary:hover:not([disabled]) {
+    background-color: color-mix(in srgb, var(--SmartThemeEmColor) 38%, var(--SmartThemeBlurTintColor));
+}
+
+.story-arc-drawer .menu_button[disabled],
+.story-arc-wand .menu_button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.story-arc-drawer .menu_button:focus-visible,
+.story-arc-drawer .text_pole:focus-visible,
+.story-arc-drawer input:focus-visible,
+.story-arc-wand .menu_button:focus-visible {
+    outline: 2px solid var(--SmartThemeEmColor);
+    outline-offset: 1px;
+}
+
+/* ─── Grouped settings ───────────────────────────────────────────────────── */
+
+.story-arc-drawer-group {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--dr-line);
+}
+
+.story-arc-drawer-group h4 {
+    margin: 0 0 2px;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.story-arc-drawer-group .checkbox_label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.story-arc-drawer-group .checkbox_label:has(input:disabled) {
+    color: var(--dr-muted);
+    cursor: not-allowed;
+}
+
+.story-arc-drawer-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+}
+
+.story-arc-drawer-field label {
+    flex: 0 0 auto;
+}
+
+.story-arc-drawer-field .text_pole {
+    flex: 1 1 8em;
+    min-width: 0;
+    margin: 0;
+}
+
+.story-arc-drawer-field input[type="number"].text_pole {
+    flex: 0 0 5em;
+}
+
+.story-arc-drawer-field:has(input:disabled) label {
+    color: var(--dr-muted);
+}
+
+.story-arc-drawer .text_pole:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.story-arc-drawer-help,
+.story-arc-drawer-status {
+    display: block;
+    color: var(--dr-muted);
+    line-height: 1.4;
+}
+
+.story-arc-drawer-status .menu_button {
+    display: inline-flex;
+    margin: 4px 0 0;
+}
+
+.story-arc-drawer-group > div > .menu_button {
+    display: inline-flex;
+    gap: 6px;
+    margin: 2px 0 0;
+}
+
+/* ─── Wand popup ─────────────────────────────────────────────────────────── */
+
+.story-arc-wand {
+    text-align: left;
+}
+
+.story-arc-wand-heading {
+    margin: 0 0 10px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.story-arc-wand-note {
+    margin: 4px 0 10px;
+    color: var(--dr-muted);
+}
+
+.story-arc-wand-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--dr-line);
+}
+
+.story-arc-wand-controls .menu_button {
+    margin: 0;
+}

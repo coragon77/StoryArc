@@ -8,8 +8,11 @@
 /* Spoiler toggle / collapsible secret sections */
 @import url('./lib/css/spoiler.css');
 
-/* Arc planning wizard (3-step popup) */
+/* Arc planning wizard (two-step popup) */
 @import url('./lib/css/wizard.css');
+
+/* Settings drawer and wand popup */
+@import url('./lib/css/settings-panel.css');
 
 /* Arc manager popup (list, actions, beat list) */
 @import url('./lib/css/arc-manager.css');

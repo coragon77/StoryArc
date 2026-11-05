@@ -94,6 +94,10 @@ A hidden truth of the arc with a complete answer, known to the model and withhel
 A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied.
 _Avoid_: event, hook
 
+**Clue**:
+What the UI calls one of an arc's foreshadowing entries: a detail planted early that points to a secret or a later development. Code and the stored arc keep `foreshadowing` (with `clue` and `target`); the wizard and the Arc Manager say "Clues".
+_Avoid_: foreshadowing (in UI text), hint
+
 **Divergence**:
 The story having moved past the state an arc's remaining beats assume, so they can no longer be fulfilled as planned: an episode's scene beats, or an act's or saga's milestones once the story or the player's rulings have closed the road they stand on.
 _Avoid_: derail, drift
