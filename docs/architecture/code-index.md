@@ -168,6 +168,9 @@ StoryArc/
 │   │   │                       #   reopenCompletionsFrom(firstGoneIndex) — delete,
 │   │   │                       #   swipe, branch load; records follow their message id;
 │   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
+│   │   │                       #   setBeatStatusByHand(arcId, beatId, status) — the
+│   │   │                       #   Arc Manager's toggle; done by hand sets
+│   │   │                       #   lastFulfilledAt (raises the records' floor), no record;
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions and
 │   │   │                       #   arc completion; restoreLastFulfilledAt();
 │   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
@@ -252,10 +255,12 @@ StoryArc/
 │   │   │                       #   stamping.js;
 │   │   │                       #   pauseArc(id) freezes the clock (pausedAt = chat.length);
 │   │   │                       #   resumeArc(id, focus) shifts messageStart/lastFulfilledAt
-│   │   │                       #   by the paused span, replannedAt by the pause after
-│   │   │                       #   the stamp; no-op on the clock if never paused;
+│   │   │                       #   by the paused span, replannedAt/reactivatedAt by the
+│   │   │                       #   pause after the stamp; no-op on the clock if never paused;
 │   │   │                       #   spotlightArc(id) — one arc in the spotlight, the
-│   │   │                       #   previous spotlit arc goes back to normal
+│   │   │                       #   previous spotlit arc goes back to normal;
+│   │   │                       #   reactivateArc(id) — past arc active again in normal
+│   │   │                       #   focus, stamps reactivatedAt (stall count restarts)
 │   │   ├── pacing.js           # calculatePhase(arc), selectNonOptionalBeats(beats),
 │   │   │                       #   getPacingDirective(phase),
 │   │   │                       #   shouldShowSecret(revealPhase, phase) — secret gate
@@ -432,7 +437,10 @@ StoryArc/
 │   │                           #   the stall rule behind the "May have drifted —
 │   │                           #   re-plan?" button (every tier; not while paused or in
 │   │                           #   background; counted from the latest of messageStart,
-│   │                           #   lastFulfilledAt, replannedAt)
+│   │                           #   lastFulfilledAt, replannedAt, reactivatedAt);
+│   │                           #   ignoreStall(arcId) stores stallIgnoredFrom;
+│   │                           #   isStallNudgeShown(arc, chatLength) — stalled and
+│   │                           #   not the ignored stall (the card's check)
 │   └── css/
 │       ├── core.css            # CSS custom properties, base layout, badges incl.
 │       │                       #   the tier badge
@@ -477,7 +485,9 @@ StoryArc/
 │   ├── test-clock.js           # Tests: selectPacingClock (spotlit episode, else first
 │   │                           #   normal; never paused/act/saga) + pauseArc/resumeArc
 │   │                           #   clock freeze and shift (stamp number continues) +
-│   │                           #   spotlightArc (previous spotlit arc back to normal)
+│   │                           #   spotlightArc (previous spotlit arc back to normal) +
+│   │                           #   reactivateArc (both statuses, spotlight kept, paused
+│   │                           #   shift, reactivatedAt shift on resume)
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
@@ -502,7 +512,9 @@ StoryArc/
 │   │                           #   acts and sagas, paused/background, re-plan stamp,
 │   │                           #   migrated arcs,
 │   │                           #   lastFulfilledAt set on fulfillment, it and
-│   │                           #   replannedAt shifted on resume, nudge rendering
+│   │                           #   replannedAt shifted on resume, nudge rendering,
+│   │                           #   reactivation stamp, ignoreStall (hidden, shown again
+│   │                           #   after the next beat, a re-plan, a reactivation)
 │   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
 │   │                           #   (numbering, old positions unchanged as the chat
 │   │                           #   grows, foreign-entry and rewritten-text handling,
@@ -585,7 +597,9 @@ StoryArc/
 │   │                           #   (message id read, never given), reopenCompletionsFrom
 │   │                           #   (delete, swipe, branch, id follow, what reopening
 │   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
-│   │                           #   hand toggle carries no record
+│   │                           #   hand toggle carries no record, setBeatStatusByHand
+│   │                           #   (lastFulfilledAt, stall nudge clears, kept on reopen
+│   │                           #   and over a rollback of an earlier record)
 │   ├── test-ruling-rollback.js # Tests: a ruling goes with its message on delete
 │   │                           #   (by id, index rule), branch load and edit (only a
 │   │                           #   ruling whose quote is gone; a kept one stays
@@ -713,6 +727,7 @@ lib/ui/
 │                              /scripts/popup.js, /scripts/utils.js)
 ├── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
 │                              planning/storage.js, planning/arc-edit.js,
+│                              planning/beat-completion.js setBeatStatusByHand,
 │                              injection/signals.js, injection/pacing.js,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
@@ -754,7 +769,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (both shifted on resume) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`, `isStallNudgeShown`, `ignoreStall`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (`reactivatedAt` stamped by `reactivateArc`; all shifted on resume) |
 | Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `latestShownMessageBefore`, `resolveRulings`, `findOptionInMessages`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, MESSAGE BEFORE THE NEW MESSAGES, task 7 with `chose`), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them, drops the removed ones), `lib/planning/generator.js` (`formatRulings`: the re-plan's three calls), `lib/ui/wizard.js` (`buildRulingsList`, step 2), `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`removeRulingsFrom`, `removeRulingsAt`: the rollback), `index.js` (delete, chat change) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
