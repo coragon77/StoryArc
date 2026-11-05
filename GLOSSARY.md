@@ -103,7 +103,7 @@ An out-of-character line of the player that contradicts an arc's premise or one 
 _Avoid_: correction (the ledger's word for a retracted fact), OOC note, instruction
 
 **Stall**:
-The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment, its last re-plan or its reactivation (a past arc made active again), whichever is later. A beat the player marks done by hand is a fulfillment too. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator. The player can ignore a stall: its nudge stays hidden until the arc's next beat lands or it is re-planned or reactivated.
+The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment, its last re-plan, its reactivation (a past arc made active again, which also restarts its phase) or the last time it went into the spotlight, whichever is later. A beat the player marks done by hand is a fulfillment too. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator. The player can ignore a stall: its nudge stays hidden until the arc's next beat lands or it is re-planned, reactivated or spotlit.
 _Avoid_: timeout, stuck
 
 ### Knowledge
@@ -177,7 +177,7 @@ Keeping a detail at the value the story set: the player's entry with that same v
 _Avoid_: pin, freeze
 
 **Undo** (hand edit):
-Taking back the newest hand edit made in the open Knowledge popup, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
+Taking back the newest hand edit made in the open Knowledge popup or Arc Manager, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger (in the Arc Manager: the arcs) changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
 _Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
 
 **Change item**:
