@@ -44,9 +44,28 @@ export const groups = [];
 export const selected_group = null;
 
 // --- /scripts/popup.js mocks ---
+/**
+ * Every Popup constructed, in order, and whether show() waits for complete().
+ * By default show() resolves at once; a test that drives a popup's handlers
+ * sets holdOpen, so the popup stays open until its complete() — and clears
+ * both in its own cleanup.
+ */
+export const mockPopups = [];
+export const mockPopupState = { holdOpen: false };
 export class Popup {
-    constructor() {}
-    async show() {}
+    constructor(content) {
+        this.content = content;
+        this.completedWith = undefined;
+        this.closed = new Promise(resolve => { this.resolveClosed = resolve; });
+        mockPopups.push(this);
+    }
+    async show() {
+        if (mockPopupState.holdOpen) await this.closed;
+    }
+    complete(result) {
+        this.completedWith = result;
+        this.resolveClosed(result);
+    }
 }
 export const POPUP_TYPE = { TEXT: 0 };
 

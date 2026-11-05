@@ -76,10 +76,11 @@ describe('setupSettingsPanelEvents', () => {
             'change #story-arc-knowledge-interval',
             'change #story-arc-profile',
             'click #story-arc-create-preset-btn',
+            'click #story-arc-knowledge-btn',
             'click #story-arc-manage-btn',
             'click #story-arc-plan-btn',
+            'click #story-arc-settings .story-arc-stall-btn',
             'click .story-arc-knowledge-names-btn',
-            'click .story-arc-stall-btn',
             'mousedown #story-arc-profile',
         ]);
     });
