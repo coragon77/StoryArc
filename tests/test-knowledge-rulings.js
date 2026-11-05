@@ -294,6 +294,7 @@ describe('updateKnowledgeAfterReply: rulings', () => {
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 1 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 2,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
         assert.equal(JSON.stringify(updateLog).toLowerCase().includes('defender'), false);
     });

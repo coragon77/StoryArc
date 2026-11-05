@@ -158,6 +158,7 @@ describe('rollBackKnowledgeFrom', () => {
                     answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
                 },
             ],
         });
@@ -272,6 +273,7 @@ describe('updateKnowledgeAfterSwipe', () => {
                     answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
                 },
             ],
         });
@@ -392,6 +394,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             }],
         });
     });
@@ -419,6 +422,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             }],
         });
     });
@@ -446,6 +450,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             }],
         });
     });
@@ -500,6 +505,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             }],
         });
     });

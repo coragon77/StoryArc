@@ -101,6 +101,7 @@ describe('the knowledge update log', () => {
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 
@@ -116,6 +117,7 @@ describe('the knowledge update log', () => {
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 
@@ -236,6 +238,7 @@ describe('the knowledge update log', () => {
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [], detailsDropped: 0 },
         ]);
@@ -285,6 +288,7 @@ describe('the knowledge update log', () => {
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 
@@ -313,6 +317,7 @@ describe('the knowledge update log', () => {
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 2, detailsChanged: 1, restatementsIgnored: 1, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 
@@ -398,6 +403,7 @@ describe('the knowledge update log: details the player locked', () => {
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 2,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 
@@ -418,6 +424,7 @@ describe('the knowledge update log: details the player locked', () => {
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 1,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
     });
 });

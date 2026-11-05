@@ -36,6 +36,11 @@ Each message starts with its index in square brackets.
 
 2. NEW CHARACTERS. List every character who appears or is talked about in the new messages and is not in the ledger under any name, with the other names the messages give them. Do not list a character the ledger already has under another name.{{UNNAMED_RELATIVES_TASK}}
 
+NEW NAMES. When a character the ledger already has goes by a name in the new messages that the ledger does not list for them (a codename, a first name, a nickname), do not list them as a new character. Write one item under "newNames" instead:
+- "character": the character's name from the ledger.
+- "name": the new name, as the messages write it.
+Write it only when the text makes plain that both names belong to one person: they unmask, they are introduced under both names, a character who knows them calls them by it, or a fact in the ledger says who goes by that name. Never as a guess from a likeness, a voice, a power or a hunch: a name the text has not tied to a ledger character is a new character. A secret identity counts once the text has shown it, even when the characters in the scene do not know it: the story may keep using two names, but the ledger keeps one character, and who knows the identity is a fact under LEARNED. Elsewhere in your answer either name may be used.
+
 3. LEARNED. Record only knowledge a character could act on or wrongly reveal: secrets, plans, identities, who did what, private information, things told in confidence. Do not record small talk, sensations, descriptions, moods or what anyone in the scene can plainly see. For every such fact a character learns in the new messages, write one item. One fact holds one piece of knowledge: knowledge that different characters can learn at different times goes into separate facts, not into one sentence joined by "and". Write each fact once: put everyone who learns it in the same way in one item.
 - "factId" when the fact is already in the ledger, even when the new messages word it differently: when the same knowledge is meant, use its id, not new text. Otherwise "text", the fact in one short sentence that names who and what ("Gabriel wants Noor's gauntlet locked on with titanium latches"). The text states the fact itself, not who knows it or who does not ("and nobody else knows" belongs in no text): the holders record that.
 - "who": the characters who learn it in that message. Leave out characters who already know it. A character who did, caused or planned what a fact describes knows it, even when they are not in the scene: list them in "who" with "how": "witnessed", in an item of their own when the others were told. This covers only the deed as the character did it. A routine act they would not remember (one signature among thousands of files) does not count, and what others found out about them or their deed is a separate fact they do not hold. A fact is not a character's because it names them.
@@ -73,6 +78,9 @@ Only the player's own out-of-character lines count, never the narrator's. A ruli
 {
   "present": ["name"],
   "newCharacters": {{NEW_CHARACTERS_SCHEMA}},
+  "newNames": [
+    { "character": "name from the ledger", "name": "the new name" }
+  ],
   "learned": [
     { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> },
     { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> }

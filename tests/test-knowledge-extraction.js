@@ -207,6 +207,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
         assert.deepEqual(answer, {
             present: ['Noor', 'Ellie'],
             newCharacters: [{ name: 'Dougal', aliases: [] }],
+            newNames: [],
             learned: [
                 { factId: 'fact-latches', public: false, who: ['Noor'], how: 'told', toldBy: 'Ellie', at: 2079 },
                 { text: 'The kiln router logged 42.08 kHz queries overnight', public: false, who: ['Dougal'], how: 'witnessed', toldBy: null, at: 2080 },
@@ -234,7 +235,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {
