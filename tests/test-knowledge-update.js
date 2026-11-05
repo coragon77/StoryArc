@@ -172,6 +172,7 @@ describe('updateKnowledgeAfterReply', () => {
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
     });

@@ -357,6 +357,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
         }]);
         const logText = JSON.stringify(updateLog);
         for (const internal of ['crane001', 'brody_refuses', 'crane_moved', 'Brody refuses']) {

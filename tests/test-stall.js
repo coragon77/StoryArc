@@ -1,8 +1,11 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { isStalled, renderProgressDisplay } from '../lib/ui/progress.js';
+import { ignoreStall, isStalled, isStallNudgeShown, renderProgressDisplay, showIgnoredStall } from '../lib/ui/progress.js';
 import { processSignalResults } from '../lib/injection/signals.js';
-import { pauseArc, resumeArc } from '../lib/injection/clock.js';
+import { pauseArc, reactivateArc, resumeArc, spotlightArc } from '../lib/injection/clock.js';
+import { completeBeats } from '../lib/planning/beat-completion.js';
+import { applyReplan } from '../lib/planning/replan.js';
+import { getArcById, replaceArc } from '../lib/planning/storage.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
 
 // Episode of estimatedLength 20 with six non-optional beats: a stall is more
@@ -188,5 +191,118 @@ describe('renderProgressDisplay — stall nudge', () => {
         const html = renderProgressDisplay([act({ title: 'Streets', rulings: [{ id: 'r1', text: 'Aegis is not her defender.', at: 2250 }] })]);
         assert.equal(html.includes('May have drifted'), false);
         assert.match(html, /data-arc-id="act"[^>]*>You overruled the plan — re-plan\?</);
+    });
+});
+
+describe('isStalled — counted from a reactivation', () => {
+    // Reactivated at 2280: 68 messages after the fulfillment, 13 after the reactivation.
+    const table = [
+        { name: 'act reactivated after its last fulfillment: counted from the reactivation', arc: act({ reactivatedAt: 2280 }), chatLength: 2293, expected: false },
+        { name: 'act reactivated at 2280, 67 messages on: not stalled', arc: act({ reactivatedAt: 2280 }), chatLength: 2347, expected: false },
+        { name: 'act reactivated at 2280, 68 messages on: stalled', arc: act({ reactivatedAt: 2280 }), chatLength: 2348, expected: true },
+    ];
+    for (const row of table) {
+        it(row.name, () => {
+            assert.equal(isStalled(row.arc, row.chatLength), row.expected);
+        });
+    }
+
+    it('reactivateArc restarts the count of an arc that ended long ago', async () => {
+        chat_metadata.story_arc = { arcs: [act({ status: 'abandoned' })] };
+        chat.length = 2400;
+        await reactivateArc('act');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.equal(isStalled(stored, 2400), false);
+        assert.equal(isStalled(stored, 2467), false);
+        assert.equal(isStalled(stored, 2468), true);
+    });
+});
+
+describe('ignoreStall — the stall nudge hidden until the next beat or re-plan', () => {
+    beforeEach(() => {
+        chat.length = 111;
+        chat_metadata.story_arc = { arcs: [episode()] };
+    });
+
+    function stored() {
+        return chat_metadata.story_arc.arcs[0];
+    }
+
+    it('stores where the ignored stall was counted from', async () => {
+        await ignoreStall('ep');
+        assert.equal(stored().stallIgnoredFrom, 100);
+    });
+
+    it('hides the nudge of the stalled arc; the arc is still stalled', async () => {
+        assert.equal(isStallNudgeShown(stored(), 111), true);
+        await ignoreStall('ep');
+        assert.equal(isStalled(stored(), 111), true);
+        assert.equal(isStallNudgeShown(stored(), 111), false);
+        assert.equal(isStallNudgeShown(stored(), 400), false);
+        assert.equal(renderProgressDisplay([stored()]).includes('May have drifted'), false);
+    });
+
+    it('shows the nudge again once the next beat lands and the arc stalls again', async () => {
+        await ignoreStall('ep');
+        chat.length = 116;
+        await completeBeats([{ arcId: 'ep', beatId: 'b0', at: 115 }], chat_metadata.story_arc.arcs);
+        assert.equal(isStallNudgeShown(stored(), 125), false);
+        assert.equal(isStallNudgeShown(stored(), 126), true);
+        chat.length = 126;
+        assert.match(renderProgressDisplay([stored()]), /data-arc-id="ep"[^>]*>May have drifted — re-plan\?/);
+    });
+
+    it('shows the nudge again once the arc is re-planned and stalls again', async () => {
+        await ignoreStall('ep');
+        stored().title = 'The Debt';
+        const { arc: replanned, error } = applyReplan(structuredClone(stored()), 130, { premise: 'A debt comes due.' });
+        assert.equal(error, null);
+        await replaceArc(getArcById('ep'), replanned);
+        assert.equal(isStallNudgeShown(stored(), 140), false);
+        assert.equal(isStallNudgeShown(stored(), 141), true);
+    });
+
+    it('shows the nudge again once the arc is reactivated and stalls again', async () => {
+        await ignoreStall('ep');
+        stored().status = 'completed';
+        chat.length = 150;
+        await reactivateArc('ep');
+        assert.equal(isStallNudgeShown(stored(), 160), false);
+        assert.equal(isStallNudgeShown(stored(), 161), true);
+    });
+});
+
+describe('spotlightArc — the stall count restarts, the warning goes', () => {
+    beforeEach(() => {
+        chat.length = 111;
+        chat_metadata.story_arc = { arcs: [episode()] };
+    });
+
+    function stored() {
+        return chat_metadata.story_arc.arcs[0];
+    }
+
+    it('clears the stall warning of the arc it spotlights', async () => {
+        assert.equal(isStallNudgeShown(stored(), 111), true);
+        await spotlightArc('ep');
+        assert.equal(isStalled(stored(), 111), false);
+        assert.equal(isStallNudgeShown(stored(), 111), false);
+    });
+
+    it('unlike Ignore, the warning comes back once the spotlit arc stalls again', async () => {
+        await spotlightArc('ep');
+        assert.equal(isStallNudgeShown(stored(), 121), false);
+        assert.equal(isStallNudgeShown(stored(), 122), true);
+    });
+});
+
+describe('showIgnoredStall — the ignore taken back', () => {
+    it('shows the nudge of the ignored stall again and drops the stored ignore', async () => {
+        chat.length = 111;
+        chat_metadata.story_arc = { arcs: [episode()] };
+        await ignoreStall('ep');
+        await showIgnoredStall('ep');
+        assert.equal('stallIgnoredFrom' in chat_metadata.story_arc.arcs[0], false);
+        assert.equal(isStallNudgeShown(chat_metadata.story_arc.arcs[0], 111), true);
     });
 });

@@ -70,6 +70,30 @@ describe('applyArcEdit', () => {
         assert.equal('replannedAt' in applyArcEdit(storedArc(), JSON.stringify(typedStamp)).arc, false);
     });
 
+    it('keeps the reactivation stamp and the ignored stall as stored, and adds neither to an arc without them', () => {
+        const reactivated = { ...storedArc(), reactivatedAt: 2300, stallIgnoredFrom: 2310 };
+        const editedStamps = { ...reactivated, reactivatedAt: 10, stallIgnoredFrom: 20 };
+        const kept = applyArcEdit(reactivated, JSON.stringify(editedStamps)).arc;
+        assert.equal(kept.reactivatedAt, 2300);
+        assert.equal(kept.stallIgnoredFrom, 2310);
+
+        const typedStamps = { ...storedArc(), reactivatedAt: 10, stallIgnoredFrom: 20 };
+        const added = applyArcEdit(storedArc(), JSON.stringify(typedStamps)).arc;
+        assert.equal('reactivatedAt' in added, false);
+        assert.equal('stallIgnoredFrom' in added, false);
+    });
+
+    it('keeps the rulings and the spotlight stamp as stored, whatever the text says', () => {
+        const ruled = { ...storedArc(), spotlitAt: 2290, rulings: [{ id: 'ruling_1', text: 'Aegis does not defend her.', at: 2280 }] };
+        const typed = { ...storedArc(), spotlitAt: 5 };
+        const kept = applyArcEdit(ruled, JSON.stringify(typed)).arc;
+        assert.deepEqual(kept.rulings, [{ id: 'ruling_1', text: 'Aegis does not defend her.', at: 2280 }]);
+        assert.equal(kept.spotlitAt, 2290);
+
+        const typedRulings = { ...storedArc(), rulings: [{ id: 'ruling_9', text: 'Typed.' }] };
+        assert.equal('rulings' in applyArcEdit(storedArc(), JSON.stringify(typedRulings)).arc, false);
+    });
+
     it('stores estimatedLength as a number', () => {
         const edited = { ...storedArc(), estimatedLength: '30' };
         assert.equal(applyArcEdit(storedArc(), JSON.stringify(edited)).arc.estimatedLength, 30);

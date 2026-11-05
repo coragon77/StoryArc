@@ -335,6 +335,7 @@ describe('the retraction through an update', () => {
                 factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -390,6 +391,7 @@ describe('the retraction through an update', () => {
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -442,6 +444,7 @@ describe('the retraction through an update', () => {
                     factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c2', messageId: 'm1' }, { factId: 'f1', characterId: 'c1', messageId: 'm1' }], details: [], names: [], scene: null },
                 },
                 {
                     kind: 'reextract', from: 2, to: 2, messageId: 'm2',
@@ -449,6 +452,7 @@ describe('the retraction through an update', () => {
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
                 },
             ],
         });

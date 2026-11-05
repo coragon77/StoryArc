@@ -168,6 +168,9 @@ StoryArc/
 │   │   │                       #   reopenCompletionsFrom(firstGoneIndex) — delete,
 │   │   │                       #   swipe, branch load; records follow their message id;
 │   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
+│   │   │                       #   setBeatStatusByHand(arcId, beatId, status) — the
+│   │   │                       #   Arc Manager's toggle; done by hand sets
+│   │   │                       #   lastFulfilledAt (raises the records' floor), no record;
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions and
 │   │   │                       #   arc completion; restoreLastFulfilledAt();
 │   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
@@ -252,10 +255,15 @@ StoryArc/
 │   │   │                       #   stamping.js;
 │   │   │                       #   pauseArc(id) freezes the clock (pausedAt = chat.length);
 │   │   │                       #   resumeArc(id, focus) shifts messageStart/lastFulfilledAt
-│   │   │                       #   by the paused span, replannedAt by the pause after
-│   │   │                       #   the stamp; no-op on the clock if never paused;
+│   │   │                       #   by the paused span, replannedAt/reactivatedAt/spotlitAt
+│   │   │                       #   by the pause after the stamp; no-op on the clock if
+│   │   │                       #   never paused;
 │   │   │                       #   spotlightArc(id) — one arc in the spotlight, the
-│   │   │                       #   previous spotlit arc goes back to normal
+│   │   │                       #   previous spotlit arc goes back to normal; stamps
+│   │   │                       #   spotlitAt (stall count restarts);
+│   │   │                       #   reactivateArc(id) — past arc active again in normal
+│   │   │                       #   focus, stamps reactivatedAt and messageStart (phase
+│   │   │                       #   and stall counts restart)
 │   │   ├── pacing.js           # calculatePhase(arc), selectNonOptionalBeats(beats),
 │   │   │                       #   getPacingDirective(phase),
 │   │   │                       #   shouldShowSecret(revealPhase, phase) — secret gate
@@ -344,6 +352,12 @@ StoryArc/
 │   │                           #   beatsCompleted), skipped (no answer, chat changed,
 │   │                           #   ledger moved), rollback; knowledgeHoldings() +
 │   │                           #   holdingsChange() find what a step added or removed;
+│   │                           #   createdChangeItems() lists the change items of an
+│   │                           #   update/reextract record (#67); listChangeItems(record)
+│   │                           #   gives each its item key; dropReviewedMarksOfGoneItems()
+│   │                           #   + presentChangeItemKeys() drop the reviewed marks of items
+│   │                           #   a rollback removed (dropKnowledgeFrom,
+│   │                           #   dropKnowledgeLearnedAt);
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
 │   │                           #   load) via followMessagesById(ledger, chat) (entries
 │   │                           #   with a message id follow their message) and
@@ -391,20 +405,25 @@ StoryArc/
 │   │   │                       #   Back from a generated plan asks inline first. The
 │   │   │                       #   build* view functions are exported (tests, shots);
 │   │   │                       #   unbinds its click namespace when the popup resolves
-│   │   ├── arc-manager.js      # showArcManager() — arc list popup: status/tier/focus
-│   │   │                       #   badges, focus <select> (paused / background / normal
-│   │   │                       #   / spotlight via clock.js; no background for an
-│   │   │                       #   episode), Re-plan (closes, then opens
-│   │   │                       #   showWizard(arcId)), Edit title and premise
-│   │   │                       #   (buildTitleAndPremiseEditor(), outside the
-│   │   │                       #   spoilers), complete, abandon; per beat an
-│   │   │                       #   inline editor (pressure + intention, delete with a
-│   │   │                       #   second click) and an Edit arc JSON editor (via
-│   │   │                       #   arc-edit.js); buildPlanItemLists() — Secrets,
-│   │   │                       #   Clues, Triggers drawers with open / waiting /
-│   │   │                       #   done items; buildReportsWaitingLine(); unbinds the whole
-│   │   │                       #   .storyArcManager namespace when the popup resolves;
-│   │   │                       #   Knowledge button (tracker on) opens the knowledge popup
+│   │   ├── arc-manager.js      # showArcManager() — the Arc Manager (#71): a table of
+│   │   │                       #   active arcs (sortActiveArcs), one <tbody> per arc:
+│   │   │                       #   title, tier, focus segmented control
+│   │   │                       #   (buildFocusControl), phase, beat strip by shape
+│   │   │                       #   (buildBeatStrip, waitingMarksOf), last beat
+│   │   │                       #   (buildLastBeatCell), ⋯ menu (buildArcMenuItems);
+│   │   │                       #   warning line (buildArcAlert: ruling, all done,
+│   │   │                       #   stall with Re-plan / Spotlight it / Ignore);
+│   │   │                       #   detail (buildArcDetail: describeWhatNarratorGets,
+│   │   │                       #   Reveal plan switch, beat status, beat editor
+│   │   │                       #   buildBeatEditor, buildTitleAndPremiseForm,
+│   │   │                       #   buildPlanList, JSON editor); past arcs with
+│   │   │                       #   Reactivate (buildPastArc); empty state;
+│   │   │                       #   buildSummary; status strip (buildStatusStrip);
+│   │   │                       #   undo: startArcUndoSession, runArcEdit,
+│   │   │                       #   undoArcEdit, newestArcEditLabel over arcs +
+│   │   │                       #   pendingMarks; patches rows in place; Re-plan, Plan
+│   │   │                       #   a new arc and Knowledge close it, then open the
+│   │   │                       #   wizard or the knowledge popup
 │   │   ├── knowledge-popup.js  # showKnowledgePopup() — the knowledge ledger behind two
 │   │   │                       #   closed spoiler drawers (Characters, Facts):
 │   │   │                       #   buildKnowledgeContent(ledger, chatMessages), with the
@@ -415,17 +434,26 @@ StoryArc/
 │   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
 │   │   │                       #   saveCharacterDetails: player detail entries that
 │   │   │                       #   lock the kind, #54; mergeCharacters: one
-│   │   │                       #   record into another, #60) return
-│   │   │                       #   { ledger, error }; new holders are how
+│   │   │                       #   record into another, #60; moveFactHolder,
+│   │   │                       #   deleteCharacter (+ removed), restoreRetractedFact,
+│   │   │                       #   lockCharacterDetail, #66;
+│   │   │                       #   markChangeItemReviewed, unmarkChangeItemReviewed:
+│   │   │                       #   reviewed marks by item key, #67) return
+│   │   │                       #   { ledger, error }; saveLedgerEdit stores one and
+│   │   │                       #   records it for undoLedgerEdit (undo-stack.js,
+│   │   │                       #   per popup session, #68); new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
 │   │   ├── knowledge-status.js # updateKnowledgeStatus() — the drawer's status line:
 │   │   │                       #   last update, + "N new names to check" and a
 │   │   │                       #   Knowledge popup button; called by index.js, the
 │   │   │                       #   panel and the popup (own file: no import cycle)
+│   │   ├── undo-stack.js       # createUndoStack({ read, write, changedMessage }) —
+│   │   │                       #   a popup session's undo over one stored state,
+│   │   │                       #   labelled entries, refused when the state changed
+│   │   │                       #   since; Knowledge popup and Arc Manager (#71)
 │   │   ├── spoiler-group.js    # buildSpoilerGroup(id, label, warning, body) — the
-│   │   │                       #   collapsed spoiler drawer of the Arc Manager and
-│   │   │                       #   the Knowledge popup
+│   │   │                       #   collapsed spoiler drawer of the Knowledge popup
 │   │   └── progress.js         # renderProgressDisplay() — compact beat status display
 │   │                           #   injected into ST sidebar; "n/m beats" or "n/m
 │   │                           #   milestones"; shows "~N msgs to next phase" only
@@ -434,10 +462,15 @@ StoryArc/
 │   │                           #   the stall rule behind the "May have drifted —
 │   │                           #   re-plan?" button (every tier; not while paused or in
 │   │                           #   background; counted from the latest of messageStart,
-│   │                           #   lastFulfilledAt, replannedAt)
+│   │                           #   lastFulfilledAt, replannedAt, reactivatedAt,
+│   │                           #   spotlitAt: stallCountStart);
+│   │                           #   ignoreStall(arcId) stores stallIgnoredFrom,
+│   │                           #   showIgnoredStall(arcId) deletes it;
+│   │                           #   isStallNudgeShown(arc, chatLength) — stalled and
+│   │                           #   not the ignored stall (the card's check)
 │   └── css/
-│       ├── core.css            # CSS custom properties, base layout, badges incl.
-│       │                       #   the tier badge
+│       ├── core.css            # CSS custom properties, base layout, buttons,
+│       │                       #   inputs (the badges went with the old Arc Manager)
 │       ├── spoiler.css         # Spoiler toggle (hidden arc content)
 │       ├── wizard.css          # Two-step wizard: head and step indicator, context
 │       │                       #   strip, form, generation log, plan with the Reveal
@@ -446,7 +479,9 @@ StoryArc/
 │       │                       #   Arc Manager and Knowledge popup
 │       ├── settings-panel.css  # Settings drawer (action row, grouped settings) and
 │       │                       #   the wand popup; ST theme variables only (#72)
-│       ├── arc-manager.css     # Arc list, beat rows, status badges
+│       ├── arc-manager.css     # Arc Manager table, warning lines, detail, menu,
+│       │                       #   status strip (ST theme variables only); the
+│       │                       #   wizard's optional tag and the knowledge chip
 │       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
 │       └── progress.css        # Compact sidebar progress widget, incl. the
 │                               #   "msgs to next phase" line and the stall nudge
@@ -486,7 +521,9 @@ StoryArc/
 │   ├── test-clock.js           # Tests: selectPacingClock (spotlit episode, else first
 │   │                           #   normal; never paused/act/saga) + pauseArc/resumeArc
 │   │                           #   clock freeze and shift (stamp number continues) +
-│   │                           #   spotlightArc (previous spotlit arc back to normal)
+│   │                           #   spotlightArc (previous spotlit arc back to normal) +
+│   │                           #   reactivateArc (both statuses, spotlight kept, paused
+│   │                           #   shift, reactivatedAt shift on resume)
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
@@ -511,7 +548,9 @@ StoryArc/
 │   │                           #   acts and sagas, paused/background, re-plan stamp,
 │   │                           #   migrated arcs,
 │   │                           #   lastFulfilledAt set on fulfillment, it and
-│   │                           #   replannedAt shifted on resume, nudge rendering
+│   │                           #   replannedAt shifted on resume, nudge rendering,
+│   │                           #   reactivation stamp, ignoreStall (hidden, shown again
+│   │                           #   after the next beat, a re-plan, a reactivation)
 │   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
 │   │                           #   (numbering, old positions unchanged as the chat
 │   │                           #   grows, foreign-entry and rewritten-text handling,
@@ -522,12 +561,20 @@ StoryArc/
 │   ├── test-generator.js       # Tests: isRetryableError (retryable vs. fail-fast);
 │   │                           #   generateArc stream routes, plan check applied or
 │   │                           #   skipped on an unreadable answer
-│   ├── test-arc-manager-plan-lists.js # Tests: three plan drawers, item order,
-│   │                           #   waiting state, reports-waiting line, title and
-│   │                           #   premise editor (escaped, no plan text)
+│   ├── test-arc-manager.js     # Tests: Arc Manager builders (plan lists, strip,
+│   │                           #   focus, warning lines, last beat, summary, what
+│   │                           #   the narrator gets, reveal markup, empty state,
+│   │                           #   order) and undo of arc edits incl. the refusal
+│   ├── test-undo-stack.js      # Tests: createUndoStack (order, labels, refusal)
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed, the
 │   │                           #   "Names to check" section and keepCharacterName (#48)
+│   ├── test-knowledge-hand-edits.js # Tests: move holder, delete character, restore a
+│   │                           #   retracted fact, lock a detail (#66), refusals,
+│   │                           #   rollback after a move, restore and lock
+│   ├── test-knowledge-undo.js  # Tests: undo of hand edits (#68): exact restore, one
+│   │                           #   further per press, refusal after an in-place or
+│   │                           #   replacing change, new session empty, every edit
 │   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
 │   │                           #   holder dedupe, details, nameClash, rollback after a
 │   │                           #   merge, taken names and the flag see one character
@@ -573,6 +620,9 @@ StoryArc/
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
+│   ├── test-knowledge-change-items.js # Tests: change items of update/reextract records,
+│   │                           #   item keys, rollback dropping reviewed marks (delete,
+│   │                           #   swipe, edit), old ledgers, mark/unmark, save (#67)
 │   ├── test-knowledge-update-log.js # Tests: updateLog records (update, empty answer,
 │   │                           #   skips by reason, nothing for off/interval/other chat,
 │   │                           #   cap 20, rollback drop/restore, re-extraction)
@@ -602,7 +652,9 @@ StoryArc/
 │   │                           #   (message id read, never given), reopenCompletionsFrom
 │   │                           #   (delete, swipe, branch, id follow, what reopening
 │   │                           #   undoes, lastFulfilledAt), reopenCompletionsAt (edit),
-│   │                           #   hand toggle carries no record
+│   │                           #   hand toggle carries no record, setBeatStatusByHand
+│   │                           #   (lastFulfilledAt, stall nudge clears, kept on reopen
+│   │                           #   and over a rollback of an earlier record)
 │   ├── test-ruling-rollback.js # Tests: a ruling goes with its message on delete
 │   │                           #   (by id, index rule), branch load and edit (only a
 │   │                           #   ruling whose quote is gone; a kept one stays
@@ -728,12 +780,13 @@ lib/ui/
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
 │                              wizard.js, arc-manager.js, knowledge-popup.js,
 │                              /scripts/popup.js, /scripts/utils.js)
-├── arc-manager.js   (imports: /script.js chat_metadata + saveMetadata,
+├── arc-manager.js   (imports: /script.js chat + chat_metadata + saveMetadata,
 │                              planning/storage.js, planning/arc-edit.js,
+│                              planning/beat-completion.js setBeatStatusByHand,
 │                              injection/signals.js, injection/pacing.js,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
-│                              knowledge-popup.js, spoiler-group.js, /scripts/popup.js,
+│                              knowledge-popup.js, undo-stack.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── knowledge-popup.js (imports: /script.js chat + saveMetadata, core/settings.js,
 │                              core/constants.js DETAIL_KINDS + DETAIL_STATUS_VALUES + HOLDER_HOW,
@@ -744,7 +797,8 @@ lib/ui/
 │                              spoiler-group.js, knowledge-status.js
 │                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)
-└── spoiler-group.js (imports: nothing)
+├── spoiler-group.js (imports: nothing)
+└── undo-stack.js    (imports: nothing)
 
 index.js  (imports: core/settings.js, planning/storage.js,
                     planning/beat-completion.js reopenCompletionsFrom, injection/builder.js,
@@ -771,7 +825,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (both shifted on resume) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`, `isStallNudgeShown`, `ignoreStall`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (`reactivatedAt` stamped by `reactivateArc`; all shifted on resume) |
 | Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `latestShownMessageBefore`, `resolveRulings`, `findOptionInMessages`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, MESSAGE BEFORE THE NEW MESSAGES, task 7 with `chose`), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them, drops the removed ones), `lib/planning/generator.js` (`formatRulings`: the re-plan's three calls), `lib/ui/wizard.js` (`buildRulingsList`, step 2), `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`removeRulingsFrom`, `removeRulingsAt`: the rollback), `index.js` (delete, chat change) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
