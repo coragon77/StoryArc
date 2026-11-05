@@ -107,7 +107,7 @@ describe('parseKnowledgeExtractionAnswer: fulfilled', () => {
 
     it('reads a missing list as empty, so an answer of the old shape stays valid', () => {
         const answer = parseKnowledgeExtractionAnswer(`{ ${base} }`);
-        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [] });
+        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [] });
     });
 
     it('reads a list of the wrong type as empty and keeps the rest of the answer', () => {

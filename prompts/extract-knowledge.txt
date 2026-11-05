@@ -3,7 +3,7 @@ You keep the knowledge ledger of a long-running roleplay: which character knows 
 The player writes as the persona {{PERSONA}}. The persona is a character like any other: it knows only what it witnessed or was told on screen.
 
 == CHARACTERS IN THE LEDGER ==
-Each with the other names they go by.
+Each with the other names they go by, and after a dash the details the ledger knows about them.
 {{CHARACTERS}}
 
 == FACTS IN THE LEDGER ==
@@ -69,6 +69,14 @@ Only what happens on screen in the new messages counts, not what is planned, hin
 - "at": the index in square brackets of the player's message, one of the new messages.
 Only the player's own out-of-character lines count, never the narrator's. A ruling contradicts something the plans list says. A request about the current scene (rewrite that, change an outfit, stop and report back) contradicts no plan and is not a ruling. New direction that contradicts nothing in the plans list is not a ruling either. When in doubt, leave it out.
 
+8. DETAILS. The characters list shows the details the ledger knows about each character. For a character from the ledger, report a detail only when the ledger does not know that kind of detail for the character yet and the new messages state it. A new character from task 2 may carry details too. Write one item per detail:
+- "character": the character's name from the ledger or from your new characters.
+- "kind": "gender"; "age" (as exact or as vague as the text puts it: "18", "twenty-something"); "role" (the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland"); "relation" (kinship to another character in the ledger or in your new characters: "mother", "brother", "husband"); or "status" ("alive" or "dead").
+- "value": the detail in a few words, always as a string. For a relation the kinship word only; for a status "alive" or "dead".
+- "of": only for a relation, the name of the other character ("Kendra Osei" for Kendra Osei's mother).
+- "at": the index in square brackets of the message that states it, one of the new messages.
+Record only what the text states. Never guess a detail from a name, a look, a trope or what would be likely. A detail the ledger already knows is not reported again, not even when the new messages state it differently. Out-of-character lines set no detail.
+
 Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
@@ -88,6 +96,9 @@ Answer with ONLY this JSON object, no prose before or after it:
   ],
   "rulings": [
     { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "chose": "only for a bare pick: the option it picks, copied exactly", "at": <index of the player's message> }
+  ],
+  "details": [
+    { "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "at": <index of the message> }
   ]
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
