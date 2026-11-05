@@ -65,15 +65,17 @@
 .am-arc.is-open > tr > td { background: var(--raised) !important; }
 .am-detail-row > td { padding: 0; }
 /* Fixed columns: a row that expands or an episode that arrives moves no column; Arc takes the rest */
-.am-table .c-tier { width: 60px; white-space: nowrap; }
+.am-table .c-tier { width: 52px; white-space: nowrap; }
 .am-table .c-focus { width: 370px; white-space: nowrap; }
-.am-table .c-phase { width: 140px; }
+.am-table .c-phase { width: 160px; }
+/* The message count stays one phrase where the column is wide enough */
+.am-table .c-phase .am-cell-sub { white-space: nowrap; }
 .am-table .c-beats { width: 186px; }
-.am-table .c-last { width: 150px; }
+.am-table .c-last { width: 140px; }
 /* One phrase per line in the last-beat cell: a number never parts from its unit */
 .am-table .c-last .am-cell-sub { white-space: nowrap; }
 .am-table .c-last .am-cell-sub.am-cell-note { white-space: normal; }
-.am-table .c-menu { width: 40px; text-align: right; }
+.am-table .c-menu { width: 34px; text-align: right; }
 .am-past .am-table .c-menu { width: 140px; }
 .am-table td.c-focus, .am-table td.c-menu { padding-top: 5px; }
 .am-cell-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 1px; }
@@ -117,6 +119,7 @@
     .am-table .c-menu { width: 34px; }
     .am-past .am-table .c-menu { width: 124px; }
     .am-table .c-phase { width: 92px; }
+    .am-table .c-phase .am-cell-sub { white-space: normal; }
     .am-table .c-beats { width: 152px; }
     .am-past .c-last .am-cell-sub { display: none; }
 }
