@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { extension_settings, chat_metadata, chat, ConnectionManagerRequestService } from '../tests/mocks/st-mocks.js';
 import { applyExtractionAnswer, parseKnowledgeExtractionAnswer, buildKnowledgeExtractionVariables, updateKnowledgeAfterReply } from '../lib/knowledge/ledger.js';
 import { fillTemplate } from '../lib/planning/generator.js';
+import { printTakenNames, listCharactersWithNames } from '../lib/knowledge/names.js';
 
 /** A ledger with Kendra Osei (codename unknown so far) and Mateo Reyes, updated through message 9. */
 function makeLedger() {
@@ -159,6 +160,36 @@ describe('applyExtractionAnswer adds a new name as an alias', () => {
         assert.deepEqual(ledger.characters[0].aliases, ['Kendra', 'Anvil']);
         assert.deepEqual(ledger.characters[1].aliases, ['Switchback']);
         assert.deepEqual(newNameCounts, { newNamesAdded: 1, newNamesRefused: 1, newNamesUnknown: 0 });
+    });
+});
+
+describe('a new name is a name of the one character it was given to', () => {
+    it('does not add a new character the answer lists under an alias the ledger has, as before new names', () => {
+        const ledger = makeLedger();
+
+        applyExtractionAnswer(ledger, answerWith({ newCharacters: [{ name: 'switchback', aliases: [] }] }), 10, 11);
+
+        assert.equal(ledger.characters.length, 2);
+    });
+
+    it('is a taken name of that character for the narrator', () => {
+        const ledger = makeLedger();
+
+        applyExtractionAnswer(ledger, answerWith({ newNames: [{ character: 'Kendra Osei', name: 'Anvil' }] }), 10, 11);
+
+        assert.deepEqual(printTakenNames(ledger), ['Anvil', 'Kendra', 'Mateo', 'Osei', 'Reyes', 'Switchback']);
+    });
+
+    it('flags a new character of the same answer who shares it, pointing at that character', () => {
+        const ledger = makeLedger();
+
+        applyExtractionAnswer(ledger, answerWith({
+            newCharacters: [{ name: 'Anvil Dunn', aliases: [] }],
+            newNames: [{ character: 'Kendra Osei', name: 'Anvil' }],
+        }), 10, 11);
+
+        assert.deepEqual(ledger.characters[2], { id: 'c3', name: 'Anvil Dunn', aliases: [], nameClash: { names: ['Anvil'], at: 11 } });
+        assert.deepEqual(listCharactersWithNames(ledger, ['Anvil'], 'c3').map(character => character.id), ['c1']);
     });
 });
 
