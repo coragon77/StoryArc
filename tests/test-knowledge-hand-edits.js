@@ -191,6 +191,7 @@ describe('deleteCharacter', () => {
             facts: [{ id: 'f1', text: 'Marcus owes the guild money.' }],
             retractedFacts: [{ id: 'f5', text: 'Marcus has a twin.' }],
             holderEntries: 3,
+            relations: [{ characterId: 'c5', kind: 'sister' }, { characterId: 'c6', kind: 'cousin' }],
         });
     });
 

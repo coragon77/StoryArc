@@ -166,11 +166,11 @@ _Avoid_: reassign, transfer
 
 **Delete** (character):
 Removing a character record in the Knowledge popup, with every mention of them: what they knew, the scenes, relations other characters have to them; someone they told reads as having witnessed it. A fact only they knew goes with them (a public one stays), and the popup names those facts before the player confirms. Refused while an unnamed relative is called after them ("Marcus Vale's mother"): name the relative or change their relation first.
-_Avoid_: remove (the word for taking one fact from a holder)
+_Avoid_: erase, purge
 
 **Restore** (retracted fact):
 "Still true": the player takes back a retraction in the Knowledge popup, and the fact returns with its holders as they were. It still goes when the messages its holders learned it in are swiped, edited or deleted.
-_Avoid_: undo, unretract
+_Avoid_: unretract, revert
 
 **Lock** (character detail):
 Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand locks it the same way.
