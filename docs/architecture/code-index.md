@@ -407,7 +407,8 @@ StoryArc/
 │   │   │                       #   keepCharacterName, addFact, editFactText, deleteFact,
 │   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
 │   │   │                       #   saveCharacterDetails: player detail entries that
-│   │   │                       #   lock the kind, #54) return
+│   │   │                       #   lock the kind, #54; mergeCharacters: one
+│   │   │                       #   record into another, #60) return
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
@@ -513,6 +514,9 @@ StoryArc/
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed, the
 │   │                           #   "Names to check" section and keepCharacterName (#48)
+│   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
+│   │                           #   holder dedupe, details, nameClash, rollback after a
+│   │                           #   merge, taken names and the flag see one character
 │   ├── test-knowledge-popup-details.js # Tests: character details in the popup (#54):
 │   │                           #   row summary, editor fields, saveCharacterDetails
 │   │                           #   (lock on change, unlock on clear, validation)

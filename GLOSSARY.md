@@ -147,3 +147,7 @@ _Avoid_: used name, reserved name, blacklist
 **Name clash**:
 A new character the knowledge extraction added with a taken name: the record keeps which names it shares and the message it was named in. Shown to the player under "Names to check" in the Knowledge popup until the player renames the character or keeps the name; once no other character has the shared names, the player clears it with "Not a clash". Only a character added by the extraction is checked, once, when it is added.
 _Avoid_: flag, duplicate name
+
+**Merge** (characters):
+Joining two character records the ledger holds for one person (a codename and a civilian name) in the Knowledge popup: the player picks the record that stays, the other record's names become its aliases, everything the other record knew and every detail of a kind the staying record does not have moves to it, and the other record goes. Renaming stays a separate edit.
+_Avoid_: combine, link
