@@ -176,6 +176,10 @@ _Avoid_: unretract, revert
 Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand locks it the same way.
 _Avoid_: pin, freeze
 
+**Undo** (hand edit):
+Taking back the newest hand edit made in the open Knowledge popup, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
+_Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
+
 **Change item**:
 One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's message id, the record's kind, the item's kind and its ids (`m6:update:holder:f2:c1`), stable across reloads. Records from before the items list counts only and have none.
 _Avoid_: change entry, delta

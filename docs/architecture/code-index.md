@@ -424,7 +424,9 @@ StoryArc/
 │   │   │                       #   lockCharacterDetail, #66;
 │   │   │                       #   markChangeItemReviewed, unmarkChangeItemReviewed:
 │   │   │                       #   reviewed marks by item key, #67) return
-│   │   │                       #   { ledger, error }; new holders are how
+│   │   │                       #   { ledger, error }; saveLedgerEdit stores one and
+│   │   │                       #   records it for undoLedgerEdit (createUndoStack,
+│   │   │                       #   per popup session, #68); new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
 │   │   ├── knowledge-status.js # updateKnowledgeStatus() — the drawer's status line:
@@ -532,6 +534,9 @@ StoryArc/
 │   ├── test-knowledge-hand-edits.js # Tests: move holder, delete character, restore a
 │   │                           #   retracted fact, lock a detail (#66), refusals,
 │   │                           #   rollback after a move, restore and lock
+│   ├── test-knowledge-undo.js  # Tests: undo of hand edits (#68): exact restore, one
+│   │                           #   further per press, refusal after an in-place or
+│   │                           #   replacing change, new session empty, every edit
 │   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
 │   │                           #   holder dedupe, details, nameClash, rollback after a
 │   │                           #   merge, taken names and the flag see one character

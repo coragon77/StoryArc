@@ -5,7 +5,7 @@ import {
     updateKnowledgeAfterReply, updateKnowledgeAfterEdit, updateKnowledgeAfterSwipe, rollBackKnowledgeFrom,
     dropKnowledgeFrom, listChangeItems,
 } from '../lib/knowledge/ledger.js';
-import { markChangeItemReviewed, saveLedgerEdit, unmarkChangeItemReviewed } from '../lib/ui/knowledge-popup.js';
+import { markChangeItemReviewed, saveLedgerEdit, startKnowledgeUndoSession, undoLedgerEdit, unmarkChangeItemReviewed } from '../lib/ui/knowledge-popup.js';
 
 const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
@@ -425,6 +425,34 @@ describe('saveLedgerEdit — a reviewed mark saved through the popup', () => {
             await saveLedgerEdit(markChangeItemReviewed(storedLedger, 'm6:update:character:c3'));
 
             assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, ['m6:update:character:c3']);
+        } finally {
+            globalThis.$ = previousJquery;
+            delete chat_metadata.story_arc;
+        }
+    });
+
+    it('undo takes a mark back', async () => {
+        const storedLedger = {
+            characters: [{ id: 'c3', name: 'Gabriel', aliases: [] }],
+            facts: [],
+            scene: { at: 6, messageId: 'm6', present: [] },
+            lastUpdatedAt: 6,
+            updateLog: [{
+                kind: 'update', from: 3, to: 6, messageId: 'm6', factsRetracted: [],
+                items: { characters: ['c3'], holders: [], details: [], names: [], scene: null },
+            }],
+            reviewedMarks: [],
+        };
+        const previousJquery = globalThis.$;
+        globalThis.$ = () => ({ length: 0 });
+        chat_metadata.story_arc = { knowledge: storedLedger };
+        startKnowledgeUndoSession();
+        try {
+            await saveLedgerEdit(markChangeItemReviewed(storedLedger, 'm6:update:character:c3'));
+            const { error } = await undoLedgerEdit();
+
+            assert.equal(error, null);
+            assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, []);
         } finally {
             globalThis.$ = previousJquery;
             delete chat_metadata.story_arc;
