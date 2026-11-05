@@ -81,7 +81,7 @@ describe('a one-word name another record shares points at nobody in the knowledg
         assert.deepEqual(talkedAboutHeadings(ledger, 'Osei landed.'), []);
     });
 
-    it('keeps the multi-word "Agent Cross" working next to the ambiguous "Cross"', () => {
+    it('keeps the multi-word "Agent Cross" working next to the shared "Cross"', () => {
         assert.deepEqual(talkedAboutHeadings(makeParagonLedger(), 'Agent Cross smiled.'),
             ['AGENT CROSS (talked about, not present)']);
         assert.deepEqual(talkedAboutHeadings(makeParagonLedger(), 'Cross smiled.'), []);
@@ -122,6 +122,19 @@ describe('a one-word name another record shares resolves to nobody in an extract
             learned: [{ text: 'the roof is wired', who: ['Osei'], how: 'witnessed', toldBy: null, public: false, at: 11 }],
         }), 11, 11);
         assert.equal(ledger.facts.length, 11);
+    });
+});
+
+describe('a shared name word that is also a surname particle in lowercase', () => {
+    it('resolves "della" to nobody when the ledger spells it "Della" next to Della Reyes', () => {
+        const ledger = makeParagonLedger();
+        ledger.characters.push({ id: 'c9', name: 'Ines Moreau', aliases: ['Della'] }, { id: 'c10', name: 'Della Reyes', aliases: [] });
+
+        applyExtractionAnswer(ledger, answerWith({
+            learned: [{ text: 'the shipment is late', who: ['della'], how: 'witnessed', toldBy: null, public: false, at: 10 }],
+        }), 10, 10);
+
+        assert.equal(ledger.facts.length, 8);
     });
 });
 
