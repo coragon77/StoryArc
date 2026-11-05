@@ -328,7 +328,9 @@ StoryArc/
 │   │                           #   resolveFulfilledDevelopments() (listed active beats,
 │   │                           #   at inside the read messages);
 │   │                           #   Apply — applyExtractionAnswer(ledger, answer, from,
-│   │                           #   last): the teller of a told fact holds it too, an
+│   │                           #   last): new names first (newNames → aliases of the
+│   │                           #   named record, a name another record has refused),
+│   │                           #   then the teller of a told fact holds it too, an
 │   │                           #   at outside from..last falls back to last; given the
 │   │                           #   chat, gives the read messages a message id (extra.
 │   │                           #   story_arc_message_id) and stores messageId;
@@ -407,7 +409,8 @@ StoryArc/
 │   │   │                       #   keepCharacterName, addFact, editFactText, deleteFact,
 │   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
 │   │   │                       #   saveCharacterDetails: player detail entries that
-│   │   │                       #   lock the kind, #54) return
+│   │   │                       #   lock the kind, #54; mergeCharacters: one
+│   │   │                       #   record into another, #60) return
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
@@ -513,6 +516,9 @@ StoryArc/
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed, the
 │   │                           #   "Names to check" section and keepCharacterName (#48)
+│   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
+│   │                           #   holder dedupe, details, nameClash, rollback after a
+│   │                           #   merge, taken names and the flag see one character
 │   ├── test-knowledge-popup-details.js # Tests: character details in the popup (#54):
 │   │                           #   row summary, editor fields, saveCharacterDetails
 │   │                           #   (lock on change, unlock on clear, validation)
@@ -541,6 +547,10 @@ StoryArc/
 │   ├── test-knowledge-names.js # Tests: buildTakenNamesBlock literal lists (titles,
 │   │                           #   hyphenated parts, aliases, repeats, diacritics,
 │   │                           #   particles, sort), byte stability; listTakenNames
+│   ├── test-knowledge-new-names.js # Tests: new names of a known character (#60):
+│   │                           #   parser, alias added / refused / unknown, applied
+│   │                           #   before new characters and the rest of the answer,
+│   │                           #   prompt with details on and off, update-log counts
 │   ├── test-knowledge-name-clash.js # Tests: the reused-name flag (#43) at the apply
 │   │                           #   (hyphens, titles, aliases, same-answer family),
 │   │                           #   through the update after a reply and an edit,

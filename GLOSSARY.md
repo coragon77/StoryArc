@@ -140,6 +140,10 @@ _Avoid_: character profile, attributes, character sheet, stats
 A cast member the story knows only through their kinship to another cast member ("Kendra Osei's mother"): a record without a name, called after its relation wherever a name is printed. It adds no taken name and is never a name clash. When the story names them on screen, the record takes the name and keeps its details.
 _Avoid_: anonymous character
 
+**New name** (of a character):
+A name the story gives a character the knowledge ledger already has, such as a codename, a first name or a nickname. The knowledge extraction reports it only when the text makes plain both names belong to one person, and it becomes an alias of that character's record instead of a second record. A secret identity is still one character in the ledger once the text has shown it, even while the characters in the scene know only one of the names. A name another character already has is not added.
+_Avoid_: rename, duplicate
+
 **Taken name**:
 A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
 _Avoid_: used name, reserved name, blacklist
@@ -147,3 +151,7 @@ _Avoid_: used name, reserved name, blacklist
 **Name clash**:
 A new character the knowledge extraction added with a taken name: the record keeps which names it shares and the message it was named in. Shown to the player under "Names to check" in the Knowledge popup until the player renames the character or keeps the name; once no other character has the shared names, the player clears it with "Not a clash". Only a character added by the extraction is checked, once, when it is added.
 _Avoid_: flag, duplicate name
+
+**Merge** (characters):
+Joining two character records the ledger holds for one person (a codename and a civilian name) in the Knowledge popup: the player picks the record that stays, the other record's names become its aliases, everything the other record knew and every detail of a kind the staying record does not have moves to it (a kind only the other record has set by the player moves too, replacing the staying record's), and the other record goes. Renaming stays a separate edit.
+_Avoid_: combine, link
