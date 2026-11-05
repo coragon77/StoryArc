@@ -159,6 +159,7 @@ describe('rollBackKnowledgeFrom', () => {
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
                 },
             ],
         });
@@ -274,6 +275,7 @@ describe('updateKnowledgeAfterSwipe', () => {
                     factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c1', messageId: swipeMessageId }], details: [], names: [], scene: ['c1'] },
                 },
             ],
         });
@@ -395,6 +397,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
     });
@@ -423,6 +426,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -451,6 +455,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
             }],
         });
     });
@@ -506,6 +511,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
     });

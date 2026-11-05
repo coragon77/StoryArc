@@ -365,6 +365,7 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
                 },
             ],
         });
@@ -435,6 +436,7 @@ describe('the message ids an update leaves on the messages it read', () => {
                 factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c2', messageId: userMessageId }, { factId: 'f1', characterId: 'c1', messageId: userMessageId }], details: [], names: [], scene: ['c1', 'c2'] },
             }],
         });
     });
