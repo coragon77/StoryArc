@@ -292,7 +292,7 @@ describe('updateKnowledgeAfterReply: rulings', () => {
         assert.deepEqual(updateLog, [{
             kind: 'update', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 1 },
-            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 2,
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 2, detailsLocked: 0,
         }]);
         assert.equal(JSON.stringify(updateLog).toLowerCase().includes('defender'), false);
     });

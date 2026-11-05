@@ -354,7 +354,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
         assert.deepEqual(updateLog, [{
             kind: 'update', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 2, rulings: 0 },
-            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0,
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0, detailsLocked: 0,
         }]);
         const logText = JSON.stringify(updateLog);
         for (const internal of ['crane001', 'brody_refuses', 'crane_moved', 'Brody refuses']) {

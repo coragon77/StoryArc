@@ -99,7 +99,7 @@ describe('the knowledge update log', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'update', from: 3, to: 6, messageId: 'm6',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-            factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
         }]);
     });
 
@@ -113,7 +113,7 @@ describe('the knowledge update log', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'update', from: 3, to: 6, messageId: 'm6',
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
         }]);
     });
 
@@ -232,7 +232,7 @@ describe('the knowledge update log', () => {
             {
                 kind: 'update', from: 3, to: 6, messageId: 'm6',
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+                factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [] },
         ]);
@@ -280,7 +280,7 @@ describe('the knowledge update log', () => {
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
             kind: 'reextract', from: 1, to: 1, messageId: 'm1',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-            factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
         }]);
     });
 
@@ -293,5 +293,80 @@ describe('the knowledge update log', () => {
         await updateKnowledgeAfterEdit(1);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{ kind: 'skipped', from: 1, to: 1, reason: 'no answer' }]);
+    });
+});
+
+describe('the knowledge update log: details the player locked', () => {
+    beforeEach(() => {
+        fillChat();
+        setSwitches();
+        storeLedger();
+        // The player set Noor's gender and role in the Knowledge popup.
+        chat_metadata.story_arc.knowledge.characters[0].details = {
+            gender: [{ value: 'female', at: null, by: 'user' }],
+            role: [
+                { value: 'mechanic', at: 0, messageId: 'm0' },
+                { value: 'chief mechanic, Bay 3', at: null, by: 'user' },
+            ],
+        };
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    it('an update skips a locked kind and counts the skips', async () => {
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'],
+            newCharacters: [],
+            learned: [],
+            details: [
+                { character: 'Noor', kind: 'gender', value: 'male', at: 4 },
+                { character: 'Noor', kind: 'role', value: 'welder', at: 4 },
+                { character: 'Ellie', kind: 'age', value: '17', at: 5 },
+            ],
+        })]);
+
+        await updateKnowledgeAfterReply(6);
+
+        const knowledge = chat_metadata.story_arc.knowledge;
+        assert.deepEqual(knowledge.characters[0].details, {
+            gender: [{ value: 'female', at: null, by: 'user' }],
+            role: [
+                { value: 'mechanic', at: 0, messageId: 'm0' },
+                { value: 'chief mechanic, Bay 3', at: null, by: 'user' },
+            ],
+        });
+        assert.deepEqual(knowledge.characters[1].details, { age: [{ value: '17', at: 5, messageId: 'm5' }] });
+        assert.deepEqual(knowledge.updateLog, [{
+            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsLocked: 2,
+        }]);
+    });
+
+    it('a re-extraction counts its locked skips too', async () => {
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'],
+            newCharacters: [],
+            learned: [],
+            details: [{ character: 'Noor', kind: 'gender', value: 'male', at: 1 }],
+        })]);
+
+        await updateKnowledgeAfterEdit(1);
+
+        const knowledge = chat_metadata.story_arc.knowledge;
+        assert.deepEqual(knowledge.characters[0].details.gender, [{ value: 'female', at: null, by: 'user' }]);
+        assert.deepEqual(knowledge.updateLog, [{
+            kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+            answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+            factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsLocked: 1,
+        }]);
     });
 });

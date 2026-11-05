@@ -404,7 +404,9 @@ StoryArc/
 │   │   │                       #   character carries nameClash; pure ledger edits
 │   │   │                       #   (addCharacter, renameCharacter, setCharacterAliases,
 │   │   │                       #   keepCharacterName, addFact, editFactText, deleteFact,
-│   │   │                       #   setFactPublic, addFactHolder, removeFactHolder) return
+│   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
+│   │   │                       #   saveCharacterDetails: player detail entries that
+│   │   │                       #   lock the kind, #54) return
 │   │   │                       #   { ledger, error }; new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
@@ -510,6 +512,9 @@ StoryArc/
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), spoiler drawers start closed, the
 │   │                           #   "Names to check" section and keepCharacterName (#48)
+│   ├── test-knowledge-popup-details.js # Tests: character details in the popup (#54):
+│   │                           #   row summary, editor fields, saveCharacterDetails
+│   │                           #   (lock on change, unlock on clear, validation)
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
 │   │                           #   parsing (all or nothing, null keys)
 │   ├── test-knowledge-apply.js # Tests: applyExtractionAnswer (new characters, aliases,
@@ -697,8 +702,9 @@ lib/ui/
 │                              knowledge-popup.js, spoiler-group.js, /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── knowledge-popup.js (imports: /script.js chat + saveMetadata, core/settings.js,
-│                              core/constants.js HOLDER_HOW,
-│                              knowledge/ledger.js characterName + nextLedgerId,
+│                              core/constants.js DETAIL_KINDS + DETAIL_STATUS_VALUES + HOLDER_HOW,
+│                              knowledge/ledger.js characterName + currentDetailText +
+│                              isDetailLocked + nextLedgerId,
 │                              knowledge/names.js listCharactersWithNames,
 │                              knowledge/message-ids.js messageIdOf,
 │                              spoiler-group.js, knowledge-status.js

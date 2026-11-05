@@ -93,6 +93,32 @@ describe('applyExtractionAnswer — character details, first statements', () => 
         assert.equal(changed, true);
     });
 
+    it('skips a kind the player locked, also when the player\'s entry follows a story entry', () => {
+        const ledger = makeLedger();
+        ledger.characters[1].details = {
+            gender: [{ value: 'female', at: null, by: 'user' }],
+            role: [
+                { value: 'cleaner', at: 5 },
+                { value: 'cleaner, double shifts, Oakland', at: null, by: 'user' },
+            ],
+        };
+
+        applyExtractionAnswer(ledger, answerWithDetails([
+            { character: 'Ama', kind: 'gender', value: 'male', at: 12 },
+            { character: 'Ama', kind: 'role', value: 'night nurse, Highland Hospital', at: 12 },
+            { character: 'Ama', kind: 'age', value: '40s', at: 12 },
+        ]), 11, 12, makeChat());
+
+        assert.deepEqual(ledger.characters[1].details, {
+            gender: [{ value: 'female', at: null, by: 'user' }],
+            role: [
+                { value: 'cleaner', at: 5 },
+                { value: 'cleaner, double shifts, Oakland', at: null, by: 'user' },
+            ],
+            age: [{ value: '40s', at: 12, messageId: 'm12' }],
+        });
+    });
+
     it('keeps the first of two items for one kind in the same answer', () => {
         const ledger = makeLedger();
 
