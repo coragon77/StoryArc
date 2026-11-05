@@ -217,7 +217,7 @@ describe('buildLastBeatCell', () => {
 
     it('a paused arc: where it was paused, and that its clock stands still', () => {
         const arc = makeEpisode({ focus: 'paused', pausedAt: 2090 });
-        assert.equal(textOf(buildLastBeatCell(arc)), 'Paused at #2,090 clock stands still · last scene beat #2,085');
+        assert.equal(textOf(buildLastBeatCell(arc)), 'Paused at #2,090 clock stands still last scene beat #2,085');
     });
 
     it('a reactivated arc says where it was reactivated', () => {
