@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildKnowledgeContent, createKnowledgeView, listChangeLines } from '../lib/ui/knowledge-popup.js';
+import { buildKnowledgeContent, createKnowledgeView, findFocusTarget, listChangeLines } from '../lib/ui/knowledge-popup.js';
 
 /**
  * Noor (c1), Ellie (c2), Gabriel (c3, new in message 6). f1 old, f2 learned
@@ -99,8 +99,8 @@ describe('buildKnowledgeContent: What changed', () => {
     it('opens on What changed with the number of lines to review on its tab', () => {
         const html = buildKnowledgeContent(makeLedger(), []);
 
-        assert.match(html, /id="sa-k-tab-inbox"[^>]*aria-selected="true"/);
-        assert.match(html, /id="sa-k-inbox-count"[^>]*>6</);
+        assert.match(html, /id="sa-k-tab-changes"[^>]*aria-selected="true"/);
+        assert.match(html, /id="sa-k-changes-count"[^>]*>6</);
     });
 
     it('says each change in one sentence', () => {
@@ -157,5 +157,41 @@ describe('buildKnowledgeContent: What changed', () => {
         ledger.updateLog = [];
 
         assert.ok(textOf(buildKnowledgeContent(ledger, [])).includes('No update yet'));
+    });
+});
+
+describe('findFocusTarget', () => {
+    /** A stand-in for the popup root: elements with attributes, found by `[attribute]` or by id */
+    function makeRoot(elements) {
+        return {
+            querySelector: selector => elements.find(element => `#${element.id}` === selector) || null,
+            querySelectorAll: selector => elements.filter(element => selector.slice(1, -1) in element.attributes),
+        };
+    }
+    const element = (id, attributes, inner = null) => ({
+        id, attributes, getAttribute: name => attributes[name] ?? null, querySelector: () => inner,
+    });
+
+    it('finds a line whose key holds a comma and a quote, which a selector list would split', () => {
+        const line = element('line-1', { 'data-line': 'u1:name:c3:Vale, "Jr"' });
+        const root = makeRoot([element('other', { 'data-line': 'u1:name:c3:Vale' }), line, element('sa-k-title', {})]);
+
+        assert.equal(findFocusTarget(root, [{ attribute: 'data-line', value: 'u1:name:c3:Vale, "Jr"' }, '#sa-k-title']), line);
+    });
+
+    it('takes the targets in the order listed, not in document order', () => {
+        const title = element('sa-k-title', {});
+        const button = element('later-button', { 'data-area': 'clash:c3, x' });
+        const root = makeRoot([title, button]);
+
+        assert.equal(findFocusTarget(root, [{ attribute: 'data-area', value: 'clash:c3, x' }, '#sa-k-title']), button);
+        assert.equal(findFocusTarget(root, [{ attribute: 'data-area', value: 'gone' }, '#sa-k-title']), title);
+    });
+
+    it('goes into the found element with `then`', () => {
+        const keepButton = { id: 'keep' };
+        const row = element('row', { 'data-area': 'clash:c3' }, keepButton);
+
+        assert.equal(findFocusTarget(makeRoot([row]), [{ attribute: 'data-area', value: 'clash:c3', then: '[data-act="keep-name"]' }]), keepButton);
     });
 });

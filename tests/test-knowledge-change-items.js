@@ -97,7 +97,7 @@ describe('update records list their items', () => {
         await updateKnowledgeAfterReply(6);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 3, newCharacters: 1, learned: 1, retracted: 1, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f2'], holdersAdded: 1, factsRetracted: ['f1'], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
@@ -123,7 +123,7 @@ describe('update records list their items', () => {
         await updateKnowledgeAfterEdit(1);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+            kind: 'reextract', recordId: 'u1', from: 1, to: 1, messageId: 'm1',
             answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
@@ -201,12 +201,12 @@ describe('the item keys of a record', () => {
 
 /** The item keys of the update ANSWER_EVERYTHING records over messages 3 to 6. */
 const EVERYTHING_KEYS = {
-    character: 'm6:update:character:c3',
-    holder: 'm6:update:holder:f2:c1',
-    detail: 'm6:update:detail:c2:gender',
-    name: 'm6:update:name:c1:Wrench',
-    retracted: 'm6:update:retracted:f1',
-    scene: 'm6:update:scene:c1:c2:c3',
+    character: 'u1:character:c3',
+    holder: 'u1:holder:f2:c1',
+    detail: 'u1:detail:c2:gender',
+    name: 'u1:name:c1:Wrench',
+    retracted: 'u1:retracted:f1',
+    scene: 'u1:scene:c1:c2:c3',
 };
 
 describe('a rollback drops the reviewed marks of the items it removes', () => {
@@ -232,7 +232,7 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
         await rollBackKnowledgeFrom(4);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
-            'm6:update:character:c3', 'm6:update:holder:f2:c1', 'm6:update:name:c1:Wrench',
+            'u1:character:c3', 'u1:holder:f2:c1', 'u1:name:c1:Wrench',
         ]);
     });
 
@@ -241,8 +241,8 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
         await rollBackKnowledgeFrom(6);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
-            'm6:update:character:c3', 'm6:update:holder:f2:c1', 'm6:update:name:c1:Wrench',
-            'm6:update:retracted:f1', 'm6:update:scene:c1:c2:c3',
+            'u1:character:c3', 'u1:holder:f2:c1', 'u1:name:c1:Wrench',
+            'u1:retracted:f1', 'u1:scene:c1:c2:c3',
         ]);
     });
 
@@ -252,7 +252,7 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
         await updateKnowledgeAfterSwipe(5);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
-            'm6:update:character:c3', 'm6:update:holder:f2:c1', 'm6:update:detail:c2:gender', 'm6:update:name:c1:Wrench',
+            'u1:character:c3', 'u1:holder:f2:c1', 'u1:detail:c2:gender', 'u1:name:c1:Wrench',
         ]);
     });
 
@@ -262,8 +262,8 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
         await updateKnowledgeAfterEdit(3);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.reviewedMarks, [
-            'm6:update:character:c3', 'm6:update:detail:c2:gender', 'm6:update:name:c1:Wrench',
-            'm6:update:retracted:f1', 'm6:update:scene:c1:c2:c3',
+            'u1:character:c3', 'u1:detail:c2:gender', 'u1:name:c1:Wrench',
+            'u1:retracted:f1', 'u1:scene:c1:c2:c3',
         ]);
     });
 });
@@ -457,5 +457,69 @@ describe('saveLedgerEdit — a reviewed mark saved through the popup', () => {
             globalThis.$ = previousJquery;
             delete chat_metadata.story_arc;
         }
+    });
+});
+
+describe('each new record has its own record id, so item keys never collide', () => {
+    beforeEach(() => {
+        fillChat();
+        setSwitches();
+        storeLedger();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    const READ_NOOR_ROLE = JSON.stringify({
+        present: ['Noor'], newCharacters: [], learned: [],
+        details: [{ character: 'Noor', kind: 'role', value: 'mechanic', at: 1 }],
+    });
+
+    it('two re-extractions of one message give different record ids and keys', async () => {
+        installExtraction([READ_NOOR_ROLE, READ_NOOR_ROLE]);
+
+        await updateKnowledgeAfterEdit(1);
+        await updateKnowledgeAfterEdit(1);
+
+        const [first, second] = chat_metadata.story_arc.knowledge.updateLog;
+        assert.equal(first.recordId, 'u1');
+        assert.equal(second.recordId, 'u2');
+        assert.deepEqual(listChangeItems(first).map(item => item.key), ['u1:detail:c1:role']);
+        assert.deepEqual(listChangeItems(second).map(item => item.key), ['u2:detail:c1:role']);
+    });
+
+    it('a mark on a deleted fact\'s holder does not carry over to a new fact that reuses its id', async () => {
+        const ledger = chat_metadata.story_arc.knowledge;
+        ledger.updateLog = [{
+            kind: 'update', recordId: 'u4', from: 1, to: 2, messageId: 'm2', factsCreated: ['f2'], factsRetracted: [],
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c1', messageId: 'm1' }], details: [], names: [], scene: null },
+        }];
+        ledger.reviewedMarks = ['u4:holder:f2:c1'];
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'], newCharacters: [],
+            learned: [{ text: 'Gabriel wants titanium latches', public: false, who: ['Noor'], how: 'witnessed', toldBy: null, at: 3 }],
+        })]);
+
+        await updateKnowledgeAfterReply(6);
+
+        const newRecord = ledger.updateLog.at(-1);
+        assert.equal(newRecord.recordId, 'u5');
+        assert.deepEqual(newRecord.factsCreated, ['f2']);
+        assert.deepEqual(listChangeItems(newRecord).map(item => item.key), ['u5:holder:f2:c1']);
+        assert.deepEqual(ledger.reviewedMarks, ['u4:holder:f2:c1']);
+    });
+
+    it('a record from before the record ids keeps its message id and kind as the key prefix', () => {
+        const record = {
+            kind: 'update', from: 3, to: 6, messageId: 'm6', factsRetracted: [],
+            items: { characters: ['c3'], holders: [], details: [], names: [], scene: null },
+        };
+
+        assert.deepEqual(listChangeItems(record).map(item => item.key), ['m6:update:character:c3']);
     });
 });

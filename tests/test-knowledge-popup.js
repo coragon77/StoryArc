@@ -318,7 +318,7 @@ function makeFlaggedLedger() {
 
 /** The markup of the "Names to check" strip of What changed, or '' when there is none. */
 function namesToCheckOf(html) {
-    const start = html.indexOf('id="sa-k-names-inbox"');
+    const start = html.indexOf('id="sa-k-names-changes"');
     if (start === -1) return '';
     return html.slice(start, html.indexOf('</details>', start));
 }
@@ -327,7 +327,7 @@ describe('buildKnowledgeContent: names to check', () => {
     it('lists the flagged character, the shared name, who has it now and the message, first in What changed', () => {
         const html = buildKnowledgeContent(makeFlaggedLedger(), []);
 
-        const stripStart = html.indexOf('id="sa-k-names-inbox"');
+        const stripStart = html.indexOf('id="sa-k-names-changes"');
         assert.ok(stripStart !== -1);
         assert.ok(stripStart < html.indexOf('class="k-empty"'));
         const text = textOf(namesToCheckOf(html));

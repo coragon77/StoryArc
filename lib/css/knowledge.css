@@ -145,7 +145,7 @@
 .story-arc-knowledge .k-clash-why q { color: var(--k-text); }
 .story-arc-knowledge .k-clash .k-editor { grid-column: 1 / -1; margin: 4px 0 6px; }
 /* ── What changed ──────────────────────────────────────────────────────── */
-.story-arc-knowledge .k-inbox { container-type: inline-size; max-width: 1240px; }
+.story-arc-knowledge .k-changes { container-type: inline-size; max-width: 1240px; }
 .story-arc-knowledge .k-intro { display: flex; justify-content: space-between; align-items: center; gap: 8px 20px; flex-wrap: wrap; padding: 14px 0 0; }
 .story-arc-knowledge .k-intro p { margin: 0; color: var(--k-muted); font-size: var(--fs-s); max-width: 80ch; }
 .story-arc-knowledge .k-intro label { display: inline-flex; gap: 6px; align-items: center; font-size: var(--fs-s); white-space: nowrap; }
