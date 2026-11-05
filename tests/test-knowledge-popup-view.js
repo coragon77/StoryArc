@@ -195,3 +195,98 @@ describe('findFocusTarget', () => {
         assert.equal(findFocusTarget(makeRoot([row]), [{ attribute: 'data-area', value: 'clash:c3', then: '[data-act="keep-name"]' }]), keepButton);
     });
 });
+
+describe('buildKnowledgeContent: Not true', () => {
+    it('offers "Not true" on a new fact, a learned line and the fact sheet', () => {
+        const html = buildKnowledgeContent(makeLedger(), []);
+        const view = createKnowledgeView();
+        view.tab = 'cast';
+        view.sheet = { type: 'fact', id: 'f2' };
+        const sheetHtml = buildKnowledgeContent(makeLedger(), [], true, view);
+
+        assert.match(html, /data-act="retract" data-area="m6:update:holder:f2:c1" data-fid="f2"/);
+        assert.match(sheetHtml, /data-act="retract" data-area="fs" data-fid="f2"/);
+    });
+
+    it('says the player took a fact back and offers "Still true"', () => {
+        const ledger = makeLedger();
+        const fact = ledger.facts.splice(1, 1)[0];
+        ledger.retractedFacts.push({ at: null, fact });
+        const view = createKnowledgeView();
+        view.showReviewed = true;
+
+        const factLine = buildKnowledgeContent(ledger, [], true, view).split('<li class="k-line').find(chunk => chunk.includes('data-line="m6:update:holder:f2:c1"'));
+
+        assert.ok(textOf(factLine).includes('You marked it not true: the narrator is no longer told it.'), textOf(factLine));
+        assert.match(factLine, /data-act="restore"/);
+    });
+});
+
+describe('buildKnowledgeContent: a planned fact on a character sheet', () => {
+    /** Ellie (c2) planned to learn f2; Noor witnessed it */
+    function ledgerWithPlan() {
+        const ledger = makeLedger();
+        ledger.facts[1].holders[1].how = 'plan';
+        return ledger;
+    }
+    function sheetOf(ledger, characterId, revealed = []) {
+        const view = createKnowledgeView();
+        view.tab = 'cast';
+        view.sheet = { type: 'character', id: characterId };
+        revealed.forEach(key => view.revealed.add(key));
+        return buildKnowledgeContent(ledger, [], true, view);
+    }
+
+    it('folds the planned facts into one line with Show, and counts only the facts they know', () => {
+        const text = textOf(sheetOf(ledgerWithPlan(), 'c2'));
+
+        assert.ok(text.includes('knows 0 facts'), text);
+        assert.ok(text.includes('1 planned fact An arc plan gives them this. Show'));
+        assert.ok(!text.includes('titanium'));
+    });
+
+    it('shows the planned fact once revealed', () => {
+        const text = textOf(sheetOf(ledgerWithPlan(), 'c2', ['plans:c2']));
+
+        assert.ok(text.includes('Gabriel wants titanium latches'));
+        assert.ok(text.includes('Ellie planned'));
+    });
+
+    it('does not count a hidden planned holder among the others who know a fact', () => {
+        const text = textOf(sheetOf(ledgerWithPlan(), 'c1'));
+
+        assert.ok(text.includes('Gabriel wants titanium latches'));
+        assert.ok(text.includes('only they know it'), text);
+    });
+});
+
+describe('buildKnowledgeContent: a relative the story named', () => {
+    it('offers "Not their name" on the new name line', () => {
+        const ledger = makeLedger();
+        ledger.characters.push({ id: 'c4', name: 'Maren', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c2' }, at: null, by: 'record' }] } });
+        ledger.updateLog[2].items.names.push({ characterId: 'c4', name: 'Maren' });
+
+        const html = buildKnowledgeContent(ledger, []);
+
+        assert.match(html, /data-act="unname" data-area="m6:update:name:c4:Maren" data-cid="c4"/);
+    });
+});
+
+describe('buildKnowledgeContent: earlier updates that stored no fact', () => {
+    it('offers a message search for an update that only added holders or details', () => {
+        const ledger = makeLedger();
+        ledger.updateLog.unshift({ kind: 'update', from: 0, to: 0, messageId: 'm0', answer: { newCharacters: 0 }, factsCreated: [], holdersAdded: 2, factsRetracted: [], detailsSet: 1 });
+
+        const html = buildKnowledgeContent(ledger, []);
+        const row = html.split('<li class="k-sum">').find(chunk => chunk.startsWith('<span class="k-sum-range">Message 0<'));
+
+        assert.ok(textOf(row).includes('Message 0 2 holders added, 1 detail set Message search'), textOf(row));
+        assert.match(row, /data-act="message-search" data-from="0" data-to="0"/);
+    });
+
+    it('offers nothing for a skipped update', () => {
+        const row = buildKnowledgeContent(makeLedger(), []).split('<li class="k-sum">').find(chunk => chunk.includes('not read'));
+
+        assert.ok(!row.split('</li>')[0].includes('data-act'));
+    });
+});
