@@ -176,7 +176,7 @@ describe('renderProgressDisplay — stall nudge', () => {
         chat.length = 111;
         const html = renderProgressDisplay([episode({ id: 'stalled' }), episode({ id: 'fresh', lastFulfilledAt: 105 })]);
         // 111 − 1 − 100 messages since the start; 20 / 6 ≈ 3 per beat
-        assert.ok(html.includes('No beat in 10 messages — about one is due every 3.'), html);
+        assert.ok(html.includes('No scene beat in 10 messages — about one is due every 3.'), html);
         assert.match(html, /class="menu_button story-arc-stall-btn" data-arc-id="stalled"/);
         assert.doesNotMatch(html, /data-arc-id="fresh"/);
     });
@@ -243,7 +243,7 @@ describe('ignoreStall — the stall nudge hidden until the next beat or re-plan'
         assert.equal(isStalled(stored(), 111), true);
         assert.equal(isStallNudgeShown(stored(), 111), false);
         assert.equal(isStallNudgeShown(stored(), 400), false);
-        assert.equal(renderProgressDisplay([stored()]).includes('No beat in'), false);
+        assert.equal(renderProgressDisplay([stored()]).includes('No scene beat in'), false);
     });
 
     it('shows the nudge again once the next beat lands and the arc stalls again', async () => {

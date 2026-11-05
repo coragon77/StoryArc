@@ -402,7 +402,10 @@ StoryArc/
 │   │   │                       #   and a visible Cancel, then the plan behind one
 │   │   │                       #   Reveal switch, foreshadowing shown as Clues; re-plan:
 │   │   │                       #   buildPremiseChoice(), "Apply re-plan" via updateArc).
-│   │   │                       #   Back from a generated plan asks inline first. The
+│   │   │                       #   Back from a generated plan asks inline first.
+│   │   │                       #   Failures say problem and recovery (raw error to the
+│   │   │                       #   console); finished log steps show their outcome;
+│   │   │                       #   the re-plan premise shows once. The
 │   │   │                       #   build* view functions are exported (tests, shots);
 │   │   │                       #   unbinds its click namespace when the popup resolves
 │   │   ├── arc-manager.js      # showArcManager() — the Arc Manager (#71): a table of
@@ -454,13 +457,15 @@ StoryArc/
 │   │   │                       #   since; Knowledge popup and Arc Manager (#71)
 │   │   ├── spoiler-group.js    # buildSpoilerGroup(id, label, warning, body) — the
 │   │   │                       #   collapsed spoiler drawer of the Knowledge popup
-│   │   └── progress.js         # renderProgressDisplay() — compact beat status display
-│   │                           #   injected into ST sidebar; "n/m beats" or "n/m
-│   │                           #   milestones"; shows "~N msgs to next phase" only
+│   │   └── progress.js         # renderProgressDisplay() — one row per active arc in
+│   │                           #   the drawer and the wand popup, in the Arc Manager's
+│   │                           #   grammar (title; tier · phase · focus; its read-only
+│   │                           #   buildBeatStrip; the stall or overrule warning with
+│   │                           #   Re-plan, #72); shows "~N messages to the next phase" only
 │   │                           #   while the message count holds the phase back,
 │   │                           #   never in resolution; isStalled(arc, chatLength) —
-│   │                           #   the stall rule behind the "May have drifted —
-│   │                           #   re-plan?" button (every tier; not while paused or in
+│   │                           #   the stall rule behind the stall warning
+│   │                           #   (every tier; not while paused or in
 │   │                           #   background; counted from the latest of messageStart,
 │   │                           #   lastFulfilledAt, replannedAt, reactivatedAt,
 │   │                           #   spotlitAt: stallCountStart);
@@ -476,15 +481,15 @@ StoryArc/
 │       │                       #   strip, form, generation log, plan with the Reveal
 │       │                       #   switch; ST theme variables only (#72). Keeps the
 │       │                       #   old .story-arc-wizard-footer row for the old
-│       │                       #   Arc Manager and Knowledge popup
+│       │                       #   Knowledge popup (until #70 lands)
 │       ├── settings-panel.css  # Settings drawer (action row, grouped settings) and
 │       │                       #   the wand popup; ST theme variables only (#72)
 │       ├── arc-manager.css     # Arc Manager table, warning lines, detail, menu,
 │       │                       #   status strip (ST theme variables only); the
 │       │                       #   wizard's optional tag and the knowledge chip
 │       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
-│       └── progress.css        # Compact sidebar progress widget, incl. the
-│                               #   "msgs to next phase" line and the stall nudge
+│       └── progress.css        # Layout of the progress rows; tokens, beat squares
+│                               #   and the warning come from arc-manager.css (#72)
 ├── tests/
 │   ├── run.sh                  # Node.js test runner (node:test)
 │   ├── smoke.sh                # HTTP smoke tests against live ST instance
@@ -766,7 +771,9 @@ lib/knowledge/
 
 lib/ui/
 ├── progress.js      (imports: planning/storage.js, injection/pacing.js,
-│                              core/settings.js, /script.js, /scripts/utils.js)
+│                              core/settings.js, core/constants.js, arc-manager.js
+│                              (buildBeatStrip; a load-safe cycle), /script.js,
+│                              /scripts/utils.js)
 ├── settings-panel.js (imports: core/constants.js, core/settings.js,
 │                              planning/arc-preset.js, wizard.js, arc-manager.js,
 │                              knowledge-popup.js, knowledge-status.js,

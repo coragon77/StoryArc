@@ -72,10 +72,10 @@ describe('renderProgressDisplay — rulings', () => {
 
     it('shows the ruling warning instead of the stall warning when both would show', () => {
         chat.length = 111;
-        assert.ok(renderProgressDisplay([stalledEpisode()]).includes('No beat in 10 messages — about one is due every 3.'));
+        assert.ok(renderProgressDisplay([stalledEpisode()]).includes('No scene beat in 10 messages — about one is due every 3.'));
         const html = renderProgressDisplay([stalledEpisode({ rulings: [{ id: 'r1', text: 'Comics, not police procedural.', at: 105 }] })]);
 
-        assert.equal(html.includes('No beat in'), false);
+        assert.equal(html.includes('No scene beat in'), false);
         assert.equal((html.match(/story-arc-stall-btn/g) || []).length, 1);
         assert.ok(html.includes('You overruled the plan: <q>Comics, not police procedural.</q>.'), html);
     });

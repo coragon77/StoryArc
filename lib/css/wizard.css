@@ -616,8 +616,10 @@
     cursor: pointer;
 }
 
-.story-arc-wizard-switch input {
+/* Specific enough to win over ST's global input[type='checkbox'] look */
+.story-arc-wizard .story-arc-wizard-switch input[type="checkbox"] {
     position: absolute;
+    left: 0;
     width: 34px;
     height: 20px;
     margin: 0;
