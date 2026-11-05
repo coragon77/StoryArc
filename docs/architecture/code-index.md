@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-04
+- **Last Updated:** 2026-11-05
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
