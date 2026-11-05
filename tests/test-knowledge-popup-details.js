@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildKnowledgeContent, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
+import { buildKnowledgeContent, createKnowledgeView, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
 
 /**
  * Kendra Osei and her mother Ama in the Paragon chat: the story stated Ama's
@@ -32,51 +32,79 @@ function textOf(html) {
     return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** The markup of the character row with this id, up to its closing tag. */
+/** A view of Cast & facts with this character's sheet open */
+function sheetViewOf(characterId) {
+    const view = createKnowledgeView();
+    view.tab = 'cast';
+    view.sheet = { type: 'character', id: characterId };
+    return view;
+}
+
+/** A view of Cast & facts with everyone A–Z unfolded */
+function allCharactersView() {
+    const view = createKnowledgeView();
+    view.tab = 'cast';
+    view.foldOpen.all = true;
+    return view;
+}
+
+/** The markup of the character's result row, up to its end. */
 function characterRowOf(html, characterId) {
-    const rowChunk = html.split('<li ').find(chunk => chunk.includes(`data-character-id="${characterId}"`)) || '';
-    return rowChunk.split('</li>')[0];
+    const rowChunk = html.split('<button type="button" class="k-row"').slice(1).find(chunk => chunk.includes(`data-character-id="${characterId}"`)) || '';
+    return rowChunk.split('</button>')[0];
+}
+
+/** The markup of a detail row of the open sheet. */
+function detailRowOf(html, kind) {
+    const start = html.indexOf(`data-detail="${kind}"`);
+    if (start === -1) return '';
+    return html.slice(start, html.indexOf('<div class="k-detail"', start + 1) === -1 ? html.indexOf('</dl>', start) : html.indexOf('<div class="k-detail"', start + 1));
 }
 
 describe('buildKnowledgeContent: character details', () => {
-    it('shows each known detail of a character by its kind, and marks the ones the player set', () => {
-        const rowText = textOf(characterRowOf(buildKnowledgeContent(makeLedger()), 'c2'));
-        assert.ok(rowText.includes(
-            'age: 40s (set by you); role: cleaner, double shifts, Oakland; relation: Kendra Osei&#39;s mother'), rowText);
+    it('shows each detail of a character\'s sheet with where it came from, and marks the ones the player set', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true, sheetViewOf('c2'));
+
+        assert.ok(textOf(detailRowOf(html, 'age')).includes('Age 40s Locked by you Edit Clear'), textOf(detailRowOf(html, 'age')));
+        assert.ok(textOf(detailRowOf(html, 'role')).includes('Role cleaner, double shifts, Oakland From the story, message #12 Edit Lock'));
+        assert.ok(textOf(detailRowOf(html, 'relation')).includes('Relation Kendra Osei&#39;s mother From the story, message #14'));
+        assert.ok(textOf(detailRowOf(html, 'gender')).includes('Gender unknown The story has not stated it. Set'));
     });
 
-    it('shows no details line for a character with none known', () => {
-        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c1');
-        assert.ok(!rowHtml.includes('story-arc-knowledge-details'));
+    it('sums up the details in the character\'s row, and says when none is known', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true, allCharactersView());
+
+        assert.ok(textOf(characterRowOf(html, 'c2')).includes('40s · cleaner, double shifts, Oakland · Kendra Osei&#39;s mother'));
+        assert.ok(textOf(characterRowOf(html, 'c1')).includes('No details known'));
     });
 
-    it('hides the details, the details editor and the unnamed relative form while character details are off', () => {
-        const html = buildKnowledgeContent(makeLedger(), [], false);
-        const rowHtml = characterRowOf(html, 'c2');
+    it('hides the details and the unnamed relative form while character details are off', () => {
+        const sheetHtml = buildKnowledgeContent(makeLedger(), [], false, sheetViewOf('c2'));
+        const listHtml = buildKnowledgeContent(makeLedger(), [], false, allCharactersView());
 
-        assert.ok(!rowHtml.includes('cleaner'), rowHtml);
-        assert.ok(!rowHtml.includes('story-arc-detail-input'), rowHtml);
-        assert.ok(!rowHtml.includes('story-arc-details-save-btn'), rowHtml);
-        assert.ok(!html.includes('story-arc-relative-add-btn'));
-        assert.ok(rowHtml.includes('Ama Osei'));
+        assert.ok(!sheetHtml.includes('cleaner'));
+        assert.ok(!sheetHtml.includes('sa-k-sec-details'));
+        assert.ok(sheetHtml.includes('Ama Osei'));
+        assert.ok(!characterRowOf(listHtml, 'c2').includes('cleaner'));
+        assert.ok(!textOf(listHtml).includes('Add unnamed relative'));
     });
 
     it('keeps an unnamed relative\'s display name while character details are off', () => {
         const ledger = makeLedger();
         ledger.characters.push({ id: 'c3', name: '', aliases: [], details: { relation: [{ value: { kind: 'father', of: 'c1' }, at: null, by: 'record' }] } });
 
-        const rowText = textOf(characterRowOf(buildKnowledgeContent(ledger, [], false), 'c3'));
+        const rowText = textOf(characterRowOf(buildKnowledgeContent(ledger, [], false, allCharactersView()), 'c3'));
 
-        assert.ok(rowText.includes('data-character-id="c3"> Kendra Osei&#39;s father Name'), rowText);
+        assert.ok(rowText.includes('Kendra Osei&#39;s father'), rowText);
+        assert.ok(rowText.includes('unnamed relative'));
     });
 
-    it('shows the details editor and the unnamed relative form while character details are on', () => {
-        const html = buildKnowledgeContent(makeLedger(), [], true);
-
-        assert.ok(characterRowOf(html, 'c2').includes('story-arc-details-save-btn'));
-        assert.ok(html.includes('story-arc-relative-add-btn'));
+    it('shows the details and the unnamed relative form while character details are on', () => {
+        assert.ok(buildKnowledgeContent(makeLedger(), [], true, sheetViewOf('c2')).includes('id="sa-k-sec-details"'));
+        assert.ok(textOf(buildKnowledgeContent(makeLedger(), [], true, allCharactersView())).includes('Add unnamed relative'));
     });
 });
+
 
 /** What the details editor of Ama's row shows before the player types anything. */
 function amaAsShown() {
@@ -87,7 +115,6 @@ function amaAsShown() {
 function kendraAsShown() {
     return { gender: '', age: '', role: '', relation: { kind: '', of: '' }, status: '' };
 }
-
 describe('saveCharacterDetails', () => {
     it('writes a detail the player sets as a player entry, which locks the kind', () => {
         const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), gender: ' female ' }, amaAsShown());
@@ -262,27 +289,32 @@ describe('saveCharacterDetails: the display name of an unnamed relative', () => 
     });
 });
 
-describe('buildKnowledgeContent: the details editor', () => {
-    it('stores in each field the value it shows, which saving compares with', () => {
-        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c2');
+describe('buildKnowledgeContent: the detail editor', () => {
+    /** Ama's sheet with the editor of one detail kind open */
+    function editorHtmlOf(kind) {
+        const view = sheetViewOf('c2');
+        view.editors.set('sheet', { mode: 'detail', characterId: 'c2', kind });
+        return detailRowOf(buildKnowledgeContent(makeLedger(), [], true, view), kind);
+    }
 
-        assert.ok(rowHtml.includes('data-detail-kind="age" value="40s" data-shown-value="40s">'), rowHtml);
-        assert.ok(rowHtml.includes('data-detail-kind="gender" value="" data-shown-value="">'));
-        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-relation-kind" value="mother" data-shown-value="mother">'));
-        assert.ok(rowHtml.includes('<select class="text_pole story-arc-detail-relation-of" data-shown-value="c1">'));
-        assert.ok(rowHtml.includes('<select class="text_pole story-arc-detail-status" data-shown-value="">'));
+    it('opens in the detail\'s row, filled with the current value', () => {
+        const rowHtml = editorHtmlOf('role');
+
+        assert.ok(rowHtml.includes('class="k-editor"'));
+        assert.ok(rowHtml.includes('data-draft="sheet:v" data-fk="detail|sheet" value="cleaner, double shifts, Oakland"'), rowHtml);
+        assert.ok(textOf(rowHtml).includes('Save and lock'));
     });
 
-    it('fills each field with the current detail, and offers the other characters for the relation', () => {
-        const rowHtml = characterRowOf(buildKnowledgeContent(makeLedger()), 'c2');
+    it('offers alive and dead for the status', () => {
+        assert.ok(editorHtmlOf('status').includes('<option value="" selected>unknown</option><option value="alive">alive</option><option value="dead">dead</option>'));
+    });
 
-        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-input" data-detail-kind="gender" value="" data-shown-value="">'));
-        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-input" data-detail-kind="age" value="40s" data-shown-value="40s">'));
-        assert.ok(rowHtml.includes('data-detail-kind="role" value="cleaner, double shifts, Oakland" data-shown-value="cleaner, double shifts, Oakland">'));
-        assert.ok(rowHtml.includes('<input type="text" class="text_pole story-arc-detail-relation-kind" value="mother" data-shown-value="mother">'));
-        assert.ok(rowHtml.includes('<option value="c1" selected>Kendra Osei</option>'));
-        assert.ok(!rowHtml.includes('<option value="c2"'), 'a character is no relative of themselves');
-        assert.ok(rowHtml.includes('<option value="" selected>unknown</option><option value="alive">alive</option><option value="dead">dead</option>'));
-        assert.ok(rowHtml.includes('story-arc-details-save-btn'));
+    it('shows a relation\'s kinship word and the other character, whom the picker offers, not the character themselves', () => {
+        const rowHtml = editorHtmlOf('relation');
+
+        assert.ok(rowHtml.includes('value="mother" placeholder="e.g. mother"'));
+        assert.ok(textOf(rowHtml).includes('Of Kendra Osei'));
+        assert.ok(rowHtml.includes('data-pick="sheet" data-cid="c1"'));
+        assert.ok(!rowHtml.includes('data-pick="sheet" data-cid="c2"'), 'a character is no relative of themselves');
     });
 });

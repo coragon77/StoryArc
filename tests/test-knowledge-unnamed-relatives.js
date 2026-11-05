@@ -14,7 +14,7 @@ import {
     parseKnowledgeExtractionAnswer,
 } from '../lib/knowledge/ledger.js';
 import { printTakenNames } from '../lib/knowledge/names.js';
-import { addUnnamedRelative, buildKnowledgeContent, renameCharacter, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
+import { addUnnamedRelative, buildKnowledgeContent, createKnowledgeView, renameCharacter, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
 import { harvestContext } from '../lib/context/harvester.js';
 
 /**
@@ -414,24 +414,31 @@ describe('unnamed relative: the Knowledge popup', () => {
         assert.equal(error, "Kendra Osei's mother is already in the ledger.");
     });
 
-    it('shows the display name in the row, the relation select and the fact holders', () => {
+    it('shows the display name in the character\'s row and as the fact\'s holder', () => {
         const ledger = makeLedger();
         ledger.facts.push({ id: 'f1', text: 'Kendra skipped school.', public: false, holders: [{ characterId: 'c2', how: 'witnessed', toldBy: null, at: 12 }] });
+        const view = createKnowledgeView();
+        view.tab = 'cast';
+        view.query = 'kendra';
 
-        const html = buildKnowledgeContent(ledger);
+        const text = buildKnowledgeContent(ledger, [], true, view).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
 
-        assert.ok(html.includes("<span class=\"story-arc-knowledge-text\">Kendra Osei&#39;s mother</span>")
-            || html.includes('<span class="story-arc-knowledge-text">Kendra Osei&#x27;s mother</span>')
-            || html.includes('<span class="story-arc-knowledge-text">Kendra Osei\'s mother</span>'), html);
-        assert.ok(!html.includes('<span class="story-arc-knowledge-text"></span>'));
-        assert.match(html, /<option value="c2">Kendra Osei(&#39;|&#x27;|')s mother<\/option>/);
+        assert.ok(text.includes('Kendra Osei&#39;s mother cleaner, double shifts, Oakland knows 1 in the scene unnamed relative'), text);
+        assert.ok(text.includes('Kendra skipped school. Kendra Osei&#39;s mother (witnessed) #12'));
+        assert.ok(!text.includes('unnamed character'));
     });
 
-    it('offers a form to add an unnamed relative with every character to relate to', () => {
-        const html = buildKnowledgeContent(ledgerWithKendra());
+    it('offers a form to add an unnamed relative, whose picker offers every character to relate to', () => {
+        const view = createKnowledgeView();
+        view.tab = 'cast';
+        view.sheet = { type: 'add', id: 'relative', prefill: {} };
 
-        assert.match(html, /<select class="text_pole story-arc-new-relative-of"><option value="c1">Kendra Osei<\/option><\/select>/);
-        assert.ok(html.includes('story-arc-relative-add-btn'));
+        const html = buildKnowledgeContent(ledgerWithKendra(), [], true, view);
+
+        assert.ok(html.includes('Add unnamed relative'));
+        assert.ok(html.includes('id="sa-k-add-kin"'));
+        assert.match(html, /data-pick="add" data-cid="c1" aria-selected="true"><span>Kendra Osei<\/span>/);
+        assert.ok(html.includes('data-act="create-relative"'));
     });
 
     it('keeps an unnamed relative nameless when its aliases are saved with an empty name', () => {

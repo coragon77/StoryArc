@@ -1,0 +1,161 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildKnowledgeContent, createKnowledgeView, listChangeLines } from '../lib/ui/knowledge-popup.js';
+
+/**
+ * Noor (c1), Ellie (c2), Gabriel (c3, new in message 6). f1 old, f2 learned
+ * in message 6, f3 retracted there. The log: an old record with counts only,
+ * a skip, and the record of messages 5–6 with its items.
+ */
+function makeLedger() {
+    return {
+        characters: [
+            { id: 'c1', name: 'Noor', aliases: ['Wrench'] },
+            { id: 'c2', name: 'Ellie', aliases: [], details: { gender: [{ value: 'female', at: 6, messageId: 'm6' }] } },
+            { id: 'c3', name: 'Gabriel', aliases: [] },
+        ],
+        facts: [
+            { id: 'f1', text: 'Ellie is Dice', public: false, holders: [
+                { characterId: 'c1', how: 'witnessed', toldBy: null, at: 1, messageId: 'm1' },
+                { characterId: 'c3', how: 'told', toldBy: 'c1', at: 6, messageId: 'm6' },
+            ] },
+            { id: 'f2', text: 'Gabriel wants titanium latches', public: false, holders: [
+                { characterId: 'c1', how: 'witnessed', toldBy: null, at: 6, messageId: 'm6' },
+                { characterId: 'c2', how: 'witnessed', toldBy: null, at: 6, messageId: 'm6' },
+            ] },
+        ],
+        retractedFacts: [{ at: 6, messageId: 'm6', fact: { id: 'f3', text: 'Noor owns the bay', public: false, holders: [
+            { characterId: 'c2', how: 'witnessed', toldBy: null, at: 2, messageId: 'm2' },
+        ] } }],
+        scene: { at: 6, messageId: 'm6', present: ['c1', 'c2', 'c3'] },
+        lastUpdatedAt: 6,
+        updateLog: [
+            { kind: 'update', from: 1, to: 2, messageId: 'm2', answer: { newCharacters: 0 }, factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [] },
+            { kind: 'skipped', from: 3, to: 4, reason: 'no answer' },
+            {
+                kind: 'update', from: 5, to: 6, messageId: 'm6', answer: { newCharacters: 1 },
+                factsCreated: ['f2'], holdersAdded: 3, factsRetracted: ['f3'], detailsSet: 1, newNamesAdded: 1,
+                items: {
+                    characters: ['c3'],
+                    holders: [
+                        { factId: 'f2', characterId: 'c1', messageId: 'm6' },
+                        { factId: 'f2', characterId: 'c2', messageId: 'm6' },
+                        { factId: 'f1', characterId: 'c3', messageId: 'm6' },
+                    ],
+                    details: [{ characterId: 'c2', kind: 'gender', messageId: 'm6' }],
+                    names: [{ characterId: 'c1', name: 'Wrench' }],
+                    scene: ['c1', 'c2', 'c3'],
+                },
+            },
+        ],
+        reviewedMarks: ['m6:update:holder:f1:c3'],
+    };
+}
+
+/** The visible text of rendered HTML: tags dropped, whitespace collapsed. */
+function textOf(html) {
+    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+describe('listChangeLines', () => {
+    it('makes one line per change, the holders of one fact on one line, newest record first', () => {
+        const { groups } = listChangeLines(makeLedger());
+
+        assert.equal(groups.length, 1);
+        assert.deepEqual(groups[0].lines.map(line => [line.type, line.itemKeys]), [
+            ['character', ['m6:update:character:c3']],
+            ['detail', ['m6:update:detail:c2:gender']],
+            ['fact', ['m6:update:holder:f2:c1', 'm6:update:holder:f2:c2']],
+            ['learned', ['m6:update:holder:f1:c3']],
+            ['retracted', ['m6:update:retracted:f3']],
+            ['name', ['m6:update:name:c1:Wrench']],
+            ['scene', ['m6:update:scene:c1:c2:c3']],
+        ]);
+    });
+
+    it('counts a line reviewed only when every item it covers is marked', () => {
+        const ledger = makeLedger();
+        ledger.reviewedMarks = ['m6:update:holder:f2:c1', 'm6:update:holder:f1:c3'];
+        const lines = listChangeLines(ledger).groups[0].lines;
+
+        assert.equal(lines.find(line => line.type === 'fact').reviewed, false);
+        assert.equal(lines.find(line => line.type === 'learned').reviewed, true);
+    });
+
+    it('lists the records without items as earlier updates, newest first', () => {
+        const { earlier } = listChangeLines(makeLedger());
+
+        assert.deepEqual(earlier.map(record => [record.kind, record.from]), [['skipped', 3], ['update', 1]]);
+    });
+
+    it('leaves the detail lines out while character details are off', () => {
+        const lines = listChangeLines(makeLedger(), false).groups[0].lines;
+
+        assert.equal(lines.some(line => line.type === 'detail'), false);
+    });
+});
+
+describe('buildKnowledgeContent: What changed', () => {
+    it('opens on What changed with the number of lines to review on its tab', () => {
+        const html = buildKnowledgeContent(makeLedger(), []);
+
+        assert.match(html, /id="sa-k-tab-inbox"[^>]*aria-selected="true"/);
+        assert.match(html, /id="sa-k-inbox-count"[^>]*>6</);
+    });
+
+    it('says each change in one sentence', () => {
+        const text = textOf(buildKnowledgeContent(makeLedger(), []));
+
+        assert.ok(text.includes('Messages 5–6'), text);
+        assert.ok(text.includes('Gabriel is new in the ledger'));
+        assert.ok(text.includes("Ellie 's gender set to female"));
+        assert.ok(text.includes('Gabriel wants titanium latches Learned by Noor witnessed Ellie witnessed'));
+        assert.ok(text.includes('No longer true: Noor owns the bay'));
+        assert.ok(text.includes('“Wrench” is now a name of Noor'));
+        assert.ok(text.includes('In the scene: Noor, Ellie and Gabriel'));
+    });
+
+    it('folds a reviewed line away and offers to show it', () => {
+        const html = buildKnowledgeContent(makeLedger(), []);
+
+        assert.equal(html.includes('data-line="m6:update:holder:f1:c3"'), false);
+        assert.ok(textOf(html).includes('Show 1 reviewed'));
+    });
+
+    it('shows the reviewed line with Reopen when reviewed lines are shown', () => {
+        const view = createKnowledgeView();
+        view.showReviewed = true;
+        const html = buildKnowledgeContent(makeLedger(), [], true, view);
+
+        const line = html.split('<li class="k-line').find(chunk => chunk.includes('data-line="m6:update:holder:f1:c3"'));
+        assert.ok(line.includes('is-reviewed'));
+        assert.ok(textOf(line).includes('Reopen'));
+    });
+
+    it('lists an earlier record as a count summary with a way into Cast & facts', () => {
+        const text = textOf(buildKnowledgeContent(makeLedger(), []));
+
+        assert.ok(text.includes('Earlier updates'));
+        assert.ok(text.includes('Messages 1–2 1 fact learned, 1 holder added Open in Cast &amp; facts'), text);
+        assert.ok(text.includes('Messages 3–4 not read (no answer)'));
+    });
+
+    it('hides a holder an arc plan gave until it is revealed', () => {
+        const ledger = makeLedger();
+        ledger.facts[1].holders[1].how = 'plan';
+        const hidden = buildKnowledgeContent(ledger, []);
+        const view = createKnowledgeView();
+        view.revealed.add('f2:c2');
+        const shown = buildKnowledgeContent(ledger, [], true, view);
+
+        assert.ok(textOf(hidden).includes('Learned by Noor witnessed Planned holder show'));
+        assert.ok(textOf(shown).includes('Learned by Noor witnessed Ellie planned'));
+    });
+
+    it('teaches the tab while the log is empty', () => {
+        const ledger = makeLedger();
+        ledger.updateLog = [];
+
+        assert.ok(textOf(buildKnowledgeContent(ledger, [])).includes('No update yet'));
+    });
+});
