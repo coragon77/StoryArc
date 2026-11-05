@@ -119,6 +119,21 @@ describe('applyExtractionAnswer — character details, first statements', () => 
         });
     });
 
+    it('skips a locked kind even when the item shows the change on screen, and counts the skip', () => {
+        const ledger = makeLedger();
+        ledger.characters[1].details = { role: [{ value: 'cleaner, double shifts, Oakland', at: null, by: 'user' }] };
+        const detailCounts = {};
+
+        applyExtractionAnswer(ledger, answerWithDetails([
+            { character: 'Ama', kind: 'role', value: 'night nurse, Highland Hospital', change: 'Ama starts her first shift at Highland Hospital.', at: 12 },
+        ]), 11, 12, makeChat(), detailCounts);
+
+        assert.deepEqual(ledger.characters[1].details, {
+            role: [{ value: 'cleaner, double shifts, Oakland', at: null, by: 'user' }],
+        });
+        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 1 });
+    });
+
     it('keeps the first of two items for one kind in the same answer', () => {
         const ledger = makeLedger();
 
@@ -211,7 +226,6 @@ describe('parseKnowledgeExtractionAnswer — details', () => {
             '"no object"',
             '{ "kind": "age", "value": "17", "at": 12 }',
             '{ "character": "Ama", "kind": "job", "value": "cleaner", "at": 12 }',
-            '{ "character": "Ama", "kind": "age", "value": 17, "at": 12 }',
             '{ "character": "Ama", "kind": "age", "value": " ", "at": 12 }',
             '{ "character": "Ama", "kind": "age", "value": "17", "at": "12" }',
             '{ "character": "Ama", "kind": "relation", "value": "mother", "at": 12 }',
@@ -264,7 +278,7 @@ describe('extract-knowledge.txt — details', () => {
 
     it('asks for a details list in the answer, with the value always a string', () => {
         assert.ok(template.includes('"details": ['), 'missing the details list in the answer');
-        assert.ok(template.includes('{ "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "at": <index of the message> }'));
+        assert.ok(template.includes('{ "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "change": "only for a changed detail: the on-screen event", "at": <index of the message> }'));
     });
 
     it('lets a new character from task 2 carry details', () => {

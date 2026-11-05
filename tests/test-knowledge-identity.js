@@ -136,7 +136,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             sceneHistory: [],
             lastUpdatedAt: 3,
             lastUpdatedMessageId: 'm6',
-            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f2'], holdersDropped: 1, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f2'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 }],
         });
     });
 
@@ -168,7 +168,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             sceneHistory: [],
             lastUpdatedAt: 4,
             lastUpdatedMessageId: 'm4',
-            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 }],
         });
     });
 
@@ -219,7 +219,7 @@ describe('rollBackKnowledgeFrom after a deletion in the middle', () => {
             scene: { at: 3, present: ['c1', 'c2'] },
             sceneHistory: [],
             lastUpdatedAt: 3,
-            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 4, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 }],
         });
     });
 });
@@ -302,7 +302,7 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             lastUpdatedAt: 4,
             lastUpdatedMessageId: 'm4',
             // Only the swipe's rollback: the deletion took nothing back, so it adds no record.
-            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] }],
+            updateLog: [{ kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 }],
         });
     });
 
@@ -358,11 +358,12 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             lastUpdatedMessageId: 'm5',
             // The branch load took nothing back, so it adds no record.
             updateLog: [
-                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [] },
+                { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
                     kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
                     answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
+                    factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
                 },
             ],
         });
@@ -430,7 +431,8 @@ describe('the message ids an update leaves on the messages it read', () => {
             updateLog: [{
                 kind: 'update', from: 1, to: 2, messageId: replyMessageId,
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
-                factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0, detailsLocked: 0,
+                factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
+            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             }],
         });
     });
