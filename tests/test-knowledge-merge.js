@@ -310,6 +310,63 @@ describe('mergeCharacters — details', () => {
 
         assert.deepEqual(ledger.characters[1].details, { relation: [{ value: { kind: 'daughter', of: 'c1' }, at: 7, messageId: 'm7' }] });
     });
+
+    it('takes the other record\'s kind when only the other record has it set by the player', () => {
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { age: [{ value: '30', at: 5, messageId: 'm5' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { age: [{ value: '28', at: 9, messageId: 'm9' }, { value: '34', at: null, by: 'user' }] } };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { age: [{ value: '28', at: 9, messageId: 'm9' }, { value: '34', at: null, by: 'user' }] });
+    });
+
+    it('keeps the main record\'s kind when only the main record has it set by the player', () => {
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { age: [{ value: '34', at: null, by: 'user' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { age: [{ value: '28', at: 9, messageId: 'm9' }] } };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { age: [{ value: '34', at: null, by: 'user' }] });
+    });
+
+    it('keeps the main record\'s kind when both records have it set by the player', () => {
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { age: [{ value: '34', at: null, by: 'user' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { age: [{ value: '28', at: 9, messageId: 'm9' }, { value: '29', at: null, by: 'user' }] } };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { age: [{ value: '34', at: null, by: 'user' }] });
+    });
+
+    it('keeps the main record\'s kind when neither record has it set by the player', () => {
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { age: [{ value: '30', at: 5, messageId: 'm5' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { age: [{ value: '28', at: 9, messageId: 'm9' }] } };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { age: [{ value: '30', at: 5, messageId: 'm5' }] });
+    });
+
+    it('takes the other record\'s relation set by the player over the main record\'s, still relating to the third record', () => {
+        // Kendra was extracted as Noor's sister; the player set Anvil as Mateo's daughter.
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { relation: [{ value: { kind: 'sister', of: 'c1' }, at: 5, messageId: 'm5' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { relation: [{ value: { kind: 'daughter', of: 'c6' }, at: null, by: 'user' }] } };
+        const mateo = { id: 'c6', name: 'Mateo Reyes', aliases: [] };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil, mateo), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { relation: [{ value: { kind: 'daughter', of: 'c6' }, at: null, by: 'user' }] });
+    });
+
+    it('drops a player relation between the two records before choosing, so the main record\'s relation stays', () => {
+        // The player set Anvil as Kendra's alter ego: a relation to itself once merged, so it locks nothing.
+        const kendra = { id: 'c5', name: 'Kendra Osei', aliases: ['Kendra'], details: { relation: [{ value: { kind: 'sister', of: 'c1' }, at: 5, messageId: 'm5' }] } };
+        const anvil = { id: 'c28', name: 'Anvil', aliases: [], details: { relation: [{ value: { kind: 'alter ego', of: 'c5' }, at: null, by: 'user' }] } };
+
+        const { ledger } = mergeCharacters(ledgerWithCharacters(kendra, anvil), 'c5', 'c28');
+
+        assert.deepEqual(ledger.characters[1].details, { relation: [{ value: { kind: 'sister', of: 'c1' }, at: 5, messageId: 'm5' }] });
+    });
 });
 
 describe('mergeCharacters — reused-name flag', () => {
