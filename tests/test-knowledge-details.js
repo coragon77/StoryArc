@@ -68,14 +68,26 @@ describe('applyExtractionAnswer — character details, first statements', () => 
         applyExtractionAnswer(ledger, answerWithDetails([
             { character: 'Kendra', kind: 'gender', value: 'female', at: 11 },
             { character: 'Kendra', kind: 'age', value: '17', at: 12 },
-            { character: 'Kendra', kind: 'status', value: 'alive', at: 12 },
+            { character: 'Kendra', kind: 'status', value: 'dead', at: 12 },
         ]), 11, 12, makeChat());
 
         assert.deepEqual(ledger.characters[0].details, {
             gender: [{ value: 'female', at: 11, messageId: 'm11' }],
             age: [{ value: '17', at: 12, messageId: 'm12' }],
-            status: [{ value: 'alive', at: 12, messageId: 'm12' }],
+            status: [{ value: 'dead', at: 12, messageId: 'm12' }],
         });
+    });
+
+    it('records no "alive" for a character with no status yet: being alive is never a first statement', () => {
+        const ledger = makeLedger();
+        const detailCounts = {};
+
+        applyExtractionAnswer(ledger, answerWithDetails([
+            { character: 'Kendra', kind: 'status', value: 'alive', at: 12 },
+        ]), 11, 12, makeChat(), detailCounts);
+
+        assert.equal(ledger.characters[0].details, undefined);
+        assert.equal(detailCounts.detailsSet, 0);
     });
 
     it('leaves a known detail as it is when the answer states a different value', () => {
