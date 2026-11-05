@@ -7,7 +7,9 @@ import {
     buildKnowledgeBlock,
     buildKnowledgeExtractionVariables,
     characterName,
+    currentDetailText,
     dropKnowledgeFrom,
+    isDetailLocked,
     parseKnowledgeExtractionAnswer,
 } from '../lib/knowledge/ledger.js';
 import { printTakenNames } from '../lib/knowledge/names.js';
@@ -16,7 +18,7 @@ import { harvestContext } from '../lib/context/harvester.js';
 
 /**
  * Kendra Osei and her mother, whom the story has not named yet: the
- * extraction created the record with its relation (record identity, at null)
+ * extraction created the record with its relation (record identity: at null, by 'record')
  * and the story stated her role at message 12.
  */
 function makeLedger() {
@@ -28,7 +30,7 @@ function makeLedger() {
                 name: '',
                 aliases: [],
                 details: {
-                    relation: [{ value: { kind: 'mother', of: 'c1' }, at: null }],
+                    relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }],
                     role: [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }],
                 },
             },
@@ -78,8 +80,8 @@ describe('unnamed relative: the display name', () => {
     it('does not loop when two unnamed records are related to each other', () => {
         const ledger = {
             characters: [
-                { id: 'c1', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c2' }, at: null }] } },
-                { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c1' }, at: null }] } },
+                { id: 'c1', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c2' }, at: null, by: 'record' }] } },
+                { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c1' }, at: null, by: 'record' }] } },
             ],
             facts: [],
             scene: { at: null, present: [] },
@@ -87,6 +89,20 @@ describe('unnamed relative: the display name', () => {
         };
 
         assert.equal(characterName(ledger, 'c1'), "unnamed character c2's sister");
+    });
+
+    it('is what the record\'s relation detail reads, so the two never differ', () => {
+        const ledger = {
+            characters: [
+                { id: 'c1', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c2' }, at: null, by: 'record' }] } },
+                { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'sister', of: 'c1' }, at: null, by: 'record' }] } },
+            ],
+            facts: [],
+            scene: { at: null, present: [] },
+            lastUpdatedAt: null,
+        };
+
+        assert.equal(currentDetailText(ledger, ledger.characters[0], 'relation'), "unnamed character c2's sister");
     });
 
     it('heads the character\'s section in the knowledge block', () => {
@@ -198,7 +214,7 @@ describe('unnamed relative: applying the extraction answer', () => {
             name: '',
             aliases: [],
             details: {
-                relation: [{ value: { kind: 'mother', of: 'c1' }, at: null }],
+                relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }],
                 role: [{ value: 'cleaner', at: 14, messageId: 'm14' }],
             },
         });
@@ -217,7 +233,7 @@ describe('unnamed relative: applying the extraction answer', () => {
 
         assert.deepEqual(ledger.characters, [
             { id: 'c1', name: 'Kendra Osei', aliases: [] },
-            { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null }] } },
+            { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }] } },
         ]);
     });
 
@@ -278,7 +294,7 @@ describe('unnamed relative: applying the extraction answer', () => {
                 name: 'Abena Osei',
                 aliases: ['Abena'],
                 details: {
-                    relation: [{ value: { kind: 'mother', of: 'c1' }, at: null }],
+                    relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }],
                     role: [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }],
                     age: [{ value: '40s', at: 14 }],
                 },
@@ -301,7 +317,69 @@ describe('unnamed relative: applying the extraction answer', () => {
 
         dropKnowledgeFrom(ledger, 0);
 
-        assert.deepEqual(ledger.characters[1].details, { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null }] });
+        assert.deepEqual(ledger.characters[1].details, { relation: [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }] });
+    });
+});
+
+describe('unnamed relative: the record\'s relation entry', () => {
+    it('locks nothing: a later relation change from the story is recorded', () => {
+        const ledger = makeLedger();
+        const detailCounts = {};
+
+        applyExtractionAnswer(ledger, answerWith({
+            details: [{ character: "Kendra Osei's mother", kind: 'relation', value: 'stepmother', of: 'Kendra Osei', at: 14, change: 'the adoption papers are signed' }],
+        }), 13, 14, makeChat(), detailCounts);
+
+        assert.equal(isDetailLocked(ledger.characters[1], 'relation'), false);
+        assert.equal(detailCounts.detailsLocked, 0);
+        assert.deepEqual(ledger.characters[1].details.relation, [
+            { value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' },
+            { value: { kind: 'stepmother', of: 'c1' }, at: 14, messageId: 'm14' },
+        ]);
+    });
+
+    it('survives a rollback that takes back the story\'s later relation entry', () => {
+        const ledger = makeLedger();
+        ledger.characters[1].details.relation.push({ value: { kind: 'stepmother', of: 'c1' }, at: 14, messageId: 'm14' });
+
+        dropKnowledgeFrom(ledger, 13);
+
+        assert.deepEqual(ledger.characters[1].details.relation, [{ value: { kind: 'mother', of: 'c1' }, at: null, by: 'record' }]);
+    });
+});
+
+describe('unnamed relative: talked about', () => {
+    /** Kendra in the scene, her unnamed mother away, and a latest reply with this text. */
+    function blockForReply(replyText) {
+        const ledger = makeLedger();
+        ledger.scene.present = ['c1'];
+        return buildKnowledgeBlock(ledger, [
+            { is_user: true, mes: 'Hi.' },
+            { is_user: false, mes: replyText },
+        ]);
+    }
+    const talkedAboutHeading = "KENDRA OSEI'S MOTHER (talked about, not present)";
+
+    it('counts when the text names the relative through the other character\'s alias', () => {
+        assert.ok(blockForReply("Kendra's mother is working a double shift.").includes(talkedAboutHeading));
+    });
+
+    it('counts when the text names the relative through the other character\'s full name', () => {
+        assert.ok(blockForReply("Kendra Osei's mother is working a double shift.").includes(talkedAboutHeading));
+    });
+
+    it('counts with a curly apostrophe', () => {
+        assert.ok(blockForReply('Kendra\u2019s mother is working a double shift.').includes(talkedAboutHeading));
+        assert.ok(blockForReply('Kendra Osei\u2019s mother is working a double shift.').includes(talkedAboutHeading));
+    });
+
+    it('ignores letter case', () => {
+        assert.ok(blockForReply("KENDRA'S MOTHER is working a double shift.").includes(talkedAboutHeading));
+    });
+
+    it('counts only a whole word', () => {
+        assert.ok(!blockForReply("Kendra's motherboard is broken.").includes(talkedAboutHeading));
+        assert.ok(!blockForReply("Akendra's mother is home.").includes(talkedAboutHeading));
     });
 });
 
@@ -373,7 +451,7 @@ describe('unnamed relative: the Knowledge popup', () => {
     it('refuses to empty the only relation of an unnamed relative', () => {
         const { ledger } = addUnnamedRelative(ledgerWithKendra(), { id: 'c2', kind: 'mother', of: 'c1' });
 
-        const result = saveCharacterDetails(ledger, 'c2', { relation: { kind: '', of: '' } });
+        const result = saveCharacterDetails(ledger, 'c2', { relation: { kind: '', of: '' } }, { relation: { kind: 'mother', of: 'c1' } });
 
         assert.equal(result.error, 'An unnamed relative needs a relation. Give them a name first.');
     });
