@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { ignoreStall, isStalled, isStallNudgeShown, renderProgressDisplay } from '../lib/ui/progress.js';
 import { processSignalResults } from '../lib/injection/signals.js';
-import { pauseArc, reactivateArc, resumeArc } from '../lib/injection/clock.js';
+import { pauseArc, reactivateArc, resumeArc, spotlightArc } from '../lib/injection/clock.js';
 import { completeBeats } from '../lib/planning/beat-completion.js';
 import { applyReplan } from '../lib/planning/replan.js';
 import { getArcById, replaceArc } from '../lib/planning/storage.js';
@@ -269,5 +269,29 @@ describe('ignoreStall — the stall nudge hidden until the next beat or re-plan'
         await reactivateArc('ep');
         assert.equal(isStallNudgeShown(stored(), 160), false);
         assert.equal(isStallNudgeShown(stored(), 161), true);
+    });
+});
+
+describe('spotlightArc — the stall count restarts, the warning goes', () => {
+    beforeEach(() => {
+        chat.length = 111;
+        chat_metadata.story_arc = { arcs: [episode()] };
+    });
+
+    function stored() {
+        return chat_metadata.story_arc.arcs[0];
+    }
+
+    it('clears the stall warning of the arc it spotlights', async () => {
+        assert.equal(isStallNudgeShown(stored(), 111), true);
+        await spotlightArc('ep');
+        assert.equal(isStalled(stored(), 111), false);
+        assert.equal(isStallNudgeShown(stored(), 111), false);
+    });
+
+    it('unlike Ignore, the warning comes back once the spotlit arc stalls again', async () => {
+        await spotlightArc('ep');
+        assert.equal(isStallNudgeShown(stored(), 121), false);
+        assert.equal(isStallNudgeShown(stored(), 122), true);
     });
 });

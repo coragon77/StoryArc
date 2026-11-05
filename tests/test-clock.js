@@ -2,6 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { selectPacingClock, pauseArc, resumeArc, spotlightArc, reactivateArc } from '../lib/injection/clock.js';
 import { buildStamp } from '../lib/injection/stamping.js';
+import { calculatePhase } from '../lib/injection/pacing.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
 
 function arc(id, tier, focus) {
@@ -189,9 +190,18 @@ describe('spotlightArc — one arc in the spotlight', () => {
         assert.equal(focusOf('lit'), 'normal');
     });
 
-    it('keeps the arc spotlit when it already was', async () => {
+    it('keeps the arc spotlit when it already was, and its spotlight stamp as it was', async () => {
+        chat_metadata.story_arc.arcs[0].spotlitAt = 12;
+        chat.length = 40;
         await spotlightArc('lit');
         assert.equal(focusOf('lit'), 'spotlight');
+        assert.equal(chat_metadata.story_arc.arcs[0].spotlitAt, 12);
+    });
+
+    it('stamps the chat length as spotlitAt on the arc it spotlights', async () => {
+        chat.length = 75;
+        await spotlightArc('quiet');
+        assert.equal(chat_metadata.story_arc.arcs.find(a => a.id === 'quiet').spotlitAt, 75);
     });
 
     it('shifts the clock of a paused arc it spotlights', async () => {
@@ -228,7 +238,7 @@ describe('reactivateArc — a past arc comes back', () => {
         await reactivateArc('dropped');
         assert.deepEqual(storedArc('dropped'), {
             id: 'dropped', title: 'dropped', status: 'active', tier: 'act', focus: 'normal',
-            messageStart: 0, estimatedLength: 40, beats: [], pausedAt: null, lastFulfilledAt: 90, reactivatedAt: 300,
+            messageStart: 300, estimatedLength: 40, beats: [], pausedAt: null, lastFulfilledAt: 90, reactivatedAt: 300,
         });
     });
 
@@ -236,25 +246,49 @@ describe('reactivateArc — a past arc comes back', () => {
         await reactivateArc('won');
         assert.deepEqual(storedArc('won'), {
             id: 'won', title: 'won', status: 'active', tier: 'episode', focus: 'normal',
-            messageStart: 0, estimatedLength: 40, beats: [], pausedAt: null, lastFulfilledAt: 140, reactivatedAt: 300,
+            messageStart: 300, estimatedLength: 40, beats: [], pausedAt: null, lastFulfilledAt: 140, reactivatedAt: 300,
         });
         assert.equal(storedArc('lit').focus, 'spotlight');
         assert.equal(selectPacingClock(chat_metadata.story_arc.arcs.filter(a => a.status === 'active')).id, 'lit');
     });
 
-    it('an arc ended while paused resumes: its clock shifts by the paused span', async () => {
+    it('an arc ended while paused is no longer paused, and its clock starts at the reactivation', async () => {
         Object.assign(storedArc('dropped'), { focus: 'paused', pausedAt: 250, messageStart: 60 });
         await reactivateArc('dropped');
         assert.equal(storedArc('dropped').focus, 'normal');
         assert.equal(storedArc('dropped').pausedAt, null);
-        assert.equal(storedArc('dropped').messageStart, 110);
+        assert.equal(storedArc('dropped').messageStart, 300);
         assert.equal(storedArc('dropped').lastFulfilledAt, 140);
         assert.equal(storedArc('dropped').reactivatedAt, 300);
+    });
+
+    it('restarts the phase count: a completed episode comes back in setup, counting from the reactivation', async () => {
+        const won = storedArc('won');
+        won.beats = [{ id: 'b1', status: 'completed' }, { id: 'b2', status: 'completed' }];
+        chat.length = 300;
+        assert.equal(calculatePhase(won).phase, 'resolution');
+        await reactivateArc('won');
+        assert.deepEqual(calculatePhase(storedArc('won')), { phase: 'setup', label: 'Setup', messageCount: 0, beatRatio: 1, messageRatio: 0 });
+        chat.length = 320;
+        assert.equal(calculatePhase(storedArc('won')).messageCount, 20);
     });
 
     it('an active arc is left as it is', async () => {
         await reactivateArc('lit');
         assert.deepEqual(storedArc('lit'), { ...arc('lit', 'episode', 'spotlight'), pausedAt: null });
+    });
+});
+
+describe('resumeArc — the spotlight stamp shifts like the re-plan stamp', () => {
+    it('only the part of the pause after the stamp shifts it', async () => {
+        chat_metadata.story_arc = {
+            version: 1,
+            arcs: [{ ...arc('a', 'act', 'paused'), pausedAt: 200, spotlitAt: 150, messageStart: 100 }],
+            settings: {},
+        };
+        chat.length = 230;
+        await resumeArc('a');
+        assert.equal(chat_metadata.story_arc.arcs[0].spotlitAt, 180);
     });
 });
 

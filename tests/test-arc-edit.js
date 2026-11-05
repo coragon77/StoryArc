@@ -83,6 +83,17 @@ describe('applyArcEdit', () => {
         assert.equal('stallIgnoredFrom' in added, false);
     });
 
+    it('keeps the rulings and the spotlight stamp as stored, whatever the text says', () => {
+        const ruled = { ...storedArc(), spotlitAt: 2290, rulings: [{ id: 'ruling_1', text: 'Aegis does not defend her.', at: 2280 }] };
+        const typed = { ...storedArc(), spotlitAt: 5 };
+        const kept = applyArcEdit(ruled, JSON.stringify(typed)).arc;
+        assert.deepEqual(kept.rulings, [{ id: 'ruling_1', text: 'Aegis does not defend her.', at: 2280 }]);
+        assert.equal(kept.spotlitAt, 2290);
+
+        const typedRulings = { ...storedArc(), rulings: [{ id: 'ruling_9', text: 'Typed.' }] };
+        assert.equal('rulings' in applyArcEdit(storedArc(), JSON.stringify(typedRulings)).arc, false);
+    });
+
     it('stores estimatedLength as a number', () => {
         const edited = { ...storedArc(), estimatedLength: '30' };
         assert.equal(applyArcEdit(storedArc(), JSON.stringify(edited)).arc.estimatedLength, 30);
