@@ -40,3 +40,6 @@ TEST-*.md
 
 # unittest-audit artifacts (verdicts, mutation reports, packets)
 testaudit-out/
+
+# Impeccable design-skill working files (critique snapshots, mocks)
+.impeccable/
