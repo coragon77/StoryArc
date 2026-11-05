@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { chat_metadata, chat } from '../tests/mocks/st-mocks.js';
-import { buildKnowledgeContent, mergeCharacters } from '../lib/ui/knowledge-popup.js';
+import { buildKnowledgeContent, mergeCharacters, saveLedgerEdit } from '../lib/ui/knowledge-popup.js';
 import { applyExtractionAnswer, dropKnowledgeFrom, rollBackKnowledgeFrom } from '../lib/knowledge/ledger.js';
 import { buildTakenNamesBlock, listCharactersWithNames } from '../lib/knowledge/names.js';
 
@@ -416,5 +416,52 @@ describe('buildKnowledgeContent — Merge into…', () => {
         const kendraRow = html.slice(html.indexOf('data-character-id="c5"'), html.indexOf('data-character-id="c28"'));
         const mergeSelect = kendraRow.slice(kendraRow.indexOf('story-arc-merge-target'));
         assert.match(mergeSelect, /^story-arc-merge-target"><option value="c28">Anvil<\/option><option value="c1">Noor al-Jamil<\/option><\/select>/);
+    });
+});
+
+describe('saveLedgerEdit — a merge saved through the popup', () => {
+    /** The stored ledger: Anvil (c28) in the scene, the scene history and a retraction. */
+    function makeStoredLedger() {
+        return {
+            ...makeLedger(),
+            scene: { at: 40, present: ['c1', 'c28'] },
+            sceneHistory: [{ at: 30, present: ['c28'] }],
+            retractedFacts: [{ at: 25, fact: { id: 'f9', text: 'Anvil is a man', public: false, holders: [{ characterId: 'c28', how: 'witnessed', toldBy: null, at: 20 }] } }],
+        };
+    }
+
+    /** Run `save` with a stored ledger and a stub `$` that finds no popup on the page. */
+    async function withStoredLedger(storedLedger, save) {
+        const previousJquery = globalThis.$;
+        globalThis.$ = () => ({ length: 0 });
+        chat_metadata.story_arc = { knowledge: storedLedger };
+        try {
+            await save();
+            return chat_metadata.story_arc.knowledge;
+        } finally {
+            globalThis.$ = previousJquery;
+            delete chat_metadata.story_arc;
+        }
+    }
+
+    it('stores the merged scene, scene history and retracted facts', async () => {
+        const storedLedger = makeStoredLedger();
+
+        const ledger = await withStoredLedger(storedLedger, () => saveLedgerEdit(mergeCharacters(storedLedger, 'c5', 'c28')));
+
+        assert.deepEqual(ledger.scene, { at: 40, present: ['c1', 'c5'] });
+        assert.deepEqual(ledger.sceneHistory, [{ at: 30, present: ['c5'] }]);
+        assert.deepEqual(ledger.retractedFacts, [{ at: 25, fact: { id: 'f9', text: 'Anvil is a man', public: false, holders: [{ characterId: 'c5', how: 'witnessed', toldBy: null, at: 20 }] } }]);
+    });
+
+    it('keeps the stored scene, scene history and retracted facts when the edited ledger has none', async () => {
+        const storedLedger = makeStoredLedger();
+        const editedLedger = { characters: storedLedger.characters, facts: [] };
+
+        const ledger = await withStoredLedger(storedLedger, () => saveLedgerEdit({ ledger: editedLedger, error: null }));
+
+        assert.deepEqual(ledger.scene, { at: 40, present: ['c1', 'c28'] });
+        assert.deepEqual(ledger.sceneHistory, [{ at: 30, present: ['c28'] }]);
+        assert.equal(ledger.retractedFacts.length, 1);
     });
 });
