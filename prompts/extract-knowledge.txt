@@ -35,6 +35,8 @@ Each message starts with its index in square brackets.
 1. PRESENT. List the characters who are in the scene at the end of the new messages. Use the names from the ledger where the character is in it.
 
 2. NEW CHARACTERS. List every character who appears or is talked about in the new messages and is not in the ledger under any name, with the other names the messages give them. Do not list a character the ledger already has under another name.
+- A relative of a character in the ledger or in your new characters whom the messages do not name ("her mother", "Kendra's brother") is an unnamed relative: leave "name" empty and give "relation", the kinship word ("mother", "brother", "husband"), and "of", the name of the other character. Elsewhere in your answer call them by the name the characters list would show: the other character's name, "'s" and the kinship word ("Kendra Osei's mother"). List an unnamed relative only when the messages make them a character of the story, not for a passing mention.
+- The characters list marks an unnamed relative "(unnamed)". When the new messages give one of them a name on screen, list them here with that name and "wasUnnamed", the name the characters list shows for them ("Kendra Osei's mother"), and use the new name in the rest of your answer.
 
 3. LEARNED. Record only knowledge a character could act on or wrongly reveal: secrets, plans, identities, who did what, private information, things told in confidence. Do not record small talk, sensations, descriptions, moods or what anyone in the scene can plainly see. For every such fact a character learns in the new messages, write one item. One fact holds one piece of knowledge: knowledge that different characters can learn at different times goes into separate facts, not into one sentence joined by "and". Write each fact once: put everyone who learns it in the same way in one item.
 - "factId" when the fact is already in the ledger, even when the new messages word it differently: when the same knowledge is meant, use its id, not new text. Otherwise "text", the fact in one short sentence that names who and what ("Gabriel wants Noor's gauntlet locked on with titanium latches"). The text states the fact itself, not who knows it or who does not ("and nobody else knows" belongs in no text): the holders record that.
@@ -81,7 +83,11 @@ Record only what the text states. Never guess a detail from a name, a look, a tr
 Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
-  "newCharacters": [{ "name": "name", "aliases": ["other name"] }],
+  "newCharacters": [
+    { "name": "name", "aliases": ["other name"] },
+    { "name": "", "aliases": [], "relation": "kinship word, only for an unnamed relative", "of": "name of the other character" },
+    { "name": "the name given on screen", "aliases": [], "wasUnnamed": "the name the characters list shows for an unnamed relative" }
+  ],
   "learned": [
     { "factId": "id of a fact in the ledger", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> },
     { "text": "a new fact in one short sentence", "public": false, "who": ["name"], "how": "witnessed | told", "toldBy": "name or null", "at": <index of the message> }

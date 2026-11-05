@@ -32,9 +32,10 @@ function textOf(html) {
     return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** The markup of the character row with this id, up to the next row. */
+/** The markup of the character row with this id, up to its closing tag. */
 function characterRowOf(html, characterId) {
-    return html.split('<li ').find(chunk => chunk.includes(`data-character-id="${characterId}"`)) || '';
+    const rowChunk = html.split('<li ').find(chunk => chunk.includes(`data-character-id="${characterId}"`)) || '';
+    return rowChunk.split('</li>')[0];
 }
 
 describe('buildKnowledgeContent: character details', () => {
