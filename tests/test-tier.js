@@ -198,10 +198,11 @@ describe('milestone section — act / saga in normal focus', () => {
 describe('progress widget label', () => {
     it('says milestones for acts and sagas, beats for episodes', () => {
         const act = withChatLength(10, () => renderProgressDisplay([makeAct()]));
-        assert.ok(act.includes('1/3 milestones'));
+        assert.ok(act.includes('aria-label="Milestones of '), act);
+        assert.ok(act.includes('<span class="story-arc-progress-meta">Act · '), act);
         const saga = withChatLength(10, () => renderProgressDisplay([makeAct({ tier: 'saga' })]));
-        assert.ok(saga.includes('1/3 milestones'));
+        assert.ok(saga.includes('aria-label="Milestones of '), saga);
         const episode = withChatLength(10, () => renderProgressDisplay([makeAct({ tier: 'episode' })]));
-        assert.ok(episode.includes('1/3 beats'));
+        assert.ok(episode.includes('aria-label="Scene beats of '), episode);
     });
 });

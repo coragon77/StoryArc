@@ -12,18 +12,20 @@
 
 /* ─── Action row: Plan, Manage, Knowledge ────────────────────────────────── */
 
+/* One primary (Plan) at its natural width, the others plain buttons beside it */
 .story-arc-drawer-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 10px;
 }
 
 .story-arc-drawer-actions .menu_button {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: none;
     min-height: 30px;
     margin: 0;
+    padding: 4px 12px;
     gap: 6px;
     white-space: nowrap;
 }

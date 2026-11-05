@@ -170,13 +170,13 @@ describe('onMessageDeleted — a ruling goes with its message', () => {
 
     it('the card shows no ruling line after its ruling was removed', async () => {
         storeChat({ arcs: [sirenAct([{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3' }])] });
-        assert.ok(renderProgressDisplay(chat_metadata.story_arc.arcs).includes('“Aegis is NOT her defender.”'));
+        assert.ok(renderProgressDisplay(chat_metadata.story_arc.arcs).includes('<q>Aegis is NOT her defender.</q>'));
         chat.length = 3;
 
         await onMessageDeleted(3);
 
         const html = renderProgressDisplay(chat_metadata.story_arc.arcs);
-        assert.equal(html.includes('story-arc-ruling'), false, html);
+        assert.equal(html.includes('am-alert'), false, html);
         assert.equal(html.includes('Aegis is NOT her defender.'), false, html);
     });
 });

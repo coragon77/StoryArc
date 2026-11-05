@@ -1,5 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { buildPremiseChoice, shortenAtWord } from '../lib/ui/wizard.js';
 import {
     chat, chat_metadata, extension_settings, mockSortedEntries, mockPopups, mockPopupState,
     ConnectionManagerRequestService,
@@ -242,7 +243,8 @@ describe('wizard: a failed context harvest offers Retry', () => {
         await openWizard();
 
         const failedStrip = fake.htmlById['story-arc-wizard-context'];
-        assert.match(failedStrip, /Could not read the story context/);
+        assert.match(failedStrip, /The chat could not be read\. Reload the chat, then Retry\./);
+        assert.doesNotMatch(failedStrip, /is_user/);
         assert.match(failedStrip, /<button type="button" class="menu_button" id="story-arc-wizard-retry-context"/);
         assert.equal(fake.propsById['story-arc-wizard-generate'].disabled, true);
 
@@ -287,7 +289,7 @@ describe('wizard: generation', () => {
         await settle();
 
         assert.match(fake.htmlById['story-arc-wizard-content'], /<p class="visually-hidden" id="story-arc-wizard-status" role="status" aria-live="polite"><\/p>/);
-        assert.equal(fake.textById['story-arc-wizard-status'], 'Analyzing story context...');
+        assert.equal(fake.textById['story-arc-wizard-status'], 'Reading the story context…');
         gate.release();
     });
 
@@ -333,10 +335,43 @@ describe('wizard: Back from Review', () => {
         await openWizard();
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
-        assert.match(fake.htmlById['story-arc-wizard-generation-error'], /Generation failed/);
+        assert.match(fake.htmlById['story-arc-wizard-generation-error'],
+            /The model&#39;s answer was not a usable plan, twice\. Retry, or pick another generation profile in the drawer\./);
+        // Finished steps say what came of them
+        const logText = fake.htmlById['story-arc-step-log'];
+        assert.match(logText, /Story context read/);
+        assert.match(logText, /Outline failed/);
+        assert.match(logText, /Outline retry failed/);
+        assert.doesNotMatch(logText, /\.\.\./);
 
         fake.trigger('click', '#story-arc-wizard-back');
 
         assert.match(fake.htmlById['story-arc-wizard-content'], /id="story-arc-direction-input"/);
+    });
+});
+
+describe('wizard: the re-plan premise choice', () => {
+    const arc = { premise: 'The mill is haunted.', proposedPremise: 'The miller fakes the haunting.', rulings: [{ id: 'r1', text: 'No ghosts.' }] };
+
+    it('shows each premise once: the chosen one (the proposal, since rulings were passed) in the text area, the other as text', () => {
+        const html = buildPremiseChoice(arc);
+
+        assert.equal(html.split('The mill is haunted.').length - 1, 1);
+        assert.equal(html.split('The miller fakes the haunting.').length - 1, 1);
+        assert.match(html, /<textarea[^>]*id="story-arc-premise-choice-text"[^>]*>The miller fakes the haunting\.<\/textarea>/);
+    });
+
+    it('moves the text area to the current premise when chosen, keeping an edited proposal as text', () => {
+        const html = buildPremiseChoice(arc, 'current', { proposed: 'The miller fakes it, badly.' });
+
+        assert.match(html, /<textarea[^>]*>The mill is haunted\.<\/textarea>/);
+        assert.match(html, /<p class="story-arc-premise-option-text">The miller fakes it, badly\.<\/p>/);
+    });
+});
+
+describe('wizard: harvested entry previews', () => {
+    it('cut at the last whole word with an ellipsis', () => {
+        assert.equal(shortenAtWord('Vera Lin agrees to the contract terms', 20), 'Vera Lin agrees to…');
+        assert.equal(shortenAtWord('Short enough.', 20), 'Short enough.');
     });
 });

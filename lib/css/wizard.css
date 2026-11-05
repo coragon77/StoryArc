@@ -17,9 +17,12 @@
     --wz-danger-tint: color-mix(in srgb, var(--warning) 8%, transparent);
     --wz-ok: color-mix(in srgb, var(--active) 58%, var(--SmartThemeBodyColor));
     --wz-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    /* Fills the popup: the content region scrolls, the head and the controls
+       row stay put (the popup is opened without its own scrolling). */
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    height: 100%;
+    min-height: 0;
     text-align: left;
     color: var(--wz-text);
     font-size: 15px;
@@ -175,15 +178,19 @@
 
 /* ─── Content and controls ───────────────────────────────────────────────── */
 
+.story-arc-wizard-head {
+    flex: none;
+}
+
 .story-arc-wizard-content {
     flex: 1;
-    min-height: 240px;
+    min-height: 0;
+    overflow-y: auto;
     padding: 14px 4px 20px;
 }
 
 .story-arc-wizard-controls {
-    position: sticky;
-    bottom: 0;
+    flex: none;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -320,6 +327,10 @@
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.story-arc-wizard-entry-name {
+    white-space: nowrap;
 }
 
 .story-arc-wizard-entry-list li {
@@ -514,16 +525,31 @@
 }
 
 .story-arc-premise-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    cursor: pointer;
+    display: grid;
+    gap: 4px;
     max-width: 90ch;
 }
 
+.story-arc-premise-option label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
 .story-arc-premise-option input {
-    margin-top: 5px;
+    margin: 0;
     accent-color: var(--wz-text);
+}
+
+.story-arc-premise-option-text {
+    margin: 0 0 4px 22px;
+    color: var(--wz-muted);
+}
+
+.story-arc-premise-option textarea {
+    margin-left: 22px;
+    width: calc(100% - 22px);
 }
 
 .story-arc-wizard-plan {
@@ -659,9 +685,9 @@
     }
 }
 
-/* ─── Shared footer row (old Arc Manager and Knowledge popup) ────────────── */
+/* ─── Shared footer row (old Knowledge popup) ────────────────────────────── */
 
-/* Still used by arc-manager.js and knowledge-popup.js until their rebuilds land. */
+/* Still used by knowledge-popup.js until its rebuild lands. */
 .story-arc-wizard-footer {
     display: flex;
     justify-content: flex-end;

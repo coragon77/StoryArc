@@ -28,7 +28,7 @@ function withChatLength(length, fn) {
 
 /** The visible text of rendered HTML: tags dropped, whitespace collapsed. */
 function textOf(html) {
-    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 describe('renderProgressDisplay — card content', () => {
@@ -47,22 +47,30 @@ describe('renderProgressDisplay — card content', () => {
         arc.beats.push(...optional);
         const html = withChatLength(2, () => renderProgressDisplay([arc]));
 
-        assert.ok(html.includes('style="width: 25%"'));
-        assert.ok(html.includes('1/4 beats'));
+        assert.ok(html.includes('<span class="am-count"><b>1</b>/4 done</span>'));
+        // Every beat has its square, the optional ones too: one done, three pending, two done optional.
+        assert.equal((html.match(/class="am-shape s-completed"/g) || []).length, 3);
+        assert.equal((html.match(/class="am-shape s-pending"/g) || []).length, 3);
     });
 
-    it('shows 0% and 0/0 for an arc with only optional beats', () => {
+    it('shows 0/0 done for an arc with only optional beats', () => {
         const arc = episode(0, { beats: [{ id: 'o1', status: 'pending', optional: true }] });
         const html = withChatLength(2, () => renderProgressDisplay([arc]));
 
-        assert.ok(html.includes('style="width: 0%"'));
-        assert.ok(html.includes('0/0 beats'));
+        assert.ok(html.includes('<b>0</b>/0 done'));
     });
 
-    it('calls the beats of an arc without a tier "beats"', () => {
+    it('names a focus other than normal in words after the phase', () => {
+        const html = withChatLength(2, () => renderProgressDisplay([episode(1, { focus: 'spotlight' })]));
+
+        assert.ok(html.includes('<span class="story-arc-progress-meta">Episode · Setup · in the spotlight</span>'));
+    });
+
+    it('names an arc without a tier an episode, with scene beats', () => {
         const html = withChatLength(2, () => renderProgressDisplay([episode(1, { tier: undefined })]));
 
-        assert.ok(html.includes('1/4 beats'));
+        assert.ok(html.includes('<span class="story-arc-progress-meta">Episode · Setup</span>'));
+        assert.ok(html.includes('aria-label="Scene beats of The Heist"'));
     });
 });
 
@@ -72,14 +80,14 @@ describe('renderProgressDisplay — pacing line', () => {
         // The beats (1 of 4 = 0.25) alone would allow development.
         const html = withChatLength(2, () => renderProgressDisplay([episode(1)]));
 
-        assert.equal(textOf(html), 'The Heist Setup 1/4 beats ~2 msgs to next phase');
+        assert.equal(textOf(html), 'The Heist Episode · Setup 1/4 done ~2 messages to the next phase');
     });
 
     it('shows no pacing line when the beats hold the phase back', () => {
         // Chat length 10 is past the setup boundary at 4; the beats (0 of 4) keep it in setup.
         const html = withChatLength(10, () => renderProgressDisplay([episode(0)]));
 
-        assert.equal(textOf(html), 'The Heist Setup 0/4 beats');
+        assert.equal(textOf(html), 'The Heist Episode · Setup 0/4 done');
     });
 
     it('shows no pacing line in resolution, even with messages left in it', () => {
@@ -87,14 +95,14 @@ describe('renderProgressDisplay — pacing line', () => {
         // The last beat was fulfilled at message 18, so the arc is not stalled.
         const html = withChatLength(19, () => renderProgressDisplay([episode(4, { lastFulfilledAt: 18 })]));
 
-        assert.equal(textOf(html), 'The Heist Resolution 4/4 beats');
+        assert.equal(textOf(html), 'The Heist Episode · Resolution 4/4 done');
     });
 
-    it('puts nothing but whitespace between two cards', () => {
+    it('puts nothing but whitespace between two rows', () => {
         const html = withChatLength(10, () => renderProgressDisplay([episode(0), episode(0, { id: 'ep2', title: 'The Escape' })]));
 
-        assert.equal(textOf(html), 'The Heist Setup 0/4 beats The Escape Setup 0/4 beats');
-        assert.match(html, /<\/div>\s*<div class="story-arc-progress-card">/);
+        assert.equal(textOf(html), 'The Heist Episode · Setup 0/4 done The Escape Episode · Setup 0/4 done');
+        assert.match(html, /<\/li>\s*<li class="story-arc-progress-arc">/);
     });
 });
 
@@ -105,7 +113,7 @@ describe('renderProgressDisplay — escaping the arc title', () => {
 
         assert.ok(html.includes(`title="&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;"`));
         assert.ok(html.includes(`>&lt;b&gt;&quot;Tom&quot; &amp; &#39;Jerry&#39;&lt;/b&gt;</span>`));
-        assert.ok(!html.includes('<b>'));
+        assert.ok(!html.includes('<b>"Tom"'));
     });
 
     it('renders an empty title as empty text and an empty attribute', () => {
