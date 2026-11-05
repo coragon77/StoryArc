@@ -148,8 +148,8 @@ describe('character details switch off — the extraction prompt', () => {
     it('has task 2 and the newCharacters schema as before character details, with no unnamed relative', () => {
         const prompt = filledPrompt(makeLedger(true), false);
 
-        assert.ok(prompt.includes('Do not list a character the ledger already has under another name.\n\n3. LEARNED.'));
-        assert.ok(prompt.includes('  "present": ["name"],\n  "newCharacters": [{ "name": "name", "aliases": ["other name"] }],\n  "learned": ['));
+        assert.ok(prompt.includes('Do not list a character the ledger already has under another name.\n\nNEW NAMES.'));
+        assert.ok(prompt.includes('  "present": ["name"],\n  "newCharacters": [{ "name": "name", "aliases": ["other name"] }],\n  "newNames": ['));
         assert.ok(!prompt.includes('unnamed'));
         assert.ok(!prompt.includes('wasUnnamed'));
         assert.ok(!prompt.includes('kinship'));
@@ -160,8 +160,8 @@ describe('character details switch off — the extraction prompt', () => {
 
         assert.ok(prompt.includes("- Kendra Osei's father (unnamed) — role: night porter; relation: Kendra Osei's father\n"));
         assert.ok(prompt.includes('Do not list a character the ledger already has under another name.\n- A relative of a character in the ledger or in your new characters whom the messages do not name'));
-        assert.ok(prompt.includes('and use the new name in the rest of your answer.\n\n3. LEARNED.'));
-        assert.ok(prompt.includes('  "newCharacters": [\n    { "name": "name", "aliases": ["other name"] },\n    { "name": "", "aliases": [], "relation": "kinship word, only for an unnamed relative", "of": "name of the other character" },\n    { "name": "the name given on screen", "aliases": [], "wasUnnamed": "the name the characters list shows for an unnamed relative" }\n  ],\n  "learned": ['));
+        assert.ok(prompt.includes('and use the new name in the rest of your answer.\n\nNEW NAMES.'));
+        assert.ok(prompt.includes('  "newCharacters": [\n    { "name": "name", "aliases": ["other name"] },\n    { "name": "", "aliases": [], "relation": "kinship word, only for an unnamed relative", "of": "name of the other character" },\n    { "name": "the name given on screen", "aliases": [], "wasUnnamed": "the name the characters list shows for an unnamed relative" }\n  ],\n  "newNames": ['));
     });
 
     it('is the same prompt as for the ledger without details', () => {

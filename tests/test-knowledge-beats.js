@@ -107,7 +107,7 @@ describe('parseKnowledgeExtractionAnswer: fulfilled', () => {
 
     it('reads a missing list as empty, so an answer of the old shape stays valid', () => {
         const answer = parseKnowledgeExtractionAnswer(`{ ${base} }`);
-        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [] });
+        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], details: [] });
     });
 
     it('reads a list of the wrong type as empty and keeps the rest of the answer', () => {
@@ -356,6 +356,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 2, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
         }]);
         const logText = JSON.stringify(updateLog);
         for (const internal of ['crane001', 'brody_refuses', 'crane_moved', 'Brody refuses']) {
