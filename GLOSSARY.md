@@ -129,8 +129,12 @@ A character who is not present but is named, by name or alias, in the latest mes
 _Avoid_: mentioned, referenced, offscreen
 
 **Cast**:
-The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Empty while the knowledge tracker is off.
+The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Each cast member may also carry character details, which the narrator sees for the characters present or talked about; the planner and the plan check see only the names. Empty while the knowledge tracker is off.
 _Avoid_: roster, character list
+
+**Character details**:
+A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded while the knowledge tracker is on.
+_Avoid_: character profile, attributes, character sheet, stats
 
 **Taken name**:
 A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
