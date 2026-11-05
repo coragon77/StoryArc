@@ -71,6 +71,7 @@ describe('setupSettingsPanelEvents', () => {
         const bindings = fake.handlers.map(bound => `${bound.type} ${bound.selector}`).sort();
         assert.deepEqual(bindings, [
             'change #story-arc-enabled',
+            'change #story-arc-knowledge-details',
             'change #story-arc-knowledge-enabled',
             'change #story-arc-knowledge-interval',
             'change #story-arc-profile',

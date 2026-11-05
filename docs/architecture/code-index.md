@@ -56,7 +56,8 @@ StoryArc/
 │   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
 │   │                           #   messageStart fallbacks, named once;
 │   │                           #   getKnowledgeTrackerSettings(),
-│   │                           #   isKnowledgeTrackerEnabled(), getKnowledgeLedger()
+│   │                           #   isKnowledgeTrackerEnabled(), isCharacterDetailsEnabled(),
+│   │                           #   getKnowledgeLedger()
 │   │                           #   (ensureChatState creates an empty ledger),
 │   │                           #   secretHolders(secret) — [] for old secrets
 │   ├── context/

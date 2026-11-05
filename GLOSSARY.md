@@ -133,7 +133,7 @@ The knowledge ledger's characters with their names and aliases, as the planner a
 _Avoid_: roster, character list
 
 **Character details**:
-A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded while the knowledge tracker is on.
+A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded and shown while the knowledge tracker and its character details switch are both on; the switch is off by default.
 _Avoid_: character profile, attributes, character sheet, stats
 
 **Unnamed relative**:
