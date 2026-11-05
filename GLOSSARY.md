@@ -159,3 +159,19 @@ _Avoid_: flag, duplicate name
 **Merge** (characters):
 Joining two character records the ledger holds for one person (a codename and a civilian name) in the Knowledge popup: the player picks the record that stays, the other record's names become its aliases, everything the other record knew and every detail of a kind the staying record does not have moves to it (a kind only the other record has set by the player moves too, replacing the staying record's), and the other record goes. Renaming stays a separate edit.
 _Avoid_: combine, link
+
+**Move** (holder):
+Giving a fact's holder entry to another character in one step in the Knowledge popup, for an entry the extraction gave the wrong person. How they learned it and the message it came from stay, so it still goes when that message is swiped, edited or deleted. When the other character already holds the fact, their own entry stays and the moved one goes. A holder the moved-from character told still reads as told by them.
+_Avoid_: reassign, transfer
+
+**Delete** (character):
+Removing a character record in the Knowledge popup, with every mention of them: what they knew, the scenes, relations other characters have to them; someone they told reads as having witnessed it. A fact only they knew goes with them (a public one stays), and the popup names those facts before the player confirms. Refused while an unnamed relative is called after them ("Marcus Vale's mother"): name the relative or change their relation first.
+_Avoid_: remove (the word for taking one fact from a holder)
+
+**Restore** (retracted fact):
+"Still true": the player takes back a retraction in the Knowledge popup, and the fact returns with its holders as they were. It still goes when the messages its holders learned it in are swiped, edited or deleted.
+_Avoid_: undo, unretract
+
+**Lock** (character detail):
+Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand locks it the same way.
+_Avoid_: pin, freeze
