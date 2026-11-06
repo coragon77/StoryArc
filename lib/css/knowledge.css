@@ -165,7 +165,7 @@
 .story-arc-knowledge .k-sub { margin: 3px 0 0; font-size: var(--fs-s); color: var(--k-muted); max-width: 90ch; }
 .story-arc-knowledge .k-note { margin: 6px 0 0; font-size: var(--fs-s); max-width: 90ch; }
 .story-arc-knowledge .k-note > i { margin-right: 5px; }
-.story-arc-knowledge .k-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-content: flex-start; max-width: 400px; }
+.story-arc-knowledge .k-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-content: flex-start; max-width: 480px; }
 .story-arc-knowledge .k-line.is-reviewed .k-text, .story-arc-knowledge .k-line.is-reviewed .k-holders { color: var(--k-muted); }
 .story-arc-knowledge .k-line.is-reviewed .k-kind { font-weight: 500; }
 @container (max-width: 860px) {
