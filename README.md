@@ -9,12 +9,12 @@ Long roleplays lose direction. After a few hundred messages the story drifts fro
 What it does:
 
 - **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
-- **Plans an arc** in three LLM passes: an analysis of the story's current state, a structured plan with beats, secrets, foreshadowing and triggers, and a check that rewrites anything in the plan that would give a secret away. On a re-plan the check also notices which secrets the story has already revealed.
+- **Plans an arc** in three LLM passes: an analysis of the story's current state, a structured plan with beats, secrets, clues and triggers, and a check that rewrites anything in the plan that would give a secret away or dictate a scene. On a re-plan the check also notices which secrets the story has already revealed.
 - **Steers the chat** by injecting the plan into the prompt. The model sees only the current pressure on the scene, never a checklist of goals, so it does not race through the plan.
 - **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat. With the knowledge tracker on, a separate extraction call recognises fulfilled beats instead.
 - **Tracks who knows what** (optional). A knowledge ledger records which character learned which fact and how, so the model stops letting characters know what they never learned. It also keeps the names already in the story, so new characters do not get them again.
 - **Tracks character details** (optional). Gender, age, role, kinship and alive or dead for every character, as the story established them, so the model stops reinventing a side character's job or family.
-- **Keeps the plan secret.** Everything that would spoil the story sits behind spoiler toggles.
+- **Keeps the plan secret.** Everything that would spoil the story stays hidden until you choose to reveal it.
 
 Story Arc was scaffolded from [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode). Story Mode plans a story from scratch; Story Arc continues one that already exists.
 
@@ -60,41 +60,35 @@ The directives are read from the **saved** preset, so save the preset after you 
 
 ## Everyday use
 
-Most of the time you use the **wand menu** next to the chat input: click it and choose **Story Arc**. The popup has **Plan Next Arc**, **Manage Arcs** and a progress card for each active arc. The same buttons are also in the Extensions drawer.
+Most of the time you use the **wand menu** next to the chat input: click it and choose **Story Arc**. The popup has **Plan a new arc**, **Manage** and **Knowledge**, and a row for each active arc. The same buttons and rows are also in the Extensions drawer.
 
 ### Planning an arc
 
-**Plan Next Arc** opens a three-step wizard.
+**Plan a new arc** opens a wizard with two steps.
 
-1. **Context.** This shows what Story Arc harvested: the character, persona, number of lorebook entries, chat depth, estimated tokens and active arcs. Expand "Inspect harvested entries" to see the lorebook entries themselves.
-2. **Direction.** Here you choose the arc's size and say what you want:
+1. **Direction.** A summary at the top shows what Story Arc read from the story: the character, persona, lorebook entries, chat depth and active arcs; expand it to inspect the lorebook entries themselves. Then you choose the arc's size and say what you want:
    - **Tier**: episode, act or saga (see [Tiers](#tiers)).
    - **Genre**: the register this arc must stay in, for example "High fantasy adventure: guild jobs, monsters and ruins, banter around the campfire. Dark moments, but never grimdark." It binds both planning passes. A new arc starts with the genre of your most recent arc.
    - **Direction**: free text about what the arc should explore, for example "The party takes a job from the guild board: find out what haunts the old mill. Let it look routine at first, and let one clue point at something much bigger."
-3. **Review.** Story Arc runs the two planning passes and shows a live log. The finished plan shows its title, themes, tone, tier and estimated length openly. The premise, secrets, beats, foreshadowing, triggers and escalation are hidden behind spoiler toggles, so you can activate an arc without reading it. Choose **Activate**, **Regenerate** or **Back**.
+2. **Review.** Story Arc runs the planning passes and shows a live log; **Cancel** stops at any time. The finished plan shows its title, themes, tone, tier and estimated length openly. The premise, secrets, beats, clues, triggers and escalation stay hidden behind **Reveal plan**, so you can activate an arc without reading it. Choose **Activate**, **Regenerate** or **Back**; Back asks before it discards a finished plan.
 
-Failed requests caused by timeouts or gateway errors are retried automatically, up to two times.
+Failed requests caused by timeouts or gateway errors are retried automatically, up to two times. If planning still fails, the wizard says why and offers **Retry**.
 
 ### Managing arcs
 
-**Manage Arcs** lists every arc in the current chat. Completed and abandoned arcs are collapsed under "Past Arcs". For each active arc you can:
+**Manage** opens the Arc Manager: one row per active arc, with its tier, focus, phase, beats and when the last beat landed. Completed and abandoned arcs are collapsed under **Past arcs**, where **Reactivate** brings one back. In a row you can:
 
-- **Set its focus** (paused, background, normal, spotlight) with the dropdown. See [Focus](#focus).
-- **Re-plan** the rest of the arc from where the story is now. See [Re-planning](#re-planning).
-- **Complete** or **Abandon** it.
-- **Edit a beat** with the pencil icon: change its pressure (what the model sees) and its "Fulfilled when" text (what counts as done). Delete is inside the editor and needs a second click.
-- **Toggle a beat's status** by clicking it, for example to complete a beat the model missed.
-- **Mark secrets, clues and triggers as done** in their spoiler groups (Secrets, Clues, Triggers — each opens on its own). An hourglass means the model has reported the item and the report waits to be applied; clicking it drops the report.
-- **Edit arc** opens the whole arc as JSON. Story Arc refuses invalid edits and always keeps the bookkeeping fields (id, status, tier, focus, message counters) as stored.
+- **Set its focus** (paused, background, normal, spotlight) with the switch. See [Focus](#focus).
+- **Act on a warning.** When an arc needs you, a sentence under its row says why, with the fix beside it: **Re-plan**, **Spotlight it** or **Ignore** when it has stalled, **Re-plan** when you overruled the plan, **Complete it** when every beat is done.
+- **Mark a beat** done (or open again) by hand, for example when the model missed it. A beat you mark done counts like one the story fulfilled, so the stall warning clears.
+- **Re-plan**, **Complete**, **Abandon** or **Edit as JSON** from the row's **⋯** menu. Completing or abandoning can be undone while the Arc Manager is open.
+- **Expand the row** to see what the narrator gets from the arc right now. **Reveal plan** shows its beats, secrets, clues and triggers; there you edit a beat (its pressure, which the model sees, and its "Fulfilled when" text) and mark secrets, clues and triggers as done. A count shows reports from the model that wait to be applied; **Drop report** discards one.
 
-### The progress card
+Every edit in the Arc Manager can be undone while it is open.
 
-Each active arc has a card in the wand popup and the Extensions drawer. It shows:
+### The arc rows
 
-- the beats or milestones fulfilled so far, for example `2/6 beats`;
-- the current phase (Setup, Development, Escalation, Climax, Resolution);
-- `~N msgs to next phase` when the message count, not the beats, holds the phase back;
-- **"May have drifted — re-plan?"** when an episode has gone about three times its expected length per beat without progress. The button opens the wizard in re-plan mode for that arc. The model is never told about this.
+Each active arc also has a row in the wand popup and the Extensions drawer. It shows the tier, phase and focus, a square per beat (filled when done), how many messages remain before the next phase when the message count holds the phase back, and the same warning sentence as the Arc Manager with **Re-plan** (and **Ignore** for a stall). The model is never told about these warnings.
 
 ## Concepts
 
@@ -121,7 +115,7 @@ Focus decides how much of the model's attention an arc gets right now. You can c
 | **Paused** | One line saying the arc exists but is not being pursued. Its beats are not checked and its message clock stands still. Use it for tangents. |
 | **Background** | Acts and sagas only. Only the title and an instruction to keep the thread off-screen unless your character goes to it or brings it up. Its milestones can still complete when you play that thread. |
 | **Normal** | The default. An episode gets its full section; an act or saga gets its premise and the standing pressures of its open milestones. |
-| **Spotlight** | The arc is pushed to the front. For an act or saga, its pressures move into the main block, and its secrets, triggers and foreshadowing are added. Only one arc can be in the spotlight: choosing spotlight sends the previous one back to normal. |
+| **Spotlight** | The arc is pushed to the front. For an act or saga, its pressures move into the main block, and its secrets, triggers and clues are added. Only one arc can be in the spotlight: choosing spotlight sends the previous one back to normal. |
 
 If an act or saga keeps pulling every scene toward itself, set it to background.
 
@@ -151,7 +145,7 @@ Then you adjust as the story moves:
 
 Stories go where they want. When an arc no longer fits, **Re-plan** regenerates the unfulfilled part from the story's current state. Re-plan keeps:
 
-- the arc itself, with its id, progress card and message counter;
+- the arc itself, with its id, its row and its message counter;
 - its title, premise and direction, which you can edit in the wizard;
 - every secret, word for word (new ones may be added);
 - every fulfilled beat, planted clue and fired trigger.
@@ -205,9 +199,15 @@ The rules:
 
 ### The Knowledge popup
 
-The Knowledge popup opens from the Arc Manager header and the wand popup while the tracker is on. It lists the characters (add, rename, aliases) and the facts with their holders (add, edit, delete, mark public), behind spoiler toggles, because the ledger shows who holds the arcs' secrets. Your edits survive every rollback; this is how you correct the ledger and enter facts the story never wrote down.
+**Knowledge** opens the Knowledge popup while the tracker is on. It is where you correct the ledger when an update got something wrong, and enter what the story never wrote down. It has three tabs:
 
-With character details on, each character's details are shown and editable there, and you can add an unnamed relative. A detail you edit is **locked**: the extraction no longer changes it. Empty the field to unlock it.
+- **What changed** lists what the latest updates recorded, one line per change, with the fix on the line: **Move to…** when the wrong character learned a fact, **Not true** when the fact is wrong, **Same person as…** when a character was recorded twice, **Not their name** for a wrong name, and edit-and-lock for a wrong detail. **Fine** marks a line as reviewed, and reviewed lines fold away.
+- **Cast & facts** finds any character or fact as you type. A character's sheet holds their names, their details, what they know, and merging or deleting them; you also add characters, relatives and facts here, and bring back a retracted fact with **Still true**.
+- **Map** shows the cast in rings around the current scene, with relations as lines and likely duplicates side by side. Click a character to open their sheet; drag one character onto another to merge them.
+
+Facts are shown openly; only what an arc's plan will let a character learn stays hidden. Every edit can be undone while the popup is open, and your edits survive every rollback.
+
+With character details on, each character's details are shown and editable on their sheet. A detail you edit or **Lock** is locked: the extraction no longer changes it until you **Unlock** it.
 
 The status line in the Extensions drawer shows the last message the ledger covers, so you can see whether it is behind.
 
@@ -220,7 +220,7 @@ Story Arc sets two prompt injections before every generation:
 - **The plan** (inside the prompt, before the chat history): one section per active arc, chosen by its tier and focus. It is capped at about **3000 tokens**. If it is larger, whole list lines are dropped from the end, and the pacing rules and the spotlight arc are kept.
 - **The beat check** (the last message before the model answers): pacing for the episode that drives the clock, plus one recognition line per open beat. It tells the model that if the story has *already* brought a beat about, it should write a marker such as `<!-- [ARC_SIGNAL:1a2b3c4d:beat_3:COMPLETE] -->` on the first line of its reply.
 
-When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager shows them with an hourglass, and the arc card counts the waiting reports. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
+When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager counts them as waiting reports. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
 
 The injected text changes only when the plan changes, never per message. This keeps the provider's prompt cache working. Completing a beat, changing an arc's focus, editing a beat or marking an item by hand changes the plan, so the next generation misses the cache once.
 
