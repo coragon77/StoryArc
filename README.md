@@ -7,10 +7,10 @@ Story Arc works like a hidden game master. It reads what has happened so far, ha
 > **Status: beta.** In daily use, but tested mostly with GLM, Gemini Argon and Claude models. Please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
 
 - **Plans arcs** from your lorebook, character card, persona and recent chat.
-- **Steers the chat**: the model feels the plan as pressure on the scene, never as a list of goals.
+- **Steers the chat** toward the plan without spelling it out.
 - **Tracks progress** as the story fulfils the plan's beats.
 - **Tracks who knows what** (optional), so characters stop knowing things they never learned.
-- **Keeps the plan secret** until you choose to reveal it.
+- **Keeps the plan secret**: from you until you choose to reveal it, and its goals from the model, so it does not rush through the arc.
 
 ## Installation
 
