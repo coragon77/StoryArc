@@ -263,7 +263,9 @@ StoryArc/
 │   │   │                       #   spotlitAt (stall count restarts);
 │   │   │                       #   reactivateArc(id) — past arc active again in normal
 │   │   │                       #   focus, stamps reactivatedAt and messageStart (phase
-│   │   │                       #   and stall counts restart)
+│   │   │                       #   and stall counts restart), moves it last in storage;
+│   │   │                       #   stallCountStart(arc), ignoreStall(arcId) stores
+│   │   │                       #   stallIgnoredFrom, showIgnoredStall(arcId) clears it
 │   │   ├── pacing.js           # calculatePhase(arc), selectNonOptionalBeats(beats),
 │   │   │                       #   getPacingDirective(phase),
 │   │   │                       #   shouldShowSecret(revealPhase, phase) — secret gate
@@ -461,9 +463,7 @@ StoryArc/
 │   │                           #   re-plan?" button (every tier; not while paused or in
 │   │                           #   background; counted from the latest of messageStart,
 │   │                           #   lastFulfilledAt, replannedAt, reactivatedAt,
-│   │                           #   spotlitAt: stallCountStart);
-│   │                           #   ignoreStall(arcId) stores stallIgnoredFrom,
-│   │                           #   showIgnoredStall(arcId) deletes it;
+│   │                           #   spotlitAt: stallCountStart in clock.js);
 │   │                           #   isStallNudgeShown(arc, chatLength) — stalled and
 │   │                           #   not the ignored stall (the card's check)
 │   └── css/
@@ -748,7 +748,7 @@ lib/knowledge/
                  /scripts/extensions.js)
 
 lib/ui/
-├── progress.js      (imports: planning/storage.js, injection/pacing.js,
+├── progress.js      (imports: planning/storage.js, injection/pacing.js, injection/clock.js,
 │                              core/settings.js, /script.js, /scripts/utils.js)
 ├── settings-panel.js (imports: core/constants.js, core/settings.js,
 │                              planning/arc-preset.js, wizard.js, arc-manager.js,
@@ -808,7 +808,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Focus: spotlight | `lib/injection/builder.js` (`buildSpotlightSection`, `sectionRank`, `buildPacingBlock`) | `clock.js` |
 | Pacing clock (stamps + brake) | `lib/injection/clock.js` | `stamping.js`, `builder.js` |
 | Re-plan | `lib/planning/replan.js` | `generator.js` (`buildArcSoFar`, `formatExistingArcs`), `lib/ui/wizard.js` (revise mode), `prompts/analyze-context.txt` |
-| Stall nudge | `lib/ui/progress.js` (`isStalled`, `isStallNudgeShown`, `ignoreStall`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (`reactivatedAt` stamped by `reactivateArc`; all shifted on resume) |
+| Stall nudge | `lib/ui/progress.js` (`isStalled`, `isStallNudgeShown`), `lib/injection/clock.js` (`stallCountStart`, `ignoreStall`, `showIgnoredStall`) | `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`lastFulfilledAt` set and restored), `lib/planning/replan.js` (`replannedAt` stamped by `applyReplan`), `lib/injection/clock.js` (`reactivatedAt` stamped by `reactivateArc`; all shifted on resume) |
 | Rulings (the player overruled the plan) | `lib/knowledge/ledger.js` (`listArcPlans`, `latestShownMessageBefore`, `resolveRulings`, `findOptionInMessages`, `storeRulings`) | `prompts/extract-knowledge.txt` (PLANS, MESSAGE BEFORE THE NEW MESSAGES, task 7 with `chose`), `lib/ui/progress.js` (`renderRulingLine`), `lib/planning/replan.js` (`applyReplan` answers them, drops the removed ones), `lib/planning/generator.js` (`formatRulings`: the re-plan's three calls), `lib/ui/wizard.js` (`buildRulingsList`, step 2), `lib/ui/settings-panel.js` (click handler), `lib/planning/beat-completion.js` (`removeRulingsFrom`, `removeRulingsAt`: the rollback), `index.js` (delete, chat change) |
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |

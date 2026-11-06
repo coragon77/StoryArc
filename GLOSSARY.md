@@ -57,6 +57,18 @@ _Avoid_: style, theme, tone
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
 
+**Past arc**:
+An arc that is no longer active: completed (by the player, or once its last open beat is done) or abandoned by the player. It is out of the prompt and its beats are no longer checked; the Arc Manager lists it under "Past arcs".
+_Avoid_: archived arc, old arc, closed arc
+
+**Reactivate**:
+Making a past arc active again, in normal focus, with its beats as they stand. Its phase and stall counts start over at that moment, and it goes last among the arcs, so it never takes the pacing clock from an episode running now.
+_Avoid_: revive, reopen (the word for a beat whose completion a rollback takes back)
+
+**Reveal plan**:
+The Arc Manager's switch, one per arc, that shows the arc's plan text: premise, pressures and fulfillments, secrets, clues and triggers. Off whenever the Arc Manager opens, so the plan stays secret unless the player asks for it; the title, the focus, the beat strip and the warnings show either way.
+_Avoid_: spoilers on, unhide, show plan
+
 ### Beats
 
 **Beat**:
@@ -70,7 +82,7 @@ An episode's beat. Ordered, one active at a time, the rest hidden from the model
 An act's or saga's beat. Unordered, all unfulfilled milestones stand at once, and any may be fulfilled in any message.
 
 **Mark**:
-The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan.
+The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
 _Avoid_: tick, flag
 
 **Pressure**:

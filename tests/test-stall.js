@@ -1,8 +1,8 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { ignoreStall, isStalled, isStallNudgeShown, renderProgressDisplay, showIgnoredStall } from '../lib/ui/progress.js';
+import { isStalled, isStallNudgeShown, renderProgressDisplay } from '../lib/ui/progress.js';
 import { processSignalResults } from '../lib/injection/signals.js';
-import { pauseArc, reactivateArc, resumeArc, spotlightArc } from '../lib/injection/clock.js';
+import { ignoreStall, pauseArc, reactivateArc, resumeArc, showIgnoredStall, spotlightArc } from '../lib/injection/clock.js';
 import { completeBeats } from '../lib/planning/beat-completion.js';
 import { applyReplan } from '../lib/planning/replan.js';
 import { getArcById, replaceArc } from '../lib/planning/storage.js';
@@ -302,7 +302,7 @@ describe('showIgnoredStall — the ignore taken back', () => {
         chat_metadata.story_arc = { arcs: [episode()] };
         await ignoreStall('ep');
         await showIgnoredStall('ep');
-        assert.equal('stallIgnoredFrom' in chat_metadata.story_arc.arcs[0], false);
+        assert.equal(chat_metadata.story_arc.arcs[0].stallIgnoredFrom, undefined);
         assert.equal(isStallNudgeShown(chat_metadata.story_arc.arcs[0], 111), true);
     });
 });

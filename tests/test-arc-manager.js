@@ -178,20 +178,20 @@ describe('buildArcAlert — the warning line', () => {
         assert.ok(html.includes('data-act="replan" data-id="act-1"'));
     });
 
-    it('with every required beat done, notes that the arc is still in the prompt and offers Complete it', () => {
+    it('with every required beat done, notes that the arc is still in the prompt and offers Complete it and Re-plan', () => {
         const arc = makeAct({ beats: [{ id: 'm1', status: 'completed' }, { id: 'm2', status: 'active', optional: true }] });
-        assert.equal(textOf(buildArcAlert(arc)), 'Every milestone is done, and the arc is still active, so the narrator keeps getting it. Complete it');
+        assert.equal(textOf(buildArcAlert(arc)), 'Every milestone is done, and the arc is still active, so the narrator keeps getting it. Complete it Re-plan');
     });
 
     it('a stall: how long no beat landed, how often one is due, and Re-plan, Spotlight it, Ignore', () => {
         // 3 required milestones over ~90 messages: one due every 30; stalled after 90 since 2000.
         const html = buildArcAlert(makeAct());
-        assert.equal(textOf(html), 'No milestone in 100 messages — about one is due every 30. Re-plan Spotlight it Ignore');
+        assert.equal(textOf(html), 'No milestone in 101 messages — about one is due every 30. Re-plan Spotlight it Ignore');
     });
 
     it('a spotlit stalled arc gets no Spotlight it, and the sentence says what the spotlight does', () => {
         const text = textOf(buildArcAlert(makeAct({ focus: 'spotlight' })));
-        assert.equal(text, 'No milestone in 100 messages — about one is due every 30. It is in the spotlight, so the narrator brings its 2 open milestones to a head. Re-plan Ignore');
+        assert.equal(text, 'No milestone in 101 messages — about one is due every 30. It is in the spotlight, so the narrator brings its 2 open milestones to a head. Re-plan Ignore');
     });
 
     it('an ignored stall shows no warning, but the last-beat cell says it is hidden and offers Show', () => {
@@ -279,6 +279,15 @@ describe('buildArcDetail — the plan behind the Reveal switch', () => {
         assert.match(html, /<div class="am-plan-only am-form">\s*<label for="am-pp-act-1">Premise<\/label>/);
         assert.ok(html.includes('<section class="am-sec am-sec-wide am-plan-only" aria-labelledby="am-sh-act-1">'));
         assert.ok(textOf(html).includes('Reveal plan hidden Spoilers. The premise, every pressure and fulfillment, 2 secrets, 1 clue and 3 triggers stay hidden until you switch this on.'));
+    });
+
+    it('escapes a stored phase and status it does not know', () => {
+        const arc = makeAct({ status: 'completed', beats: [{ id: 'm1', phase: '<img src=x>', status: '<b>odd</b>', pressure: 'p', intention: 'i' }] });
+        const html = buildArcDetail(arc, { activeArcs: [], pendingMarks: [], view: view() });
+        assert.equal(html.includes('<img src=x>'), false);
+        assert.equal(html.includes('<b>odd</b>'), false);
+        assert.ok(html.includes('&lt;img src=x&gt;'));
+        assert.ok(html.includes('&lt;b&gt;odd&lt;/b&gt;'));
     });
 
     it('a revealed arc starts shown', () => {
