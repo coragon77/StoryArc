@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-11-01
+- **Last Updated:** 2026-11-06
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -517,8 +517,8 @@ SillyTavern loads CSS from the path specified in `manifest.json`. Use `@import` 
 
 ```css
 /* style.css */
-@import url('./lib/css/core.css');
 @import url('./lib/css/wizard.css');
+@import url('./lib/css/arc-manager.css');
 ```
 
 Do NOT use `import './file.css'` in JavaScript -- ST doesn't support CSS module imports in JS.

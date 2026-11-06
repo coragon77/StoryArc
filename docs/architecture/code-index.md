@@ -480,17 +480,14 @@ StoryArc/
 │   │                           #   isStallNudgeShown(arc, chatLength) — stalled and
 │   │                           #   not the ignored stall (the card's check)
 │   └── css/
-│       ├── core.css            # CSS custom properties, base layout, buttons,
-│       │                       #   inputs (the badges went with the old Arc Manager)
-│       ├── spoiler.css         # Spoiler toggle (hidden arc content)
 │       ├── wizard.css          # Two-step wizard: head and step indicator, context
 │       │                       #   strip, form, generation log, plan with the Reveal
 │       │                       #   switch; ST theme variables only (#72)
-│       ├── settings-panel.css  # Settings drawer (action row, grouped settings) and
-│       │                       #   the wand popup; ST theme variables only (#72)
+│       ├── settings-panel.css  # Settings drawer (action row, grouped settings,
+│       │                       #   body padding) and the wand popup; ST theme
+│       │                       #   variables only (#72)
 │       ├── arc-manager.css     # Arc Manager table, warning lines, detail, menu,
-│       │                       #   status strip (ST theme variables only); the
-│       │                       #   wizard's optional-beat tag
+│       │                       #   status strip (ST theme variables only)
 │       ├── knowledge.css       # Knowledge popup (#70): tabs, lines, chips, sheets,
 │       │                       #   picker, status bar; ST theme variables only
 │       └── progress.css        # Layout of the progress rows; tokens, beat squares
