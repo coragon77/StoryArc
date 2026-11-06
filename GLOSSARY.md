@@ -159,3 +159,35 @@ _Avoid_: flag, duplicate name
 **Merge** (characters):
 Joining two character records the ledger holds for one person (a codename and a civilian name) in the Knowledge popup: the player picks the record that stays, the other record's names become its aliases, everything the other record knew and every detail of a kind the staying record does not have moves to it (a kind only the other record has set by the player moves too, replacing the staying record's), and the other record goes. Renaming stays a separate edit.
 _Avoid_: combine, link
+
+**Move** (holder):
+Giving a fact's holder entry to another character in one step in the Knowledge popup, for an entry the extraction gave the wrong person. How they learned it and the message it came from stay, so it still goes when that message is swiped, edited or deleted. When the other character already holds the fact, their own entry stays and the moved one goes. A holder the moved-from character told still reads as told by them.
+_Avoid_: reassign, transfer
+
+**Delete** (character):
+Removing a character record in the Knowledge popup, with every mention of them: what they knew, the scenes, relations other characters have to them; someone they told reads as having witnessed it. A fact only they knew goes with them (a public one stays), and the popup names those facts before the player confirms. Refused while an unnamed relative is called after them ("Marcus Vale's mother"): name the relative or change their relation first.
+_Avoid_: erase, purge
+
+**Restore** (retracted fact):
+"Still true": the player takes back a retraction in the Knowledge popup, and the fact returns with its holders as they were. It still goes when the messages its holders learned it in are swiped, edited or deleted.
+_Avoid_: unretract, revert
+
+**Lock** (character detail):
+Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand locks it the same way.
+_Avoid_: pin, freeze
+
+**Undo** (hand edit):
+Taking back the newest hand edit made in the open Knowledge popup, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
+_Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
+
+**Change item**:
+One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's own id, the item's kind and its ids (`u6:holder:f2:c1`), stable across reloads and never shared by two records. Records from before the items list counts only and have none.
+_Avoid_: change entry, delta
+
+**Reviewed mark**:
+The player's note on a change item that they have looked at it, stored on the knowledge ledger by item key. A rollback that removes the item drops its mark.
+_Avoid_: seen flag, read mark
+
+**What changed** (Knowledge popup):
+The Knowledge popup's opening view: the change items of the newest updates, one line per change, newest first, each with its fixes and "Fine" on the line. "Fine" sets the reviewed marks of the line's items, and a reviewed line folds away. Updates recorded before change items existed show as counts only.
+_Avoid_: feed

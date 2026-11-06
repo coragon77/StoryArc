@@ -97,11 +97,12 @@ describe('the knowledge update log', () => {
         await updateKnowledgeAfterReply(6);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
         }]);
     });
 
@@ -113,11 +114,12 @@ describe('the knowledge update log', () => {
         await updateKnowledgeAfterReply(6);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
         }]);
     });
 
@@ -234,11 +236,12 @@ describe('the knowledge update log', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [
             {
-                kind: 'update', from: 3, to: 6, messageId: 'm6',
+                kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             },
             { kind: 'rollback', from: 3, factsDropped: ['f2'], holdersDropped: 2, factsRestored: [], detailsDropped: 0 },
         ]);
@@ -284,11 +287,12 @@ describe('the knowledge update log', () => {
         await updateKnowledgeAfterEdit(1);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+            kind: 'reextract', recordId: 'u1', from: 1, to: 1, messageId: 'm1',
             answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f1'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c1', messageId: 'm1' }], details: [], names: [], scene: null },
         }]);
     });
 
@@ -313,11 +317,12 @@ describe('the knowledge update log', () => {
         await updateKnowledgeAfterReply(6);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.updateLog, [{
-            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 2, detailsChanged: 1, restatementsIgnored: 1, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [{ characterId: 'c1', kind: 'role', messageId: 'm4' }, { characterId: 'c1', kind: 'gender', messageId: 'm4' }, { characterId: 'c2', kind: 'gender', messageId: 'm3' }], names: [], scene: null },
         }]);
     });
 
@@ -399,11 +404,12 @@ describe('the knowledge update log: details the player locked', () => {
         });
         assert.deepEqual(knowledge.characters[1].details, { age: [{ value: '17', at: 5, messageId: 'm5' }] });
         assert.deepEqual(knowledge.updateLog, [{
-            kind: 'update', from: 3, to: 6, messageId: 'm6',
+            kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 2,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [{ characterId: 'c2', kind: 'age', messageId: 'm5' }], names: [], scene: null },
         }]);
     });
 
@@ -420,11 +426,12 @@ describe('the knowledge update log: details the player locked', () => {
         const knowledge = chat_metadata.story_arc.knowledge;
         assert.deepEqual(knowledge.characters[0].details.gender, [{ value: 'female', at: null, by: 'user' }]);
         assert.deepEqual(knowledge.updateLog, [{
-            kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+            kind: 'reextract', recordId: 'u1', from: 1, to: 1, messageId: 'm1',
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 1,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
         }]);
     });
 });

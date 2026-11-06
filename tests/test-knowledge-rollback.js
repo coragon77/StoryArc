@@ -154,11 +154,12 @@ describe('rollBackKnowledgeFrom', () => {
             updateLog: [
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
-                    kind: 'update', from: 6, to: 6, messageId: 'm6b',
+                    kind: 'update', recordId: 'u1', from: 6, to: 6, messageId: 'm6b',
                     answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
                 },
             ],
         });
@@ -269,11 +270,12 @@ describe('updateKnowledgeAfterSwipe', () => {
             updateLog: [
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
-                    kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
+                    kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: swipeMessageId,
                     answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c1', messageId: swipeMessageId }], details: [], names: [], scene: ['c1'] },
                 },
             ],
         });
@@ -390,11 +392,12 @@ describe('updateKnowledgeAfterEdit', () => {
             lastUpdatedAt: 6,
             // The edit's own drop of message 3 (f2) is no rollback record.
             updateLog: [{
-                kind: 'reextract', from: 3, to: 3, messageId: 'm3',
+                kind: 'reextract', recordId: 'u1', from: 3, to: 3, messageId: 'm3',
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
     });
@@ -418,11 +421,12 @@ describe('updateKnowledgeAfterEdit', () => {
             sceneHistory: [{ at: 2, present: ['c1'] }],
             lastUpdatedAt: 6,
             updateLog: [{
-                kind: 'reextract', from: 5, to: 5, messageId: 'm5',
+                kind: 'reextract', recordId: 'u1', from: 5, to: 5, messageId: 'm5',
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -446,11 +450,12 @@ describe('updateKnowledgeAfterEdit', () => {
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6',
             updateLog: [{
-                kind: 'reextract', from: 6, to: 6, messageId: 'm6',
+                kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: 'm6',
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
             }],
         });
     });
@@ -501,11 +506,12 @@ describe('updateKnowledgeAfterEdit', () => {
             scene: { at: 8, present: ['c2'] },
             lastUpdatedAt: 8,
             updateLog: [{
-                kind: 'reextract', from: 3, to: 3, messageId: 'm3',
+                kind: 'reextract', recordId: 'u1', from: 3, to: 3, messageId: 'm3',
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
     });

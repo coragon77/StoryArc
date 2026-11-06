@@ -360,11 +360,12 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             updateLog: [
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
-                    kind: 'reextract', from: 6, to: 6, messageId: swipeMessageId,
+                    kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: swipeMessageId,
                     answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
                 },
             ],
         });
@@ -430,11 +431,12 @@ describe('the message ids an update leaves on the messages it read', () => {
             lastUpdatedMessageId: replyMessageId,
             // Only the update: the deletion moved the entries and took nothing back.
             updateLog: [{
-                kind: 'update', from: 1, to: 2, messageId: replyMessageId,
+                kind: 'update', recordId: 'u1', from: 1, to: 2, messageId: replyMessageId,
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c2', messageId: userMessageId }, { factId: 'f1', characterId: 'c1', messageId: userMessageId }], details: [], names: [], scene: ['c1', 'c2'] },
             }],
         });
     });

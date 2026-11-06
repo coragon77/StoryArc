@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { chat_metadata, chat } from '../tests/mocks/st-mocks.js';
-import { buildKnowledgeContent, mergeCharacters, saveLedgerEdit } from '../lib/ui/knowledge-popup.js';
+import { buildKnowledgeContent, createKnowledgeView, mergeCharacters, saveLedgerEdit } from '../lib/ui/knowledge-popup.js';
 import { applyExtractionAnswer, dropKnowledgeFrom, rollBackKnowledgeFrom } from '../lib/knowledge/ledger.js';
 import { buildTakenNamesBlock, listCharactersWithNames } from '../lib/knowledge/names.js';
 
@@ -461,18 +461,51 @@ describe('mergeCharacters — the taken names see one character', () => {
         assert.deepEqual(newCharacter.nameClash, { names: ['Kendra', 'Anvil'], at: 42 });
         assert.deepEqual(listCharactersWithNames(ledger, ['Kendra', 'Anvil'], newCharacter.id).map(character => character.id), ['c5']);
         const html = buildKnowledgeContent(ledger, []);
-        assert.ok(html.includes('"Kendra" is also a name of Kendra Osei.'));
-        assert.ok(html.includes('"Anvil" is also a name of Kendra Osei.'));
+        const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+        assert.ok(text.includes('Kendra is also a name of Kendra Osei'), text);
+        assert.ok(text.includes('Anvil is also a name of Kendra Osei'));
     });
 });
 
-describe('buildKnowledgeContent — Merge into…', () => {
-    it('offers each character row the other records, sorted by display name', () => {
-        const html = buildKnowledgeContent(makeLedger(), []);
+describe('buildKnowledgeContent — Same person as…', () => {
+    /** Kendra's sheet with the merge editor open */
+    function mergeViewOf(targetId, keepSelf = false) {
+        const view = createKnowledgeView();
+        view.tab = 'cast';
+        view.sheet = { type: 'character', id: 'c28' };
+        view.editors.set('sheet', { mode: 'merge', characterId: 'c28', targetId, keepSelf });
+        return view;
+    }
 
-        const kendraRow = html.slice(html.indexOf('data-character-id="c5"'), html.indexOf('data-character-id="c28"'));
-        const mergeSelect = kendraRow.slice(kendraRow.indexOf('story-arc-merge-target'));
-        assert.match(mergeSelect, /^story-arc-merge-target"><option value="c28">Anvil<\/option><option value="c1">Noor al-Jamil<\/option><\/select>/);
+    it('offers a picker that suggests the records sharing a name, and never the record itself', () => {
+        const ledger = makeLedger();
+        ledger.characters[1].aliases.push('Anvil Osei');
+        const html = buildKnowledgeContent(ledger, [], true, mergeViewOf(null));
+
+        assert.ok(html.includes('Anvil is the same person as'));
+        assert.match(html, /data-pick="sheet" data-cid="c5" aria-selected="true"><span>Kendra Osei<\/span><span class="k-why">shares a name<\/span>/);
+        assert.ok(!html.includes('data-pick="sheet" data-cid="c28"'));
+    });
+
+    it('says what the merge does before the player confirms', () => {
+        const ledger = makeLedger();
+        ledger.facts.push({ id: 'f1', text: 'The vault code is 4471.', public: false, holders: [{ characterId: 'c28', how: 'witnessed', toldBy: null, at: 12 }] });
+        const text = buildKnowledgeContent(ledger, [], true, mergeViewOf('c5')).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+
+        assert.ok(text.includes('Merge Anvil into Kendra Osei?'), text);
+        assert.ok(text.includes('“Anvil”, “The Anvil” become aliases of Kendra Osei.'));
+        assert.ok(text.includes('1 fact Anvil knows move to Kendra Osei.'));
+        assert.ok(text.includes('Anvil&#39;s record goes. You can undo right after.'));
+        assert.ok(text.includes('Merge into Kendra Osei Keep Anvil instead'));
+    });
+
+    it('disables the merge and shows why when mergeCharacters refuses it', () => {
+        const ledger = makeLedger();
+        ledger.characters[0].aliases.push('The Anvil');
+        const html = buildKnowledgeContent(ledger, [], true, mergeViewOf('c5'));
+
+        assert.ok(html.includes('&quot;The Anvil&quot; is already a name of Noor al-Jamil.'));
+        assert.match(html, /data-act="merge-go"[^>]* disabled/);
     });
 });
 

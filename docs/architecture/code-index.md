@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-05
+- **Last Updated:** 2026-11-06
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -344,6 +344,12 @@ StoryArc/
 │   │                           #   beatsCompleted), skipped (no answer, chat changed,
 │   │                           #   ledger moved), rollback; knowledgeHoldings() +
 │   │                           #   holdingsChange() find what a step added or removed;
+│   │                           #   createdChangeItems() lists the change items of an
+│   │                           #   update/reextract record (#67); listChangeItems(record)
+│   │                           #   gives each its item key; dropReviewedMarksOfGoneItems()
+│   │                           #   + presentChangeItemKeys() drop the reviewed marks of items
+│   │                           #   a rollback removed (dropKnowledgeFrom,
+│   │                           #   dropKnowledgeLearnedAt);
 │   │                           #   Roll back — rollBackKnowledgeFrom(N) (delete, branch
 │   │                           #   load) via followMessagesById(ledger, chat) (entries
 │   │                           #   with a message id follow their message) and
@@ -403,18 +409,28 @@ StoryArc/
 │   │   │                       #   done items; buildReportsWaitingLine(); unbinds the whole
 │   │   │                       #   .storyArcManager namespace when the popup resolves;
 │   │   │                       #   Knowledge button (tracker on) opens the knowledge popup
-│   │   ├── knowledge-popup.js  # showKnowledgePopup() — the knowledge ledger behind two
-│   │   │                       #   closed spoiler drawers (Characters, Facts):
-│   │   │                       #   buildKnowledgeContent(ledger, chatMessages), with the
-│   │   │                       #   "Names to check" section above the drawers while a
-│   │   │                       #   character carries nameClash; pure ledger edits
+│   │   ├── knowledge-popup.js  # showKnowledgePopup() — What changed (listChangeLines:
+│   │   │                       #   the update log's change items as lines, Fine,
+│   │   │                       #   fixes on the line) and Cast & facts (search,
+│   │   │                       #   character / fact sheets, add forms, cast picker),
+│   │   │                       #   "Names to check" in both, status bar with Undo
+│   │   │                       #   (#70); buildKnowledgeContent(ledger, chatMessages,
+│   │   │                       #   withDetails, view) renders it from a view state
+│   │   │                       #   (createKnowledgeView); pure ledger edits
 │   │   │                       #   (addCharacter, addUnnamedRelative (#55), renameCharacter, setCharacterAliases,
 │   │   │                       #   keepCharacterName, addFact, editFactText, deleteFact,
 │   │   │                       #   setFactPublic, addFactHolder, removeFactHolder,
 │   │   │                       #   saveCharacterDetails: player detail entries that
 │   │   │                       #   lock the kind, #54; mergeCharacters: one
-│   │   │                       #   record into another, #60) return
-│   │   │                       #   { ledger, error }; new holders are how
+│   │   │                       #   record into another, #60; moveFactHolder,
+│   │   │                       #   deleteCharacter (+ removed), restoreRetractedFact,
+│   │   │                       #   lockCharacterDetail, #66; retractFact,
+│   │   │                       #   unnameCharacter, #70;
+│   │   │                       #   markChangeItemReviewed, unmarkChangeItemReviewed:
+│   │   │                       #   reviewed marks by item key, #67) return
+│   │   │                       #   { ledger, error }; saveLedgerEdit stores one and
+│   │   │                       #   records it for undoLedgerEdit (createUndoStack,
+│   │   │                       #   per popup session, #68); new holders are how
 │   │   │                       #   HOLDER_HOW.user, at null. Opened from the Arc
 │   │   │                       #   Manager and the wand menu while the tracker is on
 │   │   ├── knowledge-status.js # updateKnowledgeStatus() — the drawer's status line:
@@ -440,7 +456,8 @@ StoryArc/
 │       ├── wizard.css          # Wizard popup layout, step indicators, tier row and
 │       │                       #   hint, generation step log and streamed-chars ticker
 │       ├── arc-manager.css     # Arc list, beat rows, status badges
-│       ├── knowledge.css       # Knowledge popup rows, holder chips, editors
+│       ├── knowledge.css       # Knowledge popup (#70): tabs, lines, chips, sheets,
+│       │                       #   picker, status bar; ST theme variables only
 │       └── progress.css        # Compact sidebar progress widget, incl. the
 │                               #   "msgs to next phase" line and the stall nudge
 ├── tests/
@@ -517,13 +534,22 @@ StoryArc/
 │   │                           #   waiting state, reports-waiting line, title and
 │   │                           #   premise editor (escaped, no plan text)
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
-│   │                           #   after ledgers), spoiler drawers start closed, the
-│   │                           #   "Names to check" section and keepCharacterName (#48)
+│   │                           #   after ledgers), Cast & facts search and fact sheet,
+│   │                           #   the "Names to check" strip and keepCharacterName (#48)
+│   ├── test-knowledge-popup-view.js # Tests: What changed (#70): listChangeLines, lines
+│   │                           #   per change, reviewed folding, earlier records, plan
+│   │                           #   holders hidden, the empty log
+│   ├── test-knowledge-hand-edits.js # Tests: retractFact, unnameCharacter (#70); move holder, delete character, restore a
+│   │                           #   retracted fact, lock a detail (#66), refusals,
+│   │                           #   rollback after a move, restore and lock
+│   ├── test-knowledge-undo.js  # Tests: undo of hand edits (#68): exact restore, one
+│   │                           #   further per press, refusal after an in-place or
+│   │                           #   replacing change, new session empty, every edit
 │   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
 │   │                           #   holder dedupe, details, nameClash, rollback after a
 │   │                           #   merge, taken names and the flag see one character
 │   ├── test-knowledge-popup-details.js # Tests: character details in the popup (#54):
-│   │                           #   row summary, editor fields, saveCharacterDetails
+│   │                           #   sheet rows and lock state, detail editor, saveCharacterDetails
 │   │                           #   (lock on change, unlock on clear, validation)
 │   ├── test-knowledge-extraction.js # Tests: extraction template variables, answer
 │   │                           #   parsing (all or nothing, null keys)
@@ -564,6 +590,9 @@ StoryArc/
 │   ├── test-knowledge-update.js # Tests: updateKnowledgeAfterReply (off: no call,
 │   │                           #   interval, failed/unreadable answer, first update,
 │   │                           #   popup edit during the call, swipe during the call)
+│   ├── test-knowledge-change-items.js # Tests: change items of update/reextract records,
+│   │                           #   item keys, rollback dropping reviewed marks (delete,
+│   │                           #   swipe, edit), old ledgers, mark/unmark, save (#67)
 │   ├── test-knowledge-update-log.js # Tests: updateLog records (update, empty answer,
 │   │                           #   skips by reason, nothing for off/interval/other chat,
 │   │                           #   cap 20, rollback drop/restore, re-extraction)
@@ -720,11 +749,10 @@ lib/ui/
 │                              /scripts/utils.js)
 ├── knowledge-popup.js (imports: /script.js chat + saveMetadata, core/settings.js,
 │                              core/constants.js DETAIL_KINDS + DETAIL_STATUS_VALUES + HOLDER_HOW,
-│                              knowledge/ledger.js characterDisplayName + characterName + currentDetailText +
-│                              isDetailLocked + nextLedgerId,
-│                              knowledge/names.js listCharactersWithNames,
-│                              knowledge/message-ids.js messageIdOf,
-│                              spoiler-group.js, knowledge-status.js
+│                              knowledge/ledger.js characterDisplayName + characterName + isDetailLocked +
+│                              isSameDetailValue + listChangeItems + nextLedgerId,
+│                              knowledge/names.js foldName + listCharactersWithNames + nameWords,
+│                              knowledge/message-ids.js messageIdOf, knowledge-status.js
 │                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)
 └── spoiler-group.js (imports: nothing)

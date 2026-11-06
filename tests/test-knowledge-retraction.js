@@ -330,11 +330,12 @@ describe('the retraction through an update', () => {
             lastUpdatedMessageId: 'm3',
             retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
             updateLog: [{
-                kind: 'update', from: 2, to: 3, messageId: 'm3',
+                kind: 'update', recordId: 'u1', from: 2, to: 3, messageId: 'm3',
                 answer: { present: 2, newCharacters: 0, learned: 0, retracted: 1, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: ['f2'], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -385,11 +386,12 @@ describe('the retraction through an update', () => {
             lastUpdatedAt: 3,
             retractedFacts: [],
             updateLog: [{
-                kind: 'reextract', from: 2, to: 2, messageId: 'm2',
+                kind: 'reextract', recordId: 'u1', from: 2, to: 2, messageId: 'm2',
                 answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
         });
     });
@@ -437,18 +439,20 @@ describe('the retraction through an update', () => {
             retractedFacts: [],
             updateLog: [
                 {
-                    kind: 'reextract', from: 1, to: 1, messageId: 'm1',
+                    kind: 'reextract', recordId: 'u1', from: 1, to: 1, messageId: 'm1',
                     answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [{ factId: 'f1', characterId: 'c2', messageId: 'm1' }, { factId: 'f1', characterId: 'c1', messageId: 'm1' }], details: [], names: [], scene: null },
                 },
                 {
-                    kind: 'reextract', from: 2, to: 2, messageId: 'm2',
+                    kind: 'reextract', recordId: 'u2', from: 2, to: 2, messageId: 'm2',
                     answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
+            items: { characters: [], holders: [], details: [], names: [], scene: null },
                 },
             ],
         });
