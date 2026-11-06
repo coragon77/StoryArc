@@ -353,10 +353,6 @@
 .story-arc-knowledge .k-map-node.is-scene .k-map-lab { font-weight: 600; }
 .story-arc-knowledge .k-map-node.side-r .k-map-lab { left: calc(var(--d) / 2 + 4px); }
 .story-arc-knowledge .k-map-node.side-l .k-map-lab { right: calc(var(--d) / 2 + 4px); }
-.story-arc-knowledge .k-map-node.side-ru .k-map-lab, .story-arc-knowledge .k-map-node.side-rd .k-map-lab { left: calc(var(--d) / 2 + 4px); }
-.story-arc-knowledge .k-map-node.side-lu .k-map-lab, .story-arc-knowledge .k-map-node.side-ld .k-map-lab { right: calc(var(--d) / 2 + 4px); }
-.story-arc-knowledge .k-map-node.side-ru .k-map-lab, .story-arc-knowledge .k-map-node.side-lu .k-map-lab { top: -19px; }
-.story-arc-knowledge .k-map-node.side-rd .k-map-lab, .story-arc-knowledge .k-map-node.side-ld .k-map-lab { top: 1px; }
 .story-arc-knowledge .k-map-node.side-t .k-map-lab { top: calc(var(--d) / -2 - 21px); left: 0; transform: translateX(-50%); }
 .story-arc-knowledge .k-map-node.side-b .k-map-lab { top: calc(var(--d) / 2 + 3px); left: 0; transform: translateX(-50%); }
 .story-arc-knowledge .k-map-lab.is-off { opacity: 0; pointer-events: none; }
