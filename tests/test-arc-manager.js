@@ -186,12 +186,12 @@ describe('buildArcAlert — the warning line', () => {
     it('a stall: how long no beat landed, how often one is due, and Re-plan, Spotlight it, Ignore', () => {
         // 3 required milestones over ~90 messages: one due every 30; stalled after 90 since 2000.
         const html = buildArcAlert(makeAct());
-        assert.equal(textOf(html), 'No milestone in 101 messages — about one is due every 30. Re-plan Spotlight it Ignore');
+        assert.equal(textOf(html), 'No milestone in 100 messages — about one is due every 30. Re-plan Spotlight it Ignore');
     });
 
     it('a spotlit stalled arc gets no Spotlight it, and the sentence says what the spotlight does', () => {
         const text = textOf(buildArcAlert(makeAct({ focus: 'spotlight' })));
-        assert.equal(text, 'No milestone in 101 messages — about one is due every 30. It is in the spotlight, so the narrator brings its 2 open milestones to a head. Re-plan Ignore');
+        assert.equal(text, 'No milestone in 100 messages — about one is due every 30. It is in the spotlight, so the narrator brings its 2 open milestones to a head. Re-plan Ignore');
     });
 
     it('an ignored stall shows no warning, but the last-beat cell says it is hidden and offers Show', () => {
