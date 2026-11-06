@@ -1,255 +1,134 @@
 # Story Arc
 
-A [SillyTavern](https://github.com/SillyTavern/SillyTavern) extension that plans the next arc of an existing, long-running roleplay and quietly steers the chat model toward it.
+A [SillyTavern](https://github.com/SillyTavern/SillyTavern) extension that plans the next arc of a long-running roleplay and quietly steers the chat model toward it.
 
-Long roleplays lose direction. After a few hundred messages the story drifts from scene to scene, and the model has no idea where things are supposed to go. Story Arc works like a hidden game master: it reads what has already happened, asks an LLM to plan what happens next, and feeds that plan into every prompt without showing it to you. You play; the plan stays a surprise.
+Story Arc works like a hidden game master. It reads what has happened so far, has an LLM plan what comes next, and feeds that plan into the prompt without showing it to you. You play; the plan stays a surprise.
 
-> **Status: beta (0.1.0).** Story Arc is in daily use in long roleplays, but it has mostly been run with GLM and Claude models on one SillyTavern install. Expect rough edges, and please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
+> **Status: beta.** In daily use, but tested mostly with GLM and Claude models. Please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
 
-What it does:
-
-- **Reads the story so far** from your lorebook (World Info), the character card, your persona and the recent chat history.
-- **Plans an arc** in three LLM passes: an analysis of the story's current state, a structured plan with beats, secrets, clues and triggers, and a check that rewrites anything in the plan that would give a secret away or dictate a scene. On a re-plan the check also notices which secrets the story has already revealed.
-- **Steers the chat** by injecting the plan into the prompt. The model sees only the current pressure on the scene, never a checklist of goals, so it does not race through the plan.
-- **Tracks progress** by letting the model report, with a hidden marker, when the story has fulfilled a beat. With the knowledge tracker on, a separate extraction call recognises fulfilled beats instead.
-- **Tracks who knows what** (optional). A knowledge ledger records which character learned which fact and how, so the model stops letting characters know what they never learned. It also keeps the names already in the story, so new characters do not get them again.
-- **Tracks character details** (optional). Gender, age, role, kinship and alive or dead for every character, as the story established them, so the model stops reinventing a side character's job or family.
-- **Keeps the plan secret.** Everything that would spoil the story stays hidden until you choose to reveal it.
-
-Story Arc was scaffolded from [Story Mode](https://github.com/Prompt-And-Circumstance/StoryMode). Story Mode plans a story from scratch; Story Arc continues one that already exists.
-
-## Requirements
-
-- SillyTavern with a **Chat Completion** API. The fallback generation route and the per-message arc counter both use the Chat Completion pipeline. Text Completion APIs are not tested.
-- Optional: SillyTavern's **Connection Manager** extension, if you want arc planning to run on a different API, model or preset than the chat itself.
+- **Plans arcs** from your lorebook, character card, persona and recent chat.
+- **Steers the chat**: the model feels the plan as pressure on the scene, never as a list of goals.
+- **Tracks progress** as the story fulfils the plan's beats.
+- **Tracks who knows what** (optional), so characters stop knowing things they never learned.
+- **Keeps the plan secret** until you choose to reveal it.
 
 ## Installation
 
-In SillyTavern, open **Extensions → Install extension**, paste the repository URL and confirm:
+You need SillyTavern with a **Chat Completion** API. In SillyTavern, open **Extensions → Install extension** and paste:
 
 ```
 https://github.com/coragon77/StoryArc
 ```
 
-To install by hand instead, clone the repository into SillyTavern's third-party extension folder and reload SillyTavern:
-
-```bash
-cd SillyTavern/public/scripts/extensions/third-party
-git clone https://github.com/coragon77/StoryArc.git
-```
-
-There is no build step. SillyTavern loads the files as they are. To update, use **Manage extensions → Update**, or run `git pull` in the `StoryArc` folder.
+Or clone it into `SillyTavern/public/scripts/extensions/third-party` and reload SillyTavern.
 
 ## Setup
 
 Open the **Extensions** drawer and expand **Story Arc**.
 
-1. **Enable Story Arc.** The extension does nothing until this is checked.
-2. **Generation profile.** Choose which Connection Manager profile plans the arcs. "Current API" uses whatever the chat is using. Planning sends a large prompt (often 20,000+ characters) and expects a long JSON answer, so a capable model with a generous response length works best.
-3. **Create arc preset** (optional, recommended). This creates a preset named `Story Arc Generation`, tuned for planning (high reasoning effort, 20,000 response tokens, temperature 0.8), plus a connection profile of the same name, cloned from the selected profile. Select that profile as the generation profile afterwards.
-4. **Track who knows what** (optional, off by default). Switches on the [knowledge tracker](#the-knowledge-tracker). Each update is one extra LLM call through the generation profile, after an AI reply; **Update every N replies** sets how often. **Character details** (off by default) adds character details to the same call; it works only while the tracker is on.
+1. **Enable Story Arc.**
+2. **Generation profile**: the Connection Manager profile that plans arcs. "Current API" uses the chat's own. Planning needs a capable model and a long response length.
+3. **Create arc preset** (recommended): creates a `Story Arc Generation` preset and connection profile tuned for planning. Select it as the generation profile afterwards.
+4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it.
 
-The arc preset also holds two **standing directives** as ordinary prompt entries. You edit and toggle them in SillyTavern's own prompt manager:
+The arc preset holds two entries you toggle in SillyTavern's prompt manager. Save the preset after changing them.
 
 | Entry | Default | Effect |
 |---|---|---|
-| Story Arc: Genre | on | Keeps new arcs inside the genre and tone the story has already set. Replace its text to force one genre for every arc. |
-| Story Arc: Adult Content | off | Allows arcs to build toward explicit scenes instead of fading to black. |
+| Story Arc: Genre | on | Keeps new arcs in the genre and tone the story has set |
+| Story Arc: Adult Content | off | Lets arcs build toward explicit scenes instead of fading to black |
 
-The directives are read from the **saved** preset, so save the preset after you change a toggle.
+## Using it
 
-## Everyday use
-
-Most of the time you use the **wand menu** next to the chat input: click it and choose **Story Arc**. The popup has **Plan a new arc**, **Manage** and **Knowledge**, and a row for each active arc. The same buttons and rows are also in the Extensions drawer.
+Click the **wand menu** next to the chat input and choose **Story Arc**. The popup has **Plan a new arc**, **Manage**, **Knowledge**, and a row for each active arc. The Extensions drawer has the same.
 
 ### Planning an arc
 
-**Plan a new arc** opens a wizard with two steps.
+**Plan a new arc** opens a two-step wizard.
 
-1. **Direction.** A summary at the top shows what Story Arc read from the story: the character, persona, lorebook entries, chat depth and active arcs; expand it to inspect the lorebook entries themselves. Then you choose the arc's size and say what you want:
-   - **Tier**: episode, act or saga (see [Tiers](#tiers)).
-   - **Genre**: the register this arc must stay in, for example "High fantasy adventure: guild jobs, monsters and ruins, banter around the campfire. Dark moments, but never grimdark." It binds both planning passes. A new arc starts with the genre of your most recent arc.
-   - **Direction**: free text about what the arc should explore, for example "The party takes a job from the guild board: find out what haunts the old mill. Let it look routine at first, and let one clue point at something much bigger."
-2. **Review.** Story Arc runs the planning passes and shows a live log; **Cancel** stops at any time. The finished plan shows its title, themes, tone, tier and estimated length openly. The premise, secrets, beats, clues, triggers and escalation stay hidden behind **Reveal plan**, so you can activate an arc without reading it. Choose **Activate**, **Regenerate** or **Back**; Back asks before it discards a finished plan.
-
-Failed requests caused by timeouts or gateway errors are retried automatically, up to two times. If planning still fails, the wizard says why and offers **Retry**.
+1. **Direction.** Pick the arc's **tier** (see below), its **genre** ("High fantasy adventure, banter around the campfire, never grimdark") and say what the arc should explore.
+2. **Review.** Story Arc plans the arc and shows its title, themes and tone. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
 ### Managing arcs
 
-**Manage** opens the Arc Manager: one row per active arc, with its tier, focus, phase, beats and when the last beat landed. Completed and abandoned arcs are collapsed under **Past arcs**, where **Reactivate** brings one back. In a row you can:
+**Manage** opens the Arc Manager, with one row per arc. There you can:
 
-- **Set its focus** (paused, background, normal, spotlight) with the switch. See [Focus](#focus).
-- **Act on a warning.** When an arc needs you, a sentence under its row says why, with the fix beside it: **Re-plan**, **Spotlight it** or **Ignore** when it has stalled, **Re-plan** when you overruled the plan, **Complete it** when every beat is done.
-- **Mark a beat** done (or open again) by hand, for example when the model missed it. A beat you mark done counts like one the story fulfilled, so the stall warning clears.
-- **Re-plan**, **Complete**, **Abandon** or **Edit as JSON** from the row's **⋯** menu. Completing or abandoning can be undone while the Arc Manager is open.
-- **Expand the row** to see what the narrator gets from the arc right now. **Reveal plan** shows its beats, secrets, clues and triggers; there you edit a beat (its pressure, which the model sees, and its "Fulfilled when" text) and mark secrets, clues and triggers as done. A count shows reports from the model that wait to be applied; **Drop report** discards one.
+- set an arc's **focus** (see below);
+- act on a **warning**, for example **Re-plan** or **Ignore** when an arc has stalled;
+- mark a beat done by hand when the model missed it;
+- **Re-plan**, **Complete** or **Abandon** an arc from its **⋯** menu;
+- **Reveal plan** to read and edit its beats, secrets, clues and triggers.
 
-Every edit in the Arc Manager can be undone while it is open.
-
-### The arc rows
-
-Each active arc also has a row in the wand popup and the Extensions drawer. It shows the tier, phase and focus, a square per beat (filled when done), how many messages remain before the next phase when the message count holds the phase back, and the same warning sentence as the Arc Manager with **Re-plan** (and **Ignore** for a stall). The model is never told about these warnings.
-
-## Concepts
-
-### Tiers
-
-The tier is the size of an arc. You choose it when you plan the arc.
-
-| Tier | Length | Beats | Use it for |
-|---|---|---|---|
-| Episode | 8–20 messages | 5–8 ordered **scene beats** | One playable unit, such as a single job from the guild board |
-| Act | 60–150 messages | 3–5 **milestones** | A leg of the larger story that colours the episodes in it |
-| Saga | 400–1500 messages | 2–4 **milestones** | The overarching storyline, such as defeating the BBEG (Big Bad Evil Guy) |
-
-Scene beats come in order. Only the current one is shown to the model, and the next one is revealed only after you have reacted to the last. Milestones are unordered: all of them stand at once, and any message can fulfil any of them.
-
-You can run several arcs at the same time. They work best as layers, the way a TV series has episodes inside seasons inside the whole show.
-
-### Focus
-
-Focus decides how much of the model's attention an arc gets right now. You can change it at any time in the Arc Manager.
-
-| Focus | What the model sees |
-|---|---|
-| **Paused** | One line saying the arc exists but is not being pursued. Its beats are not checked and its message clock stands still. Use it for tangents. |
-| **Background** | Acts and sagas only. Only the title and an instruction to keep the thread off-screen unless your character goes to it or brings it up. Its milestones can still complete when you play that thread. |
-| **Normal** | The default. An episode gets its full section; an act or saga gets its premise and the standing pressures of its open milestones. |
-| **Spotlight** | The arc is pushed to the front. For an act or saga, its pressures move into the main block, and its secrets, triggers and clues are added. Only one arc can be in the spotlight: choosing spotlight sends the previous one back to normal. |
-
-If an act or saga keeps pulling every scene toward itself, set it to background.
-
-### Example: a fantasy campaign
-
-Your adventuring party has played for a few hundred messages. You plan three arcs, one per tier, and give each the focus it needs:
-
-| Arc | Tier | Focus | Why |
-|---|---|---|---|
-| Defeat the Lich of the Northern Wastes | Saga | Background | Defeating the BBEG takes a thousand messages and should not haunt every scene. |
-| Make a name for the party in Port Varrow | Act | Normal | Becoming a known party in the city is a slow goal that should colour every job. |
-| The Haunting at the Old Mill | Episode | Spotlight | The next job from the guild board is what you play tonight. |
-
-What the model gets from each layer:
-
-- **The saga** is only a title and an instruction to keep it off-screen. The lich stays out of scenes until your characters go looking for it or bring it up. Its milestones are coarse states of the world, such as "the party has learned the lich's true name", and they still complete when the story gets there. Its secrets stay specific: who the lich was, and what it wants.
-- **The act** puts its standing pressures into every scene, for example "the city's established parties take the best contracts and close ranks against newcomers". Its milestones, such as "the city watch knows the party by name" or "a rival party sees them as a threat", can come true during any job, the mill job included.
-- **The episode** gives the model one scene beat at a time: the frightened miller, the cold spot in the cellar, the thing behind the wall. It drives the pacing. With a single episode, normal focus does the same; spotlight matters when two episodes run at once.
-
-Then you adjust as the story moves:
-
-- When the party takes a detour to the harvest festival, you **pause** the episode. Its clock stops, and it picks up where it left off when you resume it.
-- When the BBEG should make a move, you put the **saga** in the **spotlight**. Its pressures, secrets and triggers come to the front, and the episode drops back to normal.
-- When the mill job is done, you plan the next episode. The act and the saga keep running.
+Every change can be undone while the Arc Manager is open. Completed and abandoned arcs sit under **Past arcs**, where **Reactivate** brings one back.
 
 ### Re-planning
 
-Stories go where they want. When an arc no longer fits, **Re-plan** regenerates the unfulfilled part from the story's current state. Re-plan keeps:
+When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets and the premise (which you can edit), and replaces the open beats. The tier can grow but never shrink.
 
-- the arc itself, with its id, its row and its message counter;
-- its title, premise and direction, which you can edit in the wizard;
-- every secret, word for word (new ones may be added);
-- every fulfilled beat, planted clue and fired trigger.
+## Tiers and focus
 
-It replaces the open beats, the unplanted clues, the unfired triggers and the arc's tone and rules. You can keep the tier or grow it (episode → act → saga), but you can never shrink it.
+The **tier** is an arc's size:
 
-### Phases and pacing
+| Tier | Length | Beats | Use it for |
+|---|---|---|---|
+| Episode | 8–20 messages | 5–8 scene beats, in order | One job, one evening's play |
+| Act | 60–150 messages | 3–5 milestones, any order | A leg of the larger story |
+| Saga | 400–1500 messages | 2–4 milestones, any order | The overarching storyline |
 
-Every arc moves through five phases: Setup, Development, Escalation, Climax and Resolution. The phase is the lower of two ratios, beats fulfilled and messages played against the estimated length, so the story never rushes ahead of either. Each phase adds its own pacing directive, for example "Plant seeds. Build atmosphere. No revelations." in Setup. Secrets are released by phase.
+Several arcs can run at once, like episodes inside seasons inside a series.
 
-### Lorebook conventions
+The **focus** sets how much attention an arc gets right now:
 
-Story Arc reads the lorebook entries SillyTavern itself would scan for the chat: chat lore, persona lore, character lore and global books. Disabled entries are skipped. The entries are sorted into three groups:
+| Focus | What the model sees |
+|---|---|
+| **Paused** | That the arc exists but is on hold. Its clock stops. |
+| **Background** | Acts and sagas only: keep the thread off-screen unless your character goes to it. |
+| **Normal** | The default. The arc's premise and its pressures on the scene. |
+| **Spotlight** | The arc comes to the front, with its secrets, triggers and clues. One arc at a time. |
 
-- **Constants**: entries marked constant (always active).
-- **Arc summaries**: entries whose comment (title) contains `[ARC ` followed by text, for example `[ARC 3] The Harbour Heist`. Use this to give the planner summaries of earlier arcs.
-- **Recent**: everything else.
+If an act or saga pulls every scene toward itself, set it to background.
+
+**An example.** In a fantasy campaign you might run three layers: the saga "Defeat the Lich" in **background**, so the lich stays out of scenes until the party looks for it; the act "Make a name in Port Varrow" in **normal**, so the city's rival parties press on every job; and the episode "The Haunting at the Old Mill" in **spotlight**, as tonight's job. When the party detours to a festival, **pause** the episode. When the lich should make a move, put the saga in the spotlight.
 
 ## The knowledge tracker
 
-The narrator writes every character from one context that holds the whole chat, so nothing stops it from letting a character know what only someone else was told, or from inventing an off-screen phone call to explain it. A rule against omniscience names no fact and loses to the scene. The knowledge tracker names the facts instead.
+With **Track who knows what** on, Story Arc reads each new reply and records which character learned which fact, and whether they saw it or were told. The model then gets, for the characters in the scene, only what they actually know.
 
-### Who knows what
+- An out-of-character correction ("that never happened") takes a fact back.
+- Deleting, swiping or editing a message takes back what it taught.
+- New characters don't get names the story already uses, unless they are related.
+- Out-of-character objections to an arc are stored as rulings, and a re-plan follows them.
 
-After an AI reply, an extraction call reads the new messages and records in the **knowledge ledger** who learned which fact, and whether they saw it happen or were told (and by whom). Just above the newest message, the model then gets a short block with what everyone knows and what each character in the scene, and each character the scene talks about, knows. A private fact appears only under the characters who hold it.
-
-- **Out-of-character corrections** take knowledge back: when you say out of character that a fact is wrong or invented, the extraction retracts it.
-- **Deleting, swiping, regenerating or editing** a message takes back what that message taught. A branch carries only what its own messages taught.
-- **Taken names.** The model is told every first name, surname and codename the story already uses, so a new character does not get one of them unless they are related. A new character who gets a taken name anyway shows up under **Names to check** in the Knowledge popup, where you rename it or keep the name.
-- **Beats and rulings.** With the tracker on, the extraction call also recognises fulfilled beats, so the narrator's prompt carries no beat check. It also notices when you say out of character that the story must differ from an arc's premise or pressures, and stores that as a ruling on the arc; a re-plan follows the arc's rulings.
-
-### Character details
-
-With **Character details** on, the same extraction call records for every character:
+With **Character details** on, it also records what the story states about each character, and nothing it doesn't:
 
 | Detail | Example |
 |---|---|
 | Gender | female |
-| Age | 52, or as vague as the story puts it: "twenty-something" |
-| Role | the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland" |
-| Relation | kinship to another character: "Kendra Osei's mother" |
-| Status | dead (being alive needs no entry) |
+| Age | 52, or "twenty-something" |
+| Role | cleaner, double shifts, Oakland |
+| Relation | Kendra Osei's mother |
+| Status | dead |
 
-The rules:
+A stated detail changes only when the story shows the change happening.
 
-- **Only what the story states.** A detail the text has not stated stays unknown; the extraction never guesses.
-- **A stated detail is binding.** It changes only when the story shows the change happening (a transfer, a new job, a death). When the narrator just states a different value, the stored one stays, and the model sees the right one again on the next turn.
-- **The model sees the details** of the characters in the scene and the characters being talked about, in the same block as their knowledge.
-- **Unnamed relatives** ("Kendra Osei's mother") are characters of their own, called after their relation. They add no taken name.
-- **Rollback** works as for knowledge: a deleted or swiped message takes its details back, and an earlier value returns.
+**Knowledge** opens the Knowledge popup, where you fix what the tracker got wrong:
 
-### The Knowledge popup
+- **What changed** lists the latest updates, each with its fix: **Move to…**, **Not true**, **Same person as…**, **Not their name**. **Fine** marks a line as reviewed.
+- **Cast & facts** lets you find, edit, add, merge or delete characters and facts. A detail you edit or **Lock** is no longer changed by the tracker.
+- **Map** shows the cast in rings around the current scene. Drag one character onto another to merge them.
 
-**Knowledge** opens the Knowledge popup while the tracker is on. It is where you correct the ledger when an update got something wrong, and enter what the story never wrote down. It has three tabs:
+Every edit can be undone while the popup is open.
 
-- **What changed** lists what the latest updates recorded, one line per change, with the fix on the line: **Move to…** when the wrong character learned a fact, **Not true** when the fact is wrong, **Same person as…** when a character was recorded twice, **Not their name** for a wrong name, and edit-and-lock for a wrong detail. **Fine** marks a line as reviewed, and reviewed lines fold away.
-- **Cast & facts** finds any character or fact as you type. A character's sheet holds their names, their details, what they know, and merging or deleting them; you also add characters, relatives and facts here, and bring back a retracted fact with **Still true**.
-- **Map** shows the cast in rings around the current scene, with relations as lines and likely duplicates side by side. Click a character to open their sheet; drag one character onto another to merge them.
+## Good to know
 
-Facts are shown openly; only what an arc's plan will let a character learn stays hidden. Every edit can be undone while the popup is open, and your edits survive every rollback.
-
-With character details on, each character's details are shown and editable on their sheet. A detail you edit or **Lock** is locked: the extraction no longer changes it until you **Unlock** it.
-
-The status line in the Extensions drawer shows the last message the ledger covers, so you can see whether it is behind.
-
-## How it works
-
-In a long RP the narrator model has no idea where the story is going. So it improvises, invents mysteries without answers, and resolves every tension in two or three messages. Story Arc acts as an automated dungeon master. It reads the story, writes a novelist's plan for what comes next, and slips that plan into the narrator's prompt, while you stay a player who gets surprised. The rule that makes this work is "Starve the solver". The narrator gets facts and forces, never a goal or an outcome, because a visible goal gets solved. In one line: prompt clauses steer, but only withholding information guarantees. In that frame, a leaked secret and a rushed scene are the same failure: the narrator was shown an outcome and went straight for it.
-
-Story Arc sets two prompt injections before every generation:
-
-- **The plan** (inside the prompt, before the chat history): one section per active arc, chosen by its tier and focus. It is capped at about **3000 tokens**. If it is larger, whole list lines are dropped from the end, and the pacing rules and the spotlight arc are kept.
-- **The beat check** (the last message before the model answers): pacing for the episode that drives the clock, plus one recognition line per open beat. It tells the model that if the story has *already* brought a beat about, it should write a marker such as `<!-- [ARC_SIGNAL:1a2b3c4d:beat_3:COMPLETE] -->` on the first line of its reply.
-
-When a reply arrives, Story Arc reads the markers, updates the arc, and removes the markers and any leaked plan ids from the message, so you never see them. Clues (`PLANTED`) and triggers (`FIRED`) are reported the same way, but their marks are held and applied in a batch: when a beat completes, or at the latest 20 messages after the oldest mark. Until then the Arc Manager counts them as waiting reports. Marking one by hand applies at once. While an episode is running, your own messages get an `[Arc: message N of ~M]` stamp in the outgoing prompt only; the stored chat is not changed.
-
-The injected text changes only when the plan changes, never per message. This keeps the provider's prompt cache working. Completing a beat, changing an arc's focus, editing a beat or marking an item by hand changes the plan, so the next generation misses the cache once.
-
-**If beats never complete**, your model is probably not writing the markers. Some models follow the instruction better than others. You can always complete a beat by hand in the Arc Manager.
-
-## Where the data lives
-
-Everything is stored per chat in the chat file's metadata (`chat_metadata.story_arc`). Story Arc only reads your lorebook, character card and persona. It writes:
-
-- its own chat metadata and its global settings, including the knowledge ledger (`chat_metadata.story_arc.knowledge`) while the tracker is on;
-- AI replies, but only to remove its own markers and any leaked plan ids;
-- a message id of its own on each message the knowledge tracker has read (`extra.story_arc_message_id`), so its knowledge follows the message when messages are deleted;
-- the `Story Arc Generation` preset and connection profile, and only when you click **Create arc preset**.
-
-Deleting the extension leaves your chats readable; the arc data simply stays unused in the metadata.
+- **Beats never complete?** Your model isn't reporting them. Mark them done by hand in the Arc Manager, or turn on the knowledge tracker, which recognises them itself.
+- **Summaries of earlier arcs**: give a lorebook entry a title starting with `[ARC ` (for example `[ARC 3] The Harbour Heist`) and the planner treats it as one.
+- **Your data**: everything is stored in the chat file. Story Arc only reads your lorebook, card and persona; removing the extension leaves your chats intact.
 
 ## Development
 
-- Vanilla JavaScript ES modules, jQuery and plain CSS. No bundler and no build step.
-- Tests use Node's built-in test runner with a loader that mocks the SillyTavern imports:
-
-  ```bash
-  ./tests/run.sh                        # all tests
-  ./tests/run.sh tests/test-replan.js   # one file
-  ```
-
-- The prompt templates for the planning passes are in `prompts/`.
-- Developer documentation starts at [docs/claude/onboarding.md](docs/claude/onboarding.md). The design is described in [docs/architecture/architecture.md](docs/architecture/architecture.md), the vocabulary in [GLOSSARY.md](GLOSSARY.md), and the design decisions in [docs/adr/](docs/adr/).
+Vanilla JavaScript, no build step. Run the tests with `./tests/run.sh`. Developer documentation starts at [docs/claude/onboarding.md](docs/claude/onboarding.md).
 
 ## License
 
-Story Arc is free software under the [GNU Affero General Public License v3.0 or later](LICENSE), the same license as SillyTavern. If you distribute a modified version, you must make its source available under the same license.
+[GNU Affero General Public License v3.0 or later](LICENSE), like SillyTavern. If you distribute a modified version, you must make its source available under the same license.
