@@ -350,21 +350,11 @@
 .am-pitch-premise { margin: 0; }
 
 /* ============================================================================
-   Used by other popups until their rebuild: the wizard's optional-beat tag
-   and the Knowledge popup's chips.
+   Used by the wizard until its rebuild: the optional-beat tag.
    ============================================================================ */
 
 .story-arc-beat-optional-label {
     font-size: 0.85em;
     font-style: italic;
     color: var(--SmartThemeEmColor, #888);
-}
-
-.story-arc-plan-chip {
-    margin-left: 6px;
-    padding: 0 6px;
-    font-size: 0.9em;
-    border-radius: 8px;
-    background: var(--black20a, rgba(0,0,0,0.2));
-    white-space: nowrap;
 }

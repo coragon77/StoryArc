@@ -193,9 +193,13 @@ Taking back the newest hand edit made in the open Knowledge popup or Arc Manager
 _Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
 
 **Change item**:
-One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's message id, the record's kind, the item's kind and its ids (`m6:update:holder:f2:c1`), stable across reloads. Records from before the items list counts only and have none.
+One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's own id, the item's kind and its ids (`u6:holder:f2:c1`), stable across reloads and never shared by two records. Records from before the items list counts only and have none.
 _Avoid_: change entry, delta
 
 **Reviewed mark**:
 The player's note on a change item that they have looked at it, stored on the knowledge ledger by item key. A rollback that removes the item drops its mark.
 _Avoid_: seen flag, read mark
+
+**What changed** (Knowledge popup):
+The Knowledge popup's opening view: the change items of the newest updates, one line per change, newest first, each with its fixes and "Fine" on the line. "Fine" sets the reviewed marks of the line's items, and a reviewed line folds away. Updates recorded before change items existed show as counts only.
+_Avoid_: feed

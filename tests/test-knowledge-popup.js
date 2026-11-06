@@ -5,6 +5,7 @@ import {
     addFact,
     addFactHolder,
     buildKnowledgeContent,
+    createKnowledgeView,
     deleteFact,
     editFactText,
     keepCharacterName,
@@ -219,25 +220,33 @@ function textOf(html) {
     return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** The markup of the fact row with this id. */
-function factRowOf(html, factId) {
-    return html.split('<li ').find(chunk => chunk.includes(`data-fact-id="${factId}"`)) || '';
+/** The markup of the result row with this data attribute, up to its end. */
+function resultRowOf(html, attribute) {
+    const chunk = html.split('<button type="button" class="k-row"').slice(1).find(candidate => candidate.includes(attribute)) || '';
+    return chunk.split('</button>')[0];
 }
 
-describe('buildKnowledgeContent', () => {
-    it('starts with both spoiler toggles closed', () => {
-        const html = buildKnowledgeContent(makeLedger());
-        const contentTags = html.match(/<div class="story-arc-spoiler-content[^"]*"/g);
-        assert.deepEqual(contentTags, [
-            '<div class="story-arc-spoiler-content"',
-            '<div class="story-arc-spoiler-content"',
-        ]);
-        assert.equal(html.match(/class="story-arc-spoiler-toggle"/g).length, 2);
-        assert.ok(textOf(html).includes('Characters (2)'));
-        assert.ok(textOf(html).includes('Facts (1)'));
+/** A view of Cast & facts with this search typed */
+function castViewWith(query) {
+    const view = createKnowledgeView();
+    view.tab = 'cast';
+    view.query = query;
+    return view;
+}
+
+describe('buildKnowledgeContent: Cast & facts', () => {
+    it('opens Cast & facts on the search field, everyone A–Z folded away', () => {
+        const view = castViewWith('');
+        const html = buildKnowledgeContent(makeLedger(), [], true, view);
+
+        assert.match(html, /id="sa-k-tab-cast"[^>]*aria-selected="true"/);
+        assert.ok(html.includes('id="sa-k-q"'));
+        assert.ok(html.includes('<details class="k-fold k-rgroup" data-fold="all"><summary>'));
+        assert.ok(textOf(html).includes('All characters 2 · A–Z'));
+        assert.equal(resultRowOf(html.slice(html.indexOf('data-fold="all"')), 'data-character-id="noor"'), '');
     });
 
-    it('shows each fact with its holders and how they learned it', () => {
+    it('finds a fact by its words and shows its holders and how they learned it', () => {
         const ledger = makeLedger();
         ledger.facts.push({
             id: 'suit',
@@ -248,16 +257,36 @@ describe('buildKnowledgeContent', () => {
                 { characterId: 'gabriel', how: 'user', toldBy: null, at: null },
             ],
         });
-        const html = buildKnowledgeContent(ledger);
+        const html = buildKnowledgeContent(ledger, [], true, castViewWith('tunes suit'));
 
-        assert.ok(factRowOf(html, 'suit').includes('Noor tunes &lt;Aegis&gt;&#39;s suit'));
-        assert.ok(textOf(factRowOf(html, 'suit')).includes('public Noor al-Jamil (told by Gabriel Marin) × Gabriel Marin (entered by you) ×'));
-        assert.ok(textOf(factRowOf(html, 'titanium')).includes('Gabriel Marin (witnessed) ×'));
+        const row = resultRowOf(html, 'data-fact-id="suit"');
+        assert.ok(row.includes('Noor <mark>tunes</mark> &lt;Aegis&gt;&#39;s <mark>suit</mark>'), row);
+        assert.ok(textOf(row).includes('Noor al-Jamil (told by Gabriel Marin), Gabriel Marin (entered by you) #2070 public'), textOf(row));
+        assert.equal(resultRowOf(html, 'data-fact-id="titanium"'), '');
     });
 
-    it('shows each character with their aliases', () => {
-        const text = textOf(buildKnowledgeContent(makeLedger()));
-        assert.ok(text.includes('Gabriel Marin also: Aegis, Mr. Marin'));
+    it('finds a character by an alias and shows the alias it matched', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true, castViewWith('aegis'));
+
+        assert.ok(textOf(resultRowOf(html, 'data-character-id="gabriel"')).includes('Gabriel Marin also Aegis'));
+        assert.equal(resultRowOf(html, 'data-character-id="noor"'), '');
+    });
+
+    it('shows a fact\'s sheet with each holder, how and when they learned it', () => {
+        const view = castViewWith('');
+        view.sheet = { type: 'fact', id: 'titanium' };
+        const text = textOf(buildKnowledgeContent(makeLedger(), [], true, view));
+
+        assert.ok(text.includes('Known to 1 holder Gabriel Marin witnessed message #2063'), text);
+        assert.ok(text.includes('Move to… Remove'));
+    });
+
+    it('offers to add what matched nothing as a character or a fact', () => {
+        const text = textOf(buildKnowledgeContent(makeLedger(), [], true, castViewWith('Dougal')));
+
+        assert.ok(text.includes('No match for Dougal'));
+        assert.ok(text.includes('Add Dougal as a new character'));
+        assert.ok(text.includes('Add Dougal as a fact'));
     });
 });
 
@@ -287,40 +316,46 @@ function makeFlaggedLedger() {
     };
 }
 
-/** The markup of the "Names to check" section, or '' when there is none. */
+/** The markup of the "Names to check" strip of What changed, or '' when there is none. */
 function namesToCheckOf(html) {
-    const start = html.indexOf('id="story-arc-knowledge-names"');
+    const start = html.indexOf('id="sa-k-names-changes"');
     if (start === -1) return '';
-    const end = html.indexOf('story-arc-spoiler-group', start);
-    return html.slice(start, end);
+    return html.slice(start, html.indexOf('</details>', start));
 }
 
 describe('buildKnowledgeContent: names to check', () => {
-    it('lists the flagged character, the shared name, who has it now and the message, before the spoiler groups', () => {
+    it('lists the flagged character, the shared name, who has it now and the message, first in What changed', () => {
         const html = buildKnowledgeContent(makeFlaggedLedger(), []);
 
-        const sectionStart = html.indexOf('id="story-arc-knowledge-names"');
-        assert.ok(sectionStart !== -1);
-        assert.ok(sectionStart < html.indexOf('story-arc-spoiler-group'));
+        const stripStart = html.indexOf('id="sa-k-names-changes"');
+        assert.ok(stripStart !== -1);
+        assert.ok(stripStart < html.indexOf('class="k-empty"'));
         const text = textOf(namesToCheckOf(html));
-        assert.ok(text.includes('Names to check'));
-        assert.ok(text.includes('Rename here first, then edit the chat text'));
+        assert.ok(text.includes('Names to check (1)'));
+        assert.ok(text.includes('rename here first and then in the chat text'));
         assert.ok(text.includes('Julian Stern'));
-        assert.ok(text.includes('"Stern" is also a name of Solomon Stern'));
+        assert.ok(text.includes('Stern is also a name of Solomon Stern'));
         assert.ok(text.includes('named in message #12'));
         assert.ok(text.includes('Rename'));
         assert.ok(text.includes('Keep the name'));
+        assert.ok(text.includes('Same person as…'));
     });
 
-    it('shows no fact and no other character in the section', () => {
+    it('shows the same strip in Cast & facts', () => {
+        const html = buildKnowledgeContent(makeFlaggedLedger(), [], true, castViewWith(''));
+
+        assert.ok(textOf(html.slice(html.indexOf('id="sa-k-names-cast"'))).includes('Stern is also a name of Solomon Stern'));
+    });
+
+    it('shows no fact and no other character in the strip', () => {
         const text = textOf(namesToCheckOf(buildKnowledgeContent(makeFlaggedLedger(), [])));
         assert.ok(!text.includes('vault'));
         assert.ok(!text.includes('Vera'));
     });
 
-    it('has no section when nothing is flagged', () => {
+    it('has no strip when nothing is flagged', () => {
         const html = buildKnowledgeContent(makeLedger(), []);
-        assert.ok(!html.includes('story-arc-knowledge-names'));
+        assert.ok(!html.includes('sa-k-names-'));
         assert.ok(!textOf(html).includes('Names to check'));
     });
 
@@ -328,10 +363,10 @@ describe('buildKnowledgeContent: names to check', () => {
         const ledger = makeFlaggedLedger();
         ledger.characters[0].name = 'Solomon <Stern>';
         ledger.characters[2].name = 'Julian & Stern';
-        const section = namesToCheckOf(buildKnowledgeContent(ledger, []));
-        assert.ok(section.includes('Solomon &lt;Stern&gt;'));
-        assert.ok(section.includes('Julian &amp; Stern'));
-        assert.ok(!section.includes('<Stern>'));
+        const strip = namesToCheckOf(buildKnowledgeContent(ledger, []));
+        assert.ok(strip.includes('Solomon &lt;Stern&gt;'));
+        assert.ok(strip.includes('Julian &amp; Stern'));
+        assert.ok(!strip.includes('<Stern>'));
     });
 
     it('lists every character who has the shared name now, and not a stored name nobody has any more', () => {
@@ -339,21 +374,20 @@ describe('buildKnowledgeContent: names to check', () => {
         ledger.characters.push({ id: 'ava', name: 'Ava Stern', aliases: [] });
         ledger.characters[2].nameClash.names = ['Stern', 'Julian'];
         const text = textOf(namesToCheckOf(buildKnowledgeContent(ledger, [])));
-        assert.ok(text.includes('"Stern" is also a name of Solomon Stern and Ava Stern'));
-        assert.ok(!text.includes('"Julian"'));
+        assert.ok(text.includes('Stern is also a name of Solomon Stern and Ava Stern'));
+        assert.ok(!text.includes('Julian is also'));
     });
 
     it('says the clash is gone when no one else has a shared name, and offers only "Not a clash"', () => {
         const ledger = makeFlaggedLedger();
         ledger.characters[0].name = 'Solomon Vance';
-        const section = namesToCheckOf(buildKnowledgeContent(ledger, []));
-        const text = textOf(section);
+        const strip = namesToCheckOf(buildKnowledgeContent(ledger, []));
+        const text = textOf(strip);
         assert.ok(text.includes('Julian Stern'));
         assert.ok(text.includes('No other character has this name any more: the clash is gone.'));
         assert.ok(text.includes('Not a clash'));
-        assert.ok(!text.includes('flag'));
-        assert.ok(!section.includes('story-arc-name-rename-btn'));
-        assert.ok(!text.includes('Keep the name'));
+        assert.ok(!strip.includes('data-act="ed-names"'));
+        assert.ok(!strip.includes('<span>Keep the name</span>'));
         assert.ok(!text.includes('is also a name of'));
     });
 
@@ -372,14 +406,11 @@ describe('buildKnowledgeContent: names to check', () => {
         assert.ok(text.includes('named in message #12'));
     });
 
-    it('marks the flagged row in the Characters group, and only that row', () => {
-        const html = buildKnowledgeContent(makeFlaggedLedger(), []);
-        const charactersGroup = html.slice(html.indexOf('id="story-arc-knowledge-characters"'), html.indexOf('id="story-arc-knowledge-facts"'));
-        const rows = charactersGroup.split('<li ').slice(1);
-        const julianRow = rows.find(row => row.includes('data-character-id="julian"'));
-        const solomonRow = rows.find(row => row.includes('data-character-id="solomon"'));
-        assert.ok(textOf(julianRow).includes('Julian Stern name to check'));
-        assert.ok(!textOf(solomonRow).includes('name to check'));
+    it('marks the flagged character\'s row in Cast & facts, and only that row', () => {
+        const view = castViewWith('stern');
+        const html = buildKnowledgeContent(makeFlaggedLedger(), [], true, view);
+        assert.ok(textOf(resultRowOf(html, 'data-character-id="julian"')).includes('name to check'));
+        assert.ok(!textOf(resultRowOf(html, 'data-character-id="solomon"')).includes('name to check'));
     });
 });
 

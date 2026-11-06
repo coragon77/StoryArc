@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { deleteCharacter, lockCharacterDetail, moveFactHolder, restoreRetractedFact } from '../lib/ui/knowledge-popup.js';
+import { deleteCharacter, lockCharacterDetail, moveFactHolder, restoreRetractedFact, retractFact, unnameCharacter } from '../lib/ui/knowledge-popup.js';
 import { dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 
 /** Noor (c1), Kendra Osei (c5) and Marcus (c7); no facts yet. */
@@ -367,5 +367,75 @@ describe('lockCharacterDetail', () => {
         assert.deepEqual(lockCharacterDetail(locked, 'c5', 'role'), { ledger: null, error: 'Kendra Osei\'s role is already set by the player.' });
         assert.deepEqual(lockCharacterDetail(makeDetailLedger(), 'c5', 'height'), { ledger: null, error: 'There is no character detail "height".' });
         assert.deepEqual(lockCharacterDetail(makeDetailLedger(), 'c99', 'role'), { ledger: null, error: 'This character is no longer in the ledger.' });
+    });
+});
+
+describe('retractFact', () => {
+    const vaultFact = () => ({ id: 'f1', text: 'The vault code is 4471.', public: false, holders: [
+        { characterId: 'c1', how: 'witnessed', toldBy: null, at: 12, messageId: 'm12' },
+    ] });
+
+    it('takes the fact out of the facts into the retracted facts, holders as they were, as the player\'s retraction', () => {
+        const { ledger, error } = retractFact(ledgerWithFacts([vaultFact()]), 'f1');
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.facts, []);
+        assert.deepEqual(ledger.retractedFacts, [{ at: null, fact: vaultFact() }]);
+    });
+
+    it('is undone by "Still true", which puts the fact back as it was', () => {
+        const retracted = retractFact(ledgerWithFacts([vaultFact()]), 'f1').ledger;
+
+        const { ledger } = restoreRetractedFact(retracted, 'f1');
+
+        assert.deepEqual(ledger.facts, [vaultFact()]);
+        assert.deepEqual(ledger.retractedFacts, []);
+    });
+
+    it('stays retracted through a rollback of a later message', () => {
+        const ledger = retractFact(ledgerWithFacts([vaultFact()]), 'f1').ledger;
+
+        dropKnowledgeFrom(ledger, 20);
+
+        assert.deepEqual(ledger.facts, []);
+        assert.deepEqual(ledger.retractedFacts, [{ at: null, fact: vaultFact() }]);
+    });
+
+    it('refuses a fact that is not in the ledger', () => {
+        assert.equal(retractFact(makeLedger(), 'f9').error, 'This fact is no longer in the ledger.');
+    });
+});
+
+describe('unnameCharacter', () => {
+    /** Ama Osei, whom the story named; she was "Kendra Osei's mother" before */
+    function ledgerWithNamedRelative() {
+        const ledger = makeLedger();
+        ledger.characters.push({
+            id: 'c9', name: 'Ama Osei', aliases: ['Ama'],
+            details: { relation: [{ value: { kind: 'mother', of: 'c5' }, at: null, by: 'record' }] },
+            nameClash: { names: ['Osei'], at: 30 },
+        });
+        return ledger;
+    }
+
+    it('makes the record an unnamed relative again: no name, relation, aliases and id kept, no name check', () => {
+        const { ledger, error } = unnameCharacter(ledgerWithNamedRelative(), 'c9');
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[3], {
+            id: 'c9', name: '', aliases: ['Ama'],
+            details: { relation: [{ value: { kind: 'mother', of: 'c5' }, at: null, by: 'record' }] },
+        });
+    });
+
+    it('refuses a record without a relation: it would have no name at all', () => {
+        assert.equal(unnameCharacter(makeLedger(), 'c7').error, 'Only a relative can go back to being unnamed: Marcus Vale has no relation.');
+    });
+
+    it('refuses when another record already goes by the relative\'s display name', () => {
+        const ledger = ledgerWithNamedRelative();
+        ledger.characters.push({ id: 'c10', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c5' }, at: null, by: 'user' }] } });
+
+        assert.equal(unnameCharacter(ledger, 'c9').error, "Kendra Osei's mother is already in the ledger.");
     });
 });
