@@ -290,3 +290,29 @@ describe('buildKnowledgeContent: earlier updates that stored no fact', () => {
         assert.ok(!row.split('</li>')[0].includes('data-act'));
     });
 });
+
+describe('buildKnowledgeContent: a moved holder on its line', () => {
+    const lineOf = (html, key) => html.split('<li class="k-line').find(chunk => chunk.includes(`data-line="${key}"`));
+
+    it('shows the old holder struck through and the new one after a move', () => {
+        const ledger = makeLedger();
+        ledger.facts[1].holders[1].characterId = 'c3';
+        const view = createKnowledgeView();
+        view.moved['m6:update:holder:f2:c1'] = { c2: 'c3' };
+
+        const line = lineOf(buildKnowledgeContent(ledger, [], true, view), 'm6:update:holder:f2:c1');
+
+        assert.ok(line.includes('<span class="k-chip is-removed"><b>Ellie</b></span>'), line);
+        assert.ok(textOf(line).includes('Gabriel witnessed'));
+    });
+
+    it('shows the holder as before once the move was undone', () => {
+        const view = createKnowledgeView();
+        view.moved['m6:update:holder:f2:c1'] = { c2: 'c3' };
+
+        const line = lineOf(buildKnowledgeContent(makeLedger(), [], true, view), 'm6:update:holder:f2:c1');
+
+        assert.ok(!line.includes('is-removed'), line);
+        assert.ok(textOf(line).includes('Learned by Noor witnessed Ellie witnessed'));
+    });
+});
