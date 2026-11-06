@@ -2,10 +2,11 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
 import {
-    buildArcAlert, buildArcDetail, buildBeatStrip, buildFocusControl, buildLastBeatCell, buildManagerContent, buildPlanList,
+    buildArcAlert, buildArcDetail, buildFocusControl, buildLastBeatCell, buildManagerContent, buildPlanList,
     buildSummary, describeWhatNarratorGets, endArcUndoSession, newestArcEditLabel, runArcEdit, sortActiveArcs,
     startArcUndoSession, undoArcEdit,
 } from '../lib/ui/arc-manager.js';
+import { buildBeatStrip } from '../lib/ui/beat-strip.js';
 import { pauseArc } from '../lib/injection/clock.js';
 import { updateArc } from '../lib/planning/storage.js';
 

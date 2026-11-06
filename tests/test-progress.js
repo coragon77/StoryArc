@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { isStalled, renderProgressDisplay } from '../lib/ui/progress.js';
-import { chat } from './mocks/st-mocks.js';
+import { isStalled, renderProgressDisplay, updateProgress } from '../lib/ui/progress.js';
+import { chat, chat_metadata } from './mocks/st-mocks.js';
 
 /**
  * An episode starting at chat index 0 with estimatedLength 20 and four
@@ -142,5 +142,51 @@ describe('isStalled — arcs it cannot judge', () => {
         arc.beats.push(...Array.from({ length: 4 }, (_, i) => ({ id: `o${i}`, status: 'pending', optional: true })));
 
         assert.equal(isStalled(arc, 10), false);
+    });
+});
+
+describe('renderProgressDisplay — stall warning', () => {
+    it('offers Ignore next to Re-plan', () => {
+        // Six beats over 20 messages, none in the 10 since message 100
+        const arc = episode(0, { id: 'stalled', messageStart: 100, lastFulfilledAt: 100, beats: Array.from({ length: 6 }, (_, i) => ({ id: `b${i}`, status: 'active', optional: false })) });
+        const html = withChatLength(111, () => renderProgressDisplay([arc]));
+
+        assert.match(html, /<button type="button" class="menu_button story-arc-stall-btn" data-arc-id="stalled"/);
+        assert.match(html, /<button type="button" class="menu_button story-arc-ignore-stall-btn" data-arc-id="stalled"[^>]*>Ignore<\/button>/);
+    });
+
+    it('names no beat rhythm when the arc has no usable length', () => {
+        // A negative length still stalls (any message is past the allowance) but gives no "every N"
+        const arc = episode(0, { id: 'odd', estimatedLength: -20, messageStart: 100, lastFulfilledAt: 100 });
+        const html = withChatLength(111, () => renderProgressDisplay([arc]));
+
+        assert.ok(html.includes('<p>No scene beat in 10 messages.</p>'), html);
+        assert.doesNotMatch(html, /Infinity|NaN|every -/);
+    });
+});
+
+describe('updateProgress — a row that cannot be built', () => {
+    it('logs the error and shows a line in the area instead of blanking it', () => {
+        const writes = [];
+        const errors = [];
+        const originalError = console.error;
+        globalThis.$ = target => (target === '#story-arc-progress-container'
+            ? { length: 1, html(value) { writes.push(value); return this; } }
+            : { length: 0 });
+        console.error = (...args) => errors.push(args);
+        // A stored arc whose beats are not a list
+        chat_metadata.story_arc = { version: 1, arcs: [{ id: 'broken', title: 'Broken', status: 'active', beats: 5 }] };
+        try {
+            updateProgress();
+        } finally {
+            console.error = originalError;
+            delete globalThis.$;
+            delete chat_metadata.story_arc;
+        }
+
+        assert.equal(writes.length, 1);
+        assert.match(writes[0], /<p class="story-arc-progress-error" role="alert">.*The arcs could not be shown\./);
+        assert.equal(errors.length, 1);
+        assert.equal(errors[0][0], '[Story Arc] Failed to update progress display:');
     });
 });

@@ -1,6 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPremiseChoice, shortenAtWord } from '../lib/ui/wizard.js';
+import { buildPremiseChoice, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
 import {
     chat, chat_metadata, extension_settings, mockSortedEntries, mockPopups, mockPopupState,
     ConnectionManagerRequestService,
@@ -243,7 +243,7 @@ describe('wizard: a failed context harvest offers Retry', () => {
         await openWizard();
 
         const failedStrip = fake.htmlById['story-arc-wizard-context'];
-        assert.match(failedStrip, /The chat could not be read\. Reload the chat, then Retry\./);
+        assert.match(failedStrip, /The chat could not be read\. Retry; if it fails again, reopen the wizard\./);
         assert.doesNotMatch(failedStrip, /is_user/);
         assert.match(failedStrip, /<button type="button" class="menu_button" id="story-arc-wizard-retry-context"/);
         assert.equal(fake.propsById['story-arc-wizard-generate'].disabled, true);
@@ -342,6 +342,7 @@ describe('wizard: Back from Review', () => {
         assert.match(logText, /Story context read/);
         assert.match(logText, /Outline failed/);
         assert.match(logText, /Outline retry failed/);
+        assert.equal(fake.textById['story-arc-wizard-status'], 'Writing the outline again…');
         assert.doesNotMatch(logText, /\.\.\./);
 
         fake.trigger('click', '#story-arc-wizard-back');
@@ -373,5 +374,59 @@ describe('wizard: harvested entry previews', () => {
     it('cut at the last whole word with an ellipsis', () => {
         assert.equal(shortenAtWord('Vera Lin agrees to the contract terms', 20), 'Vera Lin agrees to…');
         assert.equal(shortenAtWord('Short enough.', 20), 'Short enough.');
+    });
+
+    it('break at any whitespace, a line break or a tab too', () => {
+        assert.equal(shortenAtWord('Vera Lin\nagrees\tto the contract', 17), 'Vera Lin\nagrees…');
+    });
+
+    it('cut text without whitespace hard, with an ellipsis', () => {
+        assert.equal(shortenAtWord('https://example.com/a/very/long/path', 12), 'https://exam…');
+        assert.equal(shortenAtWord('東京の夜は長くて静かだった', 5), '東京の夜は…');
+    });
+});
+
+describe('wizard: failures that are not Error objects', () => {
+    it('shows the failure and its controls when the transport throws a bare string', async () => {
+        ConnectionManagerRequestService.sendRequest = async () => {
+            throw 'connection reset';
+        };
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.match(fake.htmlById['story-arc-wizard-generation-error'], /The generation profile did not answer\./);
+        assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-regenerate"/);
+    });
+});
+
+describe('wizard: Activate', () => {
+    it('stores the arc once when Activate is clicked twice before the save finished', async () => {
+        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check']);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-activate');
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.deepEqual(chat_metadata.story_arc.arcs.map(arc => arc.title), ['The Granary']);
+    });
+});
+
+describe('wizard: closeWizard', () => {
+    it('closes an open wizard (a chat change), so it never plans from the old chat', async () => {
+        const popup = await openWizard();
+
+        closeWizard();
+        await settle();
+
+        assert.equal(popup.completedWith, 0);
+    });
+
+    it('does nothing while no wizard is open', () => {
+        assert.doesNotThrow(() => closeWizard());
     });
 });

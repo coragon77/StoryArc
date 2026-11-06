@@ -14,7 +14,7 @@ function createFakeJquery() {
     const handlers = [];
     const textById = {};
     const propsById = {};
-    const trackerDependentIds = ['#story-arc-knowledge-details', '#story-arc-knowledge-interval', '#story-arc-knowledge-btn'];
+    const trackerDependentIds = ['#story-arc-knowledge-details', '#story-arc-knowledge-interval', '#story-arc-knowledge-btn', '#story-arc-knowledge-btn-hint'];
 
     const documentChain = {
         on(events, selector, handler) {
@@ -120,7 +120,7 @@ describe('knowledge tracker controls in the settings panel', () => {
         const html = settingsPanel.renderSettingsPanel();
 
         assert.match(html, /<input type="checkbox" id="story-arc-knowledge-enabled" \/>/);
-        assert.match(html, /id="story-arc-knowledge-interval" class="text_pole" min="1" step="1" value="1" disabled \/>/);
+        assert.match(html, /id="story-arc-knowledge-interval" class="text_pole" min="1" step="1" value="1" \/>/);
     });
 
     it('stores the switch in extension_settings and saves it', () => {
@@ -198,15 +198,20 @@ describe('knowledge tracker controls in the settings panel', () => {
 });
 
 describe('settings that depend on the knowledge tracker', () => {
-    it('are rendered disabled while the tracker is off: character details, the interval and the Knowledge button', () => {
+    it('are disabled at setup while the tracker is off, with the Knowledge button\'s hint shown as text', () => {
         extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: false, updateInterval: 2 } };
         loadSettings();
 
-        const html = settingsPanel.renderSettingsPanel();
+        settingsPanel.setupSettingsPanelEvents();
 
-        assert.match(html, /<input type="checkbox" id="story-arc-knowledge-details" disabled \/>/);
-        assert.match(html, /id="story-arc-knowledge-interval" class="text_pole" min="1" step="1" value="2" disabled \/>/);
-        assert.match(html, /<button type="button" id="story-arc-knowledge-btn" class="menu_button" disabled/);
+        assert.deepEqual(fake.propsById, {
+            '#story-arc-knowledge-details': { disabled: true },
+            '#story-arc-knowledge-interval': { disabled: true },
+            '#story-arc-knowledge-btn': { disabled: true },
+            '#story-arc-knowledge-btn-hint': { hidden: false },
+        });
+        assert.match(settingsPanel.renderSettingsPanel(),
+            /<small id="story-arc-knowledge-btn-hint" class="story-arc-drawer-help">Knowledge needs the tracker: turn on "Track who knows what" below\.<\/small>/);
     });
 
     it('turn on and off with the tracker switch', () => {
@@ -218,6 +223,7 @@ describe('settings that depend on the knowledge tracker', () => {
             '#story-arc-knowledge-details': { disabled: false },
             '#story-arc-knowledge-interval': { disabled: false },
             '#story-arc-knowledge-btn': { disabled: false },
+            '#story-arc-knowledge-btn-hint': { hidden: true },
         });
 
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: false });
@@ -225,6 +231,7 @@ describe('settings that depend on the knowledge tracker', () => {
             '#story-arc-knowledge-details': { disabled: true },
             '#story-arc-knowledge-interval': { disabled: true },
             '#story-arc-knowledge-btn': { disabled: true },
+            '#story-arc-knowledge-btn-hint': { hidden: false },
         });
     });
 });

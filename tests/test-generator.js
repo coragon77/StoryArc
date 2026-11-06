@@ -124,9 +124,11 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
             ['data: {"choices":[{"delta":{"content":"still not json"}}]}\n\n'],
         ]);
 
-        await generateArc(harvestedContext, '');
+        const result = await generateArc(harvestedContext, '');
 
         assert.equal(backendRequests[1].messages[0].content, 'OUTLINE FROM: The story stands at a crossroads.');
+        // Two answers that are no JSON: the code the wizard words its failure by
+        assert.equal(result.code, 'unparseable');
     });
 
     it('reads a Google (makersuite) stream through ST\'s per-source parser, skipping thoughts', async () => {
@@ -159,7 +161,7 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
 
         const result = await generateArc(harvestedContext, '');
 
-        assert.deepEqual(result, { arc: null, error: 'API error: quota exceeded' });
+        assert.deepEqual(result, { arc: null, error: 'API error: quota exceeded', code: 'failed' });
     });
 
     it('fails on a complete event that is not JSON instead of skipping it', async () => {
@@ -171,6 +173,7 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
 
         assert.equal(result.arc, null);
         assert.match(result.error, /JSON/);
+        assert.equal(result.code, 'failed');
     });
 
     /** One backend reply that streams the given text and ends. */

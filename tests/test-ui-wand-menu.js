@@ -133,6 +133,22 @@ describe('wand popup: the stall nudge', () => {
     });
 });
 
+describe('wand popup: Ignore on a stall warning', () => {
+    it('stores the ignore on the arc and keeps the wand popup open', async () => {
+        registerWandMenuEntry();
+        fake.trigger('click', '#story_arc_wand_button');
+        await settle();
+        const wandPopup = mockPopups[0];
+        // The arc's stall count starts at its messageStart, 0
+        chat.length = 200;
+
+        await fake.trigger('click', '#story-arc-wand .story-arc-ignore-stall-btn', { data: { 'arc-id': 'mill01' } });
+
+        assert.equal(chat_metadata.story_arc.arcs[0].stallIgnoredFrom, 0);
+        assert.equal(wandPopup.completedWith, undefined);
+    });
+});
+
 describe('wand popup content', () => {
     it('offers Plan, Manage and, with the tracker on, Knowledge as real buttons', () => {
         extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1 } };

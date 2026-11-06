@@ -159,3 +159,11 @@
 .story-arc-wand-controls .menu_button {
     margin: 0;
 }
+
+.story-arc-drawer-help[hidden] {
+    display: none;
+}
+
+#story-arc-knowledge-btn-hint {
+    margin: -4px 0 10px;
+}

@@ -25,6 +25,7 @@ import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings
 import { updateKnowledgeStatus } from './lib/ui/knowledge-status.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
+import { closeWizard } from './lib/ui/wizard.js';
 
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
@@ -263,6 +264,8 @@ function onMessageEdited(messageIndex) {
  * removed, and the knowledge ledger drops what it learned there.
  */
 async function onChatChanged() {
+    // An open wizard holds the old chat's context and would save into the new chat.
+    closeWizard();
     ensureChatState();
     const completionsReopened = reopenCompletionsFrom(chat.length);
     const rulingsRemoved = removeRulingsFrom(chat.length);

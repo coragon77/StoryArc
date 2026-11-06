@@ -61,3 +61,24 @@
     flex-basis: 14em;
     font-size: 13px;
 }
+
+/* Ignore is the quiet one of the two fixes, as in the Arc Manager */
+.story-arc-progress .story-arc-ignore-stall-btn {
+    background: transparent;
+    border-color: transparent;
+    color: var(--muted);
+}
+
+.story-arc-progress .story-arc-ignore-stall-btn:hover {
+    background: var(--hover);
+    color: var(--fg);
+}
+
+.story-arc-progress-error {
+    margin: 0 0 8px;
+    color: var(--SmartThemeBodyColor);
+}
+
+.story-arc-progress-error i {
+    color: color-mix(in srgb, var(--warning) 70%, var(--SmartThemeBodyColor));
+}
