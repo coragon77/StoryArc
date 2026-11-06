@@ -41,6 +41,8 @@ The `intention` is the fulfillment condition: what has ALREADY HAPPENED on scree
 
 This split exists because the narrating AI only ever sees the pressure. Show it a goal and it drives straight at the goal, resolving in two messages what should take fifteen. Show it weather and it writes the scene the weather produces. Write pressures that could plausibly persist for many scenes without resolving.
 
+A pressure is a condition, not a scene. Write it as ONE sentence of at most 25 words that names what is at stake and who or what is pressing. It never stages anything: not where anyone is, who is with whom, what they wear or carry, what they are doing, how many of anything there are, or what happens next. The narrating AI treats every concrete detail in a pressure as something it must make true, and it will force that detail into the story even when the story has already settled it otherwise. Staging is the narrator's job, decided from the story so far. "Fleet Week crowds and live cameras fill the waterfront while the missing catalyst is still somewhere beneath it" is a pressure; "Three thousand spectators pack the shoreline above four hundred pounds of catalyst while she works the surface solo in full combat gear with her squad underground" stages a scene, and the narrator will put her in combat gear at a party.
+
 A pressure never states what a secret contains. If the secret is that the quartermaster sells supplies to the Syndicate, "Supplies keep coming up short in ways nobody can quite account for" is a pressure; "The quartermaster's sales to the Syndicate are draining the stores" hands the narrating AI the answer, and it will put that answer in a character's mouth.
 
 4. ANTI-PATTERNS ARE CRITICAL
@@ -66,7 +68,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 {
   "title": "A compelling, evocative title (2-6 words). Not generic ('The Dark Secret') but specific to THIS story ('The Valdris Gambit', 'Ashes of the Thornfield Pact').",
 
-  "premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, what forces are in collision, what question the arc is exploring. This should make someone want to read the story. It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores.",
+  "premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, what forces are in collision, what question the arc is exploring. This should make someone want to read the story. It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores. The narrating AI reads it every turn, so like a pressure it stages nothing: no places, clothing, gear, numbers, or who is where or with whom.",
 
   "themes": ["List 2-4 thematic currents this arc explores. Be specific: not 'good vs evil' but 'the cost of loyalty when the institution you serve has become corrupt' or 'the relief of finding people who are as strange as you are'."],
 
@@ -110,7 +112,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
   "beats": [
     {
       "id": "short_slug_no_spaces",
-      "pressure": "The FORCE this beat exerts on scenes before it happens -- weather, not a destination. Something that leans on the characters and colours what they do, with no completion state and nothing to solve. Example: 'Supplies keep coming up short in ways nobody can quite account for, and the quartermaster has started avoiding questions.' NOT 'the party discovers the supply theft.' This is the only part of the beat the narrating AI ever sees, so write it as a standing situation, never as an objective.",
+      "pressure": "The FORCE this beat exerts on scenes before it happens -- weather, not a destination. Something that leans on the characters and colours what they do, with no completion state and nothing to solve. Example: 'Supplies keep coming up short in ways nobody can quite account for, and the quartermaster has started avoiding questions.' NOT 'the party discovers the supply theft.' This is the only part of the beat the narrating AI ever sees, so write it as a standing situation, never as an objective. ONE sentence, at most 25 words: what is at stake and who presses. No staging: no places, clothing, gear, numbers, who is where or with whom.",
       "intention": "The FULFILLMENT CONDITION -- what has ALREADY HAPPENED on screen when this beat is complete. Write it in past tense, as something to recognize in hindsight, not as an instruction. Example: 'The party has learned that what looked like random banditry is the work of one organised force.' Name ONE on-screen moment at which the development shows; it may take many forms. Never a tally of many scenes ('has completed her first patrols') and never a chain of separate events joined by 'and'.",
       "flexibility": "How much latitude does the AI have? 'High -- the encounter can take many forms as long as the party realizes the threat is organized' or 'Low -- this must involve Voss specifically and must happen near the river crossing'",
       "urgency": "soon | when-ready | climactic",
@@ -182,6 +184,8 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] Existing characters are named exactly as the story names them{{CAST_CHECKLIST}}
 - [ ] Every beat has both a `pressure` (a force with no completion state) and an `intention` (a past-tense fulfillment condition: one on-screen moment, not a tally of scenes or a chain of events)
 - [ ] No `pressure` reads as an objective, a task, or something to be achieved
+- [ ] Every `pressure` is one sentence of at most 25 words and stages nothing (no places, clothing, gear, numbers, who is where or with whom)
+- [ ] The `premise` names the situation and the question, and stages nothing either
 - [ ] Scene beats only: at least one breather beat advances no plot
 - [ ] Some introduced threads are left deliberately unresolved for the next arc
 - [ ] Anti-patterns specifically address rushing, premature resolution, and tonal breaks

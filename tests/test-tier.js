@@ -124,7 +124,7 @@ describe('milestone section — act / saga in normal focus', () => {
     it('puts the STANDING PRESSURES header above the pressures and ends the section after them', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
         assert.ok(text.startsWith('[STORY ARC - NARRATIVE DIRECTION]\n\n=== ACT: "The Long Winter" ===\nPREMISE: The valley is starving and the guild is lying about it.\n\nSTANDING PRESSURES (forces at work'));
-        assert.ok(text.endsWith('STANDING PRESSURES (forces at work across this stretch of the story — let them colour scenes as a mood, a detail or a line in passing; one becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; do not resolve them):\n- Rations shrink week by week.\n- The guild ledgers do not add up.\n\n[END STORY ARC]'));
+        assert.ok(text.endsWith('STANDING PRESSURES (forces at work across this stretch of the story — let them colour scenes as a mood, a detail or a line in passing; one becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; do not resolve them; what the story has already established always wins over a pressure):\n- Rations shrink week by week.\n- The guild ledgers do not add up.\n\n[END STORY ARC]'));
     });
 
     it('prints no PREMISE line for an act without a premise', () => {

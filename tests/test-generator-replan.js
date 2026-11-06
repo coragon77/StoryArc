@@ -130,7 +130,8 @@ describe('generateArc: a re-plan proposes the premise', () => {
         assert.ok(phase2Prompt.includes(
             '"premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, '
             + 'what forces are in collision, what question the arc is exploring. This should make someone want to read the story. '
-            + 'It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores.",',
+            + 'It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores. '
+            + 'The narrating AI reads it every turn, so like a pressure it stages nothing: no places, clothing, gear, numbers, or who is where or with whom.",',
         ));
         assert.equal(result.arc.premise, 'Mira no longer pays alone: her sister stands with her against the debt.');
         assert.equal('proposedPremise' in result.arc, false);
