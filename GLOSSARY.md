@@ -57,6 +57,18 @@ _Avoid_: style, theme, tone
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
 
+**Past arc**:
+An arc that is no longer active: completed (by the player, or once its last open beat is done) or abandoned by the player. It is out of the prompt and its beats are no longer checked; the Arc Manager lists it under "Past arcs".
+_Avoid_: archived arc, old arc, closed arc
+
+**Reactivate**:
+Making a past arc active again, in normal focus, with its beats as they stand. Its phase and stall counts start over at that moment, and it goes last among the arcs, so it never takes the pacing clock from an episode running now.
+_Avoid_: revive, reopen (the word for a beat whose completion a rollback takes back)
+
+**Reveal plan**:
+The Arc Manager's switch, one per arc, that shows the arc's plan text: premise, pressures and fulfillments, secrets, clues and triggers. Off whenever the Arc Manager opens, so the plan stays secret unless the player asks for it; the title, the focus, the beat strip and the warnings show either way.
+_Avoid_: spoilers on, unhide, show plan
+
 ### Beats
 
 **Beat**:
@@ -70,7 +82,7 @@ An episode's beat. Ordered, one active at a time, the rest hidden from the model
 An act's or saga's beat. Unordered, all unfulfilled milestones stand at once, and any may be fulfilled in any message.
 
 **Mark**:
-The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan.
+The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
 _Avoid_: tick, flag
 
 **Pressure**:
@@ -185,9 +197,13 @@ Taking back the newest hand edit made in the open Knowledge popup or Arc Manager
 _Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
 
 **Change item**:
-One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's message id, the record's kind, the item's kind and its ids (`m6:update:holder:f2:c1`), stable across reloads. Records from before the items list counts only and have none.
+One thing a knowledge update or re-extraction did to the knowledge ledger, as its record in the update log lists it: a new character, a holder entry added, a character detail set or changed, a new name, a fact retracted, or a change of who is present. Each has an item key made of the record's own id, the item's kind and its ids (`u6:holder:f2:c1`), stable across reloads and never shared by two records. Records from before the items list counts only and have none.
 _Avoid_: change entry, delta
 
 **Reviewed mark**:
 The player's note on a change item that they have looked at it, stored on the knowledge ledger by item key. A rollback that removes the item drops its mark.
 _Avoid_: seen flag, read mark
+
+**What changed** (Knowledge popup):
+The Knowledge popup's opening view: the change items of the newest updates, one line per change, newest first, each with its fixes and "Fine" on the line. "Fine" sets the reviewed marks of the line's items, and a reviewed line folds away. Updates recorded before change items existed show as counts only.
+_Avoid_: feed

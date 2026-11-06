@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { chat_metadata } from '/script.js';
 import {
     addCharacter, addFact, addFactHolder, addUnnamedRelative, deleteCharacter, deleteFact, editFactText, endKnowledgeUndoSession, keepCharacterName,
-    lockCharacterDetail, mergeCharacters, moveFactHolder, removeFactHolder, renameCharacter, restoreRetractedFact,
-    saveCharacterDetails, saveLedgerEdit, setCharacterAliases, setFactPublic, startKnowledgeUndoSession, undoLedgerEdit,
+    lockCharacterDetail, mergeCharacters, moveFactHolder, removeFactHolder, renameCharacter, restoreRetractedFact, retractFact,
+    saveCharacterDetails, saveLedgerEdit, setCharacterAliases, setFactPublic, startKnowledgeUndoSession, undoLedgerEdit, unnameCharacter,
 } from '../lib/ui/knowledge-popup.js';
 
 const CHANGED_MESSAGE = 'The ledger changed since this edit (an update ran); undo is no longer possible.';
@@ -182,6 +182,7 @@ describe('undoLedgerEdit — every edit function of the Knowledge popup', () => 
         editFactText: ledger => editFactText(ledger, 'f1', 'The vault code is 4472.'),
         deleteFact: ledger => deleteFact(ledger, 'f1'),
         restoreRetractedFact: ledger => restoreRetractedFact(ledger, 'f2'),
+        retractFact: ledger => retractFact(ledger, 'f1'),
         setFactPublic: ledger => setFactPublic(ledger, 'f1', true),
         addFactHolder: ledger => addFactHolder(ledger, 'f1', 'c5'),
         removeFactHolder: ledger => removeFactHolder(ledger, 'f1', 'c1'),
@@ -201,4 +202,18 @@ describe('undoLedgerEdit — every edit function of the Knowledge popup', () => 
             assert.deepEqual(stored(), makeLedger());
         });
     }
+});
+
+describe('undoLedgerEdit — a relative made unnamed again', () => {
+    it('gives the relative its name back', async () => {
+        stored().characters.push({ id: 'c9', name: 'Ama Osei', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c5' }, at: null, by: 'record' }] } });
+        const before = structuredClone(stored());
+        await saveLedgerEdit(unnameCharacter(stored(), 'c9'));
+        assert.equal(stored().characters[3].name, '');
+
+        const { error } = await undoLedgerEdit();
+
+        assert.equal(error, null);
+        assert.deepEqual(stored(), before);
+    });
 });

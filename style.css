@@ -17,7 +17,7 @@
 /* Arc manager popup (list, actions, beat list) */
 @import url('./lib/css/arc-manager.css');
 
-/* Knowledge popup (characters, facts and holders of the knowledge ledger) */
+/* Knowledge popup (What changed, Cast & facts) */
 @import url('./lib/css/knowledge.css');
 
 /* Progress display (settings panel compact bars) */

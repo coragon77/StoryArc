@@ -352,7 +352,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
 
         const updateLog = chat_metadata.story_arc.knowledge.updateLog;
         assert.deepEqual(updateLog, [{
-            kind: 'update', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
+            kind: 'update', recordId: 'u1', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 2, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,

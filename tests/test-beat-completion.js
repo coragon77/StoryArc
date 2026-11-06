@@ -5,6 +5,7 @@ import { completeBeat } from '../lib/planning/arc-edit.js';
 import { processSignalResults, promoteNextBeats } from '../lib/injection/signals.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
 import { isStallNudgeShown } from '../lib/ui/progress.js';
+import { resumeArc } from '../lib/injection/clock.js';
 
 /** Put the arcs into chat_metadata as they are; returns the stored arcs. */
 function storeArcs(...arcs) {
@@ -506,6 +507,30 @@ describe('setBeatStatusByHand — a beat marked done in the Arc Manager', () => 
         assert.equal(reopenCompletionsFrom(5), true);
         assert.deepEqual(statuses(arc), ['active', 'completed', 'active']);
         assert.equal(arc.lastFulfilledAt, 11);
+    });
+
+    it('drops the completion record on every hand change, so no rollback reopens a beat set by hand', async () => {
+        chatWithIds(12);
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 5 }], [arc]);
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'active');
+        assert.equal('completion' in chat_metadata.story_arc.arcs[0].beats[0], false);
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'completed');
+
+        assert.equal(reopenCompletionsFrom(5), false);
+        assert.deepEqual(statuses(chat_metadata.story_arc.arcs[0]), ['completed', 'active', 'active']);
+    });
+
+    it('on a paused arc stamps the last message before the pause, so the resume shift lands on the resume point', async () => {
+        // Chat at 100, paused at 80: the clock stood still from message 79 on.
+        chatWithIds(100);
+        storeArcs({ ...act(), focus: 'paused', pausedAt: 80 });
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'completed');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 79);
+
+        chatWithIds(110);
+        await resumeArc('act00001-full-id');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 109);
     });
 });
 

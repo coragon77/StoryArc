@@ -273,6 +273,16 @@ describe('reactivateArc — a past arc comes back', () => {
         assert.equal(calculatePhase(storedArc('won')).messageCount, 20);
     });
 
+    it('moves the reactivated arc to the end of storage order, so it never takes the pacing clock from a running episode', async () => {
+        chat_metadata.story_arc.arcs = [
+            { ...arc('old', 'episode', 'normal'), status: 'completed', pausedAt: null },
+            { ...arc('running', 'episode', 'normal'), pausedAt: null },
+        ];
+        await reactivateArc('old');
+        assert.deepEqual(chat_metadata.story_arc.arcs.map(a => a.id), ['running', 'old']);
+        assert.equal(selectPacingClock(chat_metadata.story_arc.arcs.filter(a => a.status === 'active')).id, 'running');
+    });
+
     it('an active arc is left as it is', async () => {
         await reactivateArc('lit');
         assert.deepEqual(storedArc('lit'), { ...arc('lit', 'episode', 'spotlight'), pausedAt: null });

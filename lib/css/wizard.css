@@ -686,15 +686,3 @@
         transition: none;
     }
 }
-
-/* ─── Shared footer row (old Knowledge popup) ────────────────────────────── */
-
-/* Still used by knowledge-popup.js until its rebuild lands. */
-.story-arc-wizard-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid var(--SmartThemeBorderColor);
-}
