@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "style.css",
     "author": "sfuchs",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "homePage": "https://github.com/coragon77/StoryArc",
     "license": "AGPL-3.0-or-later"
 }
