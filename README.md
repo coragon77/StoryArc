@@ -4,7 +4,7 @@ A [SillyTavern](https://github.com/SillyTavern/SillyTavern) extension that plans
 
 Story Arc works like a hidden game master. It reads what has happened so far, has an LLM plan what comes next, and feeds that plan into the prompt without showing it to you. You play; the plan stays a surprise.
 
-> **Status: beta.** In daily use, but tested mostly with GLM, Argon and Claude models. Please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
+> **Status: beta.** In daily use, but tested mostly with GLM, Gemini Argon and Claude models. Please report problems in the [issue tracker](https://github.com/coragon77/StoryArc/issues).
 
 - **Plans arcs** from your lorebook, character card, persona and recent chat.
 - **Steers the chat**: the model feels the plan as pressure on the scene, never as a list of goals.
