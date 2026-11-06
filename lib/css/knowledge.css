@@ -1,5 +1,5 @@
 /* ============================================================================
-   KNOWLEDGE POPUP — What changed and Cast & facts
+   KNOWLEDGE POPUP — What changed, Cast & facts and Map
    Styled only through SillyTavern's theme variables and color-mix() of them,
    so any ST theme carries it. Every rule is scoped to the popup's root.
    ============================================================================ */
@@ -299,3 +299,92 @@
 .story-arc-knowledge .k-item-first { grid-row: 1; }
 .story-arc-knowledge ::selection { background: color-mix(in srgb, var(--SmartThemeEmColor) 40%, transparent); }
 .story-arc-knowledge .k-iconbtn[hidden] { display: none; }
+
+/* ── Map: the cast in rings around the scene ───────────────────────────── */
+.story-arc-knowledge #sa-k-panel-map { container-type: inline-size; overflow: hidden; padding: 10px 4px 4px; display: flex; flex-direction: column; }
+.story-arc-knowledge .k-map { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.story-arc-knowledge .k-map[data-sheet="true"] { grid-template-columns: minmax(0, 1fr) clamp(360px, 34%, 460px); }
+.story-arc-knowledge .k-map-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--k-line); border-radius: 6px; overflow: hidden; background: var(--k-tint); }
+.story-arc-knowledge .k-map-side { min-width: 0; min-height: 0; overflow: auto; container-type: inline-size; padding: 0 6px 16px 2px; scrollbar-gutter: stable; }
+.story-arc-knowledge .k-map-side .k-sheet { padding-top: 0; }
+.story-arc-knowledge .k-map-side .k-sheet-head { flex-wrap: wrap; }
+/* A narrow sheet beside the map: a fact's buttons go under its text and meta line */
+@container (max-width: 560px) {
+    .story-arc-knowledge .k-map-side .k-item { grid-template-columns: minmax(0, 1fr); }
+    .story-arc-knowledge .k-map-side .k-item-acts { grid-row: auto; grid-column: 1; flex-wrap: wrap; margin-top: 4px; }
+}
+/* Too narrow for both: the sheet takes the map's place, Back returns to the map as it was */
+@container (max-width: 1080px) {
+    .story-arc-knowledge .k-map[data-sheet="true"] { grid-template-columns: minmax(0, 1fr); }
+    .story-arc-knowledge .k-map[data-sheet="true"] .k-map-main { display: none; }
+    .story-arc-knowledge .k-map[data-sheet="true"] .k-map-side { max-width: 1000px; }
+}
+.story-arc-knowledge .k-map-bar { display: flex; align-items: center; gap: 8px 12px; padding: 6px 8px; border-bottom: 1px solid var(--k-line); flex-wrap: wrap; }
+.story-arc-knowledge .k-map-filter input { width: 240px; margin: 0; padding-left: 30px; box-sizing: border-box; }
+.story-arc-knowledge .k-map-filter > i { left: 10px; font-size: 12px; }
+.story-arc-knowledge .k-map-spacer { flex: 1; }
+.story-arc-knowledge .k-map-zoom { display: inline-flex; gap: 0; }
+.story-arc-knowledge .k-map-zoom .k-btn.menu_button { margin: 0; border-radius: 0; min-width: 32px; justify-content: center; }
+.story-arc-knowledge .k-map-zoom .k-btn.menu_button:first-child { border-radius: 5px 0 0 5px; }
+.story-arc-knowledge .k-map-zoom .k-btn.menu_button:last-child { border-radius: 0 5px 5px 0; }
+.story-arc-knowledge .k-map-zoom .k-btn.menu_button + .k-btn.menu_button { border-left-width: 0; }
+.story-arc-knowledge .k-map-zoom #sa-k-map-zoom { min-width: 40px; text-align: center; }
+.story-arc-knowledge .k-map-stage { position: relative; flex: 1; min-height: 260px; overflow: hidden; cursor: grab; touch-action: none; user-select: none; }
+.story-arc-knowledge .k-map-stage.is-panning { cursor: grabbing; }
+.story-arc-knowledge .k-map-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.story-arc-knowledge .k-map-nodes { position: absolute; inset: 0; }
+.story-arc-knowledge .k-map-legend { display: flex; flex-wrap: wrap; gap: 3px 16px; padding: 5px 10px; border-top: 1px solid var(--k-line); font-size: var(--fs-s); color: var(--k-muted); }
+.story-arc-knowledge .k-map-legend > span { display: inline-flex; align-items: center; gap: 5px; }
+.story-arc-knowledge .k-map-legend .fa-triangle-exclamation { color: var(--k-danger); }
+.story-arc-knowledge .k-map-key-dot { width: 9px; height: 9px; border-radius: 50%; background: color-mix(in srgb, var(--k-text) 78%, transparent); }
+.story-arc-knowledge .k-map-key-dot.is-big { width: 15px; height: 15px; }
+.story-arc-knowledge .k-map-key-line { width: 20px; border-top: 1.5px solid color-mix(in srgb, var(--k-text) 55%, transparent); }
+
+/* A node: one button, its dot on the point, its label beside it */
+.story-arc-knowledge .k-map-node { position: absolute; left: 0; top: 0; width: 0; height: 0; padding: 0; margin: 0; border: 0; background: none; color: var(--k-text); cursor: pointer; z-index: 2; }
+.story-arc-knowledge .k-map-node::before { content: ''; position: absolute; width: max(22px, var(--d)); height: max(22px, var(--d)); left: calc(max(22px, var(--d)) / -2); top: calc(max(22px, var(--d)) / -2); border-radius: 50%; }
+.story-arc-knowledge .k-map-dot { position: absolute; width: var(--d); height: var(--d); left: calc(var(--d) / -2); top: calc(var(--d) / -2); border-radius: 50%; box-sizing: border-box; transition: transform 150ms cubic-bezier(.2, .9, .3, 1); }
+.story-arc-knowledge .k-map-node.is-scene .k-map-dot { background: var(--k-text); }
+.story-arc-knowledge .k-map-node.is-recent .k-map-dot { background: color-mix(in srgb, var(--k-text) 80%, transparent); }
+.story-arc-knowledge .k-map-node.is-earlier .k-map-dot { background: color-mix(in srgb, var(--k-text) 46%, transparent); }
+.story-arc-knowledge .k-map-node.is-none .k-map-dot { background: transparent; border: 1.5px solid color-mix(in srgb, var(--k-text) 60%, transparent); }
+.story-arc-knowledge .k-map-lab { position: absolute; top: -9px; line-height: 18px; white-space: nowrap; font-size: var(--fs-s); padding: 0 3px; border-radius: 3px; background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 86%, transparent); color: var(--k-muted); }
+.story-arc-knowledge .k-map-node.is-scene .k-map-lab, .story-arc-knowledge .k-map-node.is-recent .k-map-lab { color: var(--k-text); }
+.story-arc-knowledge .k-map-node.is-scene .k-map-lab { font-weight: 600; }
+.story-arc-knowledge .k-map-node.side-r .k-map-lab { left: calc(var(--d) / 2 + 4px); }
+.story-arc-knowledge .k-map-node.side-l .k-map-lab { right: calc(var(--d) / 2 + 4px); }
+.story-arc-knowledge .k-map-node.side-t .k-map-lab { top: calc(var(--d) / -2 - 21px); left: 0; transform: translateX(-50%); }
+.story-arc-knowledge .k-map-node.side-b .k-map-lab { top: calc(var(--d) / 2 + 3px); left: 0; transform: translateX(-50%); }
+.story-arc-knowledge .k-map-lab.is-off { opacity: 0; pointer-events: none; }
+.story-arc-knowledge .k-map-node:hover, .story-arc-knowledge .k-map-node:focus-visible { z-index: 10; }
+.story-arc-knowledge .k-map-node:hover .k-map-lab, .story-arc-knowledge .k-map-node:focus-visible .k-map-lab { opacity: 1; color: var(--k-text); box-shadow: 0 4px 12px var(--black50a); }
+.story-arc-knowledge .k-map-node:hover .k-map-dot { transform: scale(1.25); }
+.story-arc-knowledge .k-map-node:focus-visible { outline: none; }
+.story-arc-knowledge .k-map-node:focus-visible .k-map-dot { outline: 2px solid var(--k-accent); outline-offset: 3px; }
+.story-arc-knowledge .k-map-node:focus-visible .k-map-lab { outline: 1px solid var(--k-accent); }
+.story-arc-knowledge .k-map-flag { position: absolute; font-size: 11px; left: calc(var(--d) / 2 - 4px); top: calc(var(--d) / -2 - 9px); z-index: 1; color: var(--k-danger); pointer-events: none; }
+.story-arc-knowledge .k-map-node.is-clash .k-map-dot { outline: 1.5px dashed var(--k-danger); outline-offset: 2px; }
+.story-arc-knowledge .k-map-node.is-sel { z-index: 12; }
+.story-arc-knowledge .k-map-node.is-sel .k-map-dot { box-shadow: inset 0 0 0 2px var(--k-accent); outline: 2px solid var(--k-accent); outline-offset: 2px; }
+.story-arc-knowledge .k-map-node.is-sel .k-map-lab { font-weight: 600; color: var(--k-text); box-shadow: inset 0 -2px 0 var(--k-accent); }
+.story-arc-knowledge .k-map-node.is-match .k-map-lab { font-weight: 600; color: var(--k-text); }
+.story-arc-knowledge .k-map-node.is-dim { opacity: .26; }
+.story-arc-knowledge .k-map-node.is-dim:hover, .story-arc-knowledge .k-map-node.is-dim:focus-visible { opacity: 1; }
+.story-arc-knowledge .k-map-node.is-target .k-map-dot { transform: scale(1.5); outline: 2px solid var(--k-accent); outline-offset: 3px; }
+.story-arc-knowledge .k-map-node.is-carry .k-map-dot { outline: 2px dashed var(--k-accent); outline-offset: 4px; }
+.story-arc-knowledge .k-map-svg .k-map-ring { fill: none; stroke: var(--k-edge); stroke-width: 1; stroke-dasharray: 2 5; }
+.story-arc-knowledge .k-map-svg text { font-family: var(--mainFontFamily); font-size: var(--fs-s); paint-order: stroke; stroke: var(--SmartThemeBlurTintColor); stroke-width: 4px; stroke-linejoin: round; }
+.story-arc-knowledge .k-map-svg .k-map-ringt { fill: var(--k-muted); stroke-width: 3px; }
+.story-arc-knowledge .k-map-svg .k-map-fam { fill: none; stroke: color-mix(in srgb, var(--k-text) 9%, transparent); stroke-linecap: round; }
+.story-arc-knowledge .k-map-svg .k-map-rel { fill: none; stroke: color-mix(in srgb, var(--k-text) 50%, transparent); stroke-width: 1.4; }
+.story-arc-knowledge .k-map-svg .k-map-rel.is-hot { stroke: var(--k-accent); stroke-width: 2; }
+.story-arc-knowledge .k-map-svg .k-map-relt { fill: var(--k-text); font-style: italic; }
+.story-arc-knowledge .k-map-svg .k-map-share { stroke: var(--k-accent); stroke-width: 1.3; stroke-dasharray: 4 4; }
+.story-arc-knowledge .k-map-svg .k-map-sharet { fill: var(--k-accent); }
+.story-arc-knowledge .k-map-svg .k-map-dragl { stroke: var(--k-accent); stroke-width: 2; stroke-dasharray: 6 4; }
+.story-arc-knowledge .k-map-svg .k-map-rel.is-dim, .story-arc-knowledge .k-map-svg .k-map-relt.is-dim { opacity: .26; }
+/* The drag's sentence, over the labels, on a label's backing */
+.story-arc-knowledge .k-map-dragt { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; white-space: nowrap; font-size: var(--fs-s); font-weight: 600; line-height: 18px; padding: 1px 6px; border-radius: 3px; color: var(--k-text); background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 92%, transparent); box-shadow: 0 4px 12px var(--black50a); }
+@media (prefers-reduced-motion: reduce) {
+    .story-arc-knowledge .k-map-dot { transition: none; }
+}

@@ -433,7 +433,9 @@ StoryArc/
 │   │   │                       #   the update log's change items as lines, Fine,
 │   │   │                       #   fixes on the line) and Cast & facts (search,
 │   │   │                       #   character / fact sheets, add forms, cast picker),
-│   │   │                       #   "Names to check" in both, status bar with Undo
+│   │   │                       #   "Names to check" in both, status bar with Undo;
+│   │   │                       #   Map (#77: the cast in rings, layoutCastMap,
+│   │   │                       #   label placement, drag/M merge via startMapMerge)
 │   │   │                       #   (#70); buildKnowledgeContent(ledger, chatMessages,
 │   │   │                       #   withDetails, view) renders it from a view state
 │   │   │                       #   (createKnowledgeView); pure ledger edits
@@ -576,6 +578,8 @@ StoryArc/
 │   ├── test-knowledge-popup.js # Tests: knowledge popup ledger edits (literal before/
 │   │                           #   after ledgers), Cast & facts search and fact sheet,
 │   │                           #   the "Names to check" strip and keepCharacterName (#48)
+│   ├── test-knowledge-map.js   # Tests: the Map tab (#77): rings, name families,
+│   │                           #   relation lines, filter, sheet, merge preview of a drop
 │   ├── test-knowledge-popup-view.js # Tests: What changed (#70): listChangeLines, lines
 │   │                           #   per change, reviewed folding, earlier records, plan
 │   │                           #   holders hidden, the empty log
@@ -807,7 +811,7 @@ lib/ui/
 │                              core/constants.js DETAIL_KINDS + DETAIL_STATUS_VALUES + HOLDER_HOW,
 │                              knowledge/ledger.js characterDisplayName + characterName + isDetailLocked +
 │                              isSameDetailValue + listChangeItems + nextLedgerId,
-│                              knowledge/names.js foldName + listCharactersWithNames + nameWords,
+│                              knowledge/names.js foldName + listCharactersWithNames + listTakenNames + nameWords,
 │                              knowledge/message-ids.js messageIdOf, knowledge-status.js
 │                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)

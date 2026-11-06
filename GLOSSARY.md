@@ -148,6 +148,10 @@ _Avoid_: mentioned, referenced, offscreen
 The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Each cast member may also carry character details, which the narrator sees for the characters present or talked about; the planner and the plan check see only the names. An unnamed relative is a cast member too, but the planner and the plan check do not see it, since it has no name. Empty while the knowledge tracker is off.
 _Avoid_: roster, character list
 
+**Map** (Knowledge popup):
+The Knowledge popup's view of the cast as rings around the scene: present characters in the centre, then those who learned a fact in the last hundred messages, then those who learned one earlier, then those who know none. Records that share a name word sit side by side, so a likely duplicate shows next to its other half; relations are lines between two characters. For seeing and finding: selecting a character opens its sheet, dropping one character onto another proposes merging them.
+_Avoid_: graph, network, cast map (in UI text)
+
 **Character details**:
 A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded and shown while the knowledge tracker and its character details switch are both on; the switch is off by default.
 _Avoid_: character profile, attributes, character sheet, stats
