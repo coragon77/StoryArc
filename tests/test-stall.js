@@ -175,22 +175,26 @@ describe('renderProgressDisplay — stall nudge', () => {
     it('shows the re-plan nudge for a stalled episode only', () => {
         chat.length = 111;
         const html = renderProgressDisplay([episode({ id: 'stalled' }), episode({ id: 'fresh', lastFulfilledAt: 105 })]);
-        assert.match(html, /class="story-arc-stall-btn" data-arc-id="stalled"[^>]*>[^<]*May have drifted — re-plan\?/);
+        // 111 − 1 − 100 messages since the start; 20 / 6 ≈ 3 per beat
+        assert.ok(html.includes('No scene beat in 10 messages — about one is due every 3.'), html);
+        assert.match(html, /class="menu_button story-arc-stall-btn" data-arc-id="stalled"/);
         assert.doesNotMatch(html, /data-arc-id="fresh"/);
     });
 
     it('shows the re-plan nudge for a stalled act, not for a fresh one', () => {
         chat.length = 2293;
         const html = renderProgressDisplay([act({ id: 'stalled-act' }), act({ id: 'fresh-act', replannedAt: 2290 })]);
-        assert.match(html, /class="story-arc-stall-btn" data-arc-id="stalled-act"[^>]*>May have drifted — re-plan\?<\/div>/);
+        // 2293 − 1 − 2225 messages since the last milestone; 90 / 4 = 22.5, about 23 per milestone
+        assert.ok(html.includes('No milestone in 67 messages — about one is due every 23.'), html);
+        assert.match(html, /class="menu_button story-arc-stall-btn" data-arc-id="stalled-act"/);
         assert.doesNotMatch(html, /data-arc-id="fresh-act"/);
     });
 
     it('shows only the ruling line on a stalled act with an open ruling', () => {
         chat.length = 2293;
         const html = renderProgressDisplay([act({ title: 'Streets', rulings: [{ id: 'r1', text: 'Aegis is not her defender.', at: 2250 }] })]);
-        assert.equal(html.includes('May have drifted'), false);
-        assert.match(html, /data-arc-id="act"[^>]*>You overruled the plan — re-plan\?</);
+        assert.equal(html.includes('No milestone in'), false);
+        assert.ok(html.includes('You overruled the plan: <q>Aegis is not her defender.</q>.'), html);
     });
 });
 
@@ -239,7 +243,7 @@ describe('ignoreStall — the stall nudge hidden until the next beat or re-plan'
         assert.equal(isStalled(stored(), 111), true);
         assert.equal(isStallNudgeShown(stored(), 111), false);
         assert.equal(isStallNudgeShown(stored(), 400), false);
-        assert.equal(renderProgressDisplay([stored()]).includes('May have drifted'), false);
+        assert.equal(renderProgressDisplay([stored()]).includes('No scene beat in'), false);
     });
 
     it('shows the nudge again once the next beat lands and the arc stalls again', async () => {
@@ -249,7 +253,7 @@ describe('ignoreStall — the stall nudge hidden until the next beat or re-plan'
         assert.equal(isStallNudgeShown(stored(), 125), false);
         assert.equal(isStallNudgeShown(stored(), 126), true);
         chat.length = 126;
-        assert.match(renderProgressDisplay([stored()]), /data-arc-id="ep"[^>]*>May have drifted — re-plan\?/);
+        assert.match(renderProgressDisplay([stored()]), /story-arc-stall-btn" data-arc-id="ep"/);
     });
 
     it('shows the nudge again once the arc is re-planned and stalls again', async () => {

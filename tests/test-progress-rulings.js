@@ -29,34 +29,31 @@ describe('renderProgressDisplay — rulings', () => {
     it('shows an open ruling quoted, with the re-plan button of its arc', () => {
         const html = renderProgressDisplay([act({ rulings: [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, messageId: 'm3' }] })]);
 
-        assert.ok(html.includes('<span class="story-arc-ruling-quote">“Aegis is NOT her defender.”</span>'), html);
-        assert.match(html, /class="story-arc-stall-btn" data-arc-id="siren001-full-id"[^>]*>You overruled the plan — re-plan\?</);
+        assert.ok(html.includes('<p>You overruled the plan: <q>Aegis is NOT her defender.</q>.</p>'), html);
+        assert.match(html, /<button type="button" class="menu_button story-arc-stall-btn" data-arc-id="siren001-full-id"[^>]*><i[^>]*><\/i> Re-plan<\/button>/);
     });
 
     it('shows no ruling line for an answered ruling', () => {
         const html = renderProgressDisplay([act({ rulings: [{ id: 'r1', text: 'Aegis is NOT her defender.', at: 3, answeredAt: 8 }] })]);
 
-        assert.equal(html.includes('story-arc-ruling'), false);
+        assert.equal(html.includes('am-alert'), false);
         assert.equal(html.includes('story-arc-stall-btn'), false);
     });
 
-    it('escapes a quote with a less-than sign and a double quote, in the text and the tooltip', () => {
+    it('escapes a quote with a less-than sign and a double quote', () => {
         const html = renderProgressDisplay([act({ rulings: [{ id: 'r1', text: 'No <b>"police"</b> here', at: 3 }] })]);
 
-        assert.ok(html.includes('“No &lt;b&gt;&quot;police&quot;&lt;/b&gt; here”'), html);
-        assert.ok(html.includes('title="No &lt;b&gt;&quot;police&quot;&lt;/b&gt; here"'), html);
-        assert.equal(html.includes('<b>'), false);
+        assert.ok(html.includes('<q>No &lt;b&gt;&quot;police&quot;&lt;/b&gt; here</q>'), html);
+        assert.equal(html.includes('<b>"police"'), false);
     });
 
-    it('shows a bare pick with the option it picked, both escaped, in the text and the tooltip', () => {
+    it('shows a bare pick with the option it picked, both escaped', () => {
         const html = renderProgressDisplay([act({ rulings: [
             { id: 'r1', text: 'Option <1>', chose: 'Siren works the strip "alone" & free.', at: 3, messageId: 'm3' },
         ] })]);
 
         assert.ok(html.includes(
-            '<span class="story-arc-ruling-quote">“Option &lt;1&gt;”</span>'
-            + ' <span class="story-arc-ruling-chose">picked “Siren works the strip &quot;alone&quot; &amp; free.”</span>'), html);
-        assert.ok(html.includes('title="Option &lt;1&gt; — picked: Siren works the strip &quot;alone&quot; &amp; free."'), html);
+            '<p>You overruled the plan: <q>Option &lt;1&gt;</q>, picking <q>Siren works the strip &quot;alone&quot; &amp; free.</q>.</p>'), html);
         assert.equal(html.includes('<1>'), false);
     });
 
@@ -68,19 +65,19 @@ describe('renderProgressDisplay — rulings', () => {
             { id: 'r4', text: 'An answered one.', at: 9, answeredAt: 9 },
         ] })]);
 
-        assert.ok(html.includes('“Sundown is a mentor, not a partner.”</span> and 2 earlier'), html);
+        assert.ok(html.includes('<q>Sundown is a mentor, not a partner.</q>, and 2 earlier.'), html);
         assert.equal(html.includes('Comics'), false);
         assert.equal(html.includes('An answered one'), false);
     });
 
-    it('shows the ruling line instead of the stall line when both would show', () => {
+    it('shows the ruling warning instead of the stall warning when both would show', () => {
         chat.length = 111;
-        assert.ok(renderProgressDisplay([stalledEpisode()]).includes('May have drifted — re-plan?'));
+        assert.ok(renderProgressDisplay([stalledEpisode()]).includes('No scene beat in 10 messages — about one is due every 3.'));
         const html = renderProgressDisplay([stalledEpisode({ rulings: [{ id: 'r1', text: 'Comics, not police procedural.', at: 105 }] })]);
 
-        assert.equal(html.includes('May have drifted'), false);
+        assert.equal(html.includes('No scene beat in'), false);
         assert.equal((html.match(/story-arc-stall-btn/g) || []).length, 1);
-        assert.match(html, /data-arc-id="ep"[^>]*>You overruled the plan — re-plan\?</);
+        assert.ok(html.includes('You overruled the plan: <q>Comics, not police procedural.</q>.'), html);
     });
 
     it('shows none of the plan\'s text', () => {
