@@ -451,6 +451,10 @@ StoryArc/
 │   │   │                       #   last update, + "N new names to check" and a
 │   │   │                       #   Knowledge popup button; called by index.js, the
 │   │   │                       #   panel and the popup (own file: no import cycle)
+│   │   ├── beat-strip.js       # buildBeatStrip(arc, pendingMarks, isInteractive) — the
+│   │   │                       #   beat squares by shape and the done count, with the
+│   │   │                       #   tier words (beatWords, beatStatusWord), waitingMarksOf,
+│   │   │                       #   formatNumber, plural; Arc Manager and progress rows
 │   │   ├── undo-stack.js       # createUndoStack({ read, write, changedMessage }) —
 │   │   │                       #   a popup session's undo over one stored state,
 │   │   │                       #   labelled entries, refused when the state changed
@@ -649,7 +653,7 @@ StoryArc/
 │   │                           #   status line, Clues in Review, Back asks before
 │   │                           #   discarding a plan
 │   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
-│   │                           #   the wizard opens; wand content buttons
+│   │                           #   the wizard opens; Ignore keeps it open; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line, fulfillment rewrites of
 │   │                           #   open beats only) + buildPlanCheckVariables
@@ -771,12 +775,14 @@ lib/knowledge/
 
 lib/ui/
 ├── progress.js      (imports: planning/storage.js, injection/pacing.js,
-│                              core/settings.js, core/constants.js, arc-manager.js
-│                              (buildBeatStrip; a load-safe cycle), /script.js,
-│                              /scripts/utils.js)
+│                              core/settings.js, core/constants.js, beat-strip.js,
+│                              /script.js, /scripts/utils.js)
+├── beat-strip.js    (imports: injection/signals.js MARK_FLUSH_WINDOW,
+│                              injection/pacing.js, core/settings.js,
+│                              core/constants.js ARC_PHASES, /scripts/utils.js)
 ├── settings-panel.js (imports: core/constants.js, core/settings.js,
 │                              planning/arc-preset.js, wizard.js, arc-manager.js,
-│                              knowledge-popup.js, knowledge-status.js,
+│                              knowledge-popup.js, knowledge-status.js, progress.js,
 │                              /script.js, /scripts/extensions.js, /scripts/popup.js)
 ├── knowledge-status.js (imports: core/settings.js)
 ├── wizard.js        (imports: context/harvester.js, planning/generator.js,
@@ -793,7 +799,8 @@ lib/ui/
 │                              injection/signals.js, injection/pacing.js,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
-│                              knowledge-popup.js, undo-stack.js, /scripts/popup.js,
+│                              knowledge-popup.js, undo-stack.js, beat-strip.js,
+│                              /scripts/popup.js,
 │                              /scripts/utils.js)
 ├── knowledge-popup.js (imports: /script.js chat + saveMetadata, core/settings.js,
 │                              core/constants.js DETAIL_KINDS + DETAIL_STATUS_VALUES + HOLDER_HOW,
@@ -811,7 +818,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
                     planning/beat-completion.js reopenCompletionsFrom, injection/builder.js,
                     injection/stamping.js, injection/signals.js,
                     knowledge/ledger.js, ui/settings-panel.js, ui/knowledge-status.js,
-                    ui/wand-menu.js,
+                    ui/wand-menu.js, ui/wizard.js closeWizard,
                     ui/progress.js, /script.js)
 ```
 
