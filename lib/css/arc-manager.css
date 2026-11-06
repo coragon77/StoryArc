@@ -7,7 +7,6 @@
 /* ── Tokens: everything derives from ST's theme variables ───────────── */
 .am, .am-menu, .am-tip {
     --fg: var(--SmartThemeBodyColor);
-    --bg: var(--SmartThemeBlurTintColor);
     --em: var(--SmartThemeEmColor);
     --muted: color-mix(in srgb, var(--SmartThemeBodyColor) 70%, var(--SmartThemeBlurTintColor));
     --line: color-mix(in srgb, var(--SmartThemeBodyColor) 12%, transparent);
@@ -348,13 +347,3 @@
 .am-beat-state { flex: 0 0 auto; white-space: nowrap; }
 .am-pitch-title { margin: 0 0 6px; }
 .am-pitch-premise { margin: 0; }
-
-/* ============================================================================
-   Used by the wizard until its rebuild: the optional-beat tag.
-   ============================================================================ */
-
-.story-arc-beat-optional-label {
-    font-size: 0.85em;
-    font-style: italic;
-    color: var(--SmartThemeEmColor, #888);
-}

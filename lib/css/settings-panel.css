@@ -10,6 +10,12 @@
     --dr-line: color-mix(in srgb, var(--SmartThemeBodyColor) 12%, transparent);
 }
 
+/* The drawer wrapper and header inherit ST's defaults, so it lines up with
+   the other extensions in #extensions_settings2; only the body gets padding */
+#story-arc-settings .inline-drawer-content {
+    padding: 10px;
+}
+
 /* ─── Action row: Plan, Manage, Knowledge ────────────────────────────────── */
 
 /* One primary (Plan) at its natural width, the others plain buttons beside it */

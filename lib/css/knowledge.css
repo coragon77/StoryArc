@@ -26,7 +26,6 @@
     --k-danger: color-mix(in srgb, var(--warning) 72%, var(--SmartThemeBodyColor));
     --k-danger-tint: color-mix(in srgb, var(--warning) 9%, transparent);
     --k-ok: color-mix(in srgb, var(--active) 58%, var(--SmartThemeBodyColor));
-    --k-ok-tint: color-mix(in srgb, var(--active) 20%, transparent);
     --k-well: var(--black30a);
     --fs-s: 13px;
     --fs-m: 15px;
@@ -203,7 +202,6 @@
 .story-arc-knowledge .k-rgroup-head { display: flex; align-items: baseline; gap: 10px; padding: 0 10px 4px; }
 .story-arc-knowledge .k-rgroup-head h3 { font-size: var(--fs-s); font-weight: 600; margin: 0; }
 .story-arc-knowledge .k-rgroup-head .k-small { color: var(--k-muted); }
-.story-arc-knowledge .k-rows { list-style: none; margin: 0; padding: 0; }
 .story-arc-knowledge .k-row {
     display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 2px 12px; align-items: start;
     width: 100%; padding: 7px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; text-align: left; cursor: pointer;
@@ -271,11 +269,7 @@
 .story-arc-knowledge .k-item > .k-editor { grid-column: 1 / -1; }
 .story-arc-knowledge .k-item.is-masked .k-item-text { color: var(--k-muted); font-style: italic; }
 .story-arc-knowledge .k-list-foot { padding: 8px 0; display: flex; gap: 12px; align-items: center; }
-/* The one authored moment: a changed row settles in */
-@keyframes k-settle { from { background-color: var(--k-ok-tint); } to { background-color: transparent; } }
-.story-arc-knowledge .k-just { animation: k-settle 900ms cubic-bezier(.16,1,.3,1); }
 @media (prefers-reduced-motion: reduce) {
-    .story-arc-knowledge .k-just { animation: none; }
     .story-arc-knowledge .k-line, .story-arc-knowledge .k-strip > summary .fa-chevron-right, .story-arc-knowledge .k-fold > summary .fa-chevron-right { transition: none; }
 }
 /* ── Status bar (in ST's controls row) ─────────────────────────────────── */

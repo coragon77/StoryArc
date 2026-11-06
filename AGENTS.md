@@ -78,15 +78,15 @@ StoryArc/
 │   │   ├── arc-manager.js      # Arc list + controls popup
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
 │   │   ├── knowledge-status.js # The tracker's status line in the drawer (popup, panel, index.js)
-│   │   ├── spoiler-group.js    # The collapsed spoiler drawer (Arc Manager, Knowledge popup)
-│   │   └── progress.js         # Compact progress display
+│   │   ├── beat-strip.js       # The beat squares and tier words (Arc Manager, progress rows)
+│   │   ├── undo-stack.js       # A popup session's undo (Knowledge popup, Arc Manager)
+│   │   └── progress.js         # The active arcs' rows (drawer, wand popup)
 │   └── css/
-│       ├── core.css            # Variables, base styles
-│       ├── spoiler.css         # Spoiler toggle styles
 │       ├── wizard.css          # Wizard popup styles
+│       ├── settings-panel.css  # Settings drawer and wand popup styles
 │       ├── arc-manager.css     # Arc manager styles
 │       ├── knowledge.css       # Knowledge popup styles
-│       └── progress.css        # Progress display styles
+│       └── progress.css        # Progress row layout
 ├── tests/
 │   ├── run.sh                  # Node.js test runner
 │   ├── smoke.sh                # HTTP smoke tests

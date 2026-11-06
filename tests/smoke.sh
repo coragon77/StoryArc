@@ -45,7 +45,7 @@ check "index.js served" \
 # CSS served
 check "style.css served" \
     "$BASE/scripts/extensions/third-party/StoryArc/style.css" \
-    "core.css"
+    "settings-panel.css"
 
 # Core module served
 check "core/constants.js served" \
