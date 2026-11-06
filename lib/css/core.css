@@ -192,61 +192,6 @@
     gap: 6px;
 }
 
-/* ─── Status Badge ───────────────────────────────────────────────────────── */
-
-.story-arc-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.72em;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.story-arc-badge-active {
-    background: rgba(102, 187, 106, 0.2);
-    color: var(--sa-status-active);
-}
-
-.story-arc-badge-completed {
-    background: rgba(66, 165, 245, 0.2);
-    color: var(--sa-status-completed);
-}
-
-.story-arc-badge-abandoned {
-    background: rgba(239, 83, 80, 0.2);
-    color: var(--sa-status-abandoned);
-}
-
-.story-arc-badge-normal {
-    background: rgba(212, 165, 116, 0.2);
-    color: var(--sa-accent);
-}
-
-.story-arc-badge-spotlight {
-    background: rgba(212, 165, 116, 0.35);
-    color: var(--sa-accent-hover);
-    box-shadow: 0 0 4px var(--sa-accent-glow);
-}
-
-.story-arc-badge-background {
-    background: rgba(212, 165, 116, 0.08);
-    color: var(--sa-status-pending);
-}
-
-.story-arc-badge-paused {
-    background: rgba(189, 189, 189, 0.15);
-    color: var(--sa-status-pending);
-}
-
-.story-arc-badge-tier {
-    background: rgba(66, 165, 245, 0.15);
-    color: var(--sa-status-completed);
-}
-
 /* ─── Loading / Spinner ──────────────────────────────────────────────────── */
 
 .story-arc-loading {

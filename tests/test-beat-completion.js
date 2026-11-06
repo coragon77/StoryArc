@@ -1,9 +1,11 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { completeBeats, reopenCompletionsFrom, reopenCompletionsAt } from '../lib/planning/beat-completion.js';
+import { completeBeats, reopenCompletionsFrom, reopenCompletionsAt, setBeatStatusByHand } from '../lib/planning/beat-completion.js';
 import { completeBeat } from '../lib/planning/arc-edit.js';
 import { processSignalResults, promoteNextBeats } from '../lib/injection/signals.js';
 import { chat, chat_metadata } from './mocks/st-mocks.js';
+import { isStallNudgeShown } from '../lib/ui/progress.js';
+import { resumeArc } from '../lib/injection/clock.js';
 
 /** Put the arcs into chat_metadata as they are; returns the stored arcs. */
 function storeArcs(...arcs) {
@@ -444,6 +446,91 @@ describe('manual toggle and recorded completions', () => {
         assert.equal(reopenCompletionsFrom(5), true);
         assert.equal(arc.beats[0].status, 'pending');
         assert.equal(arc.beats[0].completion, undefined);
+    });
+});
+
+describe('setBeatStatusByHand — a beat marked done in the Arc Manager', () => {
+    it('completes the beat, unlocks its dependants and sets lastFulfilledAt to the last message', async () => {
+        storeArcs(episode());
+        await setBeatStatusByHand('epi00001-full-id', 'b1', 'completed');
+        assert.deepEqual(chat_metadata.story_arc.arcs[0], {
+            id: 'epi00001-full-id',
+            title: 'Test Episode',
+            tier: 'episode',
+            focus: 'normal',
+            status: 'active',
+            messageStart: 2,
+            lastFulfilledAt: 7,
+            estimatedLength: 20,
+            beats: [
+                { id: 'b1', intention: 'first', status: 'completed', unlockAfter: [], optional: false },
+                { id: 'b2', intention: 'second', status: 'pending', unlockAfter: ['b1'], optional: false },
+                { id: 'b3', intention: 'third', status: 'pending', unlockAfter: [], optional: false },
+                { id: 'b4', intention: 'extra', status: 'pending', unlockAfter: [], optional: true },
+            ],
+        });
+    });
+
+    it('clears the stall nudge, as a recognised completion does', async () => {
+        const stalled = { ...episode(), id: 'ep', lastFulfilledAt: 2, messageStart: 2, estimatedLength: 4 };
+        chatWithIds(20);
+        storeArcs(stalled);
+        assert.equal(isStallNudgeShown(chat_metadata.story_arc.arcs[0], 20), true);
+        await setBeatStatusByHand('ep', 'b1', 'completed');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 19);
+        assert.equal(isStallNudgeShown(chat_metadata.story_arc.arcs[0], 20), false);
+    });
+
+    it('never moves lastFulfilledAt back', async () => {
+        storeArcs({ ...episode(), lastFulfilledAt: 9 });
+        await setBeatStatusByHand('epi00001-full-id', 'b1', 'completed');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 9);
+    });
+
+    it('setting the beat back by hand leaves lastFulfilledAt where the hand completion put it', async () => {
+        storeArcs(episode());
+        await setBeatStatusByHand('epi00001-full-id', 'b1', 'completed');
+        await setBeatStatusByHand('epi00001-full-id', 'b1', 'pending');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.equal(stored.beats[0].status, 'pending');
+        assert.equal(stored.beats[1].status, 'pending');
+        assert.equal(stored.lastFulfilledAt, 7);
+    });
+
+    it('a rollback of an earlier recognised completion keeps the hand completion counting', async () => {
+        chatWithIds(12);
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 5 }], [arc]);
+        await setBeatStatusByHand('act00001-full-id', 'm2', 'completed');
+        assert.equal(arc.lastFulfilledAt, 11);
+
+        assert.equal(reopenCompletionsFrom(5), true);
+        assert.deepEqual(statuses(arc), ['active', 'completed', 'active']);
+        assert.equal(arc.lastFulfilledAt, 11);
+    });
+
+    it('drops the completion record on every hand change, so no rollback reopens a beat set by hand', async () => {
+        chatWithIds(12);
+        const [arc] = storeArcs(act());
+        await completeBeats([{ arcId: 'act00001', beatId: 'm1', at: 5 }], [arc]);
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'active');
+        assert.equal('completion' in chat_metadata.story_arc.arcs[0].beats[0], false);
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'completed');
+
+        assert.equal(reopenCompletionsFrom(5), false);
+        assert.deepEqual(statuses(chat_metadata.story_arc.arcs[0]), ['completed', 'active', 'active']);
+    });
+
+    it('on a paused arc stamps the last message before the pause, so the resume shift lands on the resume point', async () => {
+        // Chat at 100, paused at 80: the clock stood still from message 79 on.
+        chatWithIds(100);
+        storeArcs({ ...act(), focus: 'paused', pausedAt: 80 });
+        await setBeatStatusByHand('act00001-full-id', 'm1', 'completed');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 79);
+
+        chatWithIds(110);
+        await resumeArc('act00001-full-id');
+        assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 109);
     });
 });
 

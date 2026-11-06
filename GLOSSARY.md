@@ -57,6 +57,18 @@ _Avoid_: style, theme, tone
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
 
+**Past arc**:
+An arc that is no longer active: completed (by the player, or once its last open beat is done) or abandoned by the player. It is out of the prompt and its beats are no longer checked; the Arc Manager lists it under "Past arcs".
+_Avoid_: archived arc, old arc, closed arc
+
+**Reactivate**:
+Making a past arc active again, in normal focus, with its beats as they stand. Its phase and stall counts start over at that moment, and it goes last among the arcs, so it never takes the pacing clock from an episode running now.
+_Avoid_: revive, reopen (the word for a beat whose completion a rollback takes back)
+
+**Reveal plan**:
+The Arc Manager's switch, one per arc, that shows the arc's plan text: premise, pressures and fulfillments, secrets, clues and triggers. Off whenever the Arc Manager opens, so the plan stays secret unless the player asks for it; the title, the focus, the beat strip and the warnings show either way.
+_Avoid_: spoilers on, unhide, show plan
+
 ### Beats
 
 **Beat**:
@@ -70,7 +82,7 @@ An episode's beat. Ordered, one active at a time, the rest hidden from the model
 An act's or saga's beat. Unordered, all unfulfilled milestones stand at once, and any may be fulfilled in any message.
 
 **Mark**:
-The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan.
+The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
 _Avoid_: tick, flag
 
 **Pressure**:
@@ -103,7 +115,7 @@ An out-of-character line of the player that contradicts an arc's premise or one 
 _Avoid_: correction (the ledger's word for a retracted fact), OOC note, instruction
 
 **Stall**:
-The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment or its last re-plan, whichever is later. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator.
+The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment, its last re-plan, its reactivation (a past arc made active again, which also restarts its phase) or the last time it went into the spotlight, whichever is later. A beat the player marks done by hand is a fulfillment too. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator. The player can ignore a stall: its nudge stays hidden until the arc's next beat lands or it is re-planned, reactivated or spotlit.
 _Avoid_: timeout, stuck
 
 ### Knowledge
@@ -177,7 +189,7 @@ Keeping a detail at the value the story set: the player's entry with that same v
 _Avoid_: pin, freeze
 
 **Undo** (hand edit):
-Taking back the newest hand edit made in the open Knowledge popup, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
+Taking back the newest hand edit made in the open Knowledge popup or Arc Manager, one edit per press, back to the state before it. Undo lasts only while the popup is open. When the ledger (in the Arc Manager: the arcs) changed since that edit (an update ran after a reply, a swipe or a deleted message), undo refuses and nothing older can be undone either.
 _Avoid_: revert, rollback (the word for dropping what a swiped or deleted message brought)
 
 **Change item**:
