@@ -144,3 +144,30 @@ describe('Knowledge popup: the Map tab', () => {
         assert.match(html, /data-act="merge-go"/);
     });
 });
+
+describe('Knowledge popup: a search tie', () => {
+    it('goes to who knows more, planned facts not counted', () => {
+        // Ann Lee knows one fact; Ann Kay knows none but holds two from an arc plan
+        const holder = (characterId, how) => ({ characterId, how, toldBy: null, at: 5, messageId: 'm5' });
+        const ledger = {
+            characters: [
+                { id: 'c2', name: 'Ann Kay', aliases: [] },
+                { id: 'c1', name: 'Ann Lee', aliases: [] },
+            ],
+            facts: [
+                { id: 'f1', text: 'Ann Lee keeps the ledger', public: false, holders: [holder('c1', 'witnessed')] },
+                { id: 'f2', text: 'The heist is set for Friday', public: false, holders: [holder('c2', 'plan')] },
+                { id: 'f3', text: 'The vault code is 4471', public: false, holders: [holder('c2', 'plan')] },
+            ],
+            retractedFacts: [],
+            scene: { at: 5, present: [] },
+            lastUpdatedAt: 5,
+            updateLog: [],
+        };
+        const view = Object.assign(createKnowledgeView(), { tab: 'cast', query: 'ann' });
+        const html = buildKnowledgeContent(ledger, [], true, view);
+        const order = [...html.matchAll(/data-fk="row\|character:(c\d)"/g)].map(match => match[1]);
+
+        assert.deepEqual(order, ['c1', 'c2']);
+    });
+});

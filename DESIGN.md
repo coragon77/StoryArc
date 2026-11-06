@@ -152,7 +152,7 @@ components:
 
 **Creative North Star: "The Game Master's Desk"**
 
-Story Arc is a game master's desk set into somebody else's room. It owns no colour, no typeface and no control of its own: every surface is the user's SillyTavern theme, re-weighed. In the Arc Manager each arc is a single table row; when something needs the player, a warning line opens beneath that row and carries its own buttons. The Knowledge popup lands on a review list grouped by message range, newest first, with buttons at the end of each line, and a second tab that is a search field over the whole cast. The wizard and the drawer follow the same grammar. Whatever theme the user runs, near-black Glimmer or a light theme, the extension looks like part of SillyTavern.
+Story Arc is a game master's desk set into somebody else's room. It owns no colour, no typeface and no control of its own: every surface is the user's SillyTavern theme, re-weighed. In the Arc Manager each arc is a single table row; when something needs the player, a warning line opens beneath that row and carries its own buttons. The Knowledge popup lands on a review list grouped by message range, newest first, with buttons at the end of each line, a second tab that is a search field over the whole cast, and a third, Map, that draws the cast as rings around the scene: plain dots, names only where they fit, the chosen character's sheet beside it. The wizard and the drawer follow the same grammar. Whatever theme the user runs, near-black Glimmer or a light theme, the extension looks like part of SillyTavern.
 
 Density is high and quiet. These are desktop popups for one power user with 100+ characters and hundreds of facts, so rows are tight (7 to 11px vertical padding), text runs at SillyTavern's 15px and secondary text drops to 13px. Distinction comes from structure, weight and spacing: a 600 title against a 400 sub-line, a 1px line between rows, a 4% tint behind a group. Plans are spoilers, so hidden content sits behind one deliberate Reveal switch, never behind drawer after drawer.
 
@@ -270,6 +270,9 @@ SillyTavern's `text_pole`: well fill, ST border, 5px corners. Placeholders in mu
 
 ### Tabs and steps
 Text tabs on a hairline: muted 500 weight, selected in body colour, 600 weight and a 2px emphasis underline. Counts ride in a small well badge (4px corners); a zero count drops to 400 and muted. The wizard's two steps use the same underline with a numbered badge.
+
+### Map
+Dots in body colour, their fill fading from the scene outwards and hollow for no facts; dotted rings with muted titles; a name-family band at body 9%; relation lines at body 50%, the selected one in emphasis. Names sit on a surface backing at 13px and show on hover with the tooltip shadow; a name to check is a warning triangle and a dashed ring, never colour alone. The map holds a tinted container with 6px corners; the filter dims what it does not match to a quarter.
 
 ### Reveal switch
 A checkbox with `role="switch"` drawn as a track: well fill and edge when off, `selected` fill with a body-colour edge and knob when on, a "shown" word beside it. One per plan; it hides again when the popup closes.
