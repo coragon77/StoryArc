@@ -5,7 +5,9 @@ import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/led
 const HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
     + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
-    + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]';
+    + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. '
+    + 'A character knows the face, looks and voice only of someone they have met: '
+    + 'a name on their Has met line, or someone the story put in front of them on-screen. Hearing a name is not meeting.]';
 
 /** Amy, Steve and Mara, before anyone learns about the diagnostic logs. */
 function makeNightShiftLedger() {
@@ -56,9 +58,11 @@ describe('applyExtractionAnswer joins learned items with the same text', () => {
             HEADER,
             '',
             'AMY (present)',
+            '- Has met: Steve',
             '- Knows (told by Steve): Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Steve)',
             '',
             'STEVE (present)',
+            '- Has met: Amy',
             '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Amy)',
             '',
             'MARA (talked about, not present)',

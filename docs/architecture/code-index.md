@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-06
+- **Last Updated:** 2026-11-08
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -592,6 +592,9 @@ StoryArc/
 │   ├── test-knowledge-merge.js # Tests: "Merge into…" (#60): every reference kind,
 │   │                           #   holder dedupe, details, nameClash, rollback after a
 │   │                           #   merge, taken names and the flag see one character
+│   ├── test-knowledge-meetings.js # Tests: meetings and the "Has met" line: recording,
+│   │                           #   same-message replace, first meetings of an old ledger,
+│   │                           #   rollback, merge, delete, popup save, the block line
 │   ├── test-knowledge-popup-details.js # Tests: character details in the popup (#54):
 │   │                           #   sheet rows and lock state, detail editor, saveCharacterDetails
 │   │                           #   (lock on change, unlock on clear, validation)

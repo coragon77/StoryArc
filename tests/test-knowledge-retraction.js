@@ -62,6 +62,7 @@ describe('applyExtractionAnswer — a retracted fact leaves the ledger', () => {
             ],
             scene: { at: 2123, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 2121, present: ['c1', 'c2'] }],
+            meetings: [{ at: 2121, present: ['c1', 'c2'] }, { at: 2123, present: ['c1', 'c2'] }],
             lastUpdatedAt: 2123,
             retractedFacts: [
                 {
@@ -326,6 +327,7 @@ describe('the retraction through an update', () => {
             facts: [],
             scene: { at: 3, messageId: 'm3', present: ['c1', 'c2'] },
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
+            meetings: [{ at: 1, present: ['c1', 'c2'] }, { at: 3, messageId: 'm3', present: ['c1', 'c2'] }],
             lastUpdatedAt: 3,
             lastUpdatedMessageId: 'm3',
             retractedFacts: [{ at: 2, messageId: 'm2', fact: STIPEND }],
@@ -383,6 +385,12 @@ describe('the retraction through an update', () => {
             facts: [STIPEND],
             scene: { at: 3, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
+            // The ledger's two scenes became its first meetings, then the edited message's.
+            meetings: [
+                { at: 1, present: ['c1', 'c2'] },
+                { at: 2, messageId: 'm2', present: ['c1', 'c2'] },
+                { at: 3, present: ['c1', 'c2'] },
+            ],
             lastUpdatedAt: 3,
             retractedFacts: [],
             updateLog: [{
@@ -435,6 +443,12 @@ describe('the retraction through an update', () => {
             }],
             scene: { at: 3, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 1, present: ['c1', 'c2'] }],
+            // The ledger's two scenes became its first meetings; each edit's re-extraction added its message's.
+            meetings: [
+                { at: 1, messageId: 'm1', present: ['c1', 'c2'] },
+                { at: 2, messageId: 'm2', present: ['c1', 'c2'] },
+                { at: 3, present: ['c1', 'c2'] },
+            ],
             lastUpdatedAt: 3,
             retractedFacts: [],
             updateLog: [

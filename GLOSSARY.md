@@ -144,6 +144,10 @@ _Avoid_: active, onstage, in-scene
 A character who is not present but is named, by name or alias, in the latest message of the player or the narrator. The narrator is also told whom such a character has told. A shared name word does not count.
 _Avoid_: mentioned, referenced, offscreen
 
+**Meeting**:
+A scene the knowledge tracker saw with two or more characters present: everyone in it has met everyone else. The narrator sees, for each character present or talked about, whom they have met ("Has met"), so a character does not know the face or looks of someone they never saw. Recorded from the scene the extraction reports, with no call of its own, and only from when the tracker started: a meeting earlier in the story is not on the list.
+_Avoid_: encounter, acquaintance, contact
+
 **Cast**:
 The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Each cast member may also carry character details, which the narrator sees for the characters present or talked about; the planner and the plan check see only the names. An unnamed relative is a cast member too, but the planner and the plan check do not see it, since it has no name. Empty while the knowledge tracker is off.
 _Avoid_: roster, character list

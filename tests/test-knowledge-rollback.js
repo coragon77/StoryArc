@@ -389,6 +389,8 @@ describe('updateKnowledgeAfterEdit', () => {
             characters: CHARACTERS,
             facts: [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES],
             scene: { at: 6, present: ['c1', 'c2', 'c3'] },
+            // The ledger had no meetings: its scene became the first. Ellie alone at 3 is none.
+            meetings: [{ at: 6, present: ['c1', 'c2', 'c3'] }],
             lastUpdatedAt: 6,
             // The edit's own drop of message 3 (f2) is no rollback record.
             updateLog: [{
@@ -419,6 +421,8 @@ describe('updateKnowledgeAfterEdit', () => {
             facts: [FACT_F1, FACT_F2, FACT_F3, FACT_F4],
             scene: { at: 4, present: ['c1', 'c2'] },
             sceneHistory: [{ at: 2, present: ['c1'] }],
+            // The ledger had no meetings: its scene became the first. Noor alone at 5 is none.
+            meetings: [{ at: 4, present: ['c1', 'c2'] }],
             lastUpdatedAt: 6,
             updateLog: [{
                 kind: 'reextract', recordId: 'u1', from: 5, to: 5, messageId: 'm5',

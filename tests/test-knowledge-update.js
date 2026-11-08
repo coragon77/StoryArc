@@ -164,6 +164,7 @@ describe('updateKnowledgeAfterReply', () => {
             ],
             scene: { at: 6, messageId: 'm6', present: ['c1', 'c2'] },
             sceneHistory: [{ at: 2, present: ['c1', 'c2'] }],
+            meetings: [{ at: 2, present: ['c1', 'c2'] }, { at: 6, messageId: 'm6', present: ['c1', 'c2'] }],
             lastUpdatedAt: 6,
             lastUpdatedMessageId: 'm6',
             updateLog: [{

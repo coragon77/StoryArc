@@ -354,6 +354,9 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
             ],
             scene: { at: 3, messageId: 'm3', present: ['c1', 'c2'] },
             sceneHistory: [],
+            // The ledger had no meetings: the re-extraction took the scene at 3 as its first, and its
+            // own meeting at 6 went with swipe 1's message id when the branch showed swipe 0.
+            meetings: [{ at: 3, messageId: 'm3', present: ['c1', 'c2'] }],
             lastUpdatedAt: 5,
             lastUpdatedMessageId: 'm5',
             // The branch load took nothing back, so it adds no record.
@@ -427,6 +430,8 @@ describe('the message ids an update leaves on the messages it read', () => {
                 ],
             }],
             scene: { at: 1, messageId: replyMessageId, present: ['c1', 'c2'] },
+            // The meeting of the update's reply moved with it, by its message id.
+            meetings: [{ at: 1, messageId: replyMessageId, present: ['c1', 'c2'] }],
             lastUpdatedAt: 1,
             lastUpdatedMessageId: replyMessageId,
             // Only the update: the deletion moved the entries and took nothing back.
