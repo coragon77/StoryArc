@@ -494,6 +494,10 @@ StoryArc/
 │       │                       #   picker, status bar; ST theme variables only
 │       └── progress.css        # Layout of the progress rows; tokens, beat squares
 │                               #   and the warning come from arc-manager.css (#72)
+├── scripts/
+│   └── rebuild-knowledge-block.mjs # Diagnosis: the knowledge block the narrator got at
+│                               #   one message of a chat file, ledger cut back to then;
+│                               #   run with node --import ./tests/setup.js
 ├── tests/
 │   ├── run.sh                  # Node.js test runner (node:test)
 │   ├── smoke.sh                # HTTP smoke tests against live ST instance
