@@ -404,6 +404,21 @@ describe('updateKnowledgeAfterEdit', () => {
         });
     });
 
+    it('editing a message takes its meeting back, so a failed re-extraction leaves none the edited text may not have', async () => {
+        setSwitches({ tracker: true });
+        storeLedger();
+        chat_metadata.story_arc.knowledge.meetings = [
+            { at: 3, present: ['c1', 'c2'] },
+            { at: 6, present: ['c1', 'c2', 'c3'] },
+        ];
+        installExtraction(['not an answer']);
+        chat[3].mes = 'Gabriel wants steel latches.';
+
+        await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.meetings, [{ at: 6, present: ['c1', 'c2', 'c3'] }]);
+    });
+
     it('editing a message between the scene and the end of the ledger leaves the scene and its history as they were', async () => {
         // After a rollback the scene is from message 4 while the ledger covers through 6.
         setSwitches({ tracker: true });
