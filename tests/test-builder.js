@@ -880,11 +880,12 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
         '',
     ].join('\n');
 
-    const FIRST_THREE_FACTS = [
+    const ALL_FOUR_FACTS = [
         'WORLD FACTS (true in this story; keep every scene consistent with them):',
         '- The guild cannot compel a volunteer: it can only ask, reward or withhold favours.',
         '- The river freezes every winter.',
         '- The mayor wants the guild out of the city.',
+        '- Nobody in the city knows the granary is empty.',
         '',
     ].join('\n');
 
@@ -896,13 +897,13 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
     }
 
     for (const tier of ['act', 'saga']) {
-        it(`prints a normal ${tier} with its first three world facts after the premise`, () => {
+        it(`prints a normal ${tier} with every world fact after the premise`, () => {
             const text = withChatLength(0, () => buildInjection([makeFactMilestoneArc(tier, 'normal')]));
             const section = [
                 `=== ${tier.toUpperCase()}: "The Long Winter" ===`,
                 'PREMISE: The guild starves the city.',
                 '',
-                FIRST_THREE_FACTS,
+                ALL_FOUR_FACTS,
                 'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing; '
                     + 'it becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
                     + 'do not resolve it; what the story has already established always wins over it):',
@@ -910,23 +911,21 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
                 '',
             ].join('\n');
             assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
-            assert.equal(text.includes('Nobody in the city knows the granary is empty.'), false);
         });
 
-        it(`prints a spotlit ${tier} with its first three world facts after the premise`, () => {
+        it(`prints a spotlit ${tier} with every world fact after the premise`, () => {
             const text = withChatLength(0, () => buildInjection([makeFactMilestoneArc(tier, 'spotlight')]));
             const section = [
                 `=== ${tier.toUpperCase()}: "The Long Winter" ===`,
                 'PREMISE: The guild starves the city.',
                 '',
-                FIRST_THREE_FACTS,
+                ALL_FOUR_FACTS,
                 'BRING TO A HEAD:',
                 'The cold keeps coming.',
                 'Let this pressure intensify over the coming scenes, and let the world act on its own interests.',
                 '',
             ].join('\n');
             assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
-            assert.equal(text.includes('Nobody in the city knows the granary is empty.'), false);
         });
     }
 
@@ -934,7 +933,7 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
         const act = makeFactMilestoneArc('act', 'normal');
         act.premise = '';
         const text = withChatLength(0, () => buildInjection([act]));
-        assert.ok(text.includes(`=== ACT: "The Long Winter" ===\n\n${FIRST_THREE_FACTS}`), text);
+        assert.ok(text.includes(`=== ACT: "The Long Winter" ===\n\n${ALL_FOUR_FACTS}`), text);
     });
 
     it('prints no world fact for a background or paused arc of any tier', () => {

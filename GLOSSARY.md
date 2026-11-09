@@ -123,7 +123,7 @@ What the UI calls one of an arc's foreshadowing entries: a detail planted early 
 _Avoid_: foreshadowing (in UI text), hint
 
 **World fact**:
-A statement of what is true in the arc's world: what is possible, who holds what power, what a character or faction wants, believes or knows. Sent to the narrator, which keeps every scene consistent with it; never says how to narrate (tone, pacing, emphasis, how a character comes across). An episode's section prints all of them, an act's or saga's the first three. Replaces the directives and anti-patterns of older plans, which are stored but no longer sent (ADR-0009).
+A statement of what is true in the arc's world: what is possible, who holds what power, what a character or faction wants, believes or knows. Sent to the narrator, which keeps every scene consistent with it; never says how to narrate (tone, pacing, emphasis, how a character comes across). Every section that prints a plan prints all of them (an act or saga printed only the first three until 2026-11-09). Replaces the directives and anti-patterns of older plans, which are stored but no longer sent (ADR-0009).
 _Avoid_: directive, rule, anti-pattern
 
 **Divergence**:

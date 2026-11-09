@@ -154,7 +154,7 @@ StoryArc/
 │   │   │                       #   established, unrevealed ones by id to keep,
 │   │   │                       #   rewrite or drop, with holders, planted clues and
 │   │   │                       #   fired triggers (formatUnrevealedSecret),
-│   │   │                       #   escalation, world facts most important first,
+│   │   │                       #   escalation, world facts,
 │   │   │                       #   fulfilled beats as "already happened", skipped
 │   │   │                       #   milestones as "passed over"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
@@ -276,8 +276,6 @@ StoryArc/
 │   │   │                       #   tiers (architecture.md, migration);
 │   │   │                       #   pushWorldFacts(lines, worldFacts) — the WORLD FACTS
 │   │   │                       #   block, nothing without facts; never trimmed;
-│   │   │                       #   MILESTONE_WORLD_FACT_LIMIT (3, exported) — facts an
-│   │   │                       #   act/saga section prints (also arc-manager.js);
 │   │   │                       #   pushPlanLists(lines, arc, phase) — secrets,
 │   │   │                       #   triggers, foreshadowing; buildMilestoneSection reuses it;
 │   │   │                       #   holderSuffix(secret) — " (known only to: …)" on a
@@ -288,8 +286,8 @@ StoryArc/
 │   │   │                       #   BACKGROUND: + "Runs off-screen…" sentence; no
 │   │   │                       #   premise, no pressures (beats stay in the beat check);
 │   │   │                       #   buildMilestoneSection(arc, pressures?) — act/saga:
-│   │   │                       #   === ACT/SAGA: header, premise, the first three world
-│   │   │                       #   facts, the current milestone's pressure
+│   │   │                       #   === ACT/SAGA: header, premise, every world
+│   │   │                       #   fact, the current milestone's pressure
 │   │   │                       #   (currentMilestone, ADR-0010) under STANDING
 │   │   │                       #   PRESSURE (header + trailer swappable; pressure
 │   │   │                       #   only, never the fulfillment — a pressure-less
@@ -921,7 +919,7 @@ lib/ui/
 │                              planning/storage.js, planning/arc-edit.js,
 │                              planning/beat-completion.js setBeatStatusByHand,
 │                              injection/signals.js, injection/pacing.js,
-│                              injection/builder.js MILESTONE_WORLD_FACT_LIMIT,
+│                              injection/builder.js,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
 │                              knowledge-popup.js, undo-stack.js, beat-strip.js,

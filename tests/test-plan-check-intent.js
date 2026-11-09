@@ -106,7 +106,7 @@ describe('generate-arc.txt: dilemmas that cost, world facts that agree with the 
     it('pins the world-fact line in the world-facts section', () => {
         assert.ok(outlineTemplate.includes('A world fact never states what a secret contains.\n'
             + 'A world fact never makes a claim about everyone or every group of people ("everyone", "all of them"), and it agrees with what the story has established about the cast: their ages, roles and relations.\n'
-            + 'List the world facts most important first. In an act or saga only the first three reach the narrating AI every turn, so put first the ones the story must never lose.\n\n'
+            + '\n'
             + '5. ESCALATION IS A PATTERN, NOT A LABEL'));
     });
 });

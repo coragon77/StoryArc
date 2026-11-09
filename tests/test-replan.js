@@ -616,7 +616,7 @@ describe('buildArcSoFar', () => {
         assert.ok(text.includes(
             'Escalation so far: old escalation\n'
             + '\n'
-            + 'World facts so far, most important first (keep in your "worldFacts" each one that is still true in the story, in this order; reword or drop one the story has overtaken; put a new fact before a kept one only when it matters more):\n'
+            + 'World facts so far (keep in your "worldFacts" each one that is still true in the story; reword or drop one the story has overtaken):\n'
             + '- The brother cannot leave the city.\n'
             + '- The ledger office closes at noon.\n'
             + '\n'
@@ -627,7 +627,7 @@ describe('buildArcSoFar', () => {
     it('says (none) for world facts on an arc stored before them', () => {
         const text = buildArcSoFar(storedEpisode());
 
-        assert.ok(text.includes('put a new fact before a kept one only when it matters more):\n(none)\n\nAlready happened'), text);
+        assert.ok(text.includes('reword or drop one the story has overtaken):\n(none)\n\nAlready happened'), text);
     });
 
     it('says (none) without secrets and (none recorded) without escalation', () => {

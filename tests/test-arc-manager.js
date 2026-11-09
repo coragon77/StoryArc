@@ -311,12 +311,12 @@ describe('describeWhatNarratorGets', () => {
             'its premise, 2 world facts and the current scene beat\'s pressure , with pacing rules.');
     });
 
-    it('an act with four world facts counts the three its section prints, normal and spotlit', () => {
+    it('an act with four world facts counts all four, normal and spotlit', () => {
         const worldFacts = ['First fact.', 'Second fact.', 'Third fact.', 'Fourth fact.'];
         assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts }), [])),
-            'its premise, 3 world facts and the current milestone\'s pressure , as mood. No secrets, triggers or clues.');
+            'its premise, 4 world facts and the current milestone\'s pressure , as mood. No secrets, triggers or clues.');
         assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts, focus: 'spotlight' }), [])),
-            'its premise, 3 world facts and the current milestone\'s pressure to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
+            'its premise, 4 world facts and the current milestone\'s pressure to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
     });
 });
 
