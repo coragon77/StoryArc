@@ -58,7 +58,7 @@ Side observation, unexplained and outside the rubric: in all three replies Greg 
 
 ### B5. Arc Manager notice
 
-- `lib/ui/arc-manager.js`, the warning line of an active arc: an episode whose `directives`, `antiPatterns` or `tone` is non-empty and whose `worldFacts` is empty shows the notice of decision 3. Acts and sagas never sent those fields and get no notice.
+- `lib/ui/arc-manager.js`, the warning line of an active arc: an episode whose `directives`, `antiPatterns` or `tone` is non-empty and that has no `worldFacts` list at all (planned before world facts; a fresh or re-planned episode with an empty list gets none, code review 2026-11-09) shows the notice of decision 3. Acts and sagas never sent those fields and get no notice.
 
 ### B6. Tests
 
