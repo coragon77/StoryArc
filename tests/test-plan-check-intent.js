@@ -70,7 +70,7 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
     });
 
     it('a secret may also be rewritten for a contradiction', () => {
-        assert.ok(checkTemplate.includes('- A secret is rewritten only for leverage, by the same rule as a pressure: replace the contract or the command with the lever the setting gives the person and its cost; or for a contradiction, by the first rule below. Keep what the secret is:'));
+        assert.ok(checkTemplate.includes('- A secret is rewritten only for leverage, by the same rule as a pressure: replace the contract or the command with the lever the setting gives the person and its cost; for a contradiction, by the first rule below; or for register, by the last rule below. Keep what the secret is:'));
     });
 
     it('pins the contradiction rule', () => {
@@ -82,7 +82,7 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
     });
 
     it('pins the register rule', () => {
-        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action or world fact whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in) into the register the author asked for. Keep what it is about. Leave items that already fit. The author\'s direction and answers outrank the exception for a real power: where the author asked for no open force, a real power is played as leverage too.\n\n3. FULFILLMENTS.'));
+        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action, world fact or secret that is not revealed whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in, open blackmail threatening someone\'s home where the author asked for deniable pressure and nothing overt) into the register the author asked for. Keep what it is about; a secret also keeps every planted clue listed under it explained. Leave items that already fit. The author\'s direction and answers outrank the exception for a real power: where the author asked for no open force, a real power is played as leverage too.\n\n3. FULFILLMENTS.'));
     });
 });
 
@@ -95,9 +95,14 @@ describe('generate-arc.txt: dilemmas that cost, world facts that agree with the 
             + '4. WORLD FACTS STATE WHAT IS TRUE, NEVER HOW TO NARRATE\n'));
     });
 
+    it('pins the re-plan line in the secret guidelines', () => {
+        assert.ok(outlineTemplate.includes('- On a re-plan, the ARC SO FAR block says which secrets you may keep, rewrite or drop. A secret you keep or rewrite keeps its id, and still explains every planted clue and fired trigger listed under it.\n- Name the holders of every secret:'));
+    });
+
     it('pins the world-fact line in the world-facts section', () => {
         assert.ok(outlineTemplate.includes('A world fact never states what a secret contains.\n'
-            + 'A world fact never makes a claim about everyone or every group of people ("everyone", "all of them"), and it agrees with what the story has established about the cast: their ages, roles and relations.\n\n'
+            + 'A world fact never makes a claim about everyone or every group of people ("everyone", "all of them"), and it agrees with what the story has established about the cast: their ages, roles and relations.\n'
+            + 'List the world facts most important first. In an act or saga only the first three reach the narrating AI every turn, so put first the ones the story must never lose.\n\n'
             + '5. ESCALATION IS A PATTERN, NOT A LABEL'));
     });
 });

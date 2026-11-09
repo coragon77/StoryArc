@@ -171,10 +171,32 @@ describe('applyPlanCheck', () => {
 
         assert.deepEqual(checked.beats.map(beat => beat.intention), ['The card was destroyed.', 'The scrimmage was played.']);
         assert.deepEqual(warnings, [
-            '[Story Arc] Plan check rewrote the fulfillment of unknown or completed beat "old_milestone"; ignored',
-            '[Story Arc] Plan check rewrote the fulfillment of unknown or completed beat "no_such_beat"; ignored',
+            '[Story Arc] Plan check rewrote the fulfillment of unknown or closed beat "old_milestone"; ignored',
+            '[Story Arc] Plan check rewrote the fulfillment of unknown or closed beat "no_such_beat"; ignored',
             '[Story Arc] Plan check answered an empty fulfillment for beat "pier_stage"; ignored',
         ]);
+    });
+
+    it('leaves a skipped milestone alone like a completed one', () => {
+        const arc = makeReplannedAct();
+        arc.beats.push({ id: 'gala_night', pressure: 'The gala looms.', intention: 'Ellie has attended the gala.', status: 'skipped' });
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = message => warnings.push(message);
+        let checked;
+        try {
+            checked = applyPlanCheck(arc, {
+                rewrites: [
+                    { kind: 'pressure', id: 'gala_night', text: 'Vanguard counts the guests.' },
+                    { kind: 'fulfillment', id: 'gala_night', text: 'Ellie has been seen at the gala.' },
+                ],
+            }, []);
+        } finally {
+            console.warn = originalWarn;
+        }
+
+        assert.deepEqual(checked.beats[2], { id: 'gala_night', pressure: 'The gala looms.', intention: 'Ellie has attended the gala.', status: 'skipped' });
+        assert.deepEqual(warnings, ['[Story Arc] Plan check rewrote the fulfillment of unknown or closed beat "gala_night"; ignored']);
     });
 
     it('does not mutate the arc it is given', () => {
@@ -230,6 +252,16 @@ describe('buildPlanCheckVariables', () => {
             '- [rookie_drills] Ellie has completed her first patrols and training shifts.',
         ].join('\n'));
         assert.equal(variables.FULFILLMENTS.includes('The card was destroyed.'), false);
+    });
+
+    it('passes neither the pressure nor the fulfillment of a skipped milestone', () => {
+        const arc = makeReplannedAct();
+        arc.beats.push({ id: 'gala_night', pressure: 'The gala looms.', intention: 'Ellie has attended the gala.', status: 'skipped' });
+
+        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+
+        assert.equal(variables.PRESSURES, '- [pier_stage] The stage is rigged with Julian\'s gauntlet tether.');
+        assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
     });
 
     it('on a re-plan, hides the old disclosure mark so the check judges from the story alone', () => {
