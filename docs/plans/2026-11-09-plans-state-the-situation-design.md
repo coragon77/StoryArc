@@ -62,7 +62,10 @@ Afterwards the extended plan check (Part A) was run on the contract-clause arc:
 twice it rewrote all three pressures and the trigger into lever and cost, and
 on a military arc whose direction makes orders real it left everything alone.
 Its first version left the contract arc alone too, because its exception let
-the premise establish the authority; the premise now establishes none.
+the premise establish the authority; the premise now establishes none. Its
+second version rested on the direction and rewrote legitimate garrison orders
+when the direction was one line (see Risks); the third, judging by the setting,
+passed all five calls.
 
 Small samples, one model, one scene. The direction is clear, the size is not
 measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
@@ -101,8 +104,10 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
   does not load this file; it is kept in step with the planner.
 - `prompts/check-plan.txt`: step 2 also rewrites a pressure or trigger action in
   which someone forces a character through a contract, clause, paperwork, an
-  order, a disciplinary threat or a chain of command that neither the author's
-  direction nor the story gives them; the premise establishes no power (7630f2b).
+  order, a disciplinary threat or a chain of command that a person in their place
+  would not hold in a setting like this one; the direction or the story can grant
+  more, the premise never (7630f2b, exception reworded after the thin-direction
+  test).
 - `lib/injection/builder.js`: no `GENRE:` line in any section (PR #84,
   ADR-0004 amendment).
 
@@ -193,13 +198,18 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 
 ## Risks
 
-- The plan check's exception for real authority rests on the author's direction
-  or the story, and only a re-plan passes it the recent messages. For a fresh
-  plan the direction alone can establish an officer's authority; with a thin
-  direction in a story that has a real hierarchy, the check may rewrite
-  legitimate orders into lever and cost. The military counter-test passed
-  because its direction said "orders are orders". Not tested: a fresh plan
-  with a thin direction in such a story.
+- Found and fixed 2026-11-09: the plan check's first exception for real
+  authority rested on the author's direction or the story, and a fresh plan's
+  check gets no story messages. With a thin direction ("Amy's next arc at the
+  frontier garrison.") it rewrote a garrison's legitimate orders, the
+  court-martial and the stockade into "her standing at the garrison", in 2 of 2
+  calls. The exception now asks whether a person in that place holds the power
+  in a setting like this one (an officer commands soldiers, an employer does
+  not own an employee's free time, a volunteer body cannot compel), and the
+  premise still grants nothing. Rerun: thin-direction military arc 0 of 2
+  rewritten, explicit-direction military arc 0 of 1, contract-clause arc
+  rewritten 2 of 2. The judgment now rests on the model's sense of the
+  setting; a setting with unusual powers needs them in the direction.
 
 - World facts become the next place for style: the planner writes "keep it
   tense" as a world fact. The plan check's world-fact step is the guard; a live

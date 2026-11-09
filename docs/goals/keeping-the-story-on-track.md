@@ -40,7 +40,8 @@ Out:
 |---|---|
 | Acts and sagas at normal focus send only GENRE, PREMISE and STANDING PRESSURES to the narrator. Spotlight adds secrets, triggers and clues. Tone, directives and anti-patterns are printed only in the episode section. No Paragon arc's directives were ever in the prompt. | `lib/injection/builder.js` (`buildMilestoneSection`, `buildEpisodeSection`); the Paragon plan block rebuilt from the chat file, 2026-11-09 |
 | The plan's own wording decides whether the narrator invents coercion. Contract-clause pressures: 6 of 6 replies fail without a rule. Lever-and-cost pressures: 0 of 3, with the same GENRE line. The ranking line and removing the GENRE line changed nothing. An explicit rule in the Author's Note at depth 1 beats bad wording, 0 of 3. | Amy chat test, 2026-11-09, three replies per condition; `docs/plans/2026-11-09-plans-state-the-situation-design.md` |
-| The extended plan check rewrites contract-clause pressures and trigger actions into lever and cost, and leaves a military arc whose direction makes orders real alone. Its first wording let the premise establish authority and rewrote nothing. | Live calls of `check-plan.txt`, 2026-11-09; ADR-0009 |
+| The extended plan check rewrites contract-clause pressures and trigger actions into lever and cost (2 of 2), and leaves a military arc alone with a one-line direction (0 of 2) and with an explicit one (0 of 1). It judges a power by the setting: an officer commands soldiers, an employer does not own an employee's free time. Two earlier wordings failed: counting the premise rewrote nothing; resting on the direction rewrote legitimate orders when the direction was one line, because a fresh plan's check gets no story messages. | Live calls of `check-plan.txt`, 2026-11-09; ADR-0009; design note, Risks |
+| Stance experiment, in a separate test chat: Mara's ally history (on-screen, then hidden and replaced by an events-only summary, with an agenda pointing elsewhere) did not turn her coercive in 0 of 3 replies without a stance line. She never mentioned the history either. Per the reading fixed beforehand, this scene gives no case for stance, and the stance condition was not run. A first run in the main Amy chat was invalid: its summary contradicted the on-screen story, and the narrator followed the story in 3 of 3. | Chat "Amy - 2026-11-09@08h40m16s679ms", 2026-11-09 |
 | The planner gets the character card, persona, lorebook, the last 50 messages, the other arcs and the cast. It gets no Author's Note, no preset, no OOC rulings. | `lib/context/harvester.js` |
 | A re-plan keeps title, direction, the premise unless the player takes the proposed one, completed beats, planted clues, fired triggers and every secret. Secrets are add-only. It replaces directives, anti-patterns, tone, themes, escalation and the open road. | `lib/planning/replan.js`, ADR-0003 |
 | An unrevealed secret has no copy in the knowledge ledger. A fact is created only at the reveal, linked by `{ arcId, secretId }`. | `lib/knowledge/ledger.js`, `applyExtractionAnswer` |
@@ -48,7 +49,7 @@ Out:
 | SillyTavern's Author's Note injects the text of its panel textarea, not `chat_metadata.note_prompt`. | `public/scripts/authors-note.js`; one test reply went out without the note |
 | Summaryception's summarizer skips hidden messages, so `/hide` keeps a rejected turn out of the prompt and out of later summaries. | `src/core/chatutils.js` (`isSummarizerConversationMessage`) |
 | Summaryception's continuity block holds at most 4 `[R]` rules, hard-coded. It runs one audit per reply. After a gap it reads only the last 4 unaudited exchanges. Its bonds were empty in all 852 audits of Paragon. Vasquez's agenda stayed "Track the escaped Berth 14 construct …" from message 2737 to 3030. | `src/foundation/prompt-constants.js`, `src/core/continuity-coverage.js`; the Paragon chat file |
-| State left behind: Paragon messages 3023–3032 and 3051–3055 are hidden. The Amy chat's message 55 carries 12 test swipes, and the test arc "Ranking Test: The Night Shift" is abandoned, not deleted. | Chat files, 2026-11-09 |
+| State left behind: Paragon messages 3023–3032 and 3051–3055 are hidden. In the main Amy chat, message 54 carries 12 test swipes and shows swipe 2; messages 55–56 (Steve's request to Mara and 3 swipes) are from the invalid stance run; the test arc "Ranking Test: The Night Shift" is abandoned, not deleted. The test chat "Amy - 2026-11-09@08h40m16s679ms" keeps its scripted history, has Steve locked as persona, and can be deleted. | Chat files, 2026-11-09 |
 | `scripts/rebuild-knowledge-block.mjs` prints the knowledge block the narrator got at a given message of a chat file. | `docs/architecture/code-index.md` |
 
 ## Decided
@@ -86,7 +87,7 @@ Out:
 For this document:
 
 - Check off a chapter when its `done =` holds, with a dated line.
-- Append dated status entries below the chapters. Never rewrite earlier entries.
+- Append dated status entries to the Status section above the chapters. Never rewrite earlier entries.
 - Supersede this document with a companion or handover document, not by rewriting it.
 
 For a chapter brief (the kickoff-brief contract):
@@ -95,12 +96,17 @@ For a chapter brief (the kickoff-brief contract):
 - It carries no task list (the tickets' job) and no code or model sketches.
 - It has no wording that lets a chapter skip its spec/plan cycle.
 
+## Status
+
+- 2026-11-09: C1 complete. The stance experiment ran (C6 facts row): no case for stance from that scene; C6 waits on Stefan's decision. The plan check's exception was reworded after a thin-direction test and re-checked on five calls.
+
 ## Chapters
 
 Order: C1 finishes what shipped. C2 and C3 complete the plan-format change while its evidence is fresh. C4 makes every later diagnosis cheap. C5 removes the correction Stefan repeated most. C6 waits on its experiment.
 
-- [ ] **C1. Plan wording (Part A)** — the planner and the plan check apply the leverage rule (7630f2b), and the genre leaves the injection (PR \#84).
+- [x] **C1. Plan wording (Part A)** — the planner and the plan check apply the leverage rule (7630f2b), and the genre leaves the injection (PR \#84).
   - done = PR \#84 merged, and the Paragon plan block rebuilt from the chat file carries no `GENRE:` line.
+  - Completed 2026-11-09: PR \#84 merged (a0f8fa9); the Paragon plan block rebuilt from the chat file opens each act with its header and premise, no `GENRE:` line; CI green.
 - [ ] **C2. World facts (Part B)** — `worldFacts` replace directives and anti-patterns, and tone, directives and anti-patterns leave the prompt. Spec: `docs/plans/2026-11-09-plans-state-the-situation-design.md`.
   - done = a freshly planned arc in the Amy chat has world facts and no directives, and its injected sections carry no `TONE:`, no directives and no anti-patterns.
 - [ ] **C3. A re-plan rewrites unrevealed secrets (Part C)** — same spec, ADR-0003 amendment.
