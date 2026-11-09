@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyPlanCheck, buildPlanCheckVariables } from '../lib/planning/generator.js';
+import { applyPlanCheck, buildPlanCheckVariables, plantedCluesOfSecret } from '../lib/planning/generator.js';
 
 // The plan check rewrites a secret that hands someone a power they would not
 // hold; on a re-plan, a secret the arc already had gets a proposal the player
@@ -30,6 +30,31 @@ function makeReplannedAct() {
         beats: [],
     };
 }
+
+describe('secret rewrites: which planted clues point at a secret', () => {
+    function makeArcWithTargets(targets) {
+        return { foreshadowing: targets.map((target, index) => ({ id: `clue_${index}`, clue: `Clue ${index}.`, target, planted: true })) };
+    }
+
+    it('reads the leading id after "secret:", before a bracket or a dash', () => {
+        const arc = makeArcWithTargets(['secret:voss_betrayal (his deal)', 'secret:voss_betrayal - the deal', 'SECRET: voss_betrayal, later']);
+
+        assert.deepEqual(plantedCluesOfSecret(arc, 'voss_betrayal').map(entry => entry.clue), ['Clue 0.', 'Clue 1.', 'Clue 2.']);
+    });
+
+    it('keeps a hyphen inside an id', () => {
+        const arc = makeArcWithTargets(['secret:voss-betrayal']);
+
+        assert.deepEqual(plantedCluesOfSecret(arc, 'voss-betrayal').map(entry => entry.clue), ['Clue 0.']);
+        assert.deepEqual(plantedCluesOfSecret(arc, 'voss'), []);
+    });
+
+    it('never matches a beat target or a target in prose', () => {
+        const arc = makeArcWithTargets(['beat:voss_betrayal', 'Voss betrays the crew', 'the voss_betrayal deal']);
+
+        assert.deepEqual(plantedCluesOfSecret(arc, 'voss_betrayal'), []);
+    });
+});
 
 describe('secret rewrites: the plan check', () => {
     it('lists each secret\'s planted clues under it, matched by "secret:<id>" or the bare id', () => {
