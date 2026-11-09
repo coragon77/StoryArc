@@ -98,7 +98,14 @@ StoryArc/
 │   │   │                       #   renamePlanTexts reaches world facts; with a cast the
 │   │   │                       #   {{NAMES_BLOCK}} and the renames, applied by
 │   │   │                       #   applyPlanRenames to every text field under
-│   │   │                       #   its guards, #49);
+│   │   │                       #   its guards, #49; kind "secret" judged after the
+│   │   │                       #   revealed list: proposedContent for the re-planned
+│   │   │                       #   arc's own secrets, content replaced otherwise,
+│   │   │                       #   renames reach proposedContent);
+│   │   │                       #   plantedCluesOfSecret(arc, secretId) — planted clues
+│   │   │                       #   whose target's leading id (after an optional
+│   │   │                       #   "secret:") is the secret's; listed under each
+│   │   │                       #   secret in {{SECRETS}}, also used by wizard.js;
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
 │   │   │                       #   marks the re-planned arc (its rulings under it as
 │   │   │                       #   "Overruled by the player:") in phase 1,
@@ -196,10 +203,12 @@ StoryArc/
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
 │   │                           #   applyReplan(merged, chatLength, { premise,
-│   │                           #   removedRulingIds, storedRulings }) →
+│   │                           #   removedRulingIds, storedRulings, secretChoices }) →
 │   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
 │   │                           #   deep copy with the chosen premise trimmed, no
-│   │                           #   proposedPremise; a blank premise refused
+│   │                           #   proposedPremise; each taken secret's
+│   │                           #   proposedContent as content, proposedContent
+│   │                           #   removed from every secret; a blank premise refused
 │   │                           #   the rulings built from the stored ones at apply:
 │   │                           #   removed ones dropped, those the generation saw
 │   │                           #   answered (an earlier answeredAt kept), later ones
@@ -417,7 +426,11 @@ StoryArc/
 │   │   │                       #   → Review (generation log with a polite status line
 │   │   │                       #   and a visible Cancel, then the plan behind one
 │   │   │                       #   Reveal switch, foreshadowing shown as Clues; re-plan:
-│   │   │                       #   buildPremiseChoice(), "Apply re-plan" via updateArc).
+│   │   │                       #   buildPremiseChoice(); behind the switch
+│   │   │                       #   buildSecretChoices() (keep/take per proposed
+│   │   │                       #   secret, keep chosen) and proposedSecretsNote()
+│   │   │                       #   (their count in the hidden note); "Apply re-plan"
+│   │   │                       #   reads readSecretChoices(), stores via updateArc).
 │   │   │                       #   Back from a generated plan asks inline first.
 │   │   │                       #   Failures say problem and recovery (raw error to the
 │   │   │                       #   console); finished log steps show their outcome;
@@ -710,6 +723,12 @@ StoryArc/
 │   │                           #   outline prompt with and without a cast, three calls;
 │   │                           #   a check rename reaches the stored arc, the check
 │   │                           #   prompt with and without the names block
+│   ├── test-secret-rewrites.js # Tests: plantedCluesOfSecret (leading id, beat: and
+│   │                           #   prose targets unmatched), planted clues in
+│   │                           #   {{SECRETS}}, kind "secret": proposal for a revealable
+│   │                           #   secret, direct rewrite otherwise, none for a
+│   │                           #   revealed/disclosed one, identical/empty/unknown
+│   │                           #   dropped, no mutation, renames reach the proposal
 │   ├── test-plan-check-renames.js # Tests: applyPlanCheck renames (#49): every text
 │   │                           #   field, completed beats / fired triggers / direction /
 │   │                           #   genre kept, whole names (possessive matches), longest
@@ -881,6 +900,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutRoadInRecord`) |
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
 | World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
+| Secret rewrites (ADR-0003 amendment) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`) | `prompts/check-plan.txt` (step 2, SECRETS), `lib/planning/replan.js` (`applyReplan`), `lib/ui/wizard.js` (`buildSecretChoices`, `proposedSecretsNote`, `readSecretChoices`) |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |
 | Arc manager | `lib/ui/arc-manager.js` | `lib/planning/storage.js`, `lib/injection/clock.js`, `wizard.js` |
