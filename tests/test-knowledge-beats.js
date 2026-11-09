@@ -243,7 +243,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
         assert.deepEqual(beatOf('crane001-full-id', 'brody_refuses'), {
             id: 'brody_refuses', intention: 'Brody refuses an order from Julian in front of the crew',
             status: 'completed', unlockAfter: [], optional: false,
-            completion: { at: 4, unlocked: [], arcCompleted: false, lastFulfilledBefore: 0, messageId: assignedMessageId },
+            completion: { at: 4, unlocked: [], skipped: [], arcCompleted: false, lastFulfilledBefore: 0, messageId: assignedMessageId },
         });
         assert.equal(chat_metadata.story_arc.arcs[0].lastFulfilledAt, 4);
     });
@@ -409,7 +409,7 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: beat recogniti
         assert.ok(sentPrompts[0].includes('- [crane001:brody_refuses] Brody refuses'), sentPrompts[0]);
         assert.deepEqual(result, { ledgerChanged: true, beatsChanged: true });
         assert.deepEqual(beatOf('crane001-full-id', 'brody_refuses').completion,
-            { at: 4, unlocked: [], arcCompleted: false, lastFulfilledBefore: 0, messageId: 'm4' });
+            { at: 4, unlocked: [], skipped: [], arcCompleted: false, lastFulfilledBefore: 0, messageId: 'm4' });
     });
 
     it('an edit completed again keeps lastFulfilledAt at a later completion', async () => {

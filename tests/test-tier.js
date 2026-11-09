@@ -71,6 +71,18 @@ describe('buildTierBlock', () => {
         assert.ok(text.includes('names the on-screen moment at which the story shows it has reached a STATE; any scene may show it. Never a specific scene, place or encounter, never a tally of many scenes, never a chain of separate events.'));
     });
 
+    it('act and saga: milestones in story order, only the current one seen, one plot thread per arc', () => {
+        for (const tier of ['act', 'saga']) {
+            const text = buildTierBlock(tier);
+            assert.ok(text.includes('MILESTONES instead of scene beats, listed in the order the story should reach them. The arc is ONE plot thread, and its milestones are the steps of that thread.\n'), tier);
+            assert.ok(text.includes('- The narrating AI sees only the current milestone\'s pressure: the first one not yet fulfilled. So the first milestone is what presses from the first message on, and each later one presses only once the story has reached the one before it. A later milestone the story fulfils first still counts, and the earlier ones are then skipped as obsolete.\n'), tier);
+            assert.ok(text.includes('- Order them so each one sets up the next: benefits before they can be taken away, a reveal after its clues.\n'), tier);
+            assert.ok(text.includes('- One plot thread per arc: a second, independent thread belongs in a second arc, not in this arc\'s milestones.\n'), tier);
+            assert.ok(text.includes('- Leave unlockAfter empty ([]) on every milestone. Their order is their only prerequisite.\n'), tier);
+            assert.equal(/unordered|any order|stand at once/i.test(text), false, tier);
+        }
+    });
+
     it('saga: milestones, 2-4 of them, 400-1500 messages', () => {
         const text = buildTierBlock('saga');
         assert.ok(text.includes('SAGA'));
@@ -88,8 +100,8 @@ describe('buildTierBlock', () => {
     });
 
     it('keeps one instruction per line, each "- " bullet after the header and the scale line, ending in a newline', () => {
-        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 7 bullets
-        for (const [tier, bulletCount] of [['episode', 4], ['act', 7], ['saga', 7]]) {
+        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 10 bullets
+        for (const [tier, bulletCount] of [['episode', 4], ['act', 10], ['saga', 10]]) {
             const text = buildTierBlock(tier);
             assert.ok(text.endsWith('.\n'), tier);
             const lines = text.slice(0, -1).split('\n');
@@ -112,24 +124,24 @@ describe('buildTierBlock', () => {
 });
 
 describe('milestone section — act / saga in normal focus', () => {
-    it('lists every unfulfilled milestone pressure and no completed one', () => {
+    it('prints only the current milestone\'s pressure, the first open one, and no later or completed one', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
         assert.ok(text.includes('=== ACT: "The Long Winter" ==='));
         assert.ok(text.includes('The valley is starving and the guild is lying about it.'));
-        assert.ok(text.includes('- Rations shrink week by week.'));
-        assert.ok(text.includes('- The guild ledgers do not add up.'));
+        assert.ok(text.includes('Rations shrink week by week.'));
+        assert.equal(text.includes('The guild ledgers do not add up.'), false);
         assert.equal(text.includes('Old grudges resurface.'), false);
     });
 
-    it('puts the STANDING PRESSURES header above the pressures and ends the section after them', () => {
+    it('puts the STANDING PRESSURE header above the one pressure and ends the section after it', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
-        assert.ok(text.startsWith('[STORY ARC - NARRATIVE DIRECTION]\n\n=== ACT: "The Long Winter" ===\nPREMISE: The valley is starving and the guild is lying about it.\n\nSTANDING PRESSURES (forces at work'));
-        assert.ok(text.endsWith('STANDING PRESSURES (forces at work across this stretch of the story — let them colour scenes as a mood, a detail or a line in passing; one becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; do not resolve them; what the story has already established always wins over a pressure):\n- Rations shrink week by week.\n- The guild ledgers do not add up.\n\n[END STORY ARC]'));
+        assert.ok(text.startsWith('[STORY ARC - NARRATIVE DIRECTION]\n\n=== ACT: "The Long Winter" ===\nPREMISE: The valley is starving and the guild is lying about it.\n\nSTANDING PRESSURE (the force at work'));
+        assert.ok(text.endsWith('STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing; it becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; do not resolve it; what the story has already established always wins over it):\nRations shrink week by week.\n\n[END STORY ARC]'));
     });
 
     it('prints no PREMISE line for an act without a premise', () => {
         const text = withChatLength(10, () => buildInjection([makeAct({ premise: '' })]));
-        assert.ok(text.includes('=== ACT: "The Long Winter" ===\n\nSTANDING PRESSURES'));
+        assert.ok(text.includes('=== ACT: "The Long Winter" ===\n\nSTANDING PRESSURE ('));
         assert.equal(text.includes('PREMISE'), false);
     });
 
@@ -164,20 +176,20 @@ describe('milestone section — act / saga in normal focus', () => {
         assert.ok(text.includes('=== SAGA: "The Long Winter" ==='));
     });
 
-    it('skips a milestone without a pressure and never prints its intention (#13)', () => {
+    it('prints no pressure for a current milestone without one: never its intention, never the next one\'s pressure (#13)', () => {
         const arc = makeAct();
         arc.beats[0].pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
-        assert.equal(text.includes('- \n'), false);
-        assert.ok(text.includes('- The guild ledgers do not add up.'));
+        assert.equal(text.includes('STANDING PRESSURE'), false);
+        assert.equal(text.includes('The guild ledgers do not add up.'), false);
     });
 
     it('omits the pressures block entirely when no unfulfilled milestone has a pressure', () => {
         const arc = makeAct();
         for (const beat of arc.beats) beat.pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
-        assert.equal(text.includes('STANDING PRESSURES'), false);
+        assert.equal(text.includes('STANDING PRESSURE'), false);
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
     });
 

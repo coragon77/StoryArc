@@ -412,12 +412,10 @@ describe('milestones (act / saga)', () => {
         };
     }
 
-    it('a marker for any milestone completes it and leaves the others active', async () => {
+    it('a marker for a later milestone completes it, skips the earlier one and leaves the next one active', async () => {
         const arc = makeAct();
-        await processSignalResults([{ arcId: 'act12345', beatId: 'm3', status: 'COMPLETE' }], [arc]);
-        assert.equal(arc.beats[2].status, 'completed');
-        assert.equal(arc.beats[0].status, 'active');
-        assert.equal(arc.beats[1].status, 'active');
+        await processSignalResults([{ arcId: 'act12345', beatId: 'm2', status: 'COMPLETE' }], [arc]);
+        assert.deepEqual(arc.beats.map(b => b.status), ['skipped', 'completed', 'active']);
         assert.equal(arc.status, 'active');
     });
 
@@ -428,7 +426,7 @@ describe('milestones (act / saga)', () => {
             { arcId: 'act12345', beatId: 'm1', status: 'COMPLETE' },
         ], [arc]);
         assert.deepEqual(completedBeats, ['m2']);
-        assert.equal(arc.beats[0].status, 'active');
+        assert.equal(arc.beats[0].status, 'skipped');
     });
 
     it('promotion does not re-hide milestones and repairs any pending one', async () => {

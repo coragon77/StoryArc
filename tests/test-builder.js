@@ -292,7 +292,7 @@ describe('buildInjection — section order and budget trim', () => {
             const text = withChatLength(0, () => buildInjection([episode, act]));
 
             assert.ok(text.startsWith(`${HEADER}\n\n=== ACT: "The Long Winter" ===\n`), 'spotlit act first');
-            assert.ok(text.includes('BRING TO A HEAD:\n- The cold keeps coming.\n'));
+            assert.ok(text.includes('BRING TO A HEAD:\nThe cold keeps coming.\n'));
             assert.ok(text.includes('FORESHADOWING TO PLANT:\n- Clue number 0 '));
             assert.equal(text.includes('Clue number 39'), false);
             assert.ok(text.includes('PACING RULES:\n- You are in SETUP phase.'));
@@ -903,10 +903,10 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
                 'PREMISE: The guild starves the city.',
                 '',
                 FIRST_THREE_FACTS,
-                'STANDING PRESSURES (forces at work across this stretch of the story — let them colour scenes as a mood, a detail or a line in passing; '
-                    + 'one becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
-                    + 'do not resolve them; what the story has already established always wins over a pressure):',
-                '- The cold keeps coming.',
+                'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing; '
+                    + 'it becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
+                    + 'do not resolve it; what the story has already established always wins over it):',
+                'The cold keeps coming.',
                 '',
             ].join('\n');
             assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
@@ -921,8 +921,8 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
                 '',
                 FIRST_THREE_FACTS,
                 'BRING TO A HEAD:',
-                '- The cold keeps coming.',
-                'Let these pressures intensify over the coming scenes, and let the world act on its own interests.',
+                'The cold keeps coming.',
+                'Let this pressure intensify over the coming scenes, and let the world act on its own interests.',
                 '',
             ].join('\n');
             assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
@@ -960,6 +960,6 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
         const text = withChatLength(0, () => buildInjection([stored, actWithout]));
         assert.equal(text.includes('WORLD FACTS'), false);
         assert.ok(text.includes('PREMISE: A premise.\n\nCURRENT PRESSURE:\n'));
-        assert.ok(text.includes('PREMISE: The guild starves the city.\n\nSTANDING PRESSURES'));
+        assert.ok(text.includes('PREMISE: The guild starves the city.\n\nSTANDING PRESSURE ('));
     });
 });
