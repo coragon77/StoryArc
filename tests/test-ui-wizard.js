@@ -1,6 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPremiseChoice, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
+import { buildPremiseChoice, buildReviewStep, buildSecretChoices, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
 import {
     chat, chat_metadata, extension_settings, mockSortedEntries, mockPopups, mockPopupState,
     ConnectionManagerRequestService,
@@ -367,6 +367,57 @@ describe('wizard: the re-plan premise choice', () => {
 
         assert.match(html, /<textarea[^>]*>The mill is haunted\.<\/textarea>/);
         assert.match(html, /<p class="story-arc-premise-option-text">The miller fakes it, badly\.<\/p>/);
+    });
+});
+
+describe('wizard: the re-plan choice per proposed secret', () => {
+    function makeMergedArc() {
+        return {
+            title: 'The Mill',
+            tier: 'act',
+            premise: 'The mill is haunted.',
+            secrets: [
+                { id: 'miller_deed', content: 'The deed orders the miller to grind for the baron.', proposedContent: 'The baron holds the miller\'s debts.', revealPhase: 'climax', disclosed: false },
+                { id: 'flour_theft', content: 'The apprentice steals flour.', revealPhase: 'escalation', disclosed: false },
+            ],
+            foreshadowing: [
+                { id: 'seal', clue: 'A wax seal on the mill door.', target: 'secret:miller_deed', planted: true },
+                { id: 'ledger', clue: 'The baron\'s ledger lies open.', target: 'secret:miller_deed', planted: false },
+            ],
+            beats: [],
+            triggers: [],
+        };
+    }
+
+    it('shows the stored text, the proposal and the planted clue, with keep chosen', () => {
+        const html = buildSecretChoices(makeMergedArc());
+
+        assert.equal(html.match(/<fieldset/g).length, 1);
+        assert.match(html, /<fieldset class="story-arc-wizard-secret-choice" data-secret-id="miller_deed">/);
+        assert.match(html, /<input type="radio" name="story-arc-secret-choice-miller_deed" value="keep" checked> <b>Keep the stored wording<\/b>/);
+        assert.match(html, /<input type="radio" name="story-arc-secret-choice-miller_deed" value="take" > <b>Take the new wording<\/b>/);
+        assert.ok(html.includes('<p class="story-arc-premise-option-text">The deed orders the miller to grind for the baron.</p>'));
+        assert.ok(html.includes('<p class="story-arc-premise-option-text">The baron holds the miller&#39;s debts.</p>'));
+        assert.ok(html.includes('<ul><li>A wax seal on the mill door.</li></ul>'));
+        assert.equal(html.includes('The baron&#39;s ledger lies open.'), false);
+        assert.equal(html.includes('The apprentice steals flour.'), false);
+    });
+
+    it('renders nothing when no secret carries a proposal', () => {
+        const arc = makeMergedArc();
+        delete arc.secrets[0].proposedContent;
+
+        assert.equal(buildSecretChoices(arc), '');
+    });
+
+    it('puts the choice behind the Reveal switch and counts it in the hidden note', () => {
+        const arc = makeMergedArc();
+        const html = buildReviewStep(arc, { id: 'arc-1' });
+
+        const planBody = html.slice(html.indexOf('<div class="story-arc-wizard-plan-body">'));
+        assert.ok(planBody.includes('data-secret-id="miller_deed"'));
+        assert.equal(html.indexOf('data-secret-id="miller_deed"') > html.indexOf('<div class="story-arc-wizard-plan-body">'), true);
+        assert.ok(html.includes('Hidden: 2 secrets and 2 clues. 1 secret has new wording proposed; each keeps its wording unless you reveal the plan and take it. Revealing it may spoil'));
     });
 });
 
