@@ -47,7 +47,7 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 **Plan a new arc** opens the wizard.
 
 1. **Direction.** Pick the arc's **tier** (see below), its **genre**, kept short ("High fantasy adventure"), its **themes** if you like ("guild politics, the price of fame") and say what the arc should explore. The genre is binding: the arc reads as that genre. The themes only colour the arc where there is room; none of them has to appear. What the arc must deliver comes from your direction. Press **Generate**.
-2. **Questions**, only when your direction leaves something important open. Story Arc asks a few short questions about what you want, for example whether the pressure is open or only hinted at, or whether anyone can step in and help. Click a suggested answer or write your own; leave any blank. Your answers steer the plan as strongly as your direction, and the narrator never sees them. The questions are about what you want, never about the plan. Press **Plan the arc**. When you re-plan an arc, your earlier answers come first, ready to change.
+2. **Questions**, only when your direction leaves something important open. Story Arc asks a few short questions about what you want, never about the plan, for example whether the pressure is open or only hinted at, or whether anyone can step in and help. Click a suggested answer or write your own; leave any blank. Your answers steer the plan as strongly as your direction, and the narrator never sees them. Press **Plan the arc**. When you re-plan an arc, your earlier answers come first, ready to change.
 3. **Review.** Story Arc plans the arc and shows its title, tone and "What's it about?", the arc's themes grown from yours. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
 ### Managing arcs
@@ -56,7 +56,7 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 
 - set an arc's **focus** (see below);
 - act on a **warning**, for example **Re-plan** or **Ignore** when an arc has stalled;
-- mark a beat done by hand when the model missed it;
+- mark a beat done or skipped by hand when the model missed it;
 - **Re-plan**, **Complete** or **Abandon** an arc from its **⋯** menu;
 - **Reveal plan** to read and edit its beats, secrets, clues and triggers.
 
@@ -64,7 +64,7 @@ Every change can be undone while the Arc Manager is open. Completed and abandone
 
 ### Re-planning
 
-When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets that have come out and the premise (which you can edit), and replaces the open beats and the secrets still hidden. The tier can grow but never shrink.
+When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets that have come out, the world facts that still hold and the premise (which you can edit), and replaces the open beats and the secrets still hidden. The tier can grow but never shrink.
 
 ## Tiers and focus
 
@@ -86,7 +86,7 @@ The **focus** sets how much attention an arc gets right now:
 |---|---|
 | **Paused** | That the arc exists but is on hold. Its clock stops. |
 | **Background** | Acts and sagas only: keep the thread off-screen unless your character goes to it. |
-| **Normal** | The default. The arc's premise and its current pressure on the scene. |
+| **Normal** | The default. The arc's premise, its world facts (what is true, who holds what power) and its current pressure. |
 | **Spotlight** | The arc comes to the front, with its secrets, triggers and clues. One arc at a time. |
 
 If an act or saga pulls every scene toward itself, set it to background.
