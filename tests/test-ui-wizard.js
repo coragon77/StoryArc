@@ -526,7 +526,46 @@ describe('wizard: genre and themes on the Direction step', () => {
 
         const html = fake.htmlById['story-arc-wizard-content'];
         assert.ok(html.includes('Binding for planning: the arc reads as this genre, even where the story\'s summaries lean elsewhere. Keep it short, e.g. "Superhero drama". The narrator never sees it. Leave blank for none.'));
-        assert.ok(html.includes('Themes that may colour the arc where the premise and your direction leave room. None of them must appear. The planner builds "What\'s it about?" from them. The narrator never sees them. Leave blank for none.'));
+        assert.ok(html.includes('Themes that may colour the arc where the premise and your direction leave room. None of them must appear. The planner grows the arc\'s themes from them, shown as "What\'s it about?" on the next step. The narrator never sees them. Leave blank for none.'));
+    });
+
+    it('hides the mixed-genre note for a genre without a comma', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ genre: 'Superhero drama' })];
+
+        await openWizard();
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<p class="story-arc-wizard-help" id="story-arc-genre-mixed" hidden>\n                        This genre lists several words. Keep the genre itself here and move the rest to Themes.\n                    </p>'));
+    });
+
+    it('shows the mixed-genre note for a prefilled genre with a comma, and keeps the genre as stored', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ genre: 'Superhero drama, corruption, political thriller' })];
+
+        await openWizard();
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<p class="story-arc-wizard-help" id="story-arc-genre-mixed">\n                        This genre lists several words.'));
+        assert.ok(html.includes('>Superhero drama, corruption, political thriller</textarea>'));
+        assert.equal(chat_metadata.story_arc.arcs[0].genre, 'Superhero drama, corruption, political thriller');
+    });
+
+    it('shows the mixed-genre note on a re-plan of an arc with a comma in its genre', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ genre: 'Cozy mystery, found family' })];
+
+        showWizard('arc00001-full-id');
+        await settle();
+
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes('<p class="story-arc-wizard-help" id="story-arc-genre-mixed">\n'));
+    });
+
+    it('shows the note when a comma is typed into the genre and hides it when it is gone', async () => {
+        await openWizard();
+
+        fake.trigger('input', '#story-arc-genre-input', { value: 'Superhero drama, corruption' });
+        assert.equal(fake.propsById['story-arc-genre-mixed'].hidden, false);
+
+        fake.trigger('input', '#story-arc-genre-input', { value: 'Superhero drama' });
+        assert.equal(fake.propsById['story-arc-genre-mixed'].hidden, true);
     });
 
     it('a new arc starts from the newest arc\'s genre and the newest arc\'s themes', async () => {

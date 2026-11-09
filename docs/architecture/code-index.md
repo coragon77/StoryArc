@@ -160,7 +160,7 @@ StoryArc/
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
 │   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),
 │   │   │                       #   deleteArc();
-│   │   │                       #   latestGenre(arcs), latestThemeSeeds(arcs) — wizard
+│   │   │                       #   latestArcText(arcs, 'genre'|'themeSeeds') — wizard
 │   │   │                       #   defaults for a new arc
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
 │   │   │                       #   applyTitleAndPremiseEdit(stored, edit) — trimmed
@@ -740,7 +740,7 @@ StoryArc/
 │   ├── test-genre.js           # Tests: formatGenreBlock, formatThemesBlock, the
 │   │                           #   {{GENRE_BLOCK}} / {{THEMES_BLOCK}} slots and checklist
 │   │                           #   lines, no genre or theme seeds in the injection,
-│   │                           #   latestGenre, latestThemeSeeds, mergeReplan keeps both,
+│   │                           #   latestArcText, mergeReplan keeps both,
 │   │                           #   generateArc: themes reach Phase 2 only, stamped when set
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing

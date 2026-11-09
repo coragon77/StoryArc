@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { extension_settings } from '/scripts/extensions.js';
 import { ConnectionManagerRequestService } from '/scripts/extensions/shared.js';
 import { formatGenreBlock, formatThemesBlock, generateArc, clearTemplateCache } from '../lib/planning/generator.js';
-import { latestGenre, latestThemeSeeds } from '../lib/planning/storage.js';
+import { latestArcText } from '../lib/planning/storage.js';
 import { mergeReplan } from '../lib/planning/replan.js';
 import { buildInjection } from '../lib/injection/builder.js';
 
@@ -80,7 +80,7 @@ These are the author's themes for this arc:
 
 corruption, political intrigue
 
-They colour the arc: draw on them where the premise and the direction leave room. None of them is an obligation, and none has to appear in any particular field. What the arc must deliver comes from the direction and the premise. Build the arc's "themes" field (its thematic statements) from these themes, where the story supports them. A theme is never a world fact, and never the reason for a pressure, secret or trigger.
+They colour the arc: draw on them where the direction and the premise leave room. None of them is an obligation: none has to appear in the pressures, secrets, triggers or world facts. What the arc must deliver comes from the direction and the premise. A theme may shape a pressure, secret or trigger where the premise needs one, but no item exists only to carry a theme, and a theme is never a world fact. The one place the themes seed is the arc's "themes" field: build its thematic statements from them, where the story supports them.
 
 `);
     });
@@ -94,9 +94,15 @@ describe('prompt templates carry the genre slot', () => {
         assert.ok(text.includes('== END OF CONTEXT ==\n\n{{GENRE_BLOCK}}== YOUR TASK =='));
     });
 
-    it('outline: after the analysis, before the creative direction, the themes right after the genre', () => {
+    it('outline: the genre after the analysis, before the creative direction', () => {
         const text = read('generate-arc.txt');
-        assert.ok(text.includes('{{PHASE1_ANALYSIS}}\n\n{{GENRE_BLOCK}}{{THEMES_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
+        assert.ok(text.includes('{{PHASE1_ANALYSIS}}\n\n{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
+    });
+
+    it('outline: the themes right after the creative direction, before the tier', () => {
+        const text = read('generate-arc.txt');
+        assert.ok(text.includes('{{USER_DIRECTION}}\n\n{{THEMES_BLOCK}}{{TIER_BLOCK}}'));
+        assert.equal(text.split('{{THEMES_BLOCK}}').length - 1, 1);
     });
 
     it('analysis: no themes slot', () => {
@@ -106,7 +112,7 @@ describe('prompt templates carry the genre slot', () => {
     it('outline checklist: the genre binds the register only; no theme is a world fact', () => {
         const text = read('generate-arc.txt');
         assert.ok(text.includes('- [ ] If a GENRE block is given: the arc reads as that genre, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues\n'));
-        assert.ok(text.includes('- [ ] If a THEMES block is given: no theme is a world fact, and the `themes` field grows from the given themes where the story supports them\n'));
+        assert.ok(text.includes('- [ ] If a THEMES block is given: no theme is a world fact, no item exists only to carry a theme, and the `themes` field grows from the given themes where the story supports them\n'));
         assert.equal(text.includes('what its readers come for'), false);
     });
 
@@ -155,32 +161,30 @@ describe('the genre steers generation only (ADR-0004 amendment 2026-11-09)', () 
     });
 });
 
-describe('latestGenre', () => {
+describe('latestArcText', () => {
     it('returns the genre of the newest arc that has one', () => {
         const arcs = [{ genre: 'Space opera' }, {}, { genre: 'Cozy mystery' }, { genre: '' }];
-        assert.equal(latestGenre(arcs), 'Cozy mystery');
+        assert.equal(latestArcText(arcs, 'genre'), 'Cozy mystery');
     });
 
     it('returns the genre of the first arc when it is the only arc that has one', () => {
-        assert.equal(latestGenre([{ genre: 'Space opera' }, {}, { genre: '' }]), 'Space opera');
-        assert.equal(latestGenre([{ genre: 'Space opera' }]), 'Space opera');
+        assert.equal(latestArcText([{ genre: 'Space opera' }, {}, { genre: '' }], 'genre'), 'Space opera');
+        assert.equal(latestArcText([{ genre: 'Space opera' }], 'genre'), 'Space opera');
     });
 
     it('returns an empty string when no arc has a genre', () => {
-        assert.equal(latestGenre([]), '');
-        assert.equal(latestGenre([{}, { genre: '' }]), '');
+        assert.equal(latestArcText([], 'genre'), '');
+        assert.equal(latestArcText([{}, { genre: '' }], 'genre'), '');
     });
-});
 
-describe('latestThemeSeeds', () => {
-    it('returns the theme seeds of the newest arc that has them', () => {
-        const arcs = [{ themeSeeds: 'found family' }, {}, { themeSeeds: 'corruption' }, { themeSeeds: '' }];
-        assert.equal(latestThemeSeeds(arcs), 'corruption');
+    it('returns the theme seeds of the newest arc that has them, whatever the newest genre', () => {
+        const arcs = [{ themeSeeds: 'found family' }, {}, { themeSeeds: 'corruption' }, { genre: 'Space opera', themeSeeds: '' }];
+        assert.equal(latestArcText(arcs, 'themeSeeds'), 'corruption');
     });
 
     it('returns an empty string when no arc has theme seeds', () => {
-        assert.equal(latestThemeSeeds([]), '');
-        assert.equal(latestThemeSeeds([{ genre: 'Space opera' }, { themeSeeds: '' }]), '');
+        assert.equal(latestArcText([], 'themeSeeds'), '');
+        assert.equal(latestArcText([{ genre: 'Space opera' }, { themeSeeds: '' }], 'themeSeeds'), '');
     });
 });
 
@@ -260,7 +264,7 @@ describe('generateArc: the genre reaches both phases, the themes only the outlin
         assert.equal(sentPrompts[0].includes('corruption'), false);
         assert.ok(sentPrompts[1].startsWith('OUTLINE\n== GENRE (binding) ==\n'));
         assert.ok(sentPrompts[1].includes('turns the arc into a single joke.\n\n== THEMES (colour, not obligations) ==\nThese are the author\'s themes for this arc:\n\ncorruption, political intrigue\n\n'));
-        assert.ok(sentPrompts[1].endsWith('never the reason for a pressure, secret or trigger.\n\nEND'));
+        assert.ok(sentPrompts[1].endsWith('build its thematic statements from them, where the story supports them.\n\nEND'));
         assert.equal(result.arc.genre, 'Superhero drama');
         assert.equal(result.arc.themeSeeds, 'corruption, political intrigue');
     });
