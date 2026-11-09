@@ -110,6 +110,10 @@ _Avoid_: event, hook
 What the UI calls one of an arc's foreshadowing entries: a detail planted early that points to a secret or a later development. Code and the stored arc keep `foreshadowing` (with `clue` and `target`); the wizard and the Arc Manager say "Clues".
 _Avoid_: foreshadowing (in UI text), hint
 
+**World fact**:
+A statement of what is true in the arc's world: what is possible, who holds what power, what a character or faction wants, believes or knows. Sent to the narrator, which keeps every scene consistent with it; never says how to narrate (tone, pacing, emphasis, how a character comes across). An episode's section prints all of them, an act's or saga's the first three. Replaces the directives and anti-patterns of older plans, which are stored but no longer sent (ADR-0009).
+_Avoid_: directive, rule, anti-pattern
+
 **Divergence**:
 The story having moved past the state an arc's remaining beats assume, so they can no longer be fulfilled as planned: an episode's scene beats, or an act's or saga's milestones once the story or the player's rulings have closed the road they stand on.
 _Avoid_: derail, drift

@@ -56,3 +56,28 @@ describe('every fulfillment is one on-screen moment', () => {
         assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact | secret"'));
     });
 });
+
+describe('a plan states world facts, never how to narrate (ADR-0009)', () => {
+    const read = name => readFileSync(new URL(`../prompts/${name}`, import.meta.url), 'utf8');
+
+    it('the outline prompt asks for world facts in place of directives and anti-patterns', () => {
+        const text = read('generate-arc.txt');
+        assert.ok(text.includes('  "worldFacts": [\n    "Two to five plain statements of what is true in this arc\'s world that the story must keep'));
+        assert.equal(text.includes('"directives"'), false);
+        assert.equal(text.includes('"antiPatterns"'), false);
+        assert.equal(/anti-pattern/i.test(text), false);
+        assert.ok(text.includes('"tone": '));
+    });
+
+    it('the outline prompt draws the boundary with one example of each side, and checks it', () => {
+        const text = read('generate-arc.txt');
+        assert.ok(text.includes('"The guild cannot compel a volunteer: it can only ask, reward or withhold favours" is a world fact; "Keep the tone light" is not.'));
+        assert.ok(text.includes('- [ ] No world fact says how to narrate (tone, pacing, emphasis, how a character comes across, what to show or leave out)\n'));
+    });
+
+    it('the detail pass keeps the same rule', () => {
+        const text = read('detail-pass.txt');
+        assert.ok(text.includes('"The guild cannot compel a volunteer: it can only ask, reward or withhold favours" is a world fact; "Keep the tone light" is not.'));
+        assert.equal(/anti-pattern/i.test(text), false);
+    });
+});

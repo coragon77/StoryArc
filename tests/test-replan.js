@@ -126,6 +126,21 @@ describe('mergeReplan', () => {
         assert.deepEqual(merged.characters, ['new character']);
     });
 
+    it('takes the world facts from the generated plan, and its empty directives and rules (ADR-0009)', () => {
+        const existing = { ...storedEpisode(), worldFacts: ['Old fact.'] };
+        const generated = generatedPlan({ worldFacts: ['The brother cannot leave the city.'], directives: [], antiPatterns: [] });
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.worldFacts, ['The brother cannot leave the city.']);
+        assert.deepEqual(merged.directives, []);
+        assert.deepEqual(merged.antiPatterns, []);
+    });
+
+    it('gives an arc stored before world facts the generated ones', () => {
+        const merged = mergeReplan(storedEpisode(), generatedPlan({ worldFacts: ['The ledger office closes at noon.'] }));
+        assert.deepEqual(merged.worldFacts, ['The ledger office closes at noon.']);
+    });
+
     it('keeps fulfilled beats unchanged and appends new unfulfilled beats with no episode beat active', () => {
         const merged = mergeReplan(storedEpisode(), generatedPlan());
 
