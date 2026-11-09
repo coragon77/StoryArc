@@ -36,9 +36,9 @@ function makeAct(overrides = {}) {
         triggers: [{ id: 't1', condition: 'anyone counts the sacks', action: 'the tally is short', fired: false }],
         estimatedLength: 100,
         beats: [
+            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
             { id: 'm_hunger', pressure: 'Rations shrink week by week.', intention: 'The valley knows it will not last the winter.', status: 'active', optional: false },
             { id: 'm_lies', pressure: 'The guild ledgers do not add up.', intention: 'Someone has caught the guild in a lie.', status: 'active', optional: false },
-            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
         ],
         ...overrides,
     };
@@ -178,7 +178,7 @@ describe('milestone section — act / saga in normal focus', () => {
 
     it('prints no pressure for a current milestone without one: never its intention, never the next one\'s pressure (#13)', () => {
         const arc = makeAct();
-        arc.beats[0].pressure = '';
+        arc.beats[1].pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
         assert.equal(text.includes('STANDING PRESSURE'), false);

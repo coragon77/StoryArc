@@ -135,6 +135,49 @@ describe('completing milestones in order', () => {
     });
 });
 
+describe('completions in one call are applied in the order of their messages', () => {
+    it('applies [strings at 9, perks at 7] as perks first, so perks is completed, not skipped', async () => {
+        const [arc] = storeArcs(storedAct());
+        const result = await completeBeats([
+            { arcId: 'act00001', beatId: 'strings', at: 9 },
+            { arcId: 'act00001', beatId: 'perks', at: 7 },
+        ], [arc]);
+        assert.deepEqual(result.completedBeats, ['perks', 'strings']);
+        assert.deepEqual(statuses(arc), ['completed', 'completed', 'active', 'active']);
+        assert.deepEqual(arc.beats[1].completion.skipped, []);
+        assert.equal(arc.lastFulfilledAt, 9);
+    });
+});
+
+describe('a passed milestone: open, but before a completed one', () => {
+    it('is never current and its pressure is never printed; the first open one after the last completed one presses', () => {
+        const arc = storedAct();
+        arc.beats[1].status = 'completed';
+        storeArcs(arc);
+        // perks is open but passed; withdrawn is current.
+        assert.equal(currentMilestone(arc).id, 'withdrawn');
+        const text = buildInjection([arc]);
+        assert.ok(text.includes(`${STANDING_HEADER}\nThe perks are quietly being taken back.\n`), text);
+        assert.equal(text.includes('Gifts and privileges keep arriving from the firm.'), false);
+    });
+
+    it('stays recognisable', () => {
+        const arc = storedAct();
+        arc.beats[1].status = 'completed';
+        storeArcs(arc);
+        assert.ok(buildSignalInjection([arc]).includes('<!-- [ARC_SIGNAL:act00001:perks:COMPLETE] -->'));
+    });
+
+    it('leaves no current milestone, and no pressure block, when nothing open follows the last completed one', () => {
+        const arc = storedAct();
+        arc.beats[3].status = 'completed';
+        arc.status = 'active';
+        storeArcs(arc);
+        assert.equal(currentMilestone(arc), null);
+        assert.equal(buildInjection([arc]).includes('STANDING PRESSURE'), false);
+    });
+});
+
 describe('completing a later milestone skips the earlier open ones', () => {
     it('skips the first two, records them, and makes the fourth current', async () => {
         const [arc] = storeArcs(storedAct());
@@ -250,6 +293,27 @@ describe('rolling back a completion that skipped', () => {
     });
 });
 
+describe('skip ownership', () => {
+    it('a rollback leaves a milestone skipped while a standing completion also skipped it', async () => {
+        const [arc] = storeArcs(storedAct());
+        // B at 20 skips A.
+        chatWithIds(30);
+        await completeBeats([{ arcId: 'act00001', beatId: 'strings', at: 20 }], [arc]);
+        assert.deepEqual(statuses(arc), ['skipped', 'completed', 'active', 'active']);
+        // The player opens A by hand, then completes D by hand: D skips A and C.
+        await setBeatStatusByHand('act00001-full-id', 'perks', 'active');
+        await setBeatStatusByHand('act00001-full-id', 'frozen_out', 'completed');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.deepEqual(statuses(stored), ['skipped', 'completed', 'skipped', 'completed']);
+        assert.deepEqual(stored.beats[3].completion, { byHand: true, skipped: ['perks', 'withdrawn'] });
+
+        // Message 20 goes: B reopens, A stays skipped (D owns that skip).
+        chat.length = 20;
+        assert.equal(reopenCompletionsFrom(20), true);
+        assert.deepEqual(statuses(stored), ['skipped', 'active', 'skipped', 'completed']);
+    });
+});
+
 describe('episodes are unaffected', () => {
     it('completing a scene beat skips no earlier pending or locked beat and records no skip', async () => {
         const [episode] = storeArcs({
@@ -281,15 +345,43 @@ describe('by hand', () => {
         const stored = chat_metadata.story_arc.arcs[0];
         assert.deepEqual(statuses(stored), ['skipped', 'skipped', 'completed', 'active']);
         assert.equal(stored.beats[0].completion, undefined);
+        assert.deepEqual(stored.beats[2].completion, { byHand: true, skipped: ['perks', 'strings'] });
     });
 
-    it('setting a skipped milestone open makes it open and current again', async () => {
+    it('setting a skipped milestone open makes it open, but passed: the next one after the completed one stays current', async () => {
         const [arc] = storeArcs(storedAct());
         await completeBeats([{ arcId: 'act00001', beatId: 'withdrawn', at: 6 }], [arc]);
         await setBeatStatusByHand('act00001-full-id', 'perks', 'active');
         const stored = chat_metadata.story_arc.arcs[0];
         assert.deepEqual(statuses(stored), ['active', 'skipped', 'completed', 'active']);
+        assert.equal(currentMilestone(stored).id, 'frozen_out');
+    });
+
+    it('setting a hand-completed milestone open gives back what it skipped', async () => {
+        storeArcs(storedAct());
+        await setBeatStatusByHand('act00001-full-id', 'withdrawn', 'completed');
+        await setBeatStatusByHand('act00001-full-id', 'withdrawn', 'active');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.deepEqual(statuses(stored), ['active', 'active', 'active', 'active']);
+        assert.equal(stored.beats[2].completion, undefined);
         assert.equal(currentMilestone(stored).id, 'perks');
+    });
+
+    it('setting a recognised completion open gives back what it skipped', async () => {
+        const [arc] = storeArcs(storedAct());
+        await completeBeats([{ arcId: 'act00001', beatId: 'withdrawn', at: 6 }], [arc]);
+        await setBeatStatusByHand('act00001-full-id', 'withdrawn', 'active');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.deepEqual(statuses(stored), ['active', 'active', 'active', 'active']);
+    });
+
+    it('a rollback never reopens a hand completion', async () => {
+        storeArcs(storedAct());
+        await setBeatStatusByHand('act00001-full-id', 'withdrawn', 'completed');
+        const stored = chat_metadata.story_arc.arcs[0];
+        assert.equal(reopenCompletionsFrom(0), false);
+        assert.deepEqual(reopenCompletionsAt(11), []);
+        assert.deepEqual(statuses(stored), ['skipped', 'skipped', 'completed', 'active']);
     });
 });
 
@@ -331,5 +423,30 @@ describe('skipped in the Arc Manager and the progress rows', () => {
         assert.ok(text.includes('Milestone 3 Escalation · current, its pressure reaches the narrator Status of milestone 3 Open Skipped Done'), text);
         assert.ok(text.includes('Milestones · in order, the first open one presses'), text);
         assert.match(html, /value="skipped" data-beat-status="act00001-full-id" data-beat="perks" checked/);
+    });
+});
+
+describe('the current label in the Arc Manager detail', () => {
+    function detailText(arc) {
+        storeArcs(arc);
+        return textOf(buildArcDetail(arc, { activeArcs: [arc], pendingMarks: [], view: { revealed: new Set() } }));
+    }
+
+    it('names the narrator only in normal and spotlight focus', () => {
+        for (const focus of ['normal', 'spotlight']) {
+            assert.ok(detailText(storedAct({ focus })).includes('Milestone 1 Setup · current, its pressure reaches the narrator Status of milestone 1'), focus);
+        }
+    });
+
+    it('says only "current" in background and paused focus', () => {
+        for (const focus of ['background', 'paused']) {
+            const text = detailText(storedAct({ focus }));
+            assert.ok(text.includes('Milestone 1 Setup · current Status of milestone 1'), focus);
+            assert.equal(text.includes('reaches the narrator'), false, focus);
+        }
+    });
+
+    it('marks no milestone current on a past arc', () => {
+        assert.equal(detailText(storedAct({ status: 'abandoned' })).includes('current'), false);
     });
 });

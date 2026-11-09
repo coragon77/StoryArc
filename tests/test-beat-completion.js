@@ -466,7 +466,7 @@ describe('setBeatStatusByHand — a beat marked done in the Arc Manager', () => 
             lastFulfilledAt: 7,
             estimatedLength: 20,
             beats: [
-                { id: 'b1', intention: 'first', status: 'completed', unlockAfter: [], optional: false },
+                { id: 'b1', intention: 'first', status: 'completed', unlockAfter: [], optional: false, completion: { byHand: true, skipped: [] } },
                 { id: 'b2', intention: 'second', status: 'pending', unlockAfter: ['b1'], optional: false },
                 { id: 'b3', intention: 'third', status: 'pending', unlockAfter: [], optional: false },
                 { id: 'b4', intention: 'extra', status: 'pending', unlockAfter: [], optional: true },

@@ -34,9 +34,9 @@ function makeAct(overrides = {}) {
         triggers: [{ id: 't1', condition: 'anyone counts the sacks', action: 'the tally is short', fired: false }],
         estimatedLength: 100,
         beats: [
+            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
             { id: 'm_hunger', pressure: 'Rations shrink week by week.', intention: 'The valley knows it will not last the winter.', status: 'active', optional: false },
             { id: 'm_lies', pressure: 'The guild ledgers do not add up.', intention: 'Someone has caught the guild in a lie.', status: 'active', optional: false },
-            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
         ],
         ...overrides,
     };
@@ -89,7 +89,7 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
 
     it('prints no BRING TO A HEAD for a current milestone without a pressure instead of printing its fulfillment (#13)', () => {
         const arc = makeAct();
-        arc.beats[0].pressure = '';
+        arc.beats[1].pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
         assert.equal(text.includes('BRING TO A HEAD:'), false);
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
@@ -162,12 +162,12 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
 
         // Two of three done (0.67 → escalation) and 80/100 messages (climax) → escalation still.
         const arc = makeAct();
-        arc.beats[1].status = 'completed';
+        arc.beats[2].status = 'completed';
         const mid = withChatLength(80, () => buildInjection([arc]));
         assert.equal(mid.includes('The guildmaster sold the grain.'), false);
 
         // All done + 80/100 messages → climax.
-        arc.beats[0].status = 'completed';
+        arc.beats[1].status = 'completed';
         const climax = withChatLength(80, () => buildInjection([arc]));
         assert.ok(climax.includes('The guildmaster sold the grain.'));
     });

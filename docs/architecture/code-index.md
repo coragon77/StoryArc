@@ -69,8 +69,10 @@ StoryArc/
 │   │                           #   (ensureChatState creates an empty ledger),
 │   │                           #   secretHolders(secret) — [] for old secrets;
 │   │                           #   isBeatOpen(beat) — neither completed nor skipped;
+│   │                           #   hasSkippedBeats(arc) — a non-optional beat skipped;
 │   │                           #   currentMilestone(arc) — the first open milestone
-│   │                           #   in stored order, the one that presses (ADR-0010)
+│   │                           #   after the last completed one, the one that presses
+│   │                           #   (ADR-0010)
 │   ├── context/
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
 │   │   │                       #   returns HarvestedContext object;
@@ -213,7 +215,10 @@ StoryArc/
 │   │   │                       #   setBeatStatusByHand(arcId, beatId, status) — the
 │   │   │                       #   Arc Manager's toggle; done by hand sets
 │   │   │                       #   lastFulfilledAt (raises the records' floor) and
-│   │   │                       #   skips like a recognised one, no record;
+│   │   │                       #   skips like a recognised one, record { byHand,
+│   │   │                       #   skipped } no rollback reopens; inOrderOfMessages();
+│   │   │                       #   restoreSkippedMilestones() — a skip another
+│   │   │                       #   standing completion lists stays;
 │   │   │                       #   reopenCompletion() undoes unlocks, promotions, skips
 │   │   │                       #   and arc completion; restoreLastFulfilledAt();
 │   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
