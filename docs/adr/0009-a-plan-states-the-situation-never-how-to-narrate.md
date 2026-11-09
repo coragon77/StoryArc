@@ -1,0 +1,18 @@
+# A plan states the situation, never how to narrate
+
+A plan is written by a model and sits in the narrator's prompt every turn for the length of the arc, so its wording becomes the story's. In the Paragon chat (2026-11-08) three replies broke the world in the same way: an ally tied her help to a keycard and a blood match (message 3023), a Ward team lead produced a registry form and ordered an adult Defender around (3051), and a PR coordinator held a signed agreement in front of a volunteer to pull her out of school (3069). What the narrator got from the active acts was their genre ("… non-con, corruption, sexual deviancy, … political thriller"), a premise promising "legal traps" and "institutional exploitation", long pressures that staged scenes, and a military rank in a pressure of a story where the agency is not the military. A test on the disposable test chat (2026-11-09) isolated the plan's wording: with pressures written as contract clauses the narrator invented a contract in 6 of 6 replies, with pressures written as lever and cost in 0 of 3, the same genre line in the prompt both times.
+
+So a plan says what is true in the world: what is possible, who holds what power, what a character or faction wants, believes or knows. It never says how to narrate: tone, pacing, emphasis, how a character comes across, what to show or leave out. Character portrayal stays with the player's material (the character card, the lorebook, the preset); a change the arc itself causes is situation and may stay. Genre and tone steer generation only and never reach the narrator. Someone who presses does it with leverage the setting gives them, never with authority they do not hold, and the planner and the plan check name the lever and the cost, never the move. Story Arc's own code-written text (section headers, pacing and phase lines) is outside this decision: the risk is planner text nobody reviewed, not instructions as such.
+
+The fix is story-agnostic: nothing assumes where a player keeps their rules, because a player's rules may be in the preset, the Author's Note, the lorebook or nowhere.
+
+## Considered options
+
+- Feed the planner the player's Author's Note as standing rules: rejected by the player as a fix for one story; it assumes where a player keeps rules.
+- A sentence ranking the plan below the narration instructions and the established story: tested, no effect (3 of 3 failures with and without it); not shipped.
+- Keep the genre line in the injection as a guard (ADR-0004): dropped; it neither caused nor prevented the failure in the test, and the player ruled that style never reaches the story.
+- A setting that injects tone for players whose preset says little about style: rejected; style belongs to the preset.
+
+## Consequences
+
+Directives and anti-patterns give way to a `worldFacts` list in new plans, and an arc's tone, directives and anti-patterns are no longer printed for the narrator; re-planning an arc converts it (design: `docs/plans/2026-11-09-plans-state-the-situation-design.md`, Part B). A player whose preset says little about style loses the tone and directives an episode carried, which was seen and chosen. The plan check's job grows from give-aways to authority the setting does not grant; its exception for real authority (an officer over a soldier) depends on the author's direction or the story establishing it, never on the premise the planner wrote.

@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-11-06
+- **Last Updated:** 2026-11-09
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -525,6 +525,13 @@ Do NOT use `import './file.css'` in JavaScript -- ST doesn't support CSS module 
 
 ## Gotchas
 
+- **The Author's Note is injected from its panel, not from `chat_metadata`.**
+  `setFloatingPrompt` (`public/scripts/authors-note.js`) reads the text with
+  `$('#extension_floating_prompt').val()`; only position, depth, interval and
+  role come from `chat_metadata`. Writing `chat_metadata.note_prompt` from code
+  changes the saved note but not the next generation's. To set it from a script,
+  set the textarea and trigger `input`, which also saves it to `chat_metadata`
+  (found in the 2026-11-09 Amy test, where one reply went out without the note).
 - **A 200 OK is not proof of success.** Some backends answer with status 200 and
   an `{ error: ... }` object in the body — or, when streaming, inside an SSE
   chunk. Parsing that as the expected payload produces a confusing downstream
