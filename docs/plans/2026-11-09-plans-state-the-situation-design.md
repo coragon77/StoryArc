@@ -1,7 +1,7 @@
 # Plans State the Situation, Never How to Narrate — Design Note
 
 - **Date:** 2026-11-09
-- **Status:** Rulings by Stefan 2026-11-08/09. Part A shipped (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84). Part B (world facts, the style fields leave the prompt) and Part C (a re-plan rewrites unrevealed secrets) are designed here and await approval to implement.
+- **Status:** Rulings by Stefan 2026-11-08/09. Part A shipped (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84). Part B (world facts, the style fields leave the prompt) and Part C (secret rewrites) are designed here; their open questions were answered on 2026-11-09 and the implementation plan is `docs/plans/2026-11-09-plans-state-the-situation.md`.
 - **Builds on:** `docs/plans/2026-09-16-tiers-focus-and-replan-design.md` (sections by tier and focus, re-plan merge)
 - **ADRs touched:** `0003` (re-plan keeps the situation, replaces the road), `0004` (genre binds generation), `0006` (plans are checked before play); new `0009` (a plan states the situation, never how to narrate)
 - **Glossary:** `GLOSSARY.md`: genre, pressure, premise, re-plan
@@ -182,19 +182,23 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
   wording for secrets not yet revealed; the player takes or keeps each, and its
   id, holders and reveal phase stay. Secrets that came out are never rewritten."
 
-## Open questions for Stefan
+## Answered (Stefan, 2026-11-09: "yes, write the plan and run the test")
 
-1. World facts in act and saga sections too (recommended: yes, a world fact is
-   situation like the premise), or episodes only, where directives were?
-2. The Arc Manager notice wording, and whether it also offers to clear the old
-   fields.
-3. Part C: one more output of the re-plan's outline call (recommended: no extra
-   call), or a separate call per re-plan?
-4. Players whose preset says little about style lose the tone and directives an
-   episode used to carry. Stefan's genre ruling points that way ("its only to
-   steer what and how the arc gets generated"), but the trade-off itself was
-   not confirmed. If accepted, record "a setting that injects the tone anyway"
-   as the rejected alternative.
+1. World facts go into act and saga sections too, at most about three short
+   lines. Ruled conditional on a test, which passed: with the contract-clause
+   pressures of condition C and no rule elsewhere, one world fact in the act
+   section turned 3 of 3 failures into 0 of 3 (implementation plan, Test).
+2. The notice appears only on episodes that carry directives, anti-patterns or
+   tone (acts and sagas never sent them): "Its directives, rules and tone are
+   no longer sent to the narrator. Re-plan it to give it world facts instead."
+   No clear button.
+3. Secret rewrites come from the plan check, as a `secret` rewrite kind: no
+   extra call. On a re-plan a rewrite of a secret the arc already had is a
+   proposal in step 3; a secret the plan adds is rewritten directly.
+4. The trade-off for players whose preset says little about style is accepted.
+   Rejected alternative: a setting that sends tone to the narrator anyway.
+
+Implementation: `docs/plans/2026-11-09-plans-state-the-situation.md`.
 
 ## Risks
 
