@@ -46,8 +46,8 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 
 **Plan a new arc** opens a two-step wizard.
 
-1. **Direction.** Pick the arc's **tier** (see below), its **genre** ("High fantasy adventure, banter around the campfire, never grimdark") and say what the arc should explore.
-2. **Review.** Story Arc plans the arc and shows its title, themes and tone. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
+1. **Direction.** Pick the arc's **tier** (see below), its **genre**, kept short ("High fantasy adventure"), its **themes** if you like ("guild politics, the price of fame") and say what the arc should explore. The genre is binding: the arc reads as that genre. The themes only colour the arc where there is room; none of them has to appear. What the arc must deliver comes from your direction.
+2. **Review.** Story Arc plans the arc and shows its title, tone and "What's it about?", the arc's themes grown from yours. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
 ### Managing arcs
 

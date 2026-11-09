@@ -50,8 +50,12 @@ The free-text creative guidance the player gives before an arc is generated or r
 _Avoid_: prompt, instructions, ingredients
 
 **Genre**:
-The register an arc must stay in, written by the player per arc. Binding for both generation phases; it steers what the plan says and is never sent to the narrator (ADR-0004, amended 2026-11-09).
-_Avoid_: style, theme, tone
+The register an arc must stay in, written by the player per arc and kept short ("Superhero drama"). Binding for both generation phases, for the register only: the arc reads as this genre. What the arc must deliver comes from the direction and the premise, never from the genre. Never sent to the narrator (ADR-0004, amended 2026-11-09).
+_Avoid_: style, tone
+
+**Themes** (player):
+The themes the player writes per arc beside the genre ("corruption, political intrigue"), stored as `themeSeeds`. They colour the arc where the premise and the direction leave room and are never obligations; a theme is never a world fact and never the reason for a pressure, secret or trigger: it colours only what the direction already puts there. They seed the plan's own `themes`, its thematic statements, which the player sees as "What's it about?". Outline phase only, never sent to the narrator (ADR-0004, amended 2026-11-09).
+_Avoid_: tags, ingredients, requirements
 
 **Re-plan**:
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
