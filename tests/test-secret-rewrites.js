@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { applyPlanCheck, buildPlanCheckVariables, plantedCluesOfSecret } from '../lib/planning/generator.js';
 
 // The plan check rewrites a secret that hands someone a power they would not
-// hold; on a re-plan, a secret the arc already had gets a proposal the player
-// takes or keeps in step 3 (ADR-0003 amendment, 2026-11-09).
+// hold, directly, on a re-plan too: a secret not yet revealed is road
+// (ADR-0003 amendments, 2026-11-09).
 
 /** A merged re-plan: two secrets the arc had, one the plan adds, and clues that point at them. */
 function makeReplannedAct() {
@@ -30,6 +30,12 @@ function makeReplannedAct() {
         beats: [],
     };
 }
+
+/** The two secrets the re-planned arc had, as stored before the re-plan. */
+const EARLIER_SECRETS = [
+    { id: 'contract_leash', content: 'Her sponsor contract lets Vanguard order her to every gala.', revealPhase: 'escalation', disclosed: false, holders: ['Julian'] },
+    { id: 'jumbotron_cut', content: 'Julian rigged the Jumbotron to broadcast his gauntlet feed.', revealPhase: 'climax', disclosed: false, holders: ['Julian'] },
+];
 
 describe('secret rewrites: which planted clues point at a secret', () => {
     function makeArcWithTargets(targets) {
@@ -70,27 +76,26 @@ describe('secret rewrites: the plan check', () => {
         ].join('\n'));
     });
 
-    it('stores a rewrite of a secret the arc already had as a proposal and keeps its content', () => {
+    it('rewrites a secret the re-planned arc already had directly, trimmed, keeping id, holders and phase', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'contract_leash', text: '  Vanguard pays for her brother\'s clinic place, and a missed gala could end it.  ' }],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
-            content: 'Her sponsor contract lets Vanguard order her to every gala.',
-            proposedContent: 'Vanguard pays for her brother\'s clinic place, and a missed gala could end it.',
+            content: 'Vanguard pays for her brother\'s clinic place, and a missed gala could end it.',
             revealPhase: 'escalation',
             disclosed: false,
             holders: ['Julian'],
         });
     });
 
-    it('rewrites a secret the plan itself adds directly, with no proposal', () => {
+    it('rewrites a secret the plan itself adds directly', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns, and he lets her know it.' }],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[2], {
             id: 'new_debt',
@@ -107,7 +112,6 @@ describe('secret rewrites: the plan check', () => {
         }, []);
 
         assert.equal(checked.secrets[0].content, 'Vanguard pays for her brother\'s clinic place.');
-        assert.equal('proposedContent' in checked.secrets[0], false);
     });
 
     it('never rewrites a secret the same answer marks revealed, nor one already disclosed', () => {
@@ -120,7 +124,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
@@ -148,7 +152,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'jumbotron_cut', text: '   ' },
                 { kind: 'secret', id: 'no_such_secret', text: 'Nowhere to go.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets, makeReplannedAct().secrets);
     });
@@ -162,12 +166,12 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(arc, makeReplannedAct());
     });
 
-    it('renames inside a proposal too', () => {
+    it('renames inside a rewritten secret too', () => {
         const arc = makeReplannedAct();
         arc.secrets[0].content = 'Julian Hale\'s contract lets him order her to every gala.';
         const originalLog = console.log;
@@ -178,13 +182,11 @@ describe('secret rewrites: the plan check', () => {
                 revealed: [],
                 rewrites: [{ kind: 'secret', id: 'contract_leash', text: 'Julian Hale pays for her brother\'s clinic place.' }],
                 renames: [{ from: 'Julian Hale', to: 'Tobias Reed' }],
-            }, ['contract_leash', 'jumbotron_cut'], { cast: [{ name: 'Priya', aliases: [] }] });
+            }, EARLIER_SECRETS, { cast: [{ name: 'Priya', aliases: [] }] });
         } finally {
             console.log = originalLog;
         }
 
-        assert.equal(checked.secrets[0].content, 'Tobias Reed\'s contract lets him order her to every gala.');
-        assert.equal(checked.secrets[0].proposedContent, 'Tobias Reed pays for her brother\'s clinic place.');
-        assert.equal('proposedContent' in checked.secrets[1], false);
+        assert.equal(checked.secrets[0].content, 'Tobias Reed pays for her brother\'s clinic place.');
     });
 });

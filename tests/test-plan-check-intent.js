@@ -70,7 +70,7 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
     });
 
     it('a secret may also be rewritten for a contradiction', () => {
-        assert.ok(checkTemplate.includes('- A secret is rewritten only for leverage, by the same rule as a pressure: replace the contract or the command with the lever the setting gives the person and its cost; or for a contradiction, by the first rule below. Keep what the secret is:'));
+        assert.ok(checkTemplate.includes('- A secret is rewritten only for leverage, by the same rule as a pressure: replace the contract or the command with the lever the setting gives the person and its cost; for a contradiction, by the first rule below; or for register, by the last rule below. Keep what the secret is:'));
     });
 
     it('pins the contradiction rule', () => {
@@ -81,8 +81,12 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
         assert.ok(checkTemplate.includes('- Sweeping claims. A world fact names who holds which power, or who wants or believes what. It never makes a claim about everyone or every group of people ("everyone", "peers, superiors and VIPs alike", "all of them"): the narrator makes it true of every character in every scene. Rewrite it to name who, or drop it with an empty "text".\n'));
     });
 
+    it('pins step 1: the revealed secrets are judged by the wording before the re-plan', () => {
+        assert.ok(checkTemplate.includes('1. REVEALED SECRETS. Only when a STORY SO FAR block is given above: list the ids of the secrets in the SECRETS BEFORE THIS RE-PLAN block that the story has already revealed, judged by the wording given there. Judge from the story block alone:'));
+    });
+
     it('pins the register rule', () => {
-        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action or world fact whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in) into the register the author asked for. Keep what it is about. Leave items that already fit. The author\'s direction and answers outrank the exception for a real power: where the author asked for no open force, a real power is played as leverage too.\n\n3. FULFILLMENTS.'));
+        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action, world fact or secret that is not revealed whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in, open blackmail threatening someone\'s home where the author asked for deniable pressure and nothing overt) into the register the author asked for. Keep what it is about; a secret also keeps every planted clue listed under it explained. Leave items that already fit. The author\'s direction and answers outrank the exception for a real power: where the author asked for no open force, a real power is played as leverage too.\n\n3. FULFILLMENTS.'));
     });
 });
 
@@ -95,9 +99,14 @@ describe('generate-arc.txt: dilemmas that cost, world facts that agree with the 
             + '4. WORLD FACTS STATE WHAT IS TRUE, NEVER HOW TO NARRATE\n'));
     });
 
+    it('pins the re-plan line in the secret guidelines', () => {
+        assert.ok(outlineTemplate.includes('- On a re-plan, the ARC SO FAR block says which secrets you may keep, rewrite or drop. A secret you keep or rewrite keeps its id, and still explains every planted clue and fired trigger listed under it.\n- Name the holders of every secret:'));
+    });
+
     it('pins the world-fact line in the world-facts section', () => {
         assert.ok(outlineTemplate.includes('A world fact never states what a secret contains.\n'
-            + 'A world fact never makes a claim about everyone or every group of people ("everyone", "all of them"), and it agrees with what the story has established about the cast: their ages, roles and relations.\n\n'
+            + 'A world fact never makes a claim about everyone or every group of people ("everyone", "all of them"), and it agrees with what the story has established about the cast: their ages, roles and relations.\n'
+            + 'List the world facts most important first. In an act or saga only the first three reach the narrating AI every turn, so put first the ones the story must never lose.\n\n'
             + '5. ESCALATION IS A PATTERN, NOT A LABEL'));
     });
 });
@@ -124,6 +133,49 @@ describe('generateArc: a re-plan\'s kept world facts reach the plan check', () =
         };
         return sentPrompts;
     }
+
+    it('a re-plan stores no invented-id mark, and the check judges the old wording of a rewritten secret', async () => {
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
+        const storedAct = {
+            id: 'arc-1', title: 'The Quiet Debt', status: 'active', tier: 'episode', focus: 'normal',
+            messageStart: 100, lastFulfilledAt: 130, direction: '', premise: 'A debt comes due.',
+            themes: [], tone: '', directives: [], antiPatterns: [], worldFacts: [],
+            secrets: [{ id: 'forged_ledger', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: ['Tomas'] }],
+            foreshadowing: [], triggers: [], characters: [], estimatedLength: 14,
+            beats: [{ id: 'summons', intention: 'She has received the summons.', status: 'active', unlockAfter: [] }],
+        };
+        const generatedPlan = JSON.stringify({
+            title: 'Model title',
+            premise: 'A debt comes due.',
+            beats: [{ id: 'ledger', pressure: 'The ledger is due at dawn.', intention: 'She has read the ledger.' }],
+            secrets: [
+                { id: 'forged_ledger', content: 'The brother forged the ledger.' },
+                { content: 'The brother is dying.' },
+            ],
+            triggers: [],
+            worldFacts: [],
+        });
+        const planCheckAnswer = JSON.stringify({ revealed: ['forged_ledger'], rewrites: [], links: [] });
+        const sentPrompts = installBackend(['The ledger came out in the square.', generatedPlan, planCheckAnswer]);
+        const context = {
+            character: null,
+            persona: { name: '', description: '' },
+            lorebook: { constants: [], arcSummaries: [], recent: [] },
+            chatHistory: [],
+            existingArcs: [storedAct],
+        };
+
+        const result = await generateArc(context, '', {}, { reviseArc: storedAct });
+
+        assert.equal(result.error, null);
+        assert.ok(sentPrompts[2].includes('== SECRETS BEFORE THIS RE-PLAN ==\n'
+            + 'The arc\'s secrets as they were worded while the story above was played. The plan below may have rewritten or dropped some of them; step 1 judges these.\n'
+            + '- [forged_ledger] The ledger is forged.\n'));
+        assert.deepEqual(result.arc.secrets, [
+            { id: 'forged_ledger', content: 'The ledger is forged.', revealPhase: 'any', disclosed: true, holders: ['Tomas'] },
+            { id: 'secret_2', content: 'The brother is dying.', revealPhase: 'any', disclosed: false, holders: [] },
+        ]);
+    });
 
     it('the outline is shown the old facts, and the facts it kept are numbered in WORLD FACTS', async () => {
         extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };

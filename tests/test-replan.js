@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyReplan, mergeReplan, replanTiers } from '../lib/planning/replan.js';
-import { buildArcSoFar } from '../lib/planning/generator.js';
+import { buildArcSoFar, plantedCluesOfSecret } from '../lib/planning/generator.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
 import { reopenCompletionsFrom } from '../lib/planning/beat-completion.js';
@@ -98,6 +98,25 @@ describe('mergeReplan', () => {
         assert.deepEqual(existing.beats[1].completion.unlocked, ['beat_3']);
     });
 
+    it('drops the milestones a kept completion skipped from its record, so a rollback cannot reopen them', () => {
+        const existing = {
+            ...storedEpisode(),
+            tier: 'act',
+            beats: [
+                { id: 'm0', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+                {
+                    id: 'm1', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [],
+                    completion: { at: 140, messageId: 'm140', skipped: ['m0'], lastFulfilledBefore: 130 },
+                },
+            ],
+        };
+
+        const merged = mergeReplan(existing, generatedPlan({ tier: 'act' }));
+
+        assert.deepEqual(merged.beats[1].completion, { at: 140, messageId: 'm140', lastFulfilledBefore: 130 });
+        assert.deepEqual(existing.beats[1].completion.skipped, ['m0']);
+    });
+
     it('keeps identity, focus, status and the edited title/premise/direction', () => {
         const existing = { ...storedEpisode(), title: 'Edited title', premise: 'Edited premise', direction: 'new direction' };
         const merged = mergeReplan(existing, generatedPlan());
@@ -176,19 +195,74 @@ describe('mergeReplan', () => {
         assert.equal(merged.triggers[1].fired, false);
     });
 
-    it('keeps every existing secret verbatim and only adds new ones', () => {
+    it('keeps a revealed secret verbatim and drops a generated one restating it', () => {
+        // generatedPlan's secret_1 restates the disclosed secret_1.
         const merged = mergeReplan(storedEpisode(), generatedPlan());
 
-        assert.deepEqual(merged.secrets.slice(0, 2), storedEpisode().secrets);
-        assert.equal(merged.secrets.length, 3);
-        assert.equal(merged.secrets[2].content, 'The brother is dying.');
-        assert.equal(merged.secrets[2].id, 'secret_2_2');
-        assert.equal(merged.secrets[2].disclosed, false);
+        assert.deepEqual(merged.secrets[0], { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true });
+        assert.equal(merged.secrets.filter(secret => /creditor is her brother/i.test(secret.content)).length, 1);
+    });
+
+    it('replaces an unrevealed secret the plan keeps under its id, holders and phase included', () => {
+        const generated = generatedPlan({
+            secrets: [{ id: 'secret_2', content: 'The brother forged the ledger to cover his illness.', revealPhase: 'escalation', holders: ['Tomas'] }],
+        });
+
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.secrets, [
+            { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true },
+            { id: 'secret_2', content: 'The brother forged the ledger to cover his illness.', revealPhase: 'escalation', disclosed: false, holders: ['Tomas'] },
+        ]);
+    });
+
+    it('drops an unrevealed secret the plan leaves out and takes the plan\'s new one', () => {
+        const generated = generatedPlan({ secrets: [{ id: 'brother_dying', content: 'The brother is dying.' }] });
+
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['brother_dying', 'The brother is dying.'],
+        ]);
+    });
+
+    it('keeps a planted clue and a fired trigger pointing at an unrevealed secret the plan rewrote', () => {
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true }],
+            triggers: [{ id: 'ledger_touched', condition: 'if she opens the ledger', action: 'the clerk snatches it back', secret: 'secret_2', fired: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ id: 'secret_2', content: 'The ledger was forged with almond ink by the brother.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.foreshadowing[0], { id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true });
+        assert.deepEqual(merged.triggers[0], { id: 'ledger_touched', condition: 'if she opens the ledger', action: 'the clerk snatches it back', secret: 'secret_2', fired: true });
+        assert.deepEqual(plantedCluesOfSecret(merged, 'secret_2').map(clue => clue.id), ['almond_ink']);
+        assert.equal(merged.secrets.find(secret => secret.id === 'secret_2').content, 'The ledger was forged with almond ink by the brother.');
+    });
+
+    it('suffixes a new secret whose id collides with a revealed one, and its trigger link follows', () => {
+        const generated = generatedPlan({
+            secrets: [{ id: 'secret_1', content: 'The brother is dying.' }],
+            triggers: [{ id: 'brother_coughs', condition: 'if she visits', action: 'he hides the cough', secret: 'secret_1' }],
+        });
+
+        const merged = mergeReplan(storedEpisode(), generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['secret_1_2', 'The brother is dying.'],
+        ]);
+        assert.equal(merged.triggers.find(trigger => trigger.id === 'brother_coughs').secret, 'secret_1_2');
     });
 
     it('points a new trigger\'s secret link at the secret\'s merged id', () => {
-        // generatedPlan's secret_1 restates the stored secret_1 and is dropped;
-        // its secret_2 ("The brother is dying.") collides and becomes secret_2_2.
+        // generatedPlan's secret_1 restates the disclosed secret_1 and is
+        // dropped; its secret_2 ("The brother is dying.") has an id
+        // validation invented, so it is suffixed past the stored secret_2,
+        // which the plan left out.
         const generated = generatedPlan({
             triggers: [
                 { id: 'brother_coughs', condition: 'if she visits', action: 'he hides the cough', secret: 'secret_2' },
@@ -198,6 +272,10 @@ describe('mergeReplan', () => {
 
         const merged = mergeReplan(storedEpisode(), generated);
 
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['secret_2_2', 'The brother is dying.'],
+        ]);
         assert.deepEqual(merged.triggers.map(trigger => [trigger.id, trigger.secret]), [
             ['trigger_1', undefined],
             ['brother_coughs', 'secret_2_2'],
@@ -205,8 +283,49 @@ describe('mergeReplan', () => {
         ]);
     });
 
-    it('points a link to a dropped restated secret at the existing secret with that content', () => {
-        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: 'The Duke is alive.', revealPhase: 'any', disclosed: false }] };
+    it('never lets an id validation invented replace an unrevealed secret', () => {
+        // The planner gave no ids: validation numbers them secret_1, secret_2,
+        // the ids the stored arc's unrevealed secrets have.
+        const existing = {
+            ...storedEpisode(),
+            secrets: [
+                { id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] },
+                { id: 'secret_2', content: 'The clerk is paid by the brother.', revealPhase: 'climax', disclosed: false, holders: [] },
+            ],
+        };
+        const generated = generatedPlan({
+            secrets: [{ content: 'The brother is dying.' }, { content: 'The creditor fled the capital.' }],
+            triggers: [{ condition: 'if she visits', action: 'he hides the cough', secret: 'secret_1' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1_2', 'The brother is dying.'],
+            ['secret_2_2', 'The creditor fled the capital.'],
+        ]);
+        assert.equal(merged.triggers[1].secret, 'secret_1_2');
+    });
+
+    it('lets a named id replace the unrevealed secret while an invented one is suffixed past it', () => {
+        const existing = {
+            ...storedEpisode(),
+            secrets: [{ id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] }],
+        };
+        const generated = generatedPlan({
+            secrets: [{ content: 'The brother is dying.' }, { id: 'secret_1', content: 'The brother forged the ledger.' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The brother forged the ledger.'],
+            ['secret_1_2', 'The brother is dying.'],
+        ]);
+    });
+
+    it('points a link to a dropped restated secret at the revealed secret with that content', () => {
+        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: 'The Duke is alive.', revealPhase: 'any', disclosed: true }] };
         const generated = {
             ...generatedPlan(),
             secrets: [{ id: 'duke_alive', content: 'the duke is alive.', revealPhase: 'climax', disclosed: false }],
@@ -216,26 +335,28 @@ describe('mergeReplan', () => {
         const merged = mergeReplan(existing, generated);
 
         assert.equal(merged.triggers.find(trigger => trigger.id === 'grave_opened').secret, 'secret_1');
+        assert.deepEqual(merged.secrets.map(secret => secret.id), ['secret_1']);
     });
 
-    it('drops a generated secret that differs from an existing one only in case or surrounding spaces', () => {
-        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }] };
+    it('drops a generated secret that differs from a revealed one only in case or surrounding spaces', () => {
+        const existing = { ...storedEpisode(), secrets: [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: true }] };
         const generated = { ...generatedPlan(), secrets: [{ id: 'secret_1', content: 'the duke is ALIVE  ', revealPhase: 'any', disclosed: false }] };
         const merged = mergeReplan(existing, generated);
 
-        assert.deepEqual(merged.secrets, [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: false }]);
+        assert.deepEqual(merged.secrets, [{ id: 'secret_1', content: '  The Duke is alive ', revealPhase: 'any', disclosed: true }]);
     });
 
-    it('keeps the holders of kept secrets and takes a new secret with its own', () => {
+    it('keeps the holders of a revealed secret and takes a re-planned secret with the plan\'s', () => {
         const existing = { ...storedEpisode(), secrets: [
             { id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] },
-            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: [] },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: ['Vera'] },
         ] };
         const { arc: generated } = validateArcPlan({
             title: 'T', premise: 'P', beats: [{ intention: 'She has found the crane.' }],
             secrets: [
-                // Restates a kept secret with other holders: the kept one wins.
-                { id: 'crane_again', content: 'julian plans the crane drop.', holders: ['Vera'] },
+                // Restates the revealed secret with other holders: the stored one wins.
+                { id: 'vow_again', content: 'vera swore an oath to the guild.', holders: ['Julian'] },
+                { id: 'crane_plan', content: 'Julian and Brody plan the crane drop for the gala.', revealPhase: 'climax', holders: ['Julian'] },
                 { id: 'flash_drive', content: 'The flash drive holds the tether code.', revealPhase: 'escalation', holders: ['Gabriel'] },
             ],
         });
@@ -243,9 +364,30 @@ describe('mergeReplan', () => {
         const merged = mergeReplan(existing, generated);
 
         assert.deepEqual(merged.secrets, [
-            { id: 'crane_plan', content: 'Julian plans the crane drop.', revealPhase: 'climax', disclosed: false, holders: ['Julian', 'Brody'] },
-            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: [] },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true, holders: ['Vera'] },
+            { id: 'crane_plan', content: 'Julian and Brody plan the crane drop for the gala.', revealPhase: 'climax', disclosed: false, holders: ['Julian'] },
             { id: 'flash_drive', content: 'The flash drive holds the tether code.', revealPhase: 'escalation', disclosed: false, holders: ['Gabriel'] },
+        ]);
+    });
+
+    it('keeps a skipped milestone like a completed one, ahead of the new road', () => {
+        const existing = {
+            ...storedEpisode(),
+            tier: 'act',
+            beats: [
+                { id: 'm0', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [] },
+                { id: 'm1', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+                { id: 'm2', pressure: 'The vault waits.', intention: 'She has opened the vault.', status: 'active', unlockAfter: [] },
+            ],
+        };
+        const generated = generatedPlan({ tier: 'act', beats: [{ id: 'm1', pressure: 'The creditor calls.', intention: 'She has paid the debt.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.beats.map(beat => [beat.id, beat.status, beat.intention]), [
+            ['m0', 'completed', 'She has joined the guild.'],
+            ['m1', 'skipped', 'She has heard the rumour.'],
+            ['m1_2', 'active', 'She has paid the debt.'],
         ]);
     });
 
@@ -388,12 +530,14 @@ describe('buildArcSoFar', () => {
         const text = buildArcSoFar(storedEpisode());
 
         assert.ok(text.includes(
-            'Secrets already established (do not restate, only add):\n'
+            'Secrets already revealed (established, do not restate):\n'
             + '- The creditor is her brother.\n'
-            + '- The ledger is forged.\n'
+            + '\n'
+            + 'Secrets not yet revealed (re-plan them freely: keep, rewrite or drop each, keeping its id when you keep or rewrite it; a secret with planted clues or fired triggers listed under it must be kept or rewritten so it still explains them):\n'
+            + '- [secret_2] The ledger is forged.\n'
             + '\n'
             + 'Escalation so far: old escalation\n',
-        ));
+        ), text);
         assert.ok(text.endsWith(
             'Already happened (fulfilled beats — do not plan these again):\n'
             + '- She has received the summons.\n'
@@ -402,13 +546,69 @@ describe('buildArcSoFar', () => {
         ));
     });
 
-    it('lists the world facts after the escalation, asking to keep the ones still true', () => {
+    it('lists an unrevealed secret with its holders, planted clues and linked fired triggers', () => {
+        const arc = {
+            ...storedEpisode(),
+            secrets: [{ id: 'forged_ledger', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: ['Tomas', 'the clerk'] }],
+            foreshadowing: [
+                { id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:forged_ledger', planted: true },
+                { id: 'fresh_binding', clue: 'A binding newer than its pages', target: 'secret:forged_ledger', planted: false },
+            ],
+            triggers: [
+                { id: 'ledger_touched', condition: 'she opens the ledger', action: 'the clerk snatches it back', secret: 'forged_ledger', fired: true },
+                { id: 'ledger_burned', condition: 'she copies a page', action: 'the clerk lies', secret: 'forged_ledger', fired: false },
+                { id: 'guard_follows', condition: 'she flees', action: 'the guard follows', fired: true },
+            ],
+        };
+
+        const text = buildArcSoFar(arc);
+
+        assert.ok(text.includes(
+            'so it still explains them):\n'
+            + '- [forged_ledger] The ledger is forged.\n'
+            + '  Known to: Tomas, the clerk\n'
+            + '  Planted clue: Ink that smells of almonds\n'
+            + '  Fired trigger: IF she opens the ledger → the clerk snatches it back\n'
+            + '\n'
+            + 'Escalation so far:',
+        ), text);
+    });
+
+    it('lists skipped milestones as passed over after what already happened', () => {
+        const arc = {
+            ...storedEpisode(),
+            tier: 'act',
+            beats: [
+                { id: 'm0', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [] },
+                { id: 'm1', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+                { id: 'm2', pressure: 'The vault waits.', intention: 'She has opened the vault.', status: 'active', unlockAfter: [] },
+            ],
+        };
+
+        const text = buildArcSoFar(arc);
+
+        assert.ok(text.endsWith(
+            'Already happened (fulfilled beats — do not plan these again):\n'
+            + '- She has joined the guild.\n'
+            + '\n'
+            + 'Passed over (the story moved past them; do not plan them again):\n'
+            + '- She has heard the rumour.\n'
+            + '\n',
+        ), text);
+        assert.doesNotMatch(text, /She has opened the vault\./);
+    });
+
+    it('prints no passed-over block without a skipped milestone', () => {
+        assert.doesNotMatch(buildArcSoFar(storedEpisode()), /Passed over/);
+    });
+
+    it('lists the world facts after the escalation, asking to keep the ones still true and their rank', () => {
         const text = buildArcSoFar({ ...storedEpisode(), worldFacts: ['The brother cannot leave the city.', 'The ledger office closes at noon.'] });
 
         assert.ok(text.includes(
             'Escalation so far: old escalation\n'
             + '\n'
-            + 'World facts so far (keep in your "worldFacts" each one that is still true in the story; reword or drop one the story has overtaken):\n'
+            + 'World facts so far, most important first (keep in your "worldFacts" each one that is still true in the story, in this order; reword or drop one the story has overtaken; put a new fact before a kept one only when it matters more):\n'
             + '- The brother cannot leave the city.\n'
             + '- The ledger office closes at noon.\n'
             + '\n'
@@ -419,20 +619,23 @@ describe('buildArcSoFar', () => {
     it('says (none) for world facts on an arc stored before them', () => {
         const text = buildArcSoFar(storedEpisode());
 
-        assert.ok(text.includes('reword or drop one the story has overtaken):\n(none)\n\nAlready happened'), text);
+        assert.ok(text.includes('put a new fact before a kept one only when it matters more):\n(none)\n\nAlready happened'), text);
     });
 
     it('says (none) without secrets and (none recorded) without escalation', () => {
         const text = buildArcSoFar({ ...storedEpisode(), secrets: [], escalation: '' });
 
-        assert.ok(text.includes('only add):\n(none)\n\nEscalation so far: (none recorded)\n'));
+        assert.ok(text.includes('do not restate):\n(none)\n\nSecrets not yet revealed'), text);
+        assert.ok(text.includes('so it still explains them):\n(none)\n\nEscalation so far: (none recorded)\n'), text);
     });
 
     it('opens with the header, the re-planning instruction and the premise', () => {
         const text = buildArcSoFar(storedEpisode());
 
         assert.ok(text.startsWith('== ARC SO FAR ==\nYou are RE-PLANNING an arc that is already running'));
-        assert.ok(text.includes('your "secrets" output may only ADD new ones'));
+        assert.ok(text.includes('The revealed secrets and what has already happened below are established and stay true.'));
+        assert.ok(text.includes('Your "secrets" output holds the secrets not yet revealed that you keep or rewrite, and any new ones; a secret you leave out is dropped. Never put a revealed secret in it.'));
+        assert.ok(!text.includes('only ADD'));
         assert.ok(text.includes('\n\nCurrent premise: A debt comes due.\n\n'));
     });
 
@@ -574,49 +777,6 @@ describe('applyReplan', () => {
     it('refuses a blank premise with the JSON editor\'s message', () => {
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, { premise: '   ' }), { arc: null, error: 'premise cannot be empty.' });
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, {}), { arc: null, error: 'premise cannot be empty.' });
-    });
-
-    /** A merged arc whose plan check proposed new wording for two secrets. */
-    function mergedWithSecretProposals() {
-        const merged = mergedArc();
-        merged.secrets = [
-            { id: 'contract', content: 'Her contract lets the guild order her about.', proposedContent: 'The guild pays for her brother\'s care.', revealPhase: 'climax', disclosed: false, holders: ['Mara'] },
-            { id: 'ledger', content: 'A clause binds Vera to the ledger.', proposedContent: 'Vera owes the ledger\'s keeper.', revealPhase: 'escalation', disclosed: false, holders: ['Vera'] },
-            { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true },
-        ];
-        return merged;
-    }
-
-    it('takes and keeps each proposed secret as chosen, and stores no proposal', () => {
-        const { arc } = applyReplan(mergedWithSecretProposals(), 250, {
-            premise: 'A debt comes due.',
-            secretChoices: { contract: 'take', ledger: 'keep' },
-        });
-
-        assert.deepEqual(arc.secrets, [
-            { id: 'contract', content: 'The guild pays for her brother\'s care.', revealPhase: 'climax', disclosed: false, holders: ['Mara'] },
-            { id: 'ledger', content: 'A clause binds Vera to the ledger.', revealPhase: 'escalation', disclosed: false, holders: ['Vera'] },
-            { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true },
-        ]);
-    });
-
-    it('keeps every secret and removes every proposal when no choice is given', () => {
-        const { arc } = applyReplan(mergedWithSecretProposals(), 250, { premise: 'A debt comes due.' });
-
-        assert.deepEqual(arc.secrets.map(secret => [secret.content, 'proposedContent' in secret]), [
-            ['Her contract lets the guild order her about.', false],
-            ['A clause binds Vera to the ledger.', false],
-            ['The creditor is her brother.', false],
-        ]);
-    });
-
-    it('takes nothing for a secret without a proposal, and leaves the merged arc\'s proposals alone', () => {
-        const merged = mergedWithSecretProposals();
-
-        const { arc } = applyReplan(merged, 250, { premise: 'A debt comes due.', secretChoices: { secret_1: 'take', contract: 'take' } });
-
-        assert.equal(arc.secrets[2].content, 'The creditor is her brother.');
-        assert.deepEqual(merged, mergedWithSecretProposals());
     });
 });
 
