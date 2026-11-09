@@ -91,7 +91,8 @@ StoryArc/
 │   │   │                       #   tier, direction, genre, themeSeeds, authorAnswers,
 │   │   │                       #   messageStart, lastFulfilledAt;
 │   │   │                       #   prepareArc() = Phase 1 + the question call
-│   │   │                       #   (buildAskQuestionsVariables, parseAuthorQuestions,
+│   │   │                       #   (buildAskQuestionsVariables with buildSeenArcSoFar:
+│   │   │                       #   only what play has shown; parseAuthorQuestions,
 │   │   │                       #   answeredAuthorAnswers); formatAuthorAnswersBlock()
 │   │   │                       #   fills {{AUTHOR_ANSWERS_BLOCK}} in Phase 2;
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
