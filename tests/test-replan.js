@@ -241,8 +241,9 @@ describe('mergeReplan', () => {
 
     it('points a new trigger\'s secret link at the secret\'s merged id', () => {
         // generatedPlan's secret_1 restates the disclosed secret_1 and is
-        // dropped; its secret_2 ("The brother is dying.") replaces the
-        // unrevealed secret_2 under the same id.
+        // dropped; its secret_2 ("The brother is dying.") has an id
+        // validation invented, so it is suffixed past the stored secret_2,
+        // which the plan left out.
         const generated = generatedPlan({
             triggers: [
                 { id: 'brother_coughs', condition: 'if she visits', action: 'he hides the cough', secret: 'secret_2' },
@@ -254,12 +255,53 @@ describe('mergeReplan', () => {
 
         assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
             ['secret_1', 'The creditor is her brother.'],
-            ['secret_2', 'The brother is dying.'],
+            ['secret_2_2', 'The brother is dying.'],
         ]);
         assert.deepEqual(merged.triggers.map(trigger => [trigger.id, trigger.secret]), [
             ['trigger_1', undefined],
-            ['brother_coughs', 'secret_2'],
+            ['brother_coughs', 'secret_2_2'],
             ['creditor_named', 'secret_1'],
+        ]);
+    });
+
+    it('never lets an id validation invented replace an unrevealed secret', () => {
+        // The planner gave no ids: validation numbers them secret_1, secret_2,
+        // the ids the stored arc's unrevealed secrets have.
+        const existing = {
+            ...storedEpisode(),
+            secrets: [
+                { id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] },
+                { id: 'secret_2', content: 'The clerk is paid by the brother.', revealPhase: 'climax', disclosed: false, holders: [] },
+            ],
+        };
+        const generated = generatedPlan({
+            secrets: [{ content: 'The brother is dying.' }, { content: 'The creditor fled the capital.' }],
+            triggers: [{ condition: 'if she visits', action: 'he hides the cough', secret: 'secret_1' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1_2', 'The brother is dying.'],
+            ['secret_2_2', 'The creditor fled the capital.'],
+        ]);
+        assert.equal(merged.triggers[1].secret, 'secret_1_2');
+    });
+
+    it('lets a named id replace the unrevealed secret while an invented one is suffixed past it', () => {
+        const existing = {
+            ...storedEpisode(),
+            secrets: [{ id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] }],
+        };
+        const generated = generatedPlan({
+            secrets: [{ content: 'The brother is dying.' }, { id: 'secret_1', content: 'The brother forged the ledger.' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The brother forged the ledger.'],
+            ['secret_1_2', 'The brother is dying.'],
         ]);
     });
 
@@ -511,6 +553,34 @@ describe('buildArcSoFar', () => {
             + '\n'
             + 'Escalation so far:',
         ), text);
+    });
+
+    it('lists skipped milestones as passed over after what already happened', () => {
+        const arc = {
+            ...storedEpisode(),
+            tier: 'act',
+            beats: [
+                { id: 'm0', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [] },
+                { id: 'm1', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+                { id: 'm2', pressure: 'The vault waits.', intention: 'She has opened the vault.', status: 'active', unlockAfter: [] },
+            ],
+        };
+
+        const text = buildArcSoFar(arc);
+
+        assert.ok(text.endsWith(
+            'Already happened (fulfilled beats — do not plan these again):\n'
+            + '- She has joined the guild.\n'
+            + '\n'
+            + 'Passed over (the story moved past them; do not plan them again):\n'
+            + '- She has heard the rumour.\n'
+            + '\n',
+        ), text);
+        assert.doesNotMatch(text, /She has opened the vault\./);
+    });
+
+    it('prints no passed-over block without a skipped milestone', () => {
+        assert.doesNotMatch(buildArcSoFar(storedEpisode()), /Passed over/);
     });
 
     it('lists the world facts after the escalation, asking to keep the ones still true and their rank', () => {

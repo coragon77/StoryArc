@@ -384,7 +384,7 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
 
     it('turns a plain-string secret into a secret with that content', () => {
         assert.deepEqual(arcOf({ secrets: ['The duke is alive.'] }).secrets, [
-            { id: 'secret_1', content: 'The duke is alive.', revealPhase: 'any', disclosed: false, holders: [] },
+            { id: 'secret_1', content: 'The duke is alive.', revealPhase: 'any', disclosed: false, holders: [], idInvented: true },
         ]);
     });
 
@@ -397,8 +397,8 @@ describe('validateArcPlan — secrets, foreshadowing, triggers', () => {
             ],
         }).secrets, [
             { id: 's_a', content: 'A', revealPhase: 'climax', disclosed: false, holders: [] },
-            { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false, holders: [] },
-            { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false, holders: [] },
+            { id: 'secret_2', content: 'B', revealPhase: 'opening', disclosed: false, holders: [], idInvented: true },
+            { id: 'secret_3', content: 'C', revealPhase: 'any', disclosed: false, holders: [], idInvented: true },
         ]);
     });
 

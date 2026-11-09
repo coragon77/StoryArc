@@ -150,8 +150,8 @@ StoryArc/
 │   │   │                       #   rewrite or drop, with holders, planted clues and
 │   │   │                       #   fired triggers (formatUnrevealedSecret),
 │   │   │                       #   escalation, world facts most important first,
-│   │   │                       #   fulfilled beats as
-│   │   │                       #   "already happened"; '' for null (plan-new);
+│   │   │                       #   fulfilled beats as "already happened", skipped
+│   │   │                       #   milestones as "passed over"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
 │   │   │                       #   callLlm() exported for the knowledge extraction
 │   │   ├── arc-preset.js       # ARC_PRESET_NAME, ARC_PRESET_SETTINGS (fixed ~18-key
@@ -171,7 +171,8 @@ StoryArc/
 │   │   │                       #   clamped to TIER_TABLE[tier].lengthBand; optional
 │   │   │                       #   `pressure` per episode beat (stored arcs are
 │   │   │                       #   not migrated or re-validated); optional secret
-│   │   │                       #   `holders` (normalizeSecretHolders, [] when missing)
+│   │   │                       #   `holders` (normalizeSecretHolders, [] when missing);
+│   │   │                       #   a secret id it invents is marked idInvented
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
 │   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),

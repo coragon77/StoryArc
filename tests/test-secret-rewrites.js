@@ -31,6 +31,12 @@ function makeReplannedAct() {
     };
 }
 
+/** The two secrets the re-planned arc had, as stored before the re-plan. */
+const EARLIER_SECRETS = [
+    { id: 'contract_leash', content: 'Her sponsor contract lets Vanguard order her to every gala.', revealPhase: 'escalation', disclosed: false, holders: ['Julian'] },
+    { id: 'jumbotron_cut', content: 'Julian rigged the Jumbotron to broadcast his gauntlet feed.', revealPhase: 'climax', disclosed: false, holders: ['Julian'] },
+];
+
 describe('secret rewrites: which planted clues point at a secret', () => {
     function makeArcWithTargets(targets) {
         return { foreshadowing: targets.map((target, index) => ({ id: `clue_${index}`, clue: `Clue ${index}.`, target, planted: true })) };
@@ -74,7 +80,7 @@ describe('secret rewrites: the plan check', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'contract_leash', text: '  Vanguard pays for her brother\'s clinic place, and a missed gala could end it.  ' }],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
@@ -89,7 +95,7 @@ describe('secret rewrites: the plan check', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns, and he lets her know it.' }],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[2], {
             id: 'new_debt',
@@ -118,7 +124,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
@@ -146,7 +152,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'jumbotron_cut', text: '   ' },
                 { kind: 'secret', id: 'no_such_secret', text: 'Nowhere to go.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(checked.secrets, makeReplannedAct().secrets);
     });
@@ -160,7 +166,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, ['contract_leash', 'jumbotron_cut']);
+        }, EARLIER_SECRETS);
 
         assert.deepEqual(arc, makeReplannedAct());
     });
@@ -176,7 +182,7 @@ describe('secret rewrites: the plan check', () => {
                 revealed: [],
                 rewrites: [{ kind: 'secret', id: 'contract_leash', text: 'Julian Hale pays for her brother\'s clinic place.' }],
                 renames: [{ from: 'Julian Hale', to: 'Tobias Reed' }],
-            }, ['contract_leash', 'jumbotron_cut'], { cast: [{ name: 'Priya', aliases: [] }] });
+            }, EARLIER_SECRETS, { cast: [{ name: 'Priya', aliases: [] }] });
         } finally {
             console.log = originalLog;
         }
