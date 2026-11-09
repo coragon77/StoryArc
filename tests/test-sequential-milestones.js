@@ -165,7 +165,7 @@ describe('completing a later milestone skips the earlier open ones', () => {
         assert.deepEqual(listRecognisableBeats([arc])[0].active.map(entry => entry.beatId), ['frozen_out']);
     });
 
-    it('ignores a later claim for a milestone the same message skipped', async () => {
+    it('ignores a later claim for a milestone a completion has skipped', async () => {
         const [arc] = storeArcs(storedAct());
         const result = await completeBeats([
             { arcId: 'act00001', beatId: 'withdrawn', at: 6 },

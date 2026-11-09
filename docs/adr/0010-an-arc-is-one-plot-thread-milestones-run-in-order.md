@@ -6,7 +6,7 @@ So an arc is one plot thread. Its milestones run in the planner's order. The nar
 
 ## Considered options
 
-- Prerequisites on unordered milestones (`unlockAfter`, as scene beats have): rejected. It keeps the list of pressures and adds a graph the planner has to get right; a story that jumps past a prerequisite would leave the later milestone locked, though the story reached it.
+- Prerequisites on unordered milestones (`unlockAfter`, as scene beats have): rejected in favour of plain order.
 - Unlocking later milestones by phase or by the clock: rejected. A pressure from lost perks must follow the perks in the story, not a message count; a clock detaches the plan from where the story is.
 
 ## Consequences
