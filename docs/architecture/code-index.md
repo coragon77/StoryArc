@@ -217,7 +217,7 @@ StoryArc/
 │   │                           #   carries the model's premise as proposedPremise,
 │   │                           #   revealed secrets (a restatement dropped), closed
 │   │                           #   (completed or skipped) beats (their completion records without unlocked
-│   │                           #   and arcCompleted: withoutRoadInRecord), planted
+│   │                           #   skipped and arcCompleted: withoutRoadInRecord), planted
 │   │                           #   foreshadowing, fired triggers;
 │   │                           #   replaces the rest, the unrevealed secrets too (one
 │   │                           #   under an old id keeps its clues and triggers);
@@ -596,7 +596,7 @@ StoryArc/
 │   │                           #   secrets kept, unrevealed replaced by id or dropped,
 │   │                           #   clue and trigger links kept, id de-collision, skipped
 │   │                           #   milestones kept, tier change, kept
-│   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
+│   │                           #   completion records lose unlocked/skipped/arcCompleted) + replanTiers +
 │   │                           #   buildArcSoFar (secret blocks, world-fact rank) +
 │   │                           #   formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)

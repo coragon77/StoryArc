@@ -98,6 +98,25 @@ describe('mergeReplan', () => {
         assert.deepEqual(existing.beats[1].completion.unlocked, ['beat_3']);
     });
 
+    it('drops the milestones a kept completion skipped from its record, so a rollback cannot reopen them', () => {
+        const existing = {
+            ...storedEpisode(),
+            tier: 'act',
+            beats: [
+                { id: 'm0', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+                {
+                    id: 'm1', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [],
+                    completion: { at: 140, messageId: 'm140', skipped: ['m0'], lastFulfilledBefore: 130 },
+                },
+            ],
+        };
+
+        const merged = mergeReplan(existing, generatedPlan({ tier: 'act' }));
+
+        assert.deepEqual(merged.beats[1].completion, { at: 140, messageId: 'm140', lastFulfilledBefore: 130 });
+        assert.deepEqual(existing.beats[1].completion.skipped, ['m0']);
+    });
+
     it('keeps identity, focus, status and the edited title/premise/direction', () => {
         const existing = { ...storedEpisode(), title: 'Edited title', premise: 'Edited premise', direction: 'new direction' };
         const merged = mergeReplan(existing, generatedPlan());
