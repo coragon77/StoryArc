@@ -150,7 +150,8 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 ### Arc Manager
 
 - Only on episodes: an episode whose `directives`, `antiPatterns` or `tone` is
-  non-empty and whose `worldFacts` is empty shows one line under its warnings:
+  non-empty and that has no `worldFacts` list at all (planned before world
+  facts; an empty list does not count) shows one line under its warnings:
   "Its directives, rules and tone are no longer sent to the narrator. Re-plan
   it to give it world facts instead." No button: the re-plan is the existing
   one. Acts and sagas never sent those fields and get no notice.
