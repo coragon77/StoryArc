@@ -54,7 +54,7 @@ The register an arc must stay in, written by the player per arc and kept short (
 _Avoid_: style, tone
 
 **Themes** (player):
-The themes the player writes per arc beside the genre ("corruption, political intrigue"), stored as `themeSeeds`. They colour the arc where the premise and the direction leave room and are never obligations; a theme may shape a pressure, secret or trigger the premise needs, but no item exists only to carry one, and a theme is never a world fact. They seed the plan's own `themes`, its thematic statements, which the player sees as "What's it about?". Outline phase only, never sent to the narrator (ADR-0004, amended 2026-11-09).
+The themes the player writes per arc beside the genre ("corruption, political intrigue"), stored as `themeSeeds`. They colour the arc where the premise and the direction leave room and are never obligations; a theme is never a world fact and never the reason for a pressure, secret or trigger: it colours only what the direction already puts there. They seed the plan's own `themes`, its thematic statements, which the player sees as "What's it about?". Outline phase only, never sent to the narrator (ADR-0004, amended 2026-11-09).
 _Avoid_: tags, ingredients, requirements
 
 **Re-plan**:

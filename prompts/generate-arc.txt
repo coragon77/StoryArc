@@ -170,7 +170,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 == FINAL CHECKLIST (verify before outputting) ==
 
 - [ ] If a GENRE block is given: the arc reads as that genre, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues
-- [ ] If a THEMES block is given: no theme is a world fact, no item exists only to carry a theme, and the `themes` field grows from the given themes where the story supports them
+- [ ] If a THEMES block is given: no theme is a world fact or the reason for a pressure, secret or trigger, and the `themes` field grows from the given themes where the story supports them
 - [ ] Every secret has a SPECIFIC, COMPLETE answer (not "someone is hiding something")
 - [ ] Every foreshadowing entry points to a specific secret or beat
 - [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only

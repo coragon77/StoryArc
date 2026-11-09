@@ -80,7 +80,7 @@ These are the author's themes for this arc:
 
 corruption, political intrigue
 
-They colour the arc: draw on them where the direction and the premise leave room. None of them is an obligation: none has to appear in the pressures, secrets, triggers or world facts. What the arc must deliver comes from the direction and the premise. A theme may shape a pressure, secret or trigger where the premise needs one, but no item exists only to carry a theme, and a theme is never a world fact. The one place the themes seed is the arc's "themes" field: build its thematic statements from them, where the story supports them.
+They colour the arc: draw on them where the direction and the premise leave room. None of them is an obligation: none has to appear in the pressures, secrets, triggers or world facts. What the arc must deliver comes from the direction and the premise. A theme is never a world fact, and never the reason for a pressure, secret or trigger. The one place the themes seed is the arc's "themes" field: build its thematic statements from them, where the story supports them.
 
 `);
     });
@@ -112,7 +112,7 @@ describe('prompt templates carry the genre slot', () => {
     it('outline checklist: the genre binds the register only; no theme is a world fact', () => {
         const text = read('generate-arc.txt');
         assert.ok(text.includes('- [ ] If a GENRE block is given: the arc reads as that genre, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues\n'));
-        assert.ok(text.includes('- [ ] If a THEMES block is given: no theme is a world fact, no item exists only to carry a theme, and the `themes` field grows from the given themes where the story supports them\n'));
+        assert.ok(text.includes('- [ ] If a THEMES block is given: no theme is a world fact or the reason for a pressure, secret or trigger, and the `themes` field grows from the given themes where the story supports them\n'));
         assert.equal(text.includes('what its readers come for'), false);
     });
 
