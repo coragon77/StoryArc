@@ -45,7 +45,7 @@ A pressure is a condition, not a scene. Write it as ONE sentence of at most 25 w
 
 A pressure never states what a secret contains. If the secret is that the quartermaster sells supplies to the Syndicate, "Supplies keep coming up short in ways nobody can quite account for" is a pressure; "The quartermaster's sales to the Syndicate are draining the stores" hands the narrating AI the answer, and it will put that answer in a character's mouth.
 
-When a person or an institution presses, it presses only with leverage the setting gives it: something a character wants or fears losing, or a cost to what they value (their time, their friends, their standing). It never presses with authority it does not hold: an employer does not run a life outside work, a volunteer body cannot compel, a patron cannot simply order. Name the lever and the cost, never the move. "The guild counts every favour she does toward the licence she wants, and each one costs her an evening at home" is a pressure; "The guild's lawyers make her sign away her evenings" hands the narrating AI a scene the world does not allow, and it will write it anyway, contract and all. The same holds for every directive, secret and trigger that says how someone exerts pressure.
+When a person or an institution presses, it presses only with leverage the setting gives it: something a character wants or fears losing, or a cost to what they value (their time, their friends, their standing). It never presses with authority it does not hold: an employer does not run a life outside work, a volunteer body cannot compel, a patron cannot simply order. Name the lever and the cost, never the move. "The guild counts every favour she does toward the licence she wants, and each one costs her an evening at home" is a pressure; "The guild's lawyers make her sign away her evenings" hands the narrating AI a scene the world does not allow, and it will write it anyway, contract and all. The same holds for the premise and for every directive, secret and trigger that says how someone exerts pressure.
 
 4. ANTI-PATTERNS ARE CRITICAL
 The single biggest failure mode is the AI rushing to resolution. Your anti-patterns must explicitly address this. What should the AI NOT do? "Do not reveal the traitor's identity before the escalation phase." "Do not resolve the romantic tension -- let it simmer." "Do not let combat encounters end cleanly -- every fight should have consequences and complications." Anti-patterns are your guardrails against lazy storytelling.
@@ -170,6 +170,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - Trigger actions should be proportional and narratively organic, not plot-device explosions.
 - A trigger action describes what characters do, never what a secret is. When a trigger touches a secret, name only the visible reaction (composure cracks, a deflection, a lie, a hasty exit) and leave the secret's content out. The AI reads every trigger action each message; an action that names the hidden truth gets narrated as a confession the first time the condition is near.
 - The action also stops at the reaction. No payoff after it: not "creating an opening to flip her", not "giving the player the evidence". What the player makes of the reaction is the player's move; an action that names the payoff gets played out in the same message.
+- A trigger action or a clue describes what happens or what can be noticed: a consequence the world allows, stated as lever and cost. It says nothing about tone, pacing, or how a character comes across.
 
 == ESTIMATED LENGTH ==
 
@@ -183,6 +184,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] Every foreshadowing entry points to a specific secret or beat
 - [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only
 - [ ] No `pressure` states the content of a secret
+- [ ] Nobody in the premise, a pressure, a secret or a trigger presses with authority the setting does not give them: no contract, clause, paperwork or order where the world grants no such power
 - [ ] Existing characters are named exactly as the story names them{{CAST_CHECKLIST}}
 - [ ] Every beat has both a `pressure` (a force with no completion state) and an `intention` (a past-tense fulfillment condition: one on-screen moment, not a tally of scenes or a chain of events)
 - [ ] No `pressure` reads as an objective, a task, or something to be achieved
