@@ -23,7 +23,7 @@ These characters are already in the story. Each line gives the name, then the al
 Names already taken: Jules, Julian, Priya, Sterling
 
 Two rules for every name in the plan:
-1. Name an existing character exactly as listed above, everywhere in the plan: secrets and their holders, pressures, fulfillments, triggers, foreshadowing, directives and the characters list.
+1. Name an existing character exactly as listed above, everywhere in the plan: secrets and their holders, pressures, fulfillments, triggers, foreshadowing, world facts and the characters list.
 2. A new character gets none of the taken names as a first name or surname, unless the plan makes them related to the character who has it and says so.
 
 `);
@@ -125,7 +125,7 @@ These characters are already in the story. Each line gives the name, then the al
 Names already taken: Jules, Julian, Priya, Sterling
 
 Two rules for every name in the plan:
-1. Name an existing character exactly as listed above, everywhere in the plan: secrets and their holders, pressures, fulfillments, triggers, foreshadowing, directives and the characters list.
+1. Name an existing character exactly as listed above, everywhere in the plan: secrets and their holders, pressures, fulfillments, triggers, foreshadowing, world facts and the characters list.
 2. A new character gets none of the taken names as a first name or surname, unless the plan makes them related to the character who has it and says so.
 
 == DIRECTION ==

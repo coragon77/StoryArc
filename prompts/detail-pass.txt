@@ -9,7 +9,7 @@ Review the arc outline above and improve it in the following ways:
 
 1. ADD SPECIFICITY TO VAGUE BEATS
 If any beat's intention is generic or abstract, make it concrete. "The party discovers a clue" should become "The party finds a coded ledger in the merchant's quarters -- the cipher matches symbols they've seen on Syndicate communications, confirming organized activity in the region." The more specific the beat, the better the AI can execute it while still having creative latitude. An intention stays ONE on-screen moment at which the development shows: sharpening it never turns it into a tally of many scenes or a chain of separate events joined by "and".
-Specificity goes into intentions, triggers and clues, never into a `pressure` or the `premise`: the narrating AI reads those every turn and makes every concrete detail in them true, even against what the story has settled. Keep each pressure ONE sentence of at most 25 words naming what is at stake and who presses, with no places, clothing, gear, numbers, or who is where or with whom; shorten any pressure that is longer or stages a scene. A person or institution presses only with leverage the setting gives it (something a character wants or fears losing, a cost to what they value), never with authority it does not hold; rewrite any pressure, directive, secret or trigger that has someone order, compel or make a character sign where the world gives them no such power.
+Specificity goes into intentions, triggers and clues, never into a `pressure` or the `premise`: the narrating AI reads those every turn and makes every concrete detail in them true, even against what the story has settled. Keep each pressure ONE sentence of at most 25 words naming what is at stake and who presses, with no places, clothing, gear, numbers, or who is where or with whom; shorten any pressure that is longer or stages a scene. A person or institution presses only with leverage the setting gives it (something a character wants or fears losing, a cost to what they value), never with authority it does not hold; rewrite any pressure, world fact, secret or trigger that has someone order, compel or make a character sign where the world gives them no such power.
 
 2. STRENGTHEN FORESHADOWING
 For each secret, ensure there are at least 2 foreshadowing entries. If a secret only has one clue, add another from a different angle -- perhaps a behavioral clue AND an environmental clue, or a dialogue hint AND a physical detail. Good foreshadowing works on multiple channels so observant players can piece things together.
@@ -23,14 +23,8 @@ Every secret must have a FULL answer. If a secret says "someone is behind the at
 5. ADD MISSING CONNECTIONS
 Look for beats that should reference each other via unlockAfter but don't. Look for secrets that need more foreshadowing. Look for triggers that should fire in response to beat completions. The arc should be a web of interconnected narrative elements, not a linear list.
 
-6. IMPROVE ANTI-PATTERNS
-Add anti-patterns for any failure modes you can identify. Common ones to check:
-- Premature revelation of secrets
-- Resolving character tension too quickly
-- Making antagonists one-dimensional
-- Skipping emotional aftermath of dramatic events
-- Having NPCs explain things that should be shown
-- Rushing through setup to get to action
+6. KEEP WORLD FACTS TO WHAT IS TRUE
+Keep two to five world facts, each a plain statement of what is true in this arc's world: what is possible, who holds what power, what a character or faction wants, believes or knows. A world fact never says how to narrate: no tone, pacing, emphasis, how a character comes across, or what to show or leave out. "The guild cannot compel a volunteer: it can only ask, reward or withhold favours" is a world fact; "Keep the tone light" is not. Rewrite a world fact that says how to narrate into a statement of fact, or drop it.
 
 7. ENRICH THE ESCALATION PATTERN
 If the escalation description is generic, make it specific to this arc's content. Name the pressures, name the stakes at each level, describe what the characters experience as tension mounts.
