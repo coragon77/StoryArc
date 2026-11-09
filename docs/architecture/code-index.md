@@ -78,11 +78,14 @@ StoryArc/
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
-│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre }) —
+│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre, themeSeeds }) —
 │   │   │                       #   two-phase LLM generation with retry logic; stamps
-│   │   │                       #   tier, direction, genre, messageStart, lastFulfilledAt;
+│   │   │                       #   tier, direction, genre, themeSeeds, messageStart,
+│   │   │                       #   lastFulfilledAt;
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
 │   │   │                       #   in both phases (ADR-0004);
+│   │   │                       #   formatThemesBlock(themeSeeds) fills {{THEMES_BLOCK}}
+│   │   │                       #   in Phase 2 only: colour, never obligations;
 │   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
 │   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
 │   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
@@ -157,7 +160,8 @@ StoryArc/
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
 │   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),
 │   │   │                       #   deleteArc();
-│   │   │                       #   latestGenre(arcs) — wizard default for a new arc
+│   │   │                       #   latestGenre(arcs), latestThemeSeeds(arcs) — wizard
+│   │   │                       #   defaults for a new arc
 │   │   ├── arc-edit.js         # applyArcEdit(stored, json) — Edit arc save checks;
 │   │   │                       #   applyTitleAndPremiseEdit(stored, edit) — trimmed
 │   │   │                       #   title + premise as the only updates, same blank
@@ -421,7 +425,7 @@ StoryArc/
 │   │   │                       #   Knowledge action while the tracker is on
 │   │   ├── wizard.js           # showWizard(reviseArcId?) — two-step arc planning popup:
 │   │   │                       #   Direction (context summary strip with Retry on a
-│   │   │                       #   failed harvest, tier, genre, direction; re-plan:
+│   │   │                       #   failed harvest, tier, genre, themes, direction; re-plan:
 │   │   │                       #   title, premise, "Your rulings" with remove buttons)
 │   │   │                       #   → Review (generation log with a polite status line
 │   │   │                       #   and a visible Cancel, then the plan behind one
@@ -731,11 +735,13 @@ StoryArc/
 │   │                           #   dropped, no mutation, renames reach the proposal
 │   ├── test-plan-check-renames.js # Tests: applyPlanCheck renames (#49): every text
 │   │                           #   field, completed beats / fired triggers / direction /
-│   │                           #   genre kept, whole names (possessive matches), longest
+│   │                           #   genre / theme seeds kept, whole names (possessive matches), longest
 │   │                           #   first, each guard, malformed items; the names block
-│   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
-│   │                           #   templates, no GENRE: line in the injection, latestGenre,
-│   │                           #   mergeReplan keeps the edited genre
+│   ├── test-genre.js           # Tests: formatGenreBlock, formatThemesBlock, the
+│   │                           #   {{GENRE_BLOCK}} / {{THEMES_BLOCK}} slots and checklist
+│   │                           #   lines, no genre or theme seeds in the injection,
+│   │                           #   latestGenre, latestThemeSeeds, mergeReplan keeps both,
+│   │                           #   generateArc: themes reach Phase 2 only, stamped when set
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing
 │   │                           #   estimatedLength/messageStart)
