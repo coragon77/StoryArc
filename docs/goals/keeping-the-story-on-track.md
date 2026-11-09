@@ -14,7 +14,7 @@ The largest single source he named: "if the planned story arc is bad, it derails
 
 The incidents behind this document, all in the Paragon chat:
 
-- Message 3026: Levi called Sofia Vega "the mouth-scar female" though he had never seen her. Her scar was only in the lorebook's cast entry.
+- Message 3027 (since regenerated): Levi called Sofia Vega "the mouth-scar female" though he had never seen her. Her scar was only in the lorebook's cast entry.
 - Message 3023: Vasquez, an ally since the October 14 scene, tied her help to a vault keycard and a blood match and walked off when Ellie refused.
 - Message 3051: Sofia produced a "SWORD Parahuman Registry" form and ordered an adult Defender around. The same correction ("Sofia IS NOT GABRIELS COMMANDER") had to be made again at 3054 and 3070.
 - Message 3069: Tanya, a PR coordinator, held a signed agreement in front of Ellie to pull her out of school.
@@ -112,4 +112,4 @@ Order: C1 finishes what shipped. C2 and C3 complete the plan-format change while
 - [ ] **C6. Stance** — how characters stand with each other, recorded when the story shows a change.
   - done = the stance experiment has run and its result is recorded here, with Stefan's decision on building it.
 
-Later chapters TBD after C4 and C5: cleaning up a correction (offering to hide a corrected span), and editing meetings in the Knowledge popup (#82).
+Later chapters TBD after C4 and C5: cleaning up a correction (offering to hide a corrected span), and editing meetings in the Knowledge popup (#82). Two ideas from the session are not ruled on and have no chapter yet: rulings against any arc field, not only the premise and pressures; and a plan check that also tests the plan for internal consistency.

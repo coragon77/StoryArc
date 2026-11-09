@@ -193,6 +193,14 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 
 ## Risks
 
+- The plan check's exception for real authority rests on the author's direction
+  or the story, and only a re-plan passes it the recent messages. For a fresh
+  plan the direction alone can establish an officer's authority; with a thin
+  direction in a story that has a real hierarchy, the check may rewrite
+  legitimate orders into lever and cost. The military counter-test passed
+  because its direction said "orders are orders". Not tested: a fresh plan
+  with a thin direction in such a story.
+
 - World facts become the next place for style: the planner writes "keep it
   tense" as a world fact. The plan check's world-fact step is the guard; a live
   run on a fresh plan checks it.
