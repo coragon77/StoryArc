@@ -475,7 +475,7 @@ describe('unnamed relative: the planner\'s cast', () => {
         chat_metadata.story_arc = { version: 1, arcs: [], settings: {}, pendingMarks: [], knowledge: makeLedger() };
         try {
             const context = await harvestContext();
-            assert.deepEqual(context.cast, [{ name: 'Kendra Osei', aliases: ['Kendra'] }]);
+            assert.deepEqual(context.cast, [{ name: 'Kendra Osei', aliases: ['Kendra'], details: {} }]);
         } finally {
             delete chat_metadata.story_arc;
             delete extension_settings.story_arc;

@@ -15,7 +15,7 @@ const CAST_OF_TWO = [
 describe('formatCastBlock', () => {
     it('lists the cast with aliases, the taken names and the two rules', () => {
         assert.equal(formatCastBlock(CAST_OF_TWO, 'outline'), `== CAST (characters already in the story) ==
-These characters are already in the story. Each line gives the name, then the aliases:
+These characters are already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
 
 - Julian Sterling (aliases: Jules)
 - Priya
@@ -27,6 +27,15 @@ Two rules for every name in the plan:
 2. A new character gets none of the taken names as a first name or surname, unless the plan makes them related to the character who has it and says so.
 
 `);
+    });
+
+    it('lists a member\'s details after a dash, as the plan check\'s names block does', () => {
+        const castWithDetails = [{ name: 'Ellie Masters', aliases: ['Dice'], details: { age: '18', role: 'senior at Westbrook High' } }];
+
+        assert.ok(formatCastBlock(castWithDetails, 'outline').includes(
+            'Each line gives the name, then the aliases, then after a dash what the story has established about them:\n\n'
+            + '- Ellie Masters (aliases: Dice) — age: 18; role: senior at Westbrook High\n\n',
+        ));
     });
 
     it('points the checklist line to the cast block', () => {
@@ -117,7 +126,7 @@ describe('generateArc: the outline prompt carries the cast', () => {
         assert.equal(sentPrompts.length, 3);
         assert.equal(sentPrompts[1], `ANALYSIS: The story stands still.
 == CAST (characters already in the story) ==
-These characters are already in the story. Each line gives the name, then the aliases:
+These characters are already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
 
 - Julian Sterling (aliases: Jules)
 - Priya
@@ -159,7 +168,7 @@ SECRETS:
 - [forged] (climax) Julian Hale forged the ledger.
 
 == NAMES ==
-The cast, the characters already in the story. Each line gives the name, then the aliases:
+The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
 
 - Julian Sterling (aliases: Jules)
 - Priya
