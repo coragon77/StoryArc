@@ -50,7 +50,7 @@ The free-text creative guidance the player gives before an arc is generated or r
 _Avoid_: prompt, instructions, ingredients
 
 **Genre**:
-The register an arc must stay in, written by the player per arc. Binding for both generation phases and printed as one line in the arc's section (ADR-0004).
+The register an arc must stay in, written by the player per arc. Binding for both generation phases; it steers what the plan says and is never sent to the narrator (ADR-0004, amended 2026-11-09).
 _Avoid_: style, theme, tone
 
 **Re-plan**:

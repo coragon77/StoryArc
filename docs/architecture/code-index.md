@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-08
+- **Last Updated:** 2026-11-09
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -697,7 +697,7 @@ StoryArc/
 │   │                           #   genre kept, whole names (possessive matches), longest
 │   │                           #   first, each guard, malformed items; the names block
 │   ├── test-genre.js           # Tests: formatGenreBlock, {{GENRE_BLOCK}} slots in both
-│   │                           #   templates, GENRE: line per section, latestGenre,
+│   │                           #   templates, no GENRE: line in the injection, latestGenre,
 │   │                           #   mergeReplan keeps the edited genre
 │   ├── test-pacing.js          # Tests: phase calculation + pacing directives +
 │   │                           #   messagesUntilNextPhase (boundary offset, missing

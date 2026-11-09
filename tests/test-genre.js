@@ -74,31 +74,30 @@ describe('prompt templates carry the genre slot', () => {
     });
 });
 
-describe('GENRE line in the injection', () => {
-    it('follows the header of a normal saga', () => {
+describe('the genre steers generation only (ADR-0004 amendment 2026-11-09)', () => {
+    it('a normal saga goes from its header straight to the premise', () => {
         const text = buildInjection([makeArc()]);
-        assert.ok(text.includes(`=== SAGA: "The Shadow over Greymoor" ===\nGENRE: ${GENRE}\nPREMISE: The party joins the guild.`));
+        assert.ok(text.includes('=== SAGA: "The Shadow over Greymoor" ===\nPREMISE: The party joins the guild.'));
     });
 
-    it('is carried by a spotlit saga', () => {
+    it('a spotlit saga goes from its header straight to the premise', () => {
         const text = buildInjection([makeArc({ focus: 'spotlight' })]);
-        assert.ok(text.includes(`=== SAGA: "The Shadow over Greymoor" ===\nGENRE: ${GENRE}\n`));
+        assert.ok(text.includes('=== SAGA: "The Shadow over Greymoor" ===\nPREMISE: The party joins the guild.'));
     });
 
-    it('sits above the premise of an episode', () => {
+    it('an episode goes from its phase line straight to the premise', () => {
         const text = buildInjection([makeArc({ tier: 'episode', estimatedLength: 20 })]);
-        assert.ok(text.includes(`GENRE: ${GENRE}\n\nPREMISE: The party joins the guild.`));
+        assert.ok(text.includes('[Phase: Setup | Pacing: Do not rush]\n\nPREMISE: The party joins the guild.'));
     });
 
-    it('is absent when the arc has no genre', () => {
-        for (const tier of ['episode', 'saga']) {
-            const text = buildInjection([makeArc({ tier, genre: undefined })]);
-            assert.equal(text.includes('GENRE'), false, tier);
+    it('no section of any tier or focus carries the genre', () => {
+        for (const tier of ['episode', 'act', 'saga']) {
+            for (const focus of ['normal', 'spotlight', 'background', 'paused']) {
+                const text = buildInjection([makeArc({ tier, focus, estimatedLength: tier === 'episode' ? 20 : 800 })]);
+                assert.equal(text.includes('GENRE'), false, `${tier}/${focus}`);
+                assert.equal(text.includes(GENRE), false, `${tier}/${focus}`);
+            }
         }
-    });
-
-    it('is absent from a paused arc', () => {
-        assert.equal(buildInjection([makeArc({ focus: 'paused' })]).includes('GENRE'), false);
     });
 });
 
