@@ -411,6 +411,41 @@
     border-top: 0;
 }
 
+/* ─── Questions: suggested answers fill the answer box ──────────────────── */
+
+.story-arc-wizard-questions {
+    display: grid;
+    gap: 16px;
+    max-width: 960px;
+}
+
+.story-arc-wizard-questions h3 {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.story-arc-wizard-questions-group {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--wz-muted);
+}
+
+.story-arc-wizard-answer-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0;
+}
+
+.story-arc-wizard-answer-chip {
+    margin: 0;
+    padding: 2px 8px;
+    min-height: 0;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
 /* ─── Review: generation log ─────────────────────────────────────────────── */
 
 .story-arc-wizard-generation {

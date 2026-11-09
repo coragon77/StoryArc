@@ -121,7 +121,8 @@ async function settle() {
 function installTemplates() {
     globalThis.fetch = async (url) => {
         if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
-        if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE');
+        if (String(url).endsWith('ask-questions.txt')) return new Response('ASK');
+        if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE\n{{AUTHOR_ANSWERS_BLOCK}}END');
         if (String(url).endsWith('check-plan.txt')) return new Response('CHECK');
         throw new Error(`unexpected fetch ${url}`);
     };
@@ -139,6 +140,9 @@ function installAnswers(answers, gate = {}) {
         return () => (async function* () { yield { text }; })();
     };
 }
+
+/** The question call's answer when the direction leaves nothing open. */
+const NO_QUESTIONS = '{ "questions": [] }';
 
 const granaryPlan = JSON.stringify({
     title: 'The Granary',
@@ -264,7 +268,7 @@ describe('wizard: generation', () => {
     it('shows a Cancel during generation that closes the wizard; the result is never shown', async () => {
         const gate = {};
         gate.promise = new Promise(resolve => { gate.release = resolve; });
-        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check'], gate);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check'], gate);
         const popup = await openWizard();
 
         typeDirectionAndGenerate('Count the sacks.');
@@ -282,7 +286,7 @@ describe('wizard: generation', () => {
     it('announces each step in a polite live region, not the whole log', async () => {
         const gate = {};
         gate.promise = new Promise(resolve => { gate.release = resolve; });
-        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check'], gate);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check'], gate);
         await openWizard();
 
         typeDirectionAndGenerate('Count the sacks.');
@@ -294,7 +298,7 @@ describe('wizard: generation', () => {
     });
 
     it('reviews the plan with its foreshadowing headed Clues, never Foreshadowing', async () => {
-        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check']);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
         await openWizard();
 
         typeDirectionAndGenerate('Count the sacks.');
@@ -310,7 +314,7 @@ describe('wizard: generation', () => {
 
 describe('wizard: Back from Review', () => {
     it('warns before discarding a generated plan: Keep stays in Review, Discard goes to Direction with the typed direction', async () => {
-        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check']);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
         await openWizard();
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
@@ -331,7 +335,7 @@ describe('wizard: Back from Review', () => {
     });
 
     it('goes straight back to Direction from a failed generation: there is no plan to lose', async () => {
-        installAnswers(['The story stands at a crossroads.', 'not json', 'still not json']);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, 'not json', 'still not json']);
         await openWizard();
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
@@ -340,6 +344,7 @@ describe('wizard: Back from Review', () => {
         // Finished steps say what came of them
         const logText = fake.htmlById['story-arc-step-log'];
         assert.match(logText, /Story context read/);
+        assert.match(logText, /Direction checked for open questions/);
         assert.match(logText, /Outline failed/);
         assert.match(logText, /Outline retry failed/);
         assert.equal(fake.textById['story-arc-wizard-status'], 'Writing the outline again…');
@@ -454,7 +459,7 @@ describe('wizard: failures that are not Error objects', () => {
 
 describe('wizard: Activate', () => {
     it('stores the arc once when Activate is clicked twice before the save finished', async () => {
-        installAnswers(['The story stands at a crossroads.', granaryPlan, 'no check']);
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
         await openWizard();
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
@@ -609,5 +614,215 @@ describe('buildReviewStep — the planner\'s themes', () => {
         const html = buildReviewStep(plan, null);
         assert.ok(html.includes('<span class="story-arc-wizard-muted">What\'s it about?</span> the cost of loyalty, hunger as a weapon</p>'));
         assert.equal(html.includes('Themes:'), false);
+    });
+});
+
+describe('wizard: the Questions step', () => {
+    const pressureQuestions = JSON.stringify({ questions: [
+        { question: 'How does the pressure work?', suggestions: ['Open force', 'Deniable hints nobody admits'] },
+        { question: 'Can an ally talk a dilemma away?', suggestions: ['Yes, sometimes', 'No, nobody rescues'] },
+    ] });
+    const answersBlockForPressure = `== AUTHOR'S ANSWERS (binding, like the direction) ==
+Q: How does the pressure work?
+A: Deniable hints nobody admits
+
+These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes or your own preference disagree, the answer wins.
+
+`;
+
+    /** The transport, recording every prompt sent. */
+    function installRecordedAnswers(answers) {
+        const sentPrompts = [];
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            sentPrompts.push(messages[0].content);
+            const text = answers.shift();
+            return () => (async function* () { yield { text }; })();
+        };
+        return sentPrompts;
+    }
+
+    function storedArc(overrides = {}) {
+        return {
+            id: 'arc00001-full-id', title: 'The Granary', status: 'active', tier: 'episode', focus: 'normal',
+            messageStart: 0, lastFulfilledAt: 0, estimatedLength: 20, direction: 'Count the sacks.',
+            premise: 'The valley is starving.', tone: '', themes: [], directives: [], antiPatterns: [], worldFacts: [],
+            secrets: [], foreshadowing: [], triggers: [], characters: [], escalation: '',
+            beats: [{ id: 'empty_carts', pressure: 'Carts leave at night.', intention: 'The tally was found short.', status: 'active' }],
+            ...overrides,
+        };
+    }
+
+    it('without questions the flow is as before: two steps, straight on to Review, Phase 1 once', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.deepEqual(sentPrompts, ['ANALYZE', 'ASK', 'OUTLINE\nEND', 'CHECK']);
+        assert.match(fake.htmlById['story-arc-wizard-content'], /The Granary/);
+        const steps = fake.htmlById['story-arc-wizard-steps'];
+        assert.ok(steps.includes('<li id="story-arc-wizard-step-review" aria-current="step"><span class="story-arc-wizard-step-number">2</span>Review</li>'));
+        assert.equal(steps.includes('Questions'), false);
+        const logText = fake.htmlById['story-arc-step-log'];
+        assert.match(logText, /Story context read/);
+        assert.match(logText, /Direction checked for open questions/);
+        assert.match(logText, /Outline written/);
+    });
+
+    it('a question call answering garbage goes straight on to planning', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', 'I would ask about the tone.', granaryPlan, 'no check']);
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.equal(sentPrompts.length, 4);
+        assert.match(fake.htmlById['story-arc-wizard-content'], /The Granary/);
+    });
+
+    it('shows the questions with their suggestions as buttons, the help line, and three steps', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions]);
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.deepEqual(sentPrompts, ['ANALYZE', 'ASK']);
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<p class="story-arc-wizard-help story-arc-wizard-lead">Your answers steer the plan as strongly as your direction. They are never shown to the narrator. Leave any blank.</p>'));
+        assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-0">How does the pressure work?</label>'));
+        assert.ok(html.includes('<button type="button" class="menu_button story-arc-wizard-answer-chip" data-question-index="0" data-suggestion-index="1">Deniable hints nobody admits</button>'));
+        assert.ok(html.includes('<button type="button" class="menu_button story-arc-wizard-answer-chip" data-question-index="1" data-suggestion-index="0">Yes, sometimes</button>'));
+        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-1" rows="2"></textarea>'));
+        assert.equal(html.includes('Your earlier answers'), false);
+
+        const steps = fake.htmlById['story-arc-wizard-steps'];
+        assert.ok(steps.includes('<li id="story-arc-wizard-step-questions" aria-current="step"><span class="story-arc-wizard-step-number">2</span>Questions</li>'));
+        assert.ok(steps.includes('<li id="story-arc-wizard-step-review"><span class="story-arc-wizard-step-number">3</span>Review</li>'));
+
+        const footer = fake.htmlById['story-arc-wizard-footer'];
+        assert.match(footer, /id="story-arc-wizard-cancel"/);
+        assert.match(footer, /id="story-arc-wizard-back"/);
+        assert.match(footer, /id="story-arc-wizard-plan-arc"[^]*Plan the arc/);
+    });
+
+    it('a suggestion fills its question\'s answer box', async () => {
+        installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions]);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        fake.trigger('click', '.story-arc-wizard-answer-chip', { data: { 'question-index': 1, 'suggestion-index': 1 } });
+
+        assert.equal(fake.valueById['story-arc-answer-1'], 'No, nobody rescues');
+    });
+
+    it('Plan the arc plans from the same analysis with the answers given, and Activate stores them; a blank one is left out', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, granaryPlan, 'no check']);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        fake.valueById['story-arc-answer-0'] = ' Deniable hints nobody admits ';
+        fake.valueById['story-arc-answer-1'] = '   ';
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        assert.deepEqual(sentPrompts, ['ANALYZE', 'ASK', `OUTLINE\n${answersBlockForPressure}END`, 'CHECK']);
+        assert.match(fake.htmlById['story-arc-wizard-content'], /The Granary/);
+        assert.ok(fake.htmlById['story-arc-wizard-steps'].includes('<li id="story-arc-wizard-step-review" aria-current="step"><span class="story-arc-wizard-step-number">3</span>Review</li>'));
+
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, [{ question: 'How does the pressure work?', answer: 'Deniable hints nobody admits' }]);
+    });
+
+    it('Regenerate plans again with the same analysis and answers; Back from Review returns to the Questions with the answers', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, granaryPlan, 'no check', granaryPlan, 'no check']);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-regenerate');
+        await settle();
+
+        assert.deepEqual(sentPrompts.slice(4), [`OUTLINE\n${answersBlockForPressure}END`, 'CHECK']);
+
+        fake.trigger('click', '#story-arc-wizard-back');
+        fake.trigger('click', '#story-arc-wizard-discard-plan');
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
+        assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-plan-arc"/);
+    });
+
+    it('Back from the Questions returns to Direction with the typed direction; Cancel there stores nothing', async () => {
+        installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions]);
+        const popup = await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-back');
+
+        assert.match(fake.htmlById['story-arc-wizard-content'], /id="story-arc-direction-input"[^>]*>Count the sacks\.<\/textarea>/);
+        assert.ok(fake.htmlById['story-arc-wizard-steps'].includes('<li id="story-arc-wizard-step-direction" aria-current="step"><span class="story-arc-wizard-step-number">1</span>Direction</li>'));
+
+        fake.trigger('click', '#story-arc-wizard-cancel');
+        await settle();
+
+        assert.equal(popup.completedWith, 0);
+        assert.deepEqual(chat_metadata.story_arc.arcs, []);
+    });
+
+    it('a re-plan shows the arc\'s earlier answers first, editable, and stores the answers as edited', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ authorAnswers: [{ question: 'Who may rescue her?', answer: 'Nobody.' }] })];
+        const oneQuestion = JSON.stringify({ questions: [{ question: 'How does the pressure work?', suggestions: ['Open force', 'Deniable hints nobody admits'] }] });
+        installRecordedAnswers(['The story stands at a crossroads.', oneQuestion, granaryPlan, 'no check']);
+
+        showWizard('arc00001-full-id');
+        await settle();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<h4 class="story-arc-wizard-questions-group">Your earlier answers</h4>'));
+        assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-0">Who may rescue her?</label>\n                <textarea class="text_pole" id="story-arc-answer-0" rows="2">Nobody.</textarea>'));
+        assert.ok(html.indexOf('Your earlier answers') < html.indexOf('<h4 class="story-arc-wizard-questions-group">New questions</h4>'));
+        assert.ok(html.indexOf('New questions') < html.indexOf('How does the pressure work?'));
+
+        fake.valueById['story-arc-answer-0'] = 'Nobody, ever.';
+        fake.valueById['story-arc-answer-1'] = 'Open force';
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+        fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, [
+            { question: 'Who may rescue her?', answer: 'Nobody, ever.' },
+            { question: 'How does the pressure work?', answer: 'Open force' },
+        ]);
+    });
+
+    it('a re-plan without new questions plans with the arc\'s earlier answers and keeps them', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ authorAnswers: [{ question: 'Who may rescue her?', answer: 'Nobody.' }] })];
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+
+        showWizard('arc00001-full-id');
+        await settle();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.ok(sentPrompts[2].startsWith('OUTLINE\n== AUTHOR\'S ANSWERS (binding, like the direction) ==\nQ: Who may rescue her?\nA: Nobody.\n\n'));
+        fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, [{ question: 'Who may rescue her?', answer: 'Nobody.' }]);
     });
 });
