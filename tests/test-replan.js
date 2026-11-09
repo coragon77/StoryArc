@@ -402,6 +402,26 @@ describe('buildArcSoFar', () => {
         ));
     });
 
+    it('lists the world facts after the escalation, asking to keep the ones still true', () => {
+        const text = buildArcSoFar({ ...storedEpisode(), worldFacts: ['The brother cannot leave the city.', 'The ledger office closes at noon.'] });
+
+        assert.ok(text.includes(
+            'Escalation so far: old escalation\n'
+            + '\n'
+            + 'World facts so far (keep in your "worldFacts" each one that is still true in the story; reword or drop one the story has overtaken):\n'
+            + '- The brother cannot leave the city.\n'
+            + '- The ledger office closes at noon.\n'
+            + '\n'
+            + 'Already happened (fulfilled beats — do not plan these again):\n',
+        ), text);
+    });
+
+    it('says (none) for world facts on an arc stored before them', () => {
+        const text = buildArcSoFar(storedEpisode());
+
+        assert.ok(text.includes('reword or drop one the story has overtaken):\n(none)\n\nAlready happened'), text);
+    });
+
     it('says (none) without secrets and (none recorded) without escalation', () => {
         const text = buildArcSoFar({ ...storedEpisode(), secrets: [], escalation: '' });
 

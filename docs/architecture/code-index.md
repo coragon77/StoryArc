@@ -160,9 +160,8 @@ StoryArc/
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
-│   │   │                       #   OPTIONAL_ARRAY_ARC_FIELDS (worldFacts) — list fields
-│   │   │                       #   an older arc's JSON may lack: absent is fine, a non-list
-│   │   │                       #   is refused;
+│   │   │                       #   applyArcEdit takes an absent worldFacts key (older
+│   │   │                       #   arcs) and refuses a non-list or a non-text item;
 │   │   │                       #   completeBeat(beats, id) — completes and unlocks,
 │   │   │                       #   drops any completion record (hand toggle and
 │   │   │                       #   completeBeats)
@@ -434,7 +433,8 @@ StoryArc/
 │   │   │                       #   warning area (buildArcAlert: buildArcWarning — ruling,
 │   │   │                       #   all done, stall with Re-plan / Spotlight it / Ignore —
 │   │   │                       #   then buildStyleFieldsNotice, the note on an episode
-│   │   │                       #   with directives, rules or tone and no world facts);
+│   │   │                       #   planned before world facts — no worldFacts key —
+│   │   │                       #   with directives, rules or tone);
 │   │   │                       #   detail (buildArcDetail: describeWhatNarratorGets,
 │   │   │                       #   counting the world facts each section prints,
 │   │   │                       #   Reveal plan switch, beat status, beat editor
