@@ -73,10 +73,12 @@ The **tier** is an arc's size:
 | Tier | Length | Beats | Use it for |
 |---|---|---|---|
 | Episode | 8–20 messages | 5–8 scene beats, in order | One job, one evening's play |
-| Act | 60–150 messages | 3–5 milestones, any order | A leg of the larger story |
-| Saga | 400–1500 messages | 2–4 milestones, any order | The overarching storyline |
+| Act | 60–150 messages | 3–5 milestones, in order | A leg of the larger story |
+| Saga | 400–1500 messages | 2–4 milestones, in order | The overarching storyline |
 
 Several arcs can run at once, like episodes inside seasons inside a series.
+
+An act or saga is one plot thread. The model feels only its current milestone; the next one starts to press once the story gets there. If the story jumps ahead and reaches a later milestone first, that one counts, and the ones it passed show as **skipped**: the story moved past them. For a second, separate thread, plan a second arc.
 
 The **focus** sets how much attention an arc gets right now:
 
@@ -84,7 +86,7 @@ The **focus** sets how much attention an arc gets right now:
 |---|---|
 | **Paused** | That the arc exists but is on hold. Its clock stops. |
 | **Background** | Acts and sagas only: keep the thread off-screen unless your character goes to it. |
-| **Normal** | The default. The arc's premise and its pressures on the scene. |
+| **Normal** | The default. The arc's premise and its current pressure on the scene. |
 | **Spotlight** | The arc comes to the front, with its secrets, triggers and clues. One arc at a time. |
 
 If an act or saga pulls every scene toward itself, set it to background.

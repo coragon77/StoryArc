@@ -67,7 +67,10 @@ StoryArc/
 │   │                           #   isKnowledgeTrackerEnabled(), isCharacterDetailsEnabled(),
 │   │                           #   getKnowledgeLedger()
 │   │                           #   (ensureChatState creates an empty ledger),
-│   │                           #   secretHolders(secret) — [] for old secrets
+│   │                           #   secretHolders(secret) — [] for old secrets;
+│   │                           #   isBeatOpen(beat) — neither completed nor skipped;
+│   │                           #   currentMilestone(arc) — the first open milestone
+│   │                           #   in stored order, the one that presses (ADR-0010)
 │   ├── context/
 │   │   ├── harvester.js        # harvestContext() — orchestrates all context sources,
 │   │   │                       #   returns HarvestedContext object;
@@ -163,7 +166,8 @@ StoryArc/
 │   │   │                       #   validateArcPlan(raw, { tier }) — schema check +
 │   │   │                       #   normalization: tier defaults to episode (the
 │   │   │                       #   wizard's tier wins over the model's echo);
-│   │   │                       #   milestones (act/saga) all active, unlockAfter
+│   │   │                       #   milestones (act/saga) in the planner's order, all
+│   │   │                       #   active, unlockAfter
 │   │   │                       #   stripped, non-empty pressure required; estimatedLength
 │   │   │                       #   clamped to TIER_TABLE[tier].lengthBand; optional
 │   │   │                       #   `pressure` per episode beat (stored arcs are
@@ -194,17 +198,20 @@ StoryArc/
 │   │   │                       #   rules both paths share (in-prompt marker, knowledge
 │   │   │                       #   extraction): active arc and beat only, one per arc
 │   │   │                       #   per message, lastFulfilledAt, unlocks, arc
-│   │   │                       #   completion, no promotion; records beat.completion
-│   │   │                       #   { at, messageId?, unlocked, arcCompleted,
+│   │   │                       #   completion, no promotion; skipEarlierMilestones()
+│   │   │                       #   — act/saga: earlier open milestones become skipped
+│   │   │                       #   (ADR-0010); records beat.completion
+│   │   │                       #   { at, messageId?, unlocked, skipped, arcCompleted,
 │   │   │                       #   lastFulfilledBefore } (message id read, never given);
 │   │   │                       #   reopenCompletionsFrom(firstGoneIndex) — delete,
 │   │   │                       #   swipe, branch load; records follow their message id;
 │   │   │                       #   reopenCompletionsAt(messageIndex) — edit;
 │   │   │                       #   setBeatStatusByHand(arcId, beatId, status) — the
 │   │   │                       #   Arc Manager's toggle; done by hand sets
-│   │   │                       #   lastFulfilledAt (raises the records' floor), no record;
-│   │   │                       #   reopenCompletion() undoes unlocks, promotions and
-│   │   │                       #   arc completion; restoreLastFulfilledAt();
+│   │   │                       #   lastFulfilledAt (raises the records' floor) and
+│   │   │                       #   skips like a recognised one, no record;
+│   │   │                       #   reopenCompletion() undoes unlocks, promotions, skips
+│   │   │                       #   and arc completion; restoreLastFulfilledAt();
 │   │   │                       #   removeRulingsFrom(firstGoneIndex) — delete, branch
 │   │   │                       #   load; removeRulingsAt(messageIndex, isStillStated)
 │   │   │                       #   — edit: only rulings whose quote is gone (#45)
@@ -273,10 +280,11 @@ StoryArc/
 │   │   │                       #   premise, no pressures (beats stay in the beat check);
 │   │   │                       #   buildMilestoneSection(arc, pressures?) — act/saga:
 │   │   │                       #   === ACT/SAGA: header, premise, the first three world
-│   │   │                       #   facts, unfulfilled milestone
-│   │   │                       #   pressures under STANDING PRESSURES (header + trailer
-│   │   │                       #   swappable; pressure only, never the fulfillment —
-│   │   │                       #   a pressure-less milestone is skipped), gated
+│   │   │                       #   facts, the current milestone's pressure
+│   │   │                       #   (currentMilestone, ADR-0010) under STANDING
+│   │   │                       #   PRESSURE (header + trailer swappable; pressure
+│   │   │                       #   only, never the fulfillment — a pressure-less
+│   │   │                       #   current milestone prints no block), gated
 │   │   │                       #   secrets/triggers/foreshadowing; no
 │   │   │                       #   pacing rules, no phase line;
 │   │   │                       #   buildSpotlightSection(arc) — episode → episode section;
@@ -512,7 +520,9 @@ StoryArc/
 │   │   │                       #   Knowledge popup button; called by index.js, the
 │   │   │                       #   panel and the popup (own file: no import cycle)
 │   │   ├── beat-strip.js       # buildBeatStrip(arc, pendingMarks, isInteractive) — the
-│   │   │                       #   beat squares by shape and the done count, with the
+│   │   │                       #   beat squares by shape (s-skipped: faded, forward
+│   │   │                       #   arrow) and the done count ("done or skipped" once a
+│   │   │                       #   milestone is skipped), with the
 │   │   │                       #   tier words (beatWords, beatStatusWord), waitingMarksOf,
 │   │   │                       #   formatNumber, plural; Arc Manager and progress rows
 │   │   ├── undo-stack.js       # createUndoStack({ read, write, changedMessage }) —
@@ -779,10 +789,16 @@ StoryArc/
 │   ├── test-marks.js           # Tests: PLANTED/FIRED parsing, PLANT CHECK lines per
 │   │                           #   tier/focus, queue keeps the prompt byte-identical
 │   │                           #   until flush, flush rules, togglePlanItem
+│   ├── test-sequential-milestones.js # Tests: milestones run in order (ADR-0010):
+│   │                           #   only the current pressure (normal, spotlight), a
+│   │                           #   stored all-active act, skipping and its record,
+│   │                           #   rollback restoring the skipped ones, episodes
+│   │                           #   unchanged, by hand, the stall rule, skipped markup
+│   ├── test-beat-open.js       # Tests: isBeatOpen (completed and skipped are closed)
 │   ├── test-signals.js         # Tests: signal parsing + processSignalResults
 │   │                           #   (active-only completion, one per arc per message,
 │   │                           #   locked-beat rejection) + promoteNextBeats
-│   │                           #   + milestones (all active, any order)
+│   │                           #   + milestones (a later one skips the earlier ones)
 │   │                           #   + scrubArcInternals (incl. secret ids)
 │   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution;
 │   │                           #   prompt wording (one-moment fulfillments, world facts)

@@ -38,7 +38,7 @@ An act or saga that goes on off-screen. The model sees only its title and an ins
 _Avoid_: lurking, simmering, offscreen
 
 **Spotlight** (focus):
-The arc is pushed to the front. Only one arc at a time: spotlighting an arc sends the previous one back to normal. For an act or saga, its milestone pressures are placed in the main block with a request that the world story move, never naming a milestone to reach, and its secrets, triggers and foreshadowing are added. In normal focus an act or saga shows only its premise and pressures. For an episode it only makes that episode the pacing clock.
+The arc is pushed to the front. Only one arc at a time: spotlighting an arc sends the previous one back to normal. For an act or saga, its current milestone's pressure is placed in the main block with a request that the world story move, never naming a milestone to reach, and its secrets, triggers and foreshadowing are added. In normal focus an act or saga shows only its premise and its current milestone's pressure. For an episode it only makes that episode the pacing clock.
 _Avoid_: foregrounded, focused, pushed, urgent
 
 **Pacing clock**:
@@ -87,7 +87,11 @@ _Avoid_: step, item, checkpoint, task
 An episode's beat. Ordered, one active at a time, the rest hidden from the model until reached.
 
 **Milestone**:
-An act's or saga's beat. Unordered, all unfulfilled milestones stand at once, and any may be fulfilled in any message.
+An act's or saga's beat. An arc is one plot thread, so its milestones run in the planner's order (ADR-0010). The **current** milestone is the first open one: only its pressure reaches the model. Every open milestone stays recognisable, so the story may fulfil a later one first; the earlier open ones are then skipped.
+
+**Skipped**:
+A milestone the story moved past: a later milestone of the same arc was fulfilled while it was still open. Obsolete, not failed. It leaves the prompt and recognition like a completed one and counts with the done ones; a rollback of the completion that skipped it opens it again.
+_Avoid_: failed, missed, dropped, cancelled
 
 **Mark**:
 The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
