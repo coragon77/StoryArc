@@ -107,7 +107,7 @@ StoryArc/
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
 │   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
 │   │   │                       #   (also the open beats' fulfillments, rewrites
-│   │   │                       #   of completed beats ignored; the world facts by
+│   │   │                       #   of completed or skipped beats ignored; the world facts by
 │   │   │                       #   index in {{WORLD_FACTS}}, kind "worldFact" applied
 │   │   │                       #   by applyWorldFactRewrites — a text replaces, an
 │   │   │                       #   empty text drops, an unknown index is ignored;
@@ -115,13 +115,12 @@ StoryArc/
 │   │   │                       #   {{NAMES_BLOCK}} and the renames, applied by
 │   │   │                       #   applyPlanRenames to every text field under
 │   │   │                       #   its guards, #49; kind "secret" judged after the
-│   │   │                       #   revealed list: proposedContent for the re-planned
-│   │   │                       #   arc's own secrets, content replaced otherwise,
-│   │   │                       #   renames reach proposedContent);
+│   │   │                       #   revealed list, content replaced directly, on a
+│   │   │                       #   re-plan too);
 │   │   │                       #   plantedCluesOfSecret(arc, secretId) — planted clues
 │   │   │                       #   whose target's leading id (after an optional
 │   │   │                       #   "secret:") is the secret's; listed under each
-│   │   │                       #   secret in {{SECRETS}}, also used by wizard.js;
+│   │   │                       #   secret in {{SECRETS}} and in {{ARC_SO_FAR}};
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
 │   │   │                       #   marks the re-planned arc (its rulings under it as
 │   │   │                       #   "Overruled by the player:") in phase 1,
@@ -146,8 +145,12 @@ StoryArc/
 │   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
 │   │   │                       #   premise + "write a premise for the arc as it stands
 │   │   │                       #   now" (following every ruling, listed as binding,
-│   │   │                       #   when the arc has rulings), secrets (add-only),
-│   │   │                       #   escalation, fulfilled beats as
+│   │   │                       #   when the arc has rulings), revealed secrets as
+│   │   │                       #   established, unrevealed ones by id to keep,
+│   │   │                       #   rewrite or drop, with holders, planted clues and
+│   │   │                       #   fired triggers (formatUnrevealedSecret),
+│   │   │                       #   escalation, world facts most important first,
+│   │   │                       #   fulfilled beats as
 │   │   │                       #   "already happened"; '' for null (plan-new);
 │   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
 │   │   │                       #   callLlm() exported for the knowledge extraction
@@ -211,21 +214,21 @@ StoryArc/
 │   │   └── replan.js           # mergeReplan(existing, generated) — spec §3 merge:
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   carries the model's premise as proposedPremise,
-│   │                           #   secrets (add-only, content-deduped), completed
-│   │                           #   beats (their completion records without unlocked
+│   │                           #   revealed secrets (a restatement dropped), closed
+│   │                           #   (completed or skipped) beats (their completion records without unlocked
 │   │                           #   and arcCompleted: withoutRoadInRecord), planted
 │   │                           #   foreshadowing, fired triggers;
-│   │                           #   replaces the rest; withUniqueIds() suffixes
+│   │                           #   replaces the rest, the unrevealed secrets too (one
+│   │                           #   under an old id keeps its clues and triggers);
+│   │                           #   withUniqueIds() suffixes
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
 │   │                           #   same or larger, never smaller (wizard selector);
 │   │                           #   applyReplan(merged, chatLength, { premise,
-│   │                           #   removedRulingIds, storedRulings, secretChoices }) →
+│   │                           #   removedRulingIds, storedRulings }) →
 │   │                           #   { arc, error } — the arc "Apply re-plan" stores: a
 │   │                           #   deep copy with the chosen premise trimmed, no
-│   │                           #   proposedPremise; each taken secret's
-│   │                           #   proposedContent as content, proposedContent
-│   │                           #   removed from every secret; a blank premise refused
+│   │                           #   proposedPremise; a blank premise refused
 │   │                           #   the rulings built from the stored ones at apply:
 │   │                           #   removed ones dropped, those the generation saw
 │   │                           #   answered (an earlier answeredAt kept), later ones
@@ -447,11 +450,8 @@ StoryArc/
 │   │   │                       #   → Review (generation log with a polite status line
 │   │   │                       #   and a visible Cancel, then the plan behind one
 │   │   │                       #   Reveal switch, foreshadowing shown as Clues; re-plan:
-│   │   │                       #   buildPremiseChoice(); behind the switch
-│   │   │                       #   buildSecretChoices() (keep/take per proposed
-│   │   │                       #   secret, keep chosen) and proposedSecretsNote()
-│   │   │                       #   (their count in the hidden note); "Apply re-plan"
-│   │   │                       #   reads readSecretChoices(), stores via updateArc).
+│   │   │                       #   buildPremiseChoice(); "Apply re-plan" stores
+│   │   │                       #   via applyReplan and updateArc).
 │   │   │                       #   Back from a generated plan asks inline first.
 │   │   │                       #   Failures say problem and recovery (raw error to the
 │   │   │                       #   console); finished log steps show their outcome;
@@ -591,10 +591,13 @@ StoryArc/
 │   │                           #   shift, reactivatedAt shift on resume)
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
-│   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, secrets
-│   │                           #   add-only, id de-collision, tier change, kept
+│   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, revealed
+│   │                           #   secrets kept, unrevealed replaced by id or dropped,
+│   │                           #   clue and trigger links kept, id de-collision, skipped
+│   │                           #   milestones kept, tier change, kept
 │   │                           #   completion records lose unlocked/arcCompleted) + replanTiers +
-│   │                           #   buildArcSoFar + formatExistingArcs mark + applyReplan
+│   │                           #   buildArcSoFar (secret blocks, world-fact rank) +
+│   │                           #   formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)
 │   ├── test-replan-rulings.js  # Tests: the rulings in formatExistingArcs, buildArcSoFar,
 │   │                           #   buildPlanCheckVariables; mergeReplan carries them;
@@ -717,12 +720,14 @@ StoryArc/
 │   │                           #   status line, Clues in Review, Back asks before
 │   │                           #   discarding a plan; the Questions step (chips, help
 │   │                           #   line, three steps, re-plan prefill, answers stored),
-│   │                           #   the flow without questions as before
+│   │                           #   the flow without questions as before, no secret
+│   │                           #   choice on a re-plan's Review
 │   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
 │   │                           #   the wizard opens; Ignore keeps it open; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
 │   │                           #   only, links, echoed IF line, fulfillment rewrites of
-│   │                           #   open beats only) + buildPlanCheckVariables
+│   │                           #   open beats only, a skipped milestone left alone)
+│   │                           #   + buildPlanCheckVariables (skipped milestone out)
 │   ├── test-beat-completion.js # Tests: completeBeats rules and completion record
 │   │                           #   (message id read, never given), reopenCompletionsFrom
 │   │                           #   (delete, swipe, branch, id follow, what reopening
@@ -749,10 +754,10 @@ StoryArc/
 │   │                           #   prompt with and without the names block
 │   ├── test-secret-rewrites.js # Tests: plantedCluesOfSecret (leading id, beat: and
 │   │                           #   prose targets unmatched), planted clues in
-│   │                           #   {{SECRETS}}, kind "secret": proposal for a revealable
-│   │                           #   secret, direct rewrite otherwise, none for a
+│   │                           #   {{SECRETS}}, kind "secret": direct rewrite, on a
+│   │                           #   re-plan too, none for a
 │   │                           #   revealed/disclosed one, identical/empty/unknown
-│   │                           #   dropped, no mutation, renames reach the proposal
+│   │                           #   dropped, no mutation, renames reach the rewrite
 │   ├── test-plan-check-renames.js # Tests: applyPlanCheck renames (#49): every text
 │   │                           #   field, completed beats / fired triggers / direction /
 │   │                           #   genre / theme seeds kept, whole names (possessive matches), longest
@@ -766,7 +771,8 @@ StoryArc/
 │   │                           #   kept on a re-plan, none in the injection
 │   ├── test-plan-check-intent.js # Tests: {{AUTHOR_ANSWERS}} (with, empty, absent,
 │   │                           #   malformed), the contradiction / sweeping-claims /
-│   │                           #   register rules and the two planner lines pinned,
+│   │                           #   register rules (secrets included), the planner's
+│   │                           #   world-fact lines (rank) and re-plan secret line pinned,
 │   │                           #   a re-plan's kept world facts in {{WORLD_FACTS}}
 │   ├── test-genre.js           # Tests: formatGenreBlock, formatThemesBlock, the
 │   │                           #   {{GENRE_BLOCK}} / {{THEMES_BLOCK}} slots and checklist
@@ -938,7 +944,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutRoadInRecord`) |
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
 | World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
-| Secret rewrites (ADR-0003 amendment) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`) | `prompts/check-plan.txt` (step 2, SECRETS), `lib/planning/replan.js` (`applyReplan`), `lib/ui/wizard.js` (`buildSecretChoices`, `proposedSecretsNote`, `readSecretChoices`) |
+| Secret rewrites and re-planned secrets (ADR-0003 amendments) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`, `buildArcSoFar`) | `prompts/check-plan.txt` (step 2, SECRETS), `prompts/generate-arc.txt` (secret guidelines), `lib/planning/replan.js` (`mergeReplan`) |
 | Plan check holds the plan to the story and the author (ADR-0009 amendment) | `prompts/check-plan.txt` (step 2: contradictions, sweeping claims, register; `{{AUTHOR_ANSWERS}}`) | `lib/context/harvester.js` (`harvestCast`: details), `lib/knowledge/ledger.js` (`currentDetailText`), `lib/planning/generator.js` (`formatCastLines`, `formatAuthorAnswers`, `buildPlanCheckVariables`), `prompts/generate-arc.txt` (pressure and world-fact lines) |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |

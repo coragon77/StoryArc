@@ -64,7 +64,7 @@ Every change can be undone while the Arc Manager is open. Completed and abandone
 
 ### Re-planning
 
-When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets and the premise (which you can edit), and replaces the open beats. The tier can grow but never shrink.
+When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets that have come out and the premise (which you can edit), and replaces the open beats and the secrets still hidden. The tier can grow but never shrink.
 
 ## Tiers and focus
 

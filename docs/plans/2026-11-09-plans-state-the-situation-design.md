@@ -1,7 +1,7 @@
 # Plans State the Situation, Never How to Narrate — Design Note
 
 - **Date:** 2026-11-09
-- **Status:** Rulings by Stefan 2026-11-08/09. Shipped: Part A (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84), Part B (world facts; the style fields leave the prompt, PR #85) and Part C (secret rewrites, PR #86), all 2026-11-09. Implementation plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
+- **Status:** Rulings by Stefan 2026-11-08/09. Shipped: Part A (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84), Part B (world facts; the style fields leave the prompt, PR #85) and Part C (secret rewrites, PR #86), all 2026-11-09. Part C's proposal flow (the re-plan's keep-or-take choice per secret, `proposedContent`) was replaced later on 2026-11-09: a re-plan plans every unrevealed secret again, and the plan check rewrites secrets directly (ADR-0003 amendment, branch `feature/replan-secrets`). Implementation plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
 - **Builds on:** `docs/plans/2026-09-16-tiers-focus-and-replan-design.md` (sections by tier and focus, re-plan merge)
 - **ADRs touched:** `0003` (re-plan keeps the situation, replaces the road), `0004` (genre binds generation), `0006` (plans are checked before play); new `0009` (a plan states the situation, never how to narrate)
 - **Glossary:** `GLOSSARY.md`: genre, pressure, premise, re-plan

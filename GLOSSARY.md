@@ -62,7 +62,7 @@ The player's answers, in their own words, to the questions the wizard asks after
 _Avoid_: survey, interview, preferences
 
 **Re-plan**:
-Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
+Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its revealed secrets and its fulfilled beats. The secrets not yet revealed are planned again with the rest. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
 
 **Past arc**:
@@ -108,7 +108,7 @@ _Avoid_: signal, tracking, advancement
 ### Story state
 
 **Secret**:
-A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Never regenerated on re-plan; a re-plan may propose new wording for one not yet revealed, which the player takes or keeps, and its id, holders and reveal phase stay.
+A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Once revealed it never changes. One not yet revealed is planned again on a re-plan: kept, rewritten or dropped, keeping its id when kept or rewritten, and always still explaining the planted clues and fired triggers that point at it.
 
 **Trigger**:
 A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied.
