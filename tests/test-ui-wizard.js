@@ -809,7 +809,7 @@ These are the author's own words about this arc, and they bind like the directio
         ]);
     });
 
-    it('a re-plan without new questions plans with the arc\'s earlier answers and keeps them', async () => {
+    it('a re-plan without new questions still shows the earlier answers, to edit', async () => {
         chat_metadata.story_arc.arcs = [storedArc({ authorAnswers: [{ question: 'Who may rescue her?', answer: 'Nobody.' }] })];
         const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
 
@@ -818,11 +818,64 @@ These are the author's own words about this arc, and they bind like the directio
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
 
-        assert.ok(sentPrompts[2].startsWith('OUTLINE\n== AUTHOR\'S ANSWERS (binding, like the direction) ==\nQ: Who may rescue her?\nA: Nobody.\n\n'));
+        assert.equal(sentPrompts.length, 2);
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<h4 class="story-arc-wizard-questions-group">Your earlier answers</h4>'));
+        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Nobody.</textarea>'));
+        assert.equal(html.includes('New questions'), false);
+        assert.ok(fake.htmlById['story-arc-wizard-steps'].includes('<span class="story-arc-wizard-step-number">2</span>Questions</li>'));
+
+        fake.valueById['story-arc-answer-0'] = 'Nobody, ever.';
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        assert.ok(sentPrompts[2].startsWith('OUTLINE\n== AUTHOR\'S ANSWERS (binding, like the direction) ==\nQ: Who may rescue her?\nA: Nobody, ever.\n\n'));
         fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
         fake.trigger('click', '#story-arc-wizard-activate');
         await settle();
 
-        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, [{ question: 'Who may rescue her?', answer: 'Nobody.' }]);
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, [{ question: 'Who may rescue her?', answer: 'Nobody, ever.' }]);
+    });
+
+    it('a re-plan whose earlier answers are all cleared stores an empty list', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ authorAnswers: [{ question: 'Who may rescue her?', answer: 'Nobody.' }] })];
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+
+        showWizard('arc00001-full-id');
+        await settle();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.valueById['story-arc-answer-0'] = '';
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        assert.equal(sentPrompts[2], 'OUTLINE\nEND');
+        fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, []);
+    });
+
+    it('Back, then Generate again, keeps a typed answer for an identical question and drops one for a changed question', async () => {
+        const askedAgain = JSON.stringify({ questions: [
+            { question: 'How does the pressure work?', suggestions: ['Open force', 'Deniable hints nobody admits'] },
+            { question: 'Can anyone step in to help?', suggestions: ['Yes', 'No'] },
+        ] });
+        installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, 'The story stands at a crossroads.', askedAgain]);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
+        fake.valueById['story-arc-answer-1'] = 'No, nobody rescues';
+
+        fake.trigger('click', '#story-arc-wizard-back');
+        typeDirectionAndGenerate('Count the sacks, quietly.');
+        await settle();
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
+        assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-1">Can anyone step in to help?</label>'));
+        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-1" rows="2"></textarea>'));
     });
 });
