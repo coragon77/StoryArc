@@ -74,7 +74,7 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
     });
 
     it('pins the contradiction rule', () => {
-        assert.ok(checkTemplate.includes('- Contradictions. A pressure, a trigger action, a world fact or a secret that is not revealed never contradicts what the NAMES block below lists for a cast member (age, role, relation) or another world fact. Rewrite it to agree and keep the rest: "As an uncertified minor Ward" becomes "As an uncertified Ward" for a cast member of age 18.\n'));
+        assert.ok(checkTemplate.includes('- Contradictions. A pressure, a trigger action, a world fact or a secret that is not revealed never contradicts what the NAMES block below lists for a cast member (age, role, relation) or another world fact. Rewrite it to agree and keep the rest: "As an uncertified minor Ward" becomes "As an uncertified Ward" for a cast member of age 18. Agreeing with what the story has established about the cast wins over keeping a secret\'s hidden fact unchanged.\n'));
     });
 
     it('pins the sweeping-claims rule', () => {
@@ -82,7 +82,7 @@ describe('check-plan.txt: contradictions, sweeping claims, register', () => {
     });
 
     it('pins the register rule', () => {
-        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action or world fact whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in) into the register the author asked for. Keep what it is about. Leave items that already fit.\n\n3. FULFILLMENTS.'));
+        assert.ok(checkTemplate.includes('- Register. When the author\'s direction or the author\'s answers say how pressure works or how hard the arc is (deniable hints nobody admits, no open force, no rescuers), rewrite every pressure, trigger action or world fact whose register contradicts that (an open demand, an order, a blunt "submitting turns her into a plaything", a rescuer stepping in) into the register the author asked for. Keep what it is about. Leave items that already fit. The author\'s direction and answers outrank the exception for a real power: where the author asked for no open force, a real power is played as leverage too.\n\n3. FULFILLMENTS.'));
     });
 });
 
@@ -91,7 +91,7 @@ describe('generate-arc.txt: dilemmas that cost, world facts that agree with the 
 
     it('pins the dilemma line after the leverage paragraph', () => {
         assert.ok(outlineTemplate.includes('contract and all. The same holds for the premise and for every world fact, secret and trigger that says how someone exerts pressure.\n\n'
-            + 'A dilemma an ally could dissolve in one conversation is not a dilemma: every pressure leaves the character a choice that costs, and no one in the story can simply make it go away.\n\n'
+            + 'Unless the author\'s direction or answers say otherwise, a dilemma an ally could dissolve in one conversation is not a dilemma: every pressure leaves the character a choice that costs, and no one in the story can simply make it go away.\n\n'
             + '4. WORLD FACTS STATE WHAT IS TRUE, NEVER HOW TO NARRATE\n'));
     });
 

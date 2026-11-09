@@ -127,7 +127,7 @@ A: Through deniable hints nobody admits to.
 Q: Can an ally talk a dilemma away?
 A: No. Nobody rescues.
 
-These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes or your own preference disagree, the answer wins.
+These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes, your own preference or any default in these guidelines disagree, the answer wins.
 
 `);
     });
@@ -420,7 +420,7 @@ describe('generation with the author\'s answers', () => {
 Q: How does the pressure work?
 A: Deniable hints.
 
-These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes or your own preference disagree, the answer wins.
+These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes, your own preference or any default in these guidelines disagree, the answer wins.
 
 END`);
         assert.deepEqual(result.arc.authorAnswers, [{ question: 'How does the pressure work?', answer: 'Deniable hints.' }]);

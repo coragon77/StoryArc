@@ -626,7 +626,7 @@ describe('wizard: the Questions step', () => {
 Q: How does the pressure work?
 A: Deniable hints nobody admits
 
-These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes or your own preference disagree, the answer wins.
+These are the author's own words about this arc, and they bind like the direction: where an answer and the genre, the themes, your own preference or any default in these guidelines disagree, the answer wins.
 
 `;
 
