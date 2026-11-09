@@ -5,7 +5,7 @@ Think like a NOVELIST, not a quest designer. You are not making a to-do list. Yo
 == STORY ANALYSIS (from Phase 1) ==
 {{PHASE1_ANALYSIS}}
 
-{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR'S CREATIVE DIRECTION ==
+{{GENRE_BLOCK}}{{THEMES_BLOCK}}{{CAST_BLOCK}}== AUTHOR'S CREATIVE DIRECTION ==
 The author has provided the following guidance for what they want this arc to explore. Honor their intent while using your narrative judgment to make it work within the existing story.
 
 {{USER_DIRECTION}}
@@ -72,7 +72,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 
   "premise": "2-4 sentences describing what this arc IS. Not a plot summary but a dramatic thesis: what is at stake, what forces are in collision, what question the arc is exploring. This should make someone want to read the story. It is shown to the player in plain view, so it states no secret and no planned development, only the situation and the question the arc explores. The narrating AI reads it every turn, so like a pressure it stages nothing: no places, clothing, gear, numbers, or who is where or with whom.",
 
-  "themes": ["List 2-4 thematic currents this arc explores. Be specific: not 'good vs evil' but 'the cost of loyalty when the institution you serve has become corrupt' or 'the relief of finding people who are as strange as you are'."],
+  "themes": ["List 2-4 thematic currents this arc explores. When a THEMES block is given, grow them from the author's themes where the story supports them. Be specific: not 'good vs evil' but 'the cost of loyalty when the institution you serve has become corrupt' or 'the relief of finding people who are as strange as you are'."],
 
   "tone": "Describe the tonal arc -- how the story should FEEL at the start vs. the middle vs. the end. 'Begins with uneasy normalcy, shifts to paranoid tension as trust erodes, climaxes in desperate action and moral compromise.' Or: 'Starts as giddy first-week chaos, deepens into real friendship as the team fumbles its first outing, ends on a warm high with one question left open.'",
 
@@ -169,7 +169,8 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 
 == FINAL CHECKLIST (verify before outputting) ==
 
-- [ ] If a GENRE block is given: the arc reads as that genre and delivers what its readers come for, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues
+- [ ] If a GENRE block is given: the arc reads as that genre, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues
+- [ ] If a THEMES block is given: no theme is a world fact, and the `themes` field grows from the given themes where the story supports them
 - [ ] Every secret has a SPECIFIC, COMPLETE answer (not "someone is hiding something")
 - [ ] Every foreshadowing entry points to a specific secret or beat
 - [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only

@@ -43,8 +43,8 @@ Two rules for every name in the plan:
 describe('generate-arc.txt carries the cast slots', () => {
     const outlineTemplate = readFileSync(new URL('../prompts/generate-arc.txt', import.meta.url), 'utf8');
 
-    it('puts the cast block after the genre block, before the creative direction', () => {
-        assert.ok(outlineTemplate.includes('{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
+    it('puts the cast block after the genre and themes blocks, before the creative direction', () => {
+        assert.ok(outlineTemplate.includes('{{GENRE_BLOCK}}{{THEMES_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
     });
 
     it('ends the checklist line on existing characters\' names with the cast slot', () => {
