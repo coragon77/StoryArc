@@ -112,7 +112,7 @@ describe('world facts: the plan check', () => {
         const text = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
         assert.ok(text.includes('== WORLD FACTS ==\n{{WORLD_FACTS}}'));
         assert.ok(text.includes('Rewrite a world fact that says how to narrate as the statement of fact inside it, or drop it with an empty "text" when it holds none.'));
-        assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact"'));
+        assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact | secret"'));
     });
 
     it('rewrites a fact, drops one with an empty text, and ignores unknown indexes', () => {
