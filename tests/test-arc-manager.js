@@ -242,6 +242,11 @@ describe('buildArcAlert — the notice of an episode planned before world facts'
         assert.equal(buildArcAlert(episode), '');
     });
 
+    it('a fresh or re-planned episode with an empty world-facts list and a tone gets no notice', () => {
+        const episode = makeEpisode({ lastFulfilledAt: 2099, worldFacts: [], directives: [], antiPatterns: [], tone: 'Slow dread.' });
+        assert.equal(buildArcAlert(episode), '');
+    });
+
     it('an episode with nothing in those fields gets no notice', () => {
         assert.equal(buildArcAlert(makeEpisode({ lastFulfilledAt: 2099, directives: [], antiPatterns: [], tone: '' })), '');
         assert.equal(buildArcAlert(makeEpisode({ lastFulfilledAt: 2099 })), '');

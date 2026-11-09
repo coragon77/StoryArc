@@ -63,6 +63,15 @@ describe('world facts: applyArcEdit', () => {
         assert.equal(refused.error, 'worldFacts must be a list.');
     });
 
+    it('refuses a list with an item that is not a text, or a blank one', () => {
+        const stored = createDefaultArc({ id: 'arc-1', title: 'Night Shift', premise: 'The clinic is short-staffed.', beats: [{ id: 'beat_1', intention: 'Amy has taken a shift.', status: 'active', unlockAfter: [] }] });
+        for (const badItem of ['', '   ', 42, null, { fact: 'The clinic cannot force overtime.' }, ['nested']]) {
+            const refused = applyArcEdit(stored, JSON.stringify({ ...stored, worldFacts: ['The clinic cannot force overtime.', badItem] }));
+            assert.equal(refused.arc, null, JSON.stringify(badItem));
+            assert.equal(refused.error, 'worldFacts must be a list of texts.', JSON.stringify(badItem));
+        }
+    });
+
     it('accepts the JSON of an arc stored before world facts, which has no key', () => {
         const { worldFacts, ...oldArc } = createDefaultArc({ id: 'arc-1', title: 'Night Shift', premise: 'The clinic is short-staffed.', beats: [{ id: 'beat_1', intention: 'Amy has taken a shift.', status: 'active', unlockAfter: [] }] });
         const { arc, error } = applyArcEdit(oldArc, JSON.stringify({ ...oldArc, title: 'Day Shift' }));
@@ -133,6 +142,39 @@ describe('world facts: the plan check', () => {
             'The clinic cannot make Amy work outside her shifts.',
         ]);
         assert.deepEqual(arc.worldFacts, makeActWithFacts().worldFacts, 'the arc given is not mutated');
+    });
+
+    it('reads an index the check wrote in brackets or with spaces', () => {
+        const checked = applyPlanCheck(makeActWithFacts(), {
+            rewrites: [
+                { kind: 'worldFact', id: '[1]', text: 'Mara distrusts the agency nurses.' },
+                { kind: 'worldFact', id: ' 0 ', text: 'Mara is in charge of the night rota.' },
+            ],
+        }, []);
+        assert.deepEqual(checked.worldFacts, [
+            'Mara is in charge of the night rota.',
+            'Mara distrusts the agency nurses.',
+            'The clinic cannot make Amy work outside her shifts.',
+        ]);
+    });
+
+    it('ignores a rewrite without a text or with a null text; only a blank string drops a fact', () => {
+        const checked = applyPlanCheck(makeActWithFacts(), {
+            rewrites: [
+                { kind: 'worldFact', id: 0 },
+                { kind: 'worldFact', id: 1, text: null },
+                { kind: 'worldFact', id: 2, text: '   ' },
+            ],
+        }, []);
+        assert.deepEqual(checked.worldFacts, [
+            'Keep the scenes with Mara tense.',
+            'Mara distrusts the agency nurses, so play her cold.',
+        ]);
+    });
+
+    it('the prompt asks for the number shown in brackets as the id', () => {
+        const text = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
+        assert.ok(text.includes('Answer with kind "worldFact" and the fact\'s number (the one shown in square brackets) as the id.'));
     });
 
     it('leaves the facts alone without world-fact rewrites, and adds no list to an old arc', () => {
