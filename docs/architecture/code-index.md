@@ -55,6 +55,8 @@ StoryArc/
 │   │                           #   note in architecture.md), getChatSettings(),
 │   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
 │   │                           #   messageStart fallbacks, named once;
+│   │                           #   arcWorldFacts(arc) — the world facts, [] on arcs
+│   │                           #   stored before them (ADR-0009);
 │   │                           #   getKnowledgeTrackerSettings(),
 │   │                           #   isKnowledgeTrackerEnabled(), isCharacterDetailsEnabled(),
 │   │                           #   getKnowledgeLedger()
@@ -89,7 +91,11 @@ StoryArc/
 │   │   │                       #   runPlanCheck() (Phase 3) with the exported
 │   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
 │   │   │                       #   (also the open beats' fulfillments, rewrites
-│   │   │                       #   of completed beats ignored; with a cast the
+│   │   │                       #   of completed beats ignored; the world facts by
+│   │   │                       #   index in {{WORLD_FACTS}}, kind "worldFact" applied
+│   │   │                       #   by applyWorldFactRewrites — a text replaces, an
+│   │   │                       #   empty text drops, an unknown index is ignored;
+│   │   │                       #   renamePlanTexts reaches world facts; with a cast the
 │   │   │                       #   {{NAMES_BLOCK}} and the renames, applied by
 │   │   │                       #   applyPlanRenames to every text field under
 │   │   │                       #   its guards, #49);
@@ -154,6 +160,9 @@ StoryArc/
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
+│   │   │                       #   OPTIONAL_ARRAY_ARC_FIELDS (worldFacts) — list fields
+│   │   │                       #   an older arc's JSON may lack: absent is fine, a non-list
+│   │   │                       #   is refused;
 │   │   │                       #   completeBeat(beats, id) — completes and unlocks,
 │   │   │                       #   drops any completion record (hand toggle and
 │   │   │                       #   completeBeats)
@@ -218,11 +227,16 @@ StoryArc/
 │   │   │                       #   any header left without items
 │   │   │                       #   Private section builders, picked by buildArcSection():
 │   │   │                       #   buildEpisodeSection(arc) — the full section: premise,
-│   │   │                       #   tone, active beat as CURRENT PRESSURE (pressure,
+│   │   │                       #   world facts (no tone, directives or anti-patterns,
+│   │   │                       #   ADR-0009), active beat as CURRENT PRESSURE (pressure,
 │   │   │                       #   falling back to intention), no beat ids; linger
 │   │   │                       #   directive when no beat is active; guardrails first,
 │   │   │                       #   content lists last. Header word kept from before
-│   │   │                       #   tiers for byte-identity (architecture.md, migration);
+│   │   │                       #   tiers (architecture.md, migration);
+│   │   │                       #   pushWorldFacts(lines, worldFacts) — the WORLD FACTS
+│   │   │                       #   block, nothing without facts; never trimmed;
+│   │   │                       #   MILESTONE_WORLD_FACT_LIMIT (3, exported) — facts an
+│   │   │                       #   act/saga section prints (also arc-manager.js);
 │   │   │                       #   pushPlanLists(lines, arc, phase) — secrets,
 │   │   │                       #   triggers, foreshadowing; buildMilestoneSection reuses it;
 │   │   │                       #   holderSuffix(secret) — " (known only to: …)" on a
@@ -233,7 +247,8 @@ StoryArc/
 │   │   │                       #   BACKGROUND: + "Runs off-screen…" sentence; no
 │   │   │                       #   premise, no pressures (beats stay in the beat check);
 │   │   │                       #   buildMilestoneSection(arc, pressures?) — act/saga:
-│   │   │                       #   === ACT/SAGA: header, premise, unfulfilled milestone
+│   │   │                       #   === ACT/SAGA: header, premise, the first three world
+│   │   │                       #   facts, unfulfilled milestone
 │   │   │                       #   pressures under STANDING PRESSURES (header + trailer
 │   │   │                       #   swappable; pressure only, never the fulfillment —
 │   │   │                       #   a pressure-less milestone is skipped), gated
@@ -416,9 +431,12 @@ StoryArc/
 │   │   │                       #   (buildFocusControl), phase, beat strip by shape
 │   │   │                       #   (buildBeatStrip, waitingMarksOf), last beat
 │   │   │                       #   (buildLastBeatCell), ⋯ menu (buildArcMenuItems);
-│   │   │                       #   warning line (buildArcAlert: ruling, all done,
-│   │   │                       #   stall with Re-plan / Spotlight it / Ignore);
+│   │   │                       #   warning area (buildArcAlert: buildArcWarning — ruling,
+│   │   │                       #   all done, stall with Re-plan / Spotlight it / Ignore —
+│   │   │                       #   then buildStyleFieldsNotice, the note on an episode
+│   │   │                       #   with directives, rules or tone and no world facts);
 │   │   │                       #   detail (buildArcDetail: describeWhatNarratorGets,
+│   │   │                       #   counting the world facts each section prints,
 │   │   │                       #   Reveal plan switch, beat status, beat editor
 │   │   │                       #   buildBeatEditor, buildTitleAndPremiseForm,
 │   │   │                       #   buildPlanList, JSON editor); past arcs with
@@ -710,7 +728,12 @@ StoryArc/
 │   │                           #   locked-beat rejection) + promoteNextBeats
 │   │                           #   + milestones (all active, any order)
 │   │                           #   + scrubArcInternals (incl. secret ids)
-│   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution
+│   ├── test-templates.js       # Tests: template loading + {{KEY}} substitution;
+│   │                           #   prompt wording (one-moment fulfillments, world facts)
+│   ├── test-world-facts.js     # Tests: worldFacts on createDefaultArc, arcWorldFacts,
+│   │                           #   validateArcPlan, applyArcEdit (absent key accepted),
+│   │                           #   the plan check's {{WORLD_FACTS}}, worldFact rewrites
+│   │                           #   and drops, renames inside a world fact
 │   └── test-validation.js      # Tests: parseLlmJson + validateArcPlan incl. tier
 │                               #   (default, milestone activation, band clamp,
 │                               #   pressure-less milestone rejected)
@@ -809,6 +832,7 @@ lib/ui/
 │                              planning/storage.js, planning/arc-edit.js,
 │                              planning/beat-completion.js setBeatStatusByHand,
 │                              injection/signals.js, injection/pacing.js,
+│                              injection/builder.js MILESTONE_WORLD_FACT_LIMIT,
 │                              injection/clock.js, core/settings.js,
 │                              core/constants.js, progress.js, wizard.js,
 │                              knowledge-popup.js, undo-stack.js, beat-strip.js,
@@ -856,6 +880,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
 | Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutRoadInRecord`) |
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
+| World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |
 | Arc manager | `lib/ui/arc-manager.js` | `lib/planning/storage.js`, `lib/injection/clock.js`, `wizard.js` |
