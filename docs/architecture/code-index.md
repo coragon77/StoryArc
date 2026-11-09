@@ -17,6 +17,9 @@ StoryArc/
 ├── prompts/
 │   ├── analyze-context.txt     # Phase 1 prompt: analyze harvested context into story state;
 │   │                           #   explains the [BEING RE-PLANNED] mark on existing arcs
+│   ├── ask-questions.txt       # Wizard question call: 0-5 questions about the author's
+│   │                           #   intent the direction leaves open, 2-4 suggested
+│   │                           #   answers each; never plot, twists or secrets
 │   ├── generate-arc.txt        # Phase 2 prompt: produce JSON arc plan from analysis;
 │   │                           #   asks for both faces of each beat (pressure +
 │   │                           #   fulfillment, one on-screen moment: never a tally
@@ -78,10 +81,15 @@ StoryArc/
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
-│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre, themeSeeds }) —
-│   │   │                       #   two-phase LLM generation with retry logic; stamps
-│   │   │                       #   tier, direction, genre, themeSeeds, messageStart,
-│   │   │                       #   lastFulfilledAt;
+│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre, themeSeeds, analysis, authorAnswers }) —
+│   │   │                       #   two-phase LLM generation with retry logic (a given
+│   │   │                       #   analysis skips Phase 1); stamps
+│   │   │                       #   tier, direction, genre, themeSeeds, authorAnswers,
+│   │   │                       #   messageStart, lastFulfilledAt;
+│   │   │                       #   prepareArc() = Phase 1 + the question call
+│   │   │                       #   (buildAskQuestionsVariables, parseAuthorQuestions,
+│   │   │                       #   answeredAuthorAnswers); formatAuthorAnswersBlock()
+│   │   │                       #   fills {{AUTHOR_ANSWERS_BLOCK}} in Phase 2;
 │   │   │                       #   formatGenreBlock(genre, phase) fills {{GENRE_BLOCK}}
 │   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   formatThemesBlock(themeSeeds) fills {{THEMES_BLOCK}}
@@ -423,10 +431,14 @@ StoryArc/
 │   │   │                       #   cards rebuild; buildWandContent() (exported) says the
 │   │   │                       #   extension is off instead of offering dead buttons;
 │   │   │                       #   Knowledge action while the tracker is on
-│   │   ├── wizard.js           # showWizard(reviseArcId?) — two-step arc planning popup:
+│   │   ├── wizard.js           # showWizard(reviseArcId?) — arc planning popup:
 │   │   │                       #   Direction (context summary strip with Retry on a
 │   │   │                       #   failed harvest, tier, genre, themes, direction; re-plan:
 │   │   │                       #   title, premise, "Your rulings" with remove buttons)
+│   │   │                       #   → Questions when the model asked any
+│   │   │                       #   (buildQuestionsStep: suggestion chips, answer boxes,
+│   │   │                       #   re-plan: earlier answers first; buildStepIndicator
+│   │   │                       #   shows three steps then)
 │   │   │                       #   → Review (generation log with a polite status line
 │   │   │                       #   and a visible Cancel, then the plan behind one
 │   │   │                       #   Reveal switch, foreshadowing shown as Clues; re-plan:
@@ -698,7 +710,9 @@ StoryArc/
 │   │                           #   jQuery: Direction with the context strip, Retry on a
 │   │                           #   failed harvest, Cancel during generation, polite
 │   │                           #   status line, Clues in Review, Back asks before
-│   │                           #   discarding a plan
+│   │                           #   discarding a plan; the Questions step (chips, help
+│   │                           #   line, three steps, re-plan prefill, answers stored),
+│   │                           #   the flow without questions as before
 │   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
 │   │                           #   the wizard opens; Ignore keeps it open; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
@@ -737,6 +751,12 @@ StoryArc/
 │   │                           #   field, completed beats / fired triggers / direction /
 │   │                           #   genre / theme seeds kept, whole names (possessive matches), longest
 │   │                           #   first, each guard, malformed items; the names block
+│   ├── test-author-questions.js # Tests: parseAuthorQuestions (caps, garbage, zero),
+│   │                           #   answeredAuthorAnswers, formatAuthorAnswersBlock,
+│   │                           #   buildAskQuestionsVariables (new arc, re-plan), the
+│   │                           #   prompt and its outline slot, prepareArc, generateArc
+│   │                           #   with a given analysis, authorAnswers stamped and
+│   │                           #   kept on a re-plan, none in the injection
 │   ├── test-genre.js           # Tests: formatGenreBlock, formatThemesBlock, the
 │   │                           #   {{GENRE_BLOCK}} / {{THEMES_BLOCK}} slots and checklist
 │   │                           #   lines, no genre or theme seeds in the injection,

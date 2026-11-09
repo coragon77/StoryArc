@@ -44,10 +44,11 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 
 ### Planning an arc
 
-**Plan a new arc** opens a two-step wizard.
+**Plan a new arc** opens the wizard.
 
-1. **Direction.** Pick the arc's **tier** (see below), its **genre**, kept short ("High fantasy adventure"), its **themes** if you like ("guild politics, the price of fame") and say what the arc should explore. The genre is binding: the arc reads as that genre. The themes only colour the arc where there is room; none of them has to appear. What the arc must deliver comes from your direction.
-2. **Review.** Story Arc plans the arc and shows its title, tone and "What's it about?", the arc's themes grown from yours. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
+1. **Direction.** Pick the arc's **tier** (see below), its **genre**, kept short ("High fantasy adventure"), its **themes** if you like ("guild politics, the price of fame") and say what the arc should explore. The genre is binding: the arc reads as that genre. The themes only colour the arc where there is room; none of them has to appear. What the arc must deliver comes from your direction. Press **Generate**.
+2. **Questions**, only when your direction leaves something important open. Story Arc asks a few short questions about what you want, for example whether the pressure is open or only hinted at, or whether anyone can step in and help. Click a suggested answer or write your own; leave any blank. Your answers steer the plan as strongly as your direction, and the narrator never sees them. The questions never give away the plan. Press **Plan the arc**. When you re-plan an arc, your earlier answers come first, ready to change.
+3. **Review.** Story Arc plans the arc and shows its title, tone and "What's it about?", the arc's themes grown from yours. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
 ### Managing arcs
 

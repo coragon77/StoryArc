@@ -57,6 +57,10 @@ _Avoid_: style, tone
 The themes the player writes per arc beside the genre ("corruption, political intrigue"), stored as `themeSeeds`. They colour the arc where the premise and the direction leave room and are never obligations; a theme is never a world fact and never the reason for a pressure, secret or trigger: it colours only what the direction already puts there. They seed the plan's own `themes`, its thematic statements, which the player sees as "What's it about?". Outline phase only, never sent to the narrator (ADR-0004, amended 2026-11-09).
 _Avoid_: tags, ingredients, requirements
 
+**Author's answers**:
+The player's answers, in their own words, to the questions the wizard asks after Generate about what the direction leaves open (how pressure works, how dark the arc is, whether anyone can step in, hard lines). Only answered ones are stored, as `authorAnswers` on the arc. They bind the outline like the direction and win over genre and themes. A re-plan shows them again for editing. Never sent to the narrator.
+_Avoid_: survey, interview, preferences
+
 **Re-plan**:
 Regenerating the unfulfilled part of an active arc from the story's current state, keeping its identity, its secrets and its fulfilled beats. May keep the tier or grow it (episode → act → saga), never shrink it.
 _Avoid_: revise, regenerate, reroll
