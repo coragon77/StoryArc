@@ -30,7 +30,10 @@ StoryArc/
 │   │                           #   and pressures, list revealed secrets (re-plan),
 │   │                           #   rewrite tally/chain fulfillments ({{FULFILLMENTS}},
 │   │                           #   kind "fulfillment") into one moment, link triggers
-│   │                           #   to secrets; answers JSON (ADR-0006)
+│   │                           #   to secrets; author's answers ({{AUTHOR_ANSWERS}}) as
+│   │                           #   public input; step 2 also rewrites contradictions
+│   │                           #   with the cast's details, sweeping world facts and
+│   │                           #   off-register items (ADR-0009 amendment); answers JSON (ADR-0006)
 │   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
 │   │                           #   new characters, who learned which fact and how,
 │   │                           #   revealed secrets with what was heard, and (task 6)
@@ -73,7 +76,8 @@ StoryArc/
 │   │   │                       #   getCharacterData(), getPersonaData() (private) —
 │   │   │                       #   character card fields + user persona;
 │   │   │                       #   harvestCast() (private, #44) — the ledger's
-│   │   │                       #   named characters { name, aliases } (#55: no unnamed relative) while Story Arc and
+│   │   │                       #   named characters { name, aliases, details } (#55: no unnamed relative; details: current
+│   │   │                       #   value per kind via currentDetailText, {} while details are off) while Story Arc and
 │   │   │                       #   the knowledge tracker are on, else []
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
@@ -721,7 +725,8 @@ StoryArc/
 │   │                           #   completion; autoTrack off; log counts only
 │   ├── test-harvester.js       # Tests: harvestContext drops messages with plan ids,
 │   │                           #   the injection header or markers, keeps OOC direction;
-│   │                           #   the cast while the tracker is on, [] while off
+│   │                           #   the cast while the tracker is on, [] while off;
+│   │                           #   the cast's current details, {} while details are off
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;
@@ -737,6 +742,11 @@ StoryArc/
 │   │                           #   field, completed beats / fired triggers / direction /
 │   │                           #   genre / theme seeds kept, whole names (possessive matches), longest
 │   │                           #   first, each guard, malformed items; the names block
+│   │                           #   (with a member's details after a dash)
+│   ├── test-plan-check-intent.js # Tests: {{AUTHOR_ANSWERS}} (with, empty, absent,
+│   │                           #   malformed), the contradiction / sweeping-claims /
+│   │                           #   register rules and the two planner lines pinned,
+│   │                           #   a re-plan's kept world facts in {{WORLD_FACTS}}
 │   ├── test-genre.js           # Tests: formatGenreBlock, formatThemesBlock, the
 │   │                           #   {{GENRE_BLOCK}} / {{THEMES_BLOCK}} slots and checklist
 │   │                           #   lines, no genre or theme seeds in the injection,
@@ -795,7 +805,8 @@ lib/context/
 ├── chat-history.js  (imports: /script.js)
 └── harvester.js     (imports: chat-history.js, planning/storage.js,
                       injection/signals.js arcInternalIds, core/constants.js,
-                      core/settings.js (tracker switch, ledger), /script.js,
+                      core/settings.js (tracker and details switches, ledger),
+                      knowledge/ledger.js currentDetailText, /script.js,
                       /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
@@ -907,6 +918,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
 | World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
 | Secret rewrites (ADR-0003 amendment) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`) | `prompts/check-plan.txt` (step 2, SECRETS), `lib/planning/replan.js` (`applyReplan`), `lib/ui/wizard.js` (`buildSecretChoices`, `proposedSecretsNote`, `readSecretChoices`) |
+| Plan check holds the plan to the story and the author (ADR-0009 amendment) | `prompts/check-plan.txt` (step 2: contradictions, sweeping claims, register; `{{AUTHOR_ANSWERS}}`) | `lib/context/harvester.js` (`harvestCast`: details), `lib/knowledge/ledger.js` (`currentDetailText`), `lib/planning/generator.js` (`formatCastLines`, `formatAuthorAnswers`, `buildPlanCheckVariables`), `prompts/generate-arc.txt` (pressure and world-fact lines) |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |
 | Planning wizard | `lib/ui/wizard.js` | `lib/context/`, `lib/planning/` |
 | Arc manager | `lib/ui/arc-manager.js` | `lib/planning/storage.js`, `lib/injection/clock.js`, `wizard.js` |
