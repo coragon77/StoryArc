@@ -80,7 +80,7 @@ StoryArc/
 │   │   │                       #   character card fields + user persona;
 │   │   │                       #   harvestCast() (private, #44) — the ledger's
 │   │   │                       #   named characters { name, aliases, details } (#55: no unnamed relative; details: current
-│   │   │                       #   value per kind via currentDetailText, {} while details are off) while Story Arc and
+│   │   │                       #   value per kind via characterDetailTexts, {} while details are off) while Story Arc and
 │   │   │                       #   the knowledge tracker are on, else []
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
@@ -827,7 +827,7 @@ lib/context/
 └── harvester.js     (imports: chat-history.js, planning/storage.js,
                       injection/signals.js arcInternalIds, core/constants.js,
                       core/settings.js (tracker and details switches, ledger),
-                      knowledge/ledger.js currentDetailText, /script.js,
+                      knowledge/ledger.js characterDetailTexts, /script.js,
                       /scripts/extensions.js, /scripts/world-info.js getSortedEntries)
 
 lib/planning/
