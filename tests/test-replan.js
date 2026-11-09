@@ -575,6 +575,49 @@ describe('applyReplan', () => {
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, { premise: '   ' }), { arc: null, error: 'premise cannot be empty.' });
         assert.deepEqual(applyReplan(mergedWithProposal(), 250, {}), { arc: null, error: 'premise cannot be empty.' });
     });
+
+    /** A merged arc whose plan check proposed new wording for two secrets. */
+    function mergedWithSecretProposals() {
+        const merged = mergedArc();
+        merged.secrets = [
+            { id: 'contract', content: 'Her contract lets the guild order her about.', proposedContent: 'The guild pays for her brother\'s care.', revealPhase: 'climax', disclosed: false, holders: ['Mara'] },
+            { id: 'ledger', content: 'A clause binds Vera to the ledger.', proposedContent: 'Vera owes the ledger\'s keeper.', revealPhase: 'escalation', disclosed: false, holders: ['Vera'] },
+            { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true },
+        ];
+        return merged;
+    }
+
+    it('takes and keeps each proposed secret as chosen, and stores no proposal', () => {
+        const { arc } = applyReplan(mergedWithSecretProposals(), 250, {
+            premise: 'A debt comes due.',
+            secretChoices: { contract: 'take', ledger: 'keep' },
+        });
+
+        assert.deepEqual(arc.secrets, [
+            { id: 'contract', content: 'The guild pays for her brother\'s care.', revealPhase: 'climax', disclosed: false, holders: ['Mara'] },
+            { id: 'ledger', content: 'A clause binds Vera to the ledger.', revealPhase: 'escalation', disclosed: false, holders: ['Vera'] },
+            { id: 'secret_1', content: 'The creditor is her brother.', revealPhase: 'climax', disclosed: true },
+        ]);
+    });
+
+    it('keeps every secret and removes every proposal when no choice is given', () => {
+        const { arc } = applyReplan(mergedWithSecretProposals(), 250, { premise: 'A debt comes due.' });
+
+        assert.deepEqual(arc.secrets.map(secret => [secret.content, 'proposedContent' in secret]), [
+            ['Her contract lets the guild order her about.', false],
+            ['A clause binds Vera to the ledger.', false],
+            ['The creditor is her brother.', false],
+        ]);
+    });
+
+    it('takes nothing for a secret without a proposal, and leaves the merged arc\'s proposals alone', () => {
+        const merged = mergedWithSecretProposals();
+
+        const { arc } = applyReplan(merged, 250, { premise: 'A debt comes due.', secretChoices: { secret_1: 'take', contract: 'take' } });
+
+        assert.equal(arc.secrets[2].content, 'The creditor is her brother.');
+        assert.deepEqual(merged, mergedWithSecretProposals());
+    });
 });
 
 describe('applyReplan — the re-plan stamp restarts the stall count', () => {
