@@ -91,9 +91,6 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 6. Fixes are story-agnostic: nothing assumes where a player keeps their rules.
 7. The ranking line was to be tested first. It was, and showed no effect: it is
    not shipped.
-8. Players whose preset says little about style lose the tone and directives an
-   episode used to carry. Accepted: style belongs to the preset. Rejected
-   alternative: a setting that injects the tone anyway.
 
 ## Part A — shipped
 
@@ -188,6 +185,11 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
    fields.
 3. Part C: one more output of the re-plan's outline call (recommended: no extra
    call), or a separate call per re-plan?
+4. Players whose preset says little about style lose the tone and directives an
+   episode used to carry. Stefan's genre ruling points that way ("its only to
+   steer what and how the arc gets generated"), but the trade-off itself was
+   not confirmed. If accepted, record "a setting that injects the tone anyway"
+   as the rejected alternative.
 
 ## Risks
 
