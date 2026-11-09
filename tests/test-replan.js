@@ -78,27 +78,7 @@ function generatedPlan(overrides = {}) {
 }
 
 describe('mergeReplan', () => {
-    it('keeps a completed beat\'s message reference but drops what undoes the old road', () => {
-        const existing = storedEpisode();
-        existing.beats[1] = {
-            ...existing.beats[1],
-            completion: { at: 130, messageId: 'm130', unlocked: ['beat_3'], arcCompleted: true, lastFulfilledBefore: 120 },
-        };
-        const merged = mergeReplan(existing, generatedPlan());
-
-        assert.deepEqual(merged.beats[1], {
-            id: 'beat_2',
-            intention: 'She has confronted the messenger.',
-            status: 'completed',
-            unlockAfter: [],
-            completion: { at: 130, messageId: 'm130', lastFulfilledBefore: 120 },
-        });
-        assert.equal(merged.beats[0].completion, undefined);
-        // The stored arc is not mutated.
-        assert.deepEqual(existing.beats[1].completion.unlocked, ['beat_3']);
-    });
-
-    it('drops the milestones a kept completion skipped from its record, so a rollback cannot reopen them', () => {
+    it('keeps a closed beat without its completion record: the history before a re-plan is frozen', () => {
         const existing = {
             ...storedEpisode(),
             tier: 'act',
@@ -106,15 +86,20 @@ describe('mergeReplan', () => {
                 { id: 'm0', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
                 {
                     id: 'm1', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [],
-                    completion: { at: 140, messageId: 'm140', skipped: ['m0'], lastFulfilledBefore: 130 },
+                    completion: { at: 140, messageId: 'm140', unlocked: ['m2'], skipped: ['m0'], arcCompleted: true, lastFulfilledBefore: 130 },
                 },
+                { id: 'm2', pressure: 'The vault waits.', intention: 'She has opened the vault.', status: 'active', unlockAfter: [] },
             ],
         };
 
         const merged = mergeReplan(existing, generatedPlan({ tier: 'act' }));
 
-        assert.deepEqual(merged.beats[1].completion, { at: 140, messageId: 'm140', lastFulfilledBefore: 130 });
-        assert.deepEqual(existing.beats[1].completion.skipped, ['m0']);
+        assert.deepEqual(merged.beats.slice(0, 2), [
+            { id: 'm0', pressure: 'Rumours spread.', intention: 'She has heard the rumour.', status: 'skipped', unlockAfter: [] },
+            { id: 'm1', pressure: 'The guild watches.', intention: 'She has joined the guild.', status: 'completed', unlockAfter: [] },
+        ]);
+        // The stored arc is not mutated.
+        assert.deepEqual(existing.beats[1].completion, { at: 140, messageId: 'm140', unlocked: ['m2'], skipped: ['m0'], arcCompleted: true, lastFulfilledBefore: 130 });
     });
 
     it('keeps identity, focus, status and the edited title/premise/direction', () => {
@@ -260,9 +245,10 @@ describe('mergeReplan', () => {
 
     it('points a new trigger\'s secret link at the secret\'s merged id', () => {
         // generatedPlan's secret_1 restates the disclosed secret_1 and is
-        // dropped; its secret_2 ("The brother is dying.") has an id
-        // validation invented, so it is suffixed past the stored secret_2,
-        // which the plan left out.
+        // dropped, so its link follows to the stored one; its secret_2 ("The
+        // brother is dying.") has an id validation invented and is suffixed
+        // past the stored secret_2, which the plan left out. The link to
+        // secret_2 is the plan's own word and stays as written.
         const generated = generatedPlan({
             triggers: [
                 { id: 'brother_coughs', condition: 'if she visits', action: 'he hides the cough', secret: 'secret_2' },
@@ -278,7 +264,7 @@ describe('mergeReplan', () => {
         ]);
         assert.deepEqual(merged.triggers.map(trigger => [trigger.id, trigger.secret]), [
             ['trigger_1', undefined],
-            ['brother_coughs', 'secret_2_2'],
+            ['brother_coughs', 'secret_2'],
             ['creditor_named', 'secret_1'],
         ]);
     });
@@ -304,7 +290,29 @@ describe('mergeReplan', () => {
             ['secret_1_2', 'The brother is dying.'],
             ['secret_2_2', 'The creditor fled the capital.'],
         ]);
-        assert.equal(merged.triggers[1].secret, 'secret_1_2');
+        // An invented id's rename moves no link.
+        assert.equal(merged.triggers[1].secret, 'secret_1');
+    });
+
+    it('keeps a link to a named secret on it when an invented id is the same string', () => {
+        // The planner named one secret secret_1 (keeping the stored one) and
+        // gave the first secret no id, which validation numbered secret_1 too.
+        const existing = {
+            ...storedEpisode(),
+            secrets: [{ id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] }],
+        };
+        const generated = generatedPlan({
+            secrets: [{ content: 'The brother is dying.' }, { id: 'secret_1', content: 'The brother forged the ledger.' }],
+            triggers: [{ id: 'ledger_opened', condition: 'if she opens the ledger', action: 'the clerk lies', secret: 'secret_1' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The brother forged the ledger.'],
+            ['secret_1_2', 'The brother is dying.'],
+        ]);
+        assert.equal(merged.triggers.find(trigger => trigger.id === 'ledger_opened').secret, 'secret_1');
     });
 
     it('lets a named id replace the unrevealed secret while an invented one is suffixed past it', () => {
@@ -818,16 +826,29 @@ describe('applyReplan — the re-plan stamp restarts the stall count', () => {
         assert.equal(isStalled(stored, 2301), false);
     });
 
-    it('a kept completion reopened afterwards leaves the act not stalled', () => {
-        const { arc: stored } = applyReplan(mergedAct(), 2300, { premise: 'Patrols on the Strip.' });
+    it('a swipe of the message that completed a kept milestone reopens nothing after a re-plan', () => {
+        // The act as stored before the re-plan: m0 completed at 2225, the
+        // rest of its road open.
+        const storedAct = { ...mergedAct(), worldFacts: [] };
+        const { arc: generated } = validateArcPlan({
+            title: 'T', premise: 'Patrols on the Strip.',
+            beats: [
+                { id: 'rival', pressure: 'A rival works the same corner.', intention: 'She has faced the rival.' },
+                { id: 'favour', pressure: 'Someone keeps a tally of favours.', intention: 'She has called in a favour.' },
+            ],
+        }, { tier: 'act' });
+        const { arc: stored } = applyReplan(mergeReplan(storedAct, generated), 2300, { premise: 'Patrols on the Strip.' });
         chat.length = 0;
         chat_metadata.story_arc = { version: 1, arcs: [stored], settings: {} };
 
-        assert.equal(reopenCompletionsFrom(2225), true);
+        assert.equal(reopenCompletionsFrom(2225), false);
 
-        assert.equal(stored.beats[0].status, 'active');
-        assert.equal(stored.lastFulfilledAt, 2118);
-        assert.equal(stored.replannedAt, 2300);
+        assert.deepEqual(stored.beats.map(beat => [beat.id, beat.status]), [
+            ['m0', 'completed'],
+            ['rival', 'active'],
+            ['favour', 'active'],
+        ]);
+        assert.equal(stored.lastFulfilledAt, 2225);
         assert.equal(isStalled(stored, 2301), false);
     });
 });

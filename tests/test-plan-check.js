@@ -81,13 +81,57 @@ describe('applyPlanCheck', () => {
         assert.equal(checked.secrets[0].disclosed, false);
     });
 
-    it('leaves disclosure alone when the answer has no revealed list', () => {
+    it('keeps every earlier secret as stored when a re-plan\'s answer has no revealed list', () => {
+        // The planner rewrote brother_leash and added gala_deal; without a
+        // revealed list nothing says whether brother_leash came out.
         const arc = makeReplannedAct();
-        arc.secrets[0].disclosed = true;
+        arc.secrets = [
+            { id: 'brother_leash', content: 'Vanguard holds her brother\'s debts.', revealPhase: 'climax', disclosed: false },
+            { id: 'gala_deal', content: 'Julian bought the gala seats with Vanguard money.', revealPhase: 'any', disclosed: false },
+        ];
+        const earlierSecrets = [
+            { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: false },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true },
+        ];
+        const warnings = [];
+        const originalWarn = console.warn;
+        console.warn = message => warnings.push(message);
+        let checked;
+        try {
+            checked = applyPlanCheck(arc, {
+                rewrites: [
+                    { kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' },
+                    { kind: 'secret', id: 'gala_deal', text: 'Julian paid for the gala seats himself.' },
+                ],
+            }, earlierSecrets);
+        } finally {
+            console.warn = originalWarn;
+        }
 
-        const checked = applyPlanCheck(arc, { rewrites: [] }, EARLIER_LEASH);
+        assert.deepEqual(checked.secrets, [
+            { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: false },
+            { id: 'old_vow', content: 'Vera swore an oath to the guild.', revealPhase: 'any', disclosed: true },
+            { id: 'gala_deal', content: 'Julian paid for the gala seats himself.', revealPhase: 'any', disclosed: false },
+        ]);
+        assert.deepEqual(warnings, ['[Story Arc] Re-plan keeps every earlier secret as stored: the plan check gave no revealed list']);
+    });
 
-        assert.equal(checked.secrets[0].disclosed, true);
+    it('leaves a new plan\'s secrets alone when the answer has no revealed list', () => {
+        const checked = applyPlanCheck(makeReplannedAct(), { rewrites: [] }, []);
+
+        assert.deepEqual(checked.secrets, makeReplannedAct().secrets);
+    });
+
+    it('treats an earlier secret the ledger saw come out as revealed though the list leaves it out', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[0] = { id: 'brother_leash', content: 'Vanguard holds her brother\'s debts.', revealPhase: 'climax', disclosed: false };
+
+        const checked = applyPlanCheck(arc, {
+            revealed: [],
+            rewrites: [{ kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' }],
+        }, EARLIER_LEASH, {}, ['brother_leash']);
+
+        assert.deepEqual(checked.secrets[0], { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: true });
     });
 
     it('never un-marks a secret the story cannot have revealed — only the re-planned arc\'s own', () => {

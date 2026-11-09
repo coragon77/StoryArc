@@ -228,8 +228,8 @@ StoryArc/
 │   │                           #   keeps identity, edited title/premise/direction,
 │   │                           #   carries the model's premise as proposedPremise,
 │   │                           #   revealed secrets (a restatement dropped), closed
-│   │                           #   (completed or skipped) beats (their completion records without unlocked
-│   │                           #   skipped and arcCompleted: withoutRoadInRecord), planted
+│   │                           #   (completed or skipped) beats (without their completion
+│   │                           #   records, history frozen: withoutCompletionRecord), planted
 │   │                           #   foreshadowing, fired triggers;
 │   │                           #   replaces the rest, the unrevealed secrets too (one
 │   │                           #   under an old id keeps its clues and triggers);
@@ -610,11 +610,15 @@ StoryArc/
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, revealed
 │   │                           #   secrets kept, unrevealed replaced by id or dropped,
 │   │                           #   clue and trigger links kept, id de-collision, skipped
-│   │                           #   milestones kept, tier change, kept
-│   │                           #   completion records lose unlocked/skipped/arcCompleted) + replanTiers +
+│   │                           #   milestones kept, tier change, kept closed beats
+│   │                           #   lose their completion records, a swipe after a re-plan
+│   │                           #   reopens nothing) + replanTiers +
 │   │                           #   buildArcSoFar (secret blocks, world-fact rank) +
 │   │                           #   formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)
+│   ├── test-replan-revealed.js # Tests: secretIdsRevealedOnScreen, markSecretsRevealedOnScreen;
+│   │                           #   generateArc: a ledger-revealed secret established and
+│   │                           #   kept, a failed or unreadable check keeps every earlier secret
 │   ├── test-replan-rulings.js  # Tests: the rulings in formatExistingArcs, buildArcSoFar,
 │   │                           #   buildPlanCheckVariables; mergeReplan carries them;
 │   │                           #   applyReplan builds them from the stored rulings at
@@ -963,7 +967,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Tier/focus migration | `lib/core/settings.js` (`migrateArc`) | `lib/planning/storage.js` |
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
-| Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutRoadInRecord`) |
+| Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutCompletionRecord`) |
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
 | World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
 | Secret rewrites and re-planned secrets (ADR-0003 amendments) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`, `buildArcSoFar`) | `prompts/check-plan.txt` (step 2, SECRETS), `prompts/generate-arc.txt` (secret guidelines), `lib/planning/replan.js` (`mergeReplan`) |
