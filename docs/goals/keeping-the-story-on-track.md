@@ -97,6 +97,7 @@ For a chapter brief (the kickoff-brief contract):
 
 - 2026-11-09: C1 complete. The stance experiment ran (C6 facts row): no case for stance from that scene; C6 waits on Stefan's decision. The plan check's exception was reworded after a thin-direction test and re-checked on five calls.
 - 2026-11-09: the four design-note questions answered; the world-facts test passed (0 of 3); implementation plan for C2 and C3 written.
+- 2026-11-09: C2 and C3 complete (PRs \#85, \#86). The code review found nine points; seven were fixed before merge. Acts and sagas print at most three world facts, by ruling. A re-plan keeps the current premise unless the player picks the proposed one, so an old premise with bad wording stays until then.
 
 ## Chapters
 
@@ -105,10 +106,12 @@ Order: C1 finishes what shipped. C2 and C3 complete the plan-format change while
 - [x] **C1. Plan wording (Part A)** — the planner and the plan check apply the leverage rule (7630f2b), and the genre leaves the injection (PR \#84).
   - done = PR \#84 merged, and the Paragon plan block rebuilt from the chat file carries no `GENRE:` line.
   - Completed 2026-11-09: PR \#84 merged (a0f8fa9); the Paragon plan block rebuilt from the chat file opens each act with its header and premise, no `GENRE:` line; CI green.
-- [ ] **C2. World facts (Part B)** — `worldFacts` replace directives and anti-patterns, and tone, directives and anti-patterns leave the prompt. Spec: `docs/plans/2026-11-09-plans-state-the-situation-design.md`. Plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
+- [x] **C2. World facts (Part B)** — `worldFacts` replace directives and anti-patterns, and tone, directives and anti-patterns leave the prompt. Spec: `docs/plans/2026-11-09-plans-state-the-situation-design.md`. Plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
   - done = a freshly planned arc in the Amy chat has world facts and no directives, and its injected sections carry no `TONE:`, no directives and no anti-patterns.
-- [ ] **C3. A re-plan rewrites unrevealed secrets (Part C)** — same spec, ADR-0003 amendment. Plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
+  - Completed 2026-11-09: PR \#85 merged (133d2a0). The fresh episode "Salt, Flour, and Stolen Hours" in the Amy chat got four world facts, no directives or anti-patterns, and its section has no `TONE:`, `DO NOT:` or `DIRECTIVES:`. A re-planned old episode got world facts, and its notice went away. CI green.
+- [x] **C3. A re-plan rewrites unrevealed secrets (Part C)** — same spec, ADR-0003 amendment. Plan: `docs/plans/2026-11-09-plans-state-the-situation.md`.
   - done = a re-plan in the Amy chat proposes a rewrite for an unrevealed secret, shows the old text and its planted clues, and stores the rewrite only when the player takes it.
+  - Completed 2026-11-09: PR \#86 merged (b2df77d). A re-plan of the ranking-test act proposed lever-and-cost wording for a contract-addendum secret, next to the stored text and its planted clue. Taking it stored the new wording; id, holders and reveal phase stayed, and no proposal stayed in storage.
 - [ ] **C4. The view of everything Story Arc sends** — \#83.
   - done = \#83 closed.
 - [ ] **C5. Standing rulings** — an OOC world ruling becomes a confirmed rule that stays in the prompt.

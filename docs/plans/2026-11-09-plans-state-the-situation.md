@@ -1,7 +1,7 @@
 # Plans State the Situation — Implementation Plan (Parts B and C)
 
 - **Date:** 2026-11-09
-- **Status:** Approved for implementation (Stefan, 2026-11-09: "yes, write the plan and run the test")
+- **Status:** Shipped 2026-11-09: Part B in PR #85, Part C in PR #86. Approved for implementation by Stefan, 2026-11-09: "yes, write the plan and run the test".
 - **Design:** `docs/plans/2026-11-09-plans-state-the-situation-design.md`, ADR-0009
 - **Goals:** `docs/goals/keeping-the-story-on-track.md`, chapters C2 and C3
 
