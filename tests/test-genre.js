@@ -99,9 +99,9 @@ describe('prompt templates carry the genre slot', () => {
         assert.ok(text.includes('{{PHASE1_ANALYSIS}}\n\n{{GENRE_BLOCK}}{{CAST_BLOCK}}== AUTHOR\'S CREATIVE DIRECTION =='));
     });
 
-    it('outline: the themes right after the creative direction, before the tier', () => {
+    it('outline: the themes right after the creative direction and the author\'s answers, before the tier', () => {
         const text = read('generate-arc.txt');
-        assert.ok(text.includes('{{USER_DIRECTION}}\n\n{{THEMES_BLOCK}}{{TIER_BLOCK}}'));
+        assert.ok(text.includes('{{USER_DIRECTION}}\n\n{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{TIER_BLOCK}}'));
         assert.equal(text.split('{{THEMES_BLOCK}}').length - 1, 1);
     });
 

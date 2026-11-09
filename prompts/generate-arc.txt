@@ -10,7 +10,7 @@ The author has provided the following guidance for what they want this arc to ex
 
 {{USER_DIRECTION}}
 
-{{THEMES_BLOCK}}{{TIER_BLOCK}}
+{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{TIER_BLOCK}}
 {{ARC_DIRECTIVES}}
 {{ARC_SO_FAR}}
 == CURRENTLY ACTIVE ARCS ==
@@ -171,6 +171,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 
 - [ ] If a GENRE block is given: the arc reads as that genre, and no single device (one kind of incident, gag, mishap or set piece) repeats across the secrets, pressures, triggers and clues
 - [ ] If a THEMES block is given: no theme is a world fact or the reason for a pressure, secret or trigger, and the `themes` field grows from the given themes where the story supports them
+- [ ] If an AUTHOR'S ANSWERS block is given: nothing in the plan contradicts an answer
 - [ ] Every secret has a SPECIFIC, COMPLETE answer (not "someone is hiding something")
 - [ ] Every foreshadowing entry points to a specific secret or beat
 - [ ] No trigger action states the content of a secret or a payoff -- it names the reaction only
