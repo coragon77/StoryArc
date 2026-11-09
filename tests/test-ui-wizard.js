@@ -417,7 +417,7 @@ describe('wizard: the re-plan choice per proposed secret', () => {
         const planBody = html.slice(html.indexOf('<div class="story-arc-wizard-plan-body">'));
         assert.ok(planBody.includes('data-secret-id="miller_deed"'));
         assert.equal(html.indexOf('data-secret-id="miller_deed"') > html.indexOf('<div class="story-arc-wizard-plan-body">'), true);
-        assert.ok(html.includes('Hidden: 2 secrets and 2 clues. 1 secret has new wording proposed; each keeps its wording unless you reveal the plan and take it. Revealing it may spoil'));
+        assert.ok(html.includes('Hidden: 2 secrets and 2 clues. Revealing it may spoil the story for you as a player. 1 secret has new wording proposed; each keeps its wording unless you reveal the plan and take it.'));
     });
 });
 
