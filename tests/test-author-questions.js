@@ -134,7 +134,7 @@ These are the author's own words about this arc, and they bind like the directio
 });
 
 describe('buildAskQuestionsVariables', () => {
-    it('a new arc: the direction, tier, genre, themes, analysis and running arcs; no arc so far, nothing answered', () => {
+    it('a new arc: the direction, tier, genre, themes, analysis and the running arcs by title; no arc so far, nothing answered', () => {
         const variables = buildAskQuestionsVariables({
             analysis: 'She owes more than money.',
             userDirection: 'A debt she cannot pay.',
@@ -150,7 +150,7 @@ describe('buildAskQuestionsVariables', () => {
             GENRE: 'Drama',
             THEMES: 'guilt, family',
             PHASE1_ANALYSIS: 'She owes more than money.',
-            EXISTING_ARCS: '[NORMAL] "The Harbour" — Smugglers move in.',
+            EXISTING_ARCS: '- "The Harbour"',
             ARC_SO_FAR: '',
             ANSWERED: '(none)',
         });
@@ -179,7 +179,7 @@ describe('buildAskQuestionsVariables', () => {
         assert.ok(variables.ARC_SO_FAR.startsWith('== ARC SO FAR (what the author has seen in play) ==\nPremise: A debt comes due.\n'));
         assert.equal(variables.ARC_SO_FAR.includes('The lender is her brother.'), false);
         assert.equal(variables.ANSWERED, 'Q: Who rescues her?\nA: Nobody.');
-        assert.equal(variables.EXISTING_ARCS, '[BACKGROUND] "The Harbour" — Smugglers move in.');
+        assert.equal(variables.EXISTING_ARCS, '- "The Harbour"');
     });
 });
 
@@ -384,6 +384,38 @@ describe('generation with the author\'s answers', () => {
             'The lender knows her habits too well.', 'She has faced the lender.', 'Each favour is a step closer to the lender.']) {
             assert.equal(askPrompt.includes(hidden), false, hidden);
         }
+    });
+
+    it('prepareArc gives the question call another arc by its title only, never its premise or a secret', async () => {
+        const sentPrompts = installBackend(['She owes more than money.', '{ "questions": [] }']);
+        const otherArc = makeArc({
+            id: 'other',
+            title: 'The Harbour',
+            premise: 'The harbourmaster runs the smugglers.',
+            secrets: [{ id: 'h1', content: 'The harbourmaster is the lender.', revealPhase: 'climax', disclosed: false }],
+        });
+        MINIMAL_TEMPLATES['ask-questions.txt'] = 'ASK {{EXISTING_ARCS}}';
+        try {
+            await prepareArc({ ...context, existingArcs: [otherArc] }, 'A debt.');
+        } finally {
+            MINIMAL_TEMPLATES['ask-questions.txt'] = 'ASK {{USER_DIRECTION}} | {{ANSWERED}}{{ARC_SO_FAR}}';
+        }
+
+        assert.equal(sentPrompts[1], 'ASK - "The Harbour"');
+    });
+
+    it('prepareArc given an analysis skips Phase 1 and asks with the answers given', async () => {
+        const sentPrompts = installBackend(['{ "questions": [] }']);
+        const phases = [];
+
+        const prepared = await prepareArc(context, 'A debt.', { onProgress: phase => phases.push(phase) }, {
+            analysis: 'She owes more than money.',
+            authorAnswers: [{ question: 'How dark is it?', answer: ' Bleak. ' }, { question: 'Who rescues her?', answer: '' }],
+        });
+
+        assert.deepEqual(sentPrompts, ['ASK A debt. | Q: How dark is it?\nA: Bleak.']);
+        assert.deepEqual(phases, ['questions']);
+        assert.equal(prepared.analysis, 'She owes more than money.');
     });
 
     it('generateArc given an analysis skips Phase 1 and plans from it', async () => {

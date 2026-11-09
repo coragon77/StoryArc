@@ -1,6 +1,7 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPremiseChoice, buildReviewStep, buildSecretChoices, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
+import { clearTemplateCache } from '../lib/planning/generator.js';
 import {
     chat, chat_metadata, extension_settings, mockSortedEntries, mockPopups, mockPopupState,
     ConnectionManagerRequestService,
@@ -857,25 +858,110 @@ These are the author's own words about this arc, and they bind like the directio
         assert.deepEqual(chat_metadata.story_arc.arcs[0].authorAnswers, []);
     });
 
-    it('Back, then Generate again, keeps a typed answer for an identical question and drops one for a changed question', async () => {
-        const askedAgain = JSON.stringify({ questions: [
-            { question: 'How does the pressure work?', suggestions: ['Open force', 'Deniable hints nobody admits'] },
-            { question: 'Can anyone step in to help?', suggestions: ['Yes', 'No'] },
-        ] });
-        installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, 'The story stands at a crossroads.', askedAgain]);
+    it('Back, then Generate with nothing changed, brings back the same questions and answers without a call', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions]);
         await openWizard();
         typeDirectionAndGenerate('Count the sacks.');
         await settle();
         fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
-        fake.valueById['story-arc-answer-1'] = 'No, nobody rescues';
 
         fake.trigger('click', '#story-arc-wizard-back');
-        typeDirectionAndGenerate('Count the sacks, quietly.');
+        typeDirectionAndGenerate('Count the sacks.');
         await settle();
 
+        assert.deepEqual(sentPrompts, ['ANALYZE', 'ASK']);
         const html = fake.htmlById['story-arc-wizard-content'];
         assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
-        assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-1">Can anyone step in to help?</label>'));
-        assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-1" rows="2"></textarea>'));
+        assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-1">Can an ally talk a dilemma away?</label>'));
+    });
+
+    it('Back, then Generate with a changed direction: no new Phase 1, the typed answers passed as answered, each kept on the step and planned with', async () => {
+        const askedAgain = JSON.stringify({ questions: [
+            { question: 'How does the pressure work?', suggestions: ['Open force', 'Deniable hints nobody admits'] },
+            { question: 'What must never happen?', suggestions: ['A rescue', 'A confession'] },
+        ] });
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, askedAgain, granaryPlan, 'no check']);
+        globalThis.fetch = async (url) => {
+            if (String(url).endsWith('ask-questions.txt')) return new Response('ASK {{ANSWERED}}');
+            if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
+            if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE\n{{AUTHOR_ANSWERS_BLOCK}}END');
+            return new Response('CHECK');
+        };
+        clearTemplateCache();
+        try {
+            await openWizard();
+            typeDirectionAndGenerate('Count the sacks.');
+            await settle();
+            fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
+            fake.valueById['story-arc-answer-1'] = 'No, nobody rescues';
+
+            fake.trigger('click', '#story-arc-wizard-back');
+            typeDirectionAndGenerate('Count the sacks, quietly.');
+            await settle();
+
+            assert.deepEqual(sentPrompts.slice(0, 3), [
+                'ANALYZE',
+                'ASK (none)',
+                'ASK Q: How does the pressure work?\nA: Deniable hints nobody admits\nQ: Can an ally talk a dilemma away?\nA: No, nobody rescues',
+            ]);
+            const html = fake.htmlById['story-arc-wizard-content'];
+            assert.ok(html.includes('<h4 class="story-arc-wizard-questions-group">Your earlier answers</h4>'));
+            assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-0">Can an ally talk a dilemma away?</label>'));
+            assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">No, nobody rescues</textarea>'));
+            assert.ok(html.includes('<textarea class="text_pole" id="story-arc-answer-1" rows="2">Deniable hints nobody admits</textarea>'));
+            assert.ok(html.includes('<label class="story-arc-wizard-label" for="story-arc-answer-2">What must never happen?</label>'));
+
+            fake.valueById['story-arc-answer-0'] = 'No, nobody rescues';
+            fake.valueById['story-arc-answer-1'] = 'Deniable hints nobody admits';
+            fake.valueById['story-arc-answer-2'] = '';
+            fake.trigger('click', '#story-arc-wizard-plan-arc');
+            await settle();
+
+            assert.ok(sentPrompts[3].startsWith('OUTLINE\n== AUTHOR\'S ANSWERS (binding, like the direction) ==\nQ: Can an ally talk a dilemma away?\nA: No, nobody rescues\nQ: How does the pressure work?\nA: Deniable hints nobody admits\n\n'));
+        } finally {
+            clearTemplateCache();
+        }
+    });
+
+    it('Back, then Generate with a changed genre runs Phase 1 again', async () => {
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', pressureQuestions, 'The story leans dark.', pressureQuestions]);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-back');
+        fake.valueById['story-arc-direction-input'] = 'Count the sacks.';
+        fake.valueById['story-arc-tier-select'] = 'episode';
+        fake.valueById['story-arc-genre-input'] = 'Gothic horror';
+        fake.trigger('click', '#story-arc-wizard-generate');
+        await settle();
+
+        assert.deepEqual(sentPrompts, ['ANALYZE', 'ASK', 'ANALYZE', 'ASK']);
+    });
+
+    it('Retry after a failed Phase 1 keeps the typed answers', async () => {
+        const answers = ['The story stands at a crossroads.', pressureQuestions, 'FAIL', 'The story leans dark.', pressureQuestions];
+        ConnectionManagerRequestService.sendRequest = async () => {
+            const text = answers.shift();
+            if (text === 'FAIL') throw new Error('401 Unauthorized');
+            return () => (async function* () { yield { text }; })();
+        };
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
+
+        fake.trigger('click', '#story-arc-wizard-back');
+        fake.valueById['story-arc-direction-input'] = 'Count the sacks.';
+        fake.valueById['story-arc-tier-select'] = 'episode';
+        fake.valueById['story-arc-genre-input'] = 'Gothic horror';
+        fake.trigger('click', '#story-arc-wizard-generate');
+        await settle();
+        assert.match(fake.htmlById['story-arc-wizard-generation-error'], /The generation profile did not answer\./);
+
+        fake.trigger('click', '#story-arc-wizard-regenerate');
+        await settle();
+
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
     });
 });

@@ -17,7 +17,7 @@ The author is also a player of this story. Everything you write is shown to them
 == STORY ANALYSIS ==
 {{PHASE1_ANALYSIS}}
 
-== CURRENTLY ACTIVE ARCS ==
+== OTHER ACTIVE ARCS (titles) ==
 {{EXISTING_ARCS}}
 
 {{ARC_SO_FAR}}== ALREADY ANSWERED BY THE AUTHOR ==
