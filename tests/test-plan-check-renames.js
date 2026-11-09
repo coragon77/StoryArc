@@ -213,6 +213,37 @@ describe('applyPlanCheck: renames', () => {
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Hale" → "Marsh" ignored: a ruling of the player names it']);
     });
 
+    it('drops a rename of a name in an answer of the author\'s answers', () => {
+        const arc = {
+            ...makePlannedAct(),
+            premise: 'The docks change hands.',
+            authorAnswers: [{ question: 'Who may step in?', answer: 'Julian Hale never helps her.' }],
+        };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+
+        assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
+        assert.deepEqual(checked.authorAnswers, [{ question: 'Who may step in?', answer: 'Julian Hale never helps her.' }]);
+        assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Hale" ignored: the author\'s answers name it']);
+    });
+
+    it('keeps a rename of a name that only the model-written question carries', () => {
+        const arc = {
+            ...makePlannedAct(),
+            premise: 'The docks change hands.',
+            authorAnswers: [{ question: 'Can Julian Hale step in?', answer: 'Nobody steps in.' }],
+        };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+
+        assert.equal(checked.secrets[0].content, 'Owen Hale owes Brody Kane.');
+        assert.deepEqual(recorded.warnings, []);
+    });
+
     it('drops a rename of a name in the title a re-plan keeps', () => {
         const arc = { ...makePlannedAct(), premise: 'The docks change hands.' };
 
@@ -313,7 +344,7 @@ describe('buildPlanCheckVariables: the names block', () => {
         const variables = buildPlanCheckVariables(makeArc(['Julian Hale', 'Priya']), null, CAST_OF_TWO);
 
         assert.equal(variables.NAMES_BLOCK, `== NAMES ==
-The cast, the characters already in the story. Each line gives the name, then the aliases:
+The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
 
 - Julian Sterling (aliases: Jules)
 - Priya
@@ -334,6 +365,28 @@ RENAMES. For each character the plan names, decide whether it is a cast member o
 Answer the renames as one more key of the JSON object below: "renames": [{ "from": "the name as the plan writes it", "to": "the new name" }]. An empty list is fine.
 
 `);
+    });
+
+    it('lists a member\'s details after a dash, and a member without details as before', () => {
+        const castWithDetails = [
+            {
+                name: 'Ellie Masters',
+                aliases: ['Dice'],
+                details: { age: '18', role: 'uncertified Ward, senior at Westbrook High', relation: 'Mara Masters\'s sister' },
+            },
+            { name: 'Mara Masters', aliases: [], details: {} },
+        ];
+
+        const variables = buildPlanCheckVariables(makeArc([]), null, castWithDetails);
+
+        assert.ok(variables.NAMES_BLOCK.startsWith(`== NAMES ==
+The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
+
+- Ellie Masters (aliases: Dice) — age: 18; role: uncertified Ward, senior at Westbrook High; relation: Mara Masters's sister
+- Mara Masters
+
+Names already taken: Dice, Ellie, Mara, Masters
+`));
     });
 
     it('writes (none) when the plan lists no characters', () => {

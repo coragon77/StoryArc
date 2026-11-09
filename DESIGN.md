@@ -269,7 +269,7 @@ The one look of a holder entry: 1px edge, 4px corners, well fill, 13px; the hold
 SillyTavern's `text_pole`: well fill, ST border, 5px corners. Placeholders in muted at full opacity, caret in emphasis, focus as a 2px emphasis outline. An invalid field gets a dashed warning-ink border plus an error line with its icon. The Knowledge search field is the one large field: 19px text, 8px corners, magnifier inset, sticky at the top of its tab.
 
 ### Tabs and steps
-Text tabs on a hairline: muted 500 weight, selected in body colour, 600 weight and a 2px emphasis underline. Counts ride in a small well badge (4px corners); a zero count drops to 400 and muted. The wizard's two steps use the same underline with a numbered badge.
+Text tabs on a hairline: muted 500 weight, selected in body colour, 600 weight and a 2px emphasis underline. Counts ride in a small well badge (4px corners); a zero count drops to 400 and muted. The wizard's steps (Direction and Review, with Questions between them when the planner asks any) use the same underline with a numbered badge.
 
 ### Map
 Dots in body colour, their fill fading from the scene outwards and hollow for no facts; dotted rings with muted titles; a name-family band at body 9%; relation lines at body 50%, the selected one in emphasis. Names sit on a surface backing at 13px and show on hover with the tooltip shadow; a name to check is a warning triangle and a dashed ring, never colour alone. The map holds a tinted container with 6px corners; the filter dims what it does not match to a quarter.

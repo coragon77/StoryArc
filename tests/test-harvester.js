@@ -79,8 +79,8 @@ describe('harvestContext — the cast', () => {
         const context = await harvestWithTracker(true);
 
         assert.deepEqual(context.cast, [
-            { name: 'Julian Sterling', aliases: ['Jules'] },
-            { name: 'Priya', aliases: [] },
+            { name: 'Julian Sterling', aliases: ['Jules'], details: {} },
+            { name: 'Priya', aliases: [], details: {} },
         ]);
     });
 
@@ -97,5 +97,59 @@ describe('harvestContext — the cast', () => {
         // "Julian Sterling Jules\nPriya" is 27 characters, 28 with the joining newline:
         // 7 more tokens at four characters per token.
         assert.equal(withCast.estimatedTokens - withoutCast.estimatedTokens, 7);
+    });
+});
+
+describe('harvestContext — the cast\'s details', () => {
+    // Ellie's age was set by the player; her role changed once, so the
+    // later entry is the current one; her relation points at Mara by id.
+    const ledgerWithDetails = {
+        characters: [
+            {
+                id: 'c1', name: 'Ellie Masters', aliases: ['Dice'],
+                details: {
+                    age: [{ value: '18', at: null, by: 'user' }],
+                    role: [
+                        { value: 'junior at Westbrook High', at: 12 },
+                        { value: 'uncertified Ward, senior at Westbrook High', at: 340 },
+                    ],
+                    relation: [{ value: { kind: 'sister', of: 'c2' }, at: 50 }],
+                },
+            },
+            { id: 'c2', name: 'Mara Masters', aliases: [] },
+        ],
+        facts: [],
+        scene: { at: 0, present: [] },
+        lastUpdatedAt: 0,
+    };
+
+    async function harvestWithDetails(characterDetails) {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, characterDetails } };
+        chat_metadata.story_arc = { version: 1, arcs: [], settings: {}, pendingMarks: [], knowledge: ledgerWithDetails };
+        try {
+            return await harvestContext();
+        } finally {
+            delete chat_metadata.story_arc;
+            delete extension_settings.story_arc;
+        }
+    }
+
+    it('gives each member the current value of every known kind, a relation by name', async () => {
+        const context = await harvestWithDetails(true);
+
+        assert.deepEqual(context.cast, [
+            {
+                name: 'Ellie Masters',
+                aliases: ['Dice'],
+                details: { age: '18', role: 'uncertified Ward, senior at Westbrook High', relation: 'Mara Masters\'s sister' },
+            },
+            { name: 'Mara Masters', aliases: [], details: {} },
+        ]);
+    });
+
+    it('gives no details while character details are off', async () => {
+        const context = await harvestWithDetails(false);
+
+        assert.deepEqual(context.cast.map(member => member.details), [{}, {}]);
     });
 });
