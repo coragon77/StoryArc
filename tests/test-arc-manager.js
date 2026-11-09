@@ -206,6 +206,48 @@ describe('buildArcAlert — the warning line', () => {
     });
 });
 
+describe('buildArcAlert — the notice of an episode planned before world facts', () => {
+    const NOTICE = 'Its directives, rules and tone are no longer sent to the narrator. Re-plan it to give it world facts instead.';
+
+    it('an episode with directives, rules or tone and no world facts gets the notice, with no button', () => {
+        const oldEpisodes = [
+            makeEpisode({ lastFulfilledAt: 2099, directives: ['Keep it intimate.'], antiPatterns: [], tone: '' }),
+            makeEpisode({ lastFulfilledAt: 2099, directives: [], antiPatterns: ['No sudden villains.'], tone: '' }),
+            makeEpisode({ lastFulfilledAt: 2099, directives: [], antiPatterns: [], tone: 'Slow dread.' }),
+        ];
+        for (const episode of oldEpisodes) {
+            const html = buildArcAlert(episode);
+            assert.equal(textOf(html), NOTICE);
+            assert.equal(html.includes('<button'), false);
+        }
+    });
+
+    it('comes after the warning line of a stalled episode', () => {
+        const episode = makeEpisode({ directives: ['Keep it intimate.'] });
+        const text = textOf(buildArcAlert(episode));
+        assert.ok(text.startsWith('No scene beat in '), text);
+        assert.ok(text.endsWith(`Ignore ${NOTICE}`), text);
+    });
+
+    it('an act with directives, rules and tone gets no notice', () => {
+        const act = makeAct({ lastFulfilledAt: 2090, directives: ['Keep it grim.'], antiPatterns: ['No sudden villains.'], tone: 'Slow dread.' });
+        assert.equal(buildArcAlert(act), '');
+    });
+
+    it('an episode with world facts gets no notice, whatever else it carries', () => {
+        const episode = makeEpisode({
+            lastFulfilledAt: 2099, directives: ['Keep it intimate.'], antiPatterns: ['No sudden villains.'], tone: 'Slow dread.',
+            worldFacts: ['The market closes at dawn.'],
+        });
+        assert.equal(buildArcAlert(episode), '');
+    });
+
+    it('an episode with nothing in those fields gets no notice', () => {
+        assert.equal(buildArcAlert(makeEpisode({ lastFulfilledAt: 2099, directives: [], antiPatterns: [], tone: '' })), '');
+        assert.equal(buildArcAlert(makeEpisode({ lastFulfilledAt: 2099 })), '');
+    });
+});
+
 describe('buildLastBeatCell', () => {
     it('where the last beat landed and how long ago', () => {
         assert.equal(textOf(buildLastBeatCell(makeEpisode())), '#2,085 15 messages ago');
@@ -256,6 +298,20 @@ describe('describeWhatNarratorGets', () => {
         const episode = makeEpisode();
         assert.equal(textOf(describeWhatNarratorGets(episode, [episode])),
             'its premise and the current scene beat\'s pressure , with pacing rules. It is the pacing clock, so the phase brake counts its messages.');
+    });
+
+    it('an episode with world facts counts every one', () => {
+        const episode = makeEpisode({ worldFacts: ['The market closes at dawn.', 'The guards take bribes.'] });
+        assert.equal(textOf(describeWhatNarratorGets(episode, [])),
+            'its premise, 2 world facts and the current scene beat\'s pressure , with pacing rules.');
+    });
+
+    it('an act with four world facts counts the three its section prints, normal and spotlit', () => {
+        const worldFacts = ['First fact.', 'Second fact.', 'Third fact.', 'Fourth fact.'];
+        assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts }), [])),
+            'its premise, 3 world facts and 2 standing pressures , as mood. No secrets, triggers or clues.');
+        assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts, focus: 'spotlight' }), [])),
+            'its premise, 3 world facts and 2 pressures to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
     });
 });
 

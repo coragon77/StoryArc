@@ -1,6 +1,6 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPremiseChoice, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
+import { buildPremiseChoice, buildReviewStep, closeWizard, shortenAtWord } from '../lib/ui/wizard.js';
 import {
     chat, chat_metadata, extension_settings, mockSortedEntries, mockPopups, mockPopupState,
     ConnectionManagerRequestService,
@@ -428,5 +428,32 @@ describe('wizard: closeWizard', () => {
 
     it('does nothing while no wizard is open', () => {
         assert.doesNotThrow(() => closeWizard());
+    });
+});
+
+describe('buildReviewStep — world facts', () => {
+    function makePlan(overrides = {}) {
+        return {
+            title: 'The Long Winter', tier: 'act', estimatedLength: 90, tone: 'Slow dread.', themes: [],
+            premise: 'The guild starves the city.',
+            worldFacts: ['The guild cannot compel a volunteer.', 'The river freezes every winter.'],
+            beats: [], secrets: [], foreshadowing: [], triggers: [], escalation: '',
+            ...overrides,
+        };
+    }
+
+    it('lists the world facts behind the Reveal switch and counts them in the hidden note', () => {
+        const html = buildReviewStep(makePlan(), null);
+        const planBody = html.split('class="story-arc-wizard-plan-body">')[1];
+        assert.ok(planBody.startsWith('<section><h4>Premise</h4><p>The guild starves the city.</p></section>'
+            + '<section><h4>World facts</h4><ul><li>The guild cannot compel a volunteer.</li><li>The river freezes every winter.</li></ul></section>'), planBody);
+        assert.ok(html.includes('Hidden: the premise and 2 world facts. Revealing it may spoil the story for you as a player.'));
+        assert.equal(html.split('class="story-arc-wizard-plan-body">')[0].includes('The river freezes every winter.'), false);
+    });
+
+    it('shows no world-facts section for a plan without any', () => {
+        const html = buildReviewStep(makePlan({ worldFacts: [] }), null);
+        assert.equal(html.includes('World facts'), false);
+        assert.ok(html.includes('Hidden: the premise. Revealing it'));
     });
 });
