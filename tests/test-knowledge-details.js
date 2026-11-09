@@ -395,3 +395,27 @@ describe('buildKnowledgeBlock — details', () => {
         ].join('\n'));
     });
 });
+
+describe('characterDetailTexts', () => {
+    it('lists the known details by kind in kind order, the last entry of each history, unknown kinds left out', async () => {
+        const { characterDetailTexts } = await import('../lib/knowledge/ledger.js');
+        const character = {
+            name: 'Kendra Osei',
+            aliases: [],
+            details: {
+                status: [{ value: 'alive', at: 3 }],
+                age: [{ value: '16', at: 1 }, { value: '17', at: 9 }],
+                gender: [{ value: 'female', at: 1 }],
+                role: [],
+            },
+        };
+        const details = characterDetailTexts({ characters: [character] }, character);
+        assert.deepEqual(Object.entries(details), [['gender', 'female'], ['age', '17'], ['status', 'alive']]);
+    });
+
+    it('gives an empty record for a character without details', async () => {
+        const { characterDetailTexts } = await import('../lib/knowledge/ledger.js');
+        const character = { name: 'Ama Osei', aliases: [] };
+        assert.deepEqual(characterDetailTexts({ characters: [character] }, character), {});
+    });
+});
