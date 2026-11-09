@@ -213,6 +213,22 @@ describe('applyPlanCheck: renames', () => {
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Hale" → "Marsh" ignored: a ruling of the player names it']);
     });
 
+    it('drops a rename of a name in a question or an answer of the author\'s answers', () => {
+        const arc = {
+            ...makePlannedAct(),
+            premise: 'The docks change hands.',
+            authorAnswers: [{ question: 'Who may step in?', answer: 'Julian Hale never helps her.' }],
+        };
+
+        const checked = applyPlanCheck(arc, {
+            renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
+        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+
+        assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
+        assert.deepEqual(checked.authorAnswers, [{ question: 'Who may step in?', answer: 'Julian Hale never helps her.' }]);
+        assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Hale" ignored: the author\'s answers name it']);
+    });
+
     it('drops a rename of a name in the title a re-plan keeps', () => {
         const arc = { ...makePlannedAct(), premise: 'The docks change hands.' };
 

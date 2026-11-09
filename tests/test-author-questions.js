@@ -4,11 +4,11 @@ import { readFileSync } from 'node:fs';
 import { extension_settings } from '/scripts/extensions.js';
 import { ConnectionManagerRequestService } from '/scripts/extensions/shared.js';
 import {
-    answeredAuthorAnswers, buildAskQuestionsVariables, clearTemplateCache, formatAuthorAnswersBlock,
+    answeredAuthorAnswers, buildAskQuestionsVariables, buildSeenArcSoFar, clearTemplateCache, formatAuthorAnswersBlock,
     generateArc, loadTemplate, parseAuthorQuestions, prepareArc,
 } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
-import { mergeReplan } from '../lib/planning/replan.js';
+import { applyReplan, mergeReplan } from '../lib/planning/replan.js';
 import { buildInjection } from '../lib/injection/builder.js';
 
 const read = name => readFileSync(new URL(`../prompts/${name}`, import.meta.url), 'utf8');
@@ -165,7 +165,7 @@ describe('buildAskQuestionsVariables', () => {
         assert.equal(variables.EXISTING_ARCS, '(No existing arcs)');
     });
 
-    it('a re-plan: the arc so far as the outline gets it, the earlier answers as answered, the arc itself not among the running arcs', () => {
+    it('a re-plan: the arc so far as the player has seen it, the earlier answers as answered, the arc itself not among the running arcs', () => {
         const reviseArc = makeArc({ authorAnswers: [{ question: 'Who rescues her?', answer: 'Nobody.' }, { question: 'How dark?', answer: ' ' }] });
         const variables = buildAskQuestionsVariables({
             analysis: 'She owes more than money.',
@@ -176,10 +176,72 @@ describe('buildAskQuestionsVariables', () => {
             genre: '',
             themeSeeds: '',
         });
-        assert.ok(variables.ARC_SO_FAR.startsWith('== ARC SO FAR ==\nYou are RE-PLANNING an arc that is already running'));
-        assert.ok(variables.ARC_SO_FAR.includes('\nCurrent premise: A debt comes due.\n'));
+        assert.ok(variables.ARC_SO_FAR.startsWith('== ARC SO FAR (what the author has seen in play) ==\nPremise: A debt comes due.\n'));
+        assert.equal(variables.ARC_SO_FAR.includes('The lender is her brother.'), false);
         assert.equal(variables.ANSWERED, 'Q: Who rescues her?\nA: Nobody.');
         assert.equal(variables.EXISTING_ARCS, '[BACKGROUND] "The Harbour" — Smugglers move in.');
+    });
+});
+
+/** A re-planned arc with each part once seen in play and once still hidden. */
+function makeSeenAndHiddenArc() {
+    return makeArc({
+        premise: 'A debt comes due.',
+        escalation: 'Each favour is a step closer to the lender.',
+        secrets: [
+            { id: 's_out', content: 'The ledger was forged.', revealPhase: 'any', disclosed: true },
+            { id: 's_hidden', content: 'The lender is her brother.', revealPhase: 'climax', disclosed: false },
+        ],
+        foreshadowing: [
+            { id: 'f_planted', clue: 'A ring with the family crest on the lender\'s hand', target: 'secret:s_hidden', planted: true },
+            { id: 'f_unplanted', clue: 'Her brother pays in old coins', target: 'secret:s_hidden', planted: false },
+        ],
+        triggers: [
+            { id: 't_open', condition: 'she asks about the lender', action: 'her brother changes the subject', fired: false },
+        ],
+        beats: [
+            { id: 'm_done', pressure: 'The first favour is due.', intention: 'She has paid the first favour.', status: 'completed' },
+            { id: 'm_open', pressure: 'The lender knows her habits too well.', intention: 'She has faced the lender.', status: 'active' },
+        ],
+    });
+}
+
+describe('buildSeenArcSoFar', () => {
+    it('renders nothing when planning new', () => {
+        assert.equal(buildSeenArcSoFar(null), '');
+    });
+
+    it('gives the premise, what happened, the planted clues and the secrets that came out, nothing hidden', () => {
+        assert.equal(buildSeenArcSoFar(makeSeenAndHiddenArc()), `== ARC SO FAR (what the author has seen in play) ==
+Premise: A debt comes due.
+
+Already happened:
+- She has paid the first favour.
+
+Clues already planted:
+- A ring with the family crest on the lender's hand
+
+Secrets already out in the story:
+- The ledger was forged.
+
+`);
+    });
+
+    it('marks empty parts as none', () => {
+        const arc = makeArc({ secrets: [], foreshadowing: [], beats: [{ id: 'm1', pressure: 'P.', intention: 'I.', status: 'active' }] });
+        assert.equal(buildSeenArcSoFar(arc), `== ARC SO FAR (what the author has seen in play) ==
+Premise: A debt comes due.
+
+Already happened:
+(none)
+
+Clues already planted:
+(none)
+
+Secrets already out in the story:
+(none)
+
+`);
     });
 });
 
@@ -230,7 +292,7 @@ describe('generation with the author\'s answers', () => {
 
     const MINIMAL_TEMPLATES = {
         'analyze-context.txt': 'ANALYSE',
-        'ask-questions.txt': 'ASK {{USER_DIRECTION}} | {{ANSWERED}}',
+        'ask-questions.txt': 'ASK {{USER_DIRECTION}} | {{ANSWERED}}{{ARC_SO_FAR}}',
         'generate-arc.txt': 'OUTLINE {{PHASE1_ANALYSIS}}\n{{AUTHOR_ANSWERS_BLOCK}}END',
         'check-plan.txt': 'CHECK',
     };
@@ -306,7 +368,22 @@ describe('generation with the author\'s answers', () => {
 
         await prepareArc({ ...context, existingArcs: [reviseArc] }, 'Tighten the screws.', {}, { tier: 'act', reviseArc });
 
-        assert.equal(sentPrompts[1], 'ASK Tighten the screws. | Q: Who rescues her?\nA: Nobody.');
+        assert.ok(sentPrompts[1].startsWith('ASK Tighten the screws. | Q: Who rescues her?\nA: Nobody.== ARC SO FAR (what the author has seen in play) ==\n'));
+    });
+
+    it('prepareArc on a re-plan never puts an unrevealed secret, an unfired trigger, an unplanted clue or an open pressure into the question prompt', async () => {
+        const sentPrompts = installBackend(['She owes more than money.', '{ "questions": [] }']);
+        const reviseArc = makeSeenAndHiddenArc();
+
+        await prepareArc({ ...context, existingArcs: [reviseArc] }, 'Tighten the screws.', {}, { tier: 'act', reviseArc });
+
+        const askPrompt = sentPrompts[1];
+        assert.ok(askPrompt.includes('- The ledger was forged.\n'));
+        assert.ok(askPrompt.includes('- She has paid the first favour.\n'));
+        for (const hidden of ['The lender is her brother.', 'her brother changes the subject', 'Her brother pays in old coins',
+            'The lender knows her habits too well.', 'She has faced the lender.', 'Each favour is a step closer to the lender.']) {
+            assert.equal(askPrompt.includes(hidden), false, hidden);
+        }
     });
 
     it('generateArc given an analysis skips Phase 1 and plans from it', async () => {
@@ -355,6 +432,28 @@ END`);
         const result = await generateArc(context, 'A debt.', {}, { analysis: 'She owes more.', authorAnswers: [{ question: 'Q?', answer: '  ' }] });
 
         assert.equal('authorAnswers' in result.arc, false);
+    });
+
+    it('a re-plan: the arc going into the check and the arc applyReplan stores carry this run\'s answers, not the arc\'s earlier ones', async () => {
+        // An unreadable check answer returns the arc that went into the check unchanged.
+        installBackend([generatedPlan, 'no check']);
+        const reviseArc = makeArc({ authorAnswers: [{ question: 'Who rescues her?', answer: 'Her brother.' }] });
+        const authorAnswers = [{ question: 'Who rescues her?', answer: 'Nobody, ever.' }];
+
+        const result = await generateArc({ ...context, existingArcs: [reviseArc] }, 'A debt.', {}, { tier: 'act', reviseArc, analysis: 'She owes more.', authorAnswers });
+        const { arc: storedArc } = applyReplan(result.arc, 12, { premise: 'A debt comes due.' });
+
+        assert.deepEqual(result.arc.authorAnswers, [{ question: 'Who rescues her?', answer: 'Nobody, ever.' }]);
+        assert.deepEqual(storedArc.authorAnswers, [{ question: 'Who rescues her?', answer: 'Nobody, ever.' }]);
+    });
+
+    it('a re-plan with every answer cleared carries an empty list, so the stored answers are cleared too', async () => {
+        installBackend([generatedPlan, 'no check']);
+        const reviseArc = makeArc({ authorAnswers: [{ question: 'Who rescues her?', answer: 'Her brother.' }] });
+
+        const result = await generateArc({ ...context, existingArcs: [reviseArc] }, 'A debt.', {}, { tier: 'act', reviseArc, analysis: 'She owes more.', authorAnswers: [] });
+
+        assert.deepEqual(result.arc.authorAnswers, []);
     });
 
     it('a re-plan keeps the answers as the wizard passed them on the arc being re-planned', async () => {
