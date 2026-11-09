@@ -76,6 +76,7 @@ describe('createDefaultArc', () => {
             tone: '',
             directives: [],
             antiPatterns: [],
+            worldFacts: [],
             secrets: [],
             foreshadowing: [],
             beats: [],

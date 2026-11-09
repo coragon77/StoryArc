@@ -1,7 +1,7 @@
 # Plans State the Situation, Never How to Narrate — Design Note
 
 - **Date:** 2026-11-09
-- **Status:** Rulings by Stefan 2026-11-08/09. Part A shipped (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84). Part B (world facts, the style fields leave the prompt) and Part C (secret rewrites) are designed here; their open questions were answered on 2026-11-09 and the implementation plan is `docs/plans/2026-11-09-plans-state-the-situation.md`.
+- **Status:** Rulings by Stefan 2026-11-08/09. Part A shipped (planner and plan-check prompts, 7630f2b; the GENRE line, PR #84). Part B (world facts, the style fields leave the prompt) is built on `feature/world-facts`; Part C (secret rewrites) is designed here; their open questions were answered on 2026-11-09 and the implementation plan is `docs/plans/2026-11-09-plans-state-the-situation.md`.
 - **Builds on:** `docs/plans/2026-09-16-tiers-focus-and-replan-design.md` (sections by tier and focus, re-plan merge)
 - **ADRs touched:** `0003` (re-plan keeps the situation, replaces the road), `0004` (genre binds generation), `0006` (plans are checked before play); new `0009` (a plan states the situation, never how to narrate)
 - **Glossary:** `GLOSSARY.md`: genre, pressure, premise, re-plan
@@ -140,18 +140,21 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 ### Injection
 
 - `buildEpisodeSection`: `TONE`, the anti-pattern block and the directive block
-  go; a `WORLD FACTS:` block takes their place.
-- `buildMilestoneSection` (normal and spotlight): a `WORLD FACTS:` block after
-  the premise. Acts and sagas carried no directives before, so this adds text
-  to their sections (open question 1).
+  go; a world-facts block takes their place, after the premise, headed
+  `WORLD FACTS (true in this story; keep every scene consistent with them):`.
+- `buildMilestoneSection` (normal and spotlight): the same block after the
+  premise, at most the first three facts. Acts and sagas carried no directives
+  before, so this adds text to their sections (open question 1).
 - Background and paused sections: unchanged.
 
 ### Arc Manager
 
-- An arc whose `directives`, `antiPatterns` or `tone` is non-empty and whose
-  `worldFacts` is empty shows one line under its warnings: "Directives, rules
-  and tone are no longer sent to the narrator. Re-plan the arc to give it world
-  facts." No button: the re-plan is the existing one.
+- Only on episodes: an episode whose `directives`, `antiPatterns` or `tone` is
+  non-empty and that has no `worldFacts` list at all (planned before world
+  facts; an empty list does not count) shows one line under its warnings:
+  "Its directives, rules and tone are no longer sent to the narrator. Re-plan
+  it to give it world facts instead." No button: the re-plan is the existing
+  one. Acts and sagas never sent those fields and get no notice.
 - The release note says the same.
 
 ### Tests
@@ -161,7 +164,8 @@ measured. Full record: the session's `amy-test/RESULTS.md`, folded in here.
 - `validateArcPlan` and `applyArcEdit` on `worldFacts`; `mergeReplan` takes
   them from the generated plan; `applyPlanCheck` applies a world-fact rewrite
   and a drop, ignores an unknown index.
-- The Arc Manager notice: shown for an old arc, not for one with world facts.
+- The Arc Manager notice: shown for an old episode, not for an act with
+  directives, not for an episode with world facts.
 
 ## Part C — a re-plan rewrites unrevealed secrets
 

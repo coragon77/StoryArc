@@ -126,6 +126,21 @@ describe('mergeReplan', () => {
         assert.deepEqual(merged.characters, ['new character']);
     });
 
+    it('takes the world facts from the generated plan, and its empty directives and rules (ADR-0009)', () => {
+        const existing = { ...storedEpisode(), worldFacts: ['Old fact.'] };
+        const generated = generatedPlan({ worldFacts: ['The brother cannot leave the city.'], directives: [], antiPatterns: [] });
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.worldFacts, ['The brother cannot leave the city.']);
+        assert.deepEqual(merged.directives, []);
+        assert.deepEqual(merged.antiPatterns, []);
+    });
+
+    it('gives an arc stored before world facts the generated ones', () => {
+        const merged = mergeReplan(storedEpisode(), generatedPlan({ worldFacts: ['The ledger office closes at noon.'] }));
+        assert.deepEqual(merged.worldFacts, ['The ledger office closes at noon.']);
+    });
+
     it('keeps fulfilled beats unchanged and appends new unfulfilled beats with no episode beat active', () => {
         const merged = mergeReplan(storedEpisode(), generatedPlan());
 
@@ -385,6 +400,26 @@ describe('buildArcSoFar', () => {
             + '- She has confronted the messenger.\n'
             + '\n',
         ));
+    });
+
+    it('lists the world facts after the escalation, asking to keep the ones still true', () => {
+        const text = buildArcSoFar({ ...storedEpisode(), worldFacts: ['The brother cannot leave the city.', 'The ledger office closes at noon.'] });
+
+        assert.ok(text.includes(
+            'Escalation so far: old escalation\n'
+            + '\n'
+            + 'World facts so far (keep in your "worldFacts" each one that is still true in the story; reword or drop one the story has overtaken):\n'
+            + '- The brother cannot leave the city.\n'
+            + '- The ledger office closes at noon.\n'
+            + '\n'
+            + 'Already happened (fulfilled beats — do not plan these again):\n',
+        ), text);
+    });
+
+    it('says (none) for world facts on an arc stored before them', () => {
+        const text = buildArcSoFar(storedEpisode());
+
+        assert.ok(text.includes('reword or drop one the story has overtaken):\n(none)\n\nAlready happened'), text);
     });
 
     it('says (none) without secrets and (none recorded) without escalation', () => {

@@ -78,7 +78,7 @@ describe('buildInjection — frame', () => {
     });
 
     it('returns a body exactly at the budget untrimmed', () => {
-        const arc = makeArc({ antiPatterns: ['No sudden villains.'] });
+        const arc = makeArc({ worldFacts: ['The manor has no telephone.'] });
         const untrimmed = buildInjection([arc]);
         chat_metadata.story_arc.settings.injectionBudget = Math.ceil(bodyOf(untrimmed).length / 4);
         try {
@@ -95,6 +95,7 @@ describe('buildInjection — episode section content', () => {
             tone: 'Slow dread.',
             antiPatterns: ['No sudden villains.'],
             directives: ['Keep it intimate.', 'Show, do not tell.'],
+            worldFacts: ['The manor has no telephone.', 'Nobody in the village can read.'],
             secrets: [
                 { content: 'Shown from the start.', revealPhase: 'any', disclosed: false },
                 { content: 'Already out in the open.', revealPhase: 'any', disclosed: true },
@@ -112,9 +113,15 @@ describe('buildInjection — episode section content', () => {
         });
     }
 
-    it('prints TONE after the premise when the arc has one', () => {
+    it('prints the world facts after the premise, and never the tone (ADR-0009)', () => {
         const text = withChatLength(0, () => buildInjection([makeFullArc()]));
-        assert.ok(text.includes('PREMISE: A premise.\n\nTONE: Slow dread.\n\nCURRENT PRESSURE:\n'));
+        assert.ok(text.includes('PREMISE: A premise.\n\n'
+            + 'WORLD FACTS (true in this story; keep every scene consistent with them):\n'
+            + '- The manor has no telephone.\n'
+            + '- Nobody in the village can read.\n'
+            + '\nCURRENT PRESSURE:\n'), text);
+        assert.equal(text.includes('TONE:'), false);
+        assert.equal(text.includes('Slow dread.'), false);
     });
 
     it('prints the PACING RULES line with the upper-case phase label and that phase\'s directive', () => {
@@ -129,15 +136,10 @@ describe('buildInjection — episode section content', () => {
         assert.ok(escalation.includes('- You are in ESCALATION phase. Stakes rise sharply. Confrontations can begin. Secrets start surfacing.\n'));
     });
 
-    it('lists directives, then only open secrets, unfired triggers and unplanted clues, in that order', () => {
+    it('follows the pacing rules with only open secrets, unfired triggers and unplanted clues, in that order', () => {
         const text = withChatLength(0, () => buildInjection([makeFullArc()]));
         const lists = [
-            'DO NOT:',
-            '- No sudden villains.',
-            '',
-            'DIRECTIVES:',
-            '- Keep it intimate.',
-            '- Show, do not tell.',
+            '- If tempted to resolve something — add a complication instead.',
             '',
             'SECRETS (guard these carefully — do not reveal directly):',
             '- Shown from the start.',
@@ -151,6 +153,13 @@ describe('buildInjection — episode section content', () => {
             '',
         ].join('\n');
         assert.ok(text.endsWith(`${lists}\n[END STORY ARC]`), text);
+    });
+
+    it('never prints the directives or the anti-patterns (ADR-0009)', () => {
+        const text = withChatLength(0, () => buildInjection([makeFullArc()]));
+        for (const fragment of ['DO NOT:', 'DIRECTIVES:', 'No sudden villains.', 'Keep it intimate.', 'Show, do not tell.']) {
+            assert.equal(text.includes(fragment), false, fragment);
+        }
     });
 
     it('never shows a disclosed secret, a secret before its phase, a fired trigger or a planted clue', () => {
@@ -170,7 +179,7 @@ describe('buildInjection — episode section content', () => {
             foreshadowing: [{ clue: 'z', target: 'w', planted: true }],
         })]));
         for (const text of [empty, filtered]) {
-            for (const header of ['TONE:', 'DO NOT:', 'DIRECTIVES:', 'SECRETS', 'TRIGGERS', 'FORESHADOWING']) {
+            for (const header of ['WORLD FACTS', 'TONE:', 'DO NOT:', 'DIRECTIVES:', 'SECRETS', 'TRIGGERS', 'FORESHADOWING']) {
                 assert.equal(text.includes(header), false, header);
             }
         }
@@ -220,13 +229,13 @@ describe('buildInjection — beat visibility', () => {
 describe('buildInjection — section order and budget trim', () => {
     it('puts the guardrail sections before the content lists', () => {
         const arc = makeArc({
-            antiPatterns: ['No sudden villains.'],
+            worldFacts: ['The manor has no telephone.'],
             secrets: [{ content: 'The butler did it.', disclosed: false, revealPhase: 'any' }],
             foreshadowing: [{ clue: 'A dropped glove.', target: 'the butler', planted: false }],
             triggers: [{ condition: 'the butler appears', action: 'he lies', fired: false }],
         });
         const text = buildInjection([arc]);
-        const order = ['PACING RULES:', 'DO NOT:', 'SECRETS', 'TRIGGERS', 'FORESHADOWING'];
+        const order = ['WORLD FACTS', 'PACING RULES:', 'SECRETS', 'TRIGGERS', 'FORESHADOWING'];
         const positions = order.map(h => text.indexOf(h));
         assert.ok(positions.every(p => p >= 0), `all sections present: ${positions}`);
         for (let i = 1; i < positions.length; i++) {
@@ -242,11 +251,11 @@ describe('buildInjection — section order and budget trim', () => {
                 target: 'the reveal',
                 planted: false,
             }));
-            const arc = makeArc({ antiPatterns: ['No sudden villains.'], foreshadowing });
+            const arc = makeArc({ worldFacts: ['The manor has no telephone.'], foreshadowing });
             const text = buildInjection([arc]);
 
             assert.ok(text.includes('PACING RULES:\n- You are in SETUP phase.'));
-            assert.ok(text.includes('DO NOT:\n- No sudden villains.\n'));
+            assert.ok(text.includes('WORLD FACTS (true in this story; keep every scene consistent with them):\n- The manor has no telephone.\n'));
             assert.ok(text.endsWith('\n[END STORY ARC]'));
             assert.ok(Math.ceil(bodyOf(text).length / 4) <= 200, 'trimmed to the budget');
             assert.ok(text.includes('FORESHADOWING TO PLANT:\n- Clue number 0 '));
@@ -279,7 +288,7 @@ describe('buildInjection — section order and budget trim', () => {
                 foreshadowing,
                 beats: [{ id: 'cold', pressure: 'The cold keeps coming.', intention: 'x', status: 'pending', optional: false }],
             });
-            const episode = makeArc({ antiPatterns: ['No sudden villains.'] });
+            const episode = makeArc({ worldFacts: ['The manor has no telephone.'] });
             const text = withChatLength(0, () => buildInjection([episode, act]));
 
             assert.ok(text.startsWith(`${HEADER}\n\n=== ACT: "The Long Winter" ===\n`), 'spotlit act first');
@@ -287,8 +296,8 @@ describe('buildInjection — section order and budget trim', () => {
             assert.ok(text.includes('FORESHADOWING TO PLANT:\n- Clue number 0 '));
             assert.equal(text.includes('Clue number 39'), false);
             assert.ok(text.includes('PACING RULES:\n- You are in SETUP phase.'));
-            assert.ok(text.includes('DO NOT:\n- No sudden villains.'));
-            assert.ok(text.endsWith('DO NOT:\n- No sudden villains.\n[END STORY ARC]'), text);
+            assert.ok(text.includes('WORLD FACTS (true in this story; keep every scene consistent with them):\n- The manor has no telephone.\n'));
+            assert.ok(text.endsWith('- If tempted to resolve something — add a complication instead.\n[END STORY ARC]'), text);
             assert.ok(Math.ceil(bodyOf(text).length / 4) <= 300, 'trimmed to the budget');
         } finally {
             delete chat_metadata.story_arc.settings.injectionBudget;
@@ -311,11 +320,39 @@ describe('buildInjection — section order and budget trim', () => {
         }
     });
 
+    it('never drops a world-fact line, even when the body stays over budget without any list item', () => {
+        chat_metadata.story_arc.settings.injectionBudget = 10;
+        try {
+            const act = makeArc({
+                id: 'act00001-full-id',
+                title: 'The Long Winter',
+                tier: 'act',
+                focus: 'spotlight',
+                worldFacts: ['The guild cannot compel a volunteer.', 'The river freezes every winter.'],
+                foreshadowing: [{ clue: 'Carts leave at night.', target: 'the guild', planted: false }],
+                beats: [{ id: 'cold', pressure: 'The cold keeps coming.', intention: 'x', status: 'pending', optional: false }],
+            });
+            const episode = makeArc({
+                worldFacts: ['The manor has no telephone.', 'Nobody in the village can read.'],
+                foreshadowing: [{ clue: 'A scratch on the lock.', target: 'the intruder', planted: false }],
+            });
+            const text = withChatLength(0, () => buildInjection([episode, act]));
+
+            assert.equal(text.includes('FORESHADOWING TO PLANT:'), false);
+            assert.ok(text.includes('WORLD FACTS (true in this story; keep every scene consistent with them):\n'
+                + '- The guild cannot compel a volunteer.\n- The river freezes every winter.\n'), text);
+            assert.ok(text.includes('WORLD FACTS (true in this story; keep every scene consistent with them):\n'
+                + '- The manor has no telephone.\n- Nobody in the village can read.\n'), text);
+        } finally {
+            delete chat_metadata.story_arc.settings.injectionBudget;
+        }
+    });
+
     // The two tests below size the budget from the untrimmed output: trimming
     // keeps a prefix of whole lines, so the expected result is that prefix.
     function shortClueArc() {
         const foreshadowing = Array.from({ length: 12 }, (_, i) => ({ clue: `c${i}`, target: 't', planted: false }));
-        return makeArc({ antiPatterns: ['No sudden villains.'], foreshadowing });
+        return makeArc({ worldFacts: ['The manor has no telephone.'], foreshadowing });
     }
 
     it('keeps every whole line that fits the budget, counting the line breaks', () => {
@@ -339,7 +376,7 @@ describe('buildInjection — section order and budget trim', () => {
         chat_metadata.story_arc.settings.injectionBudget = Math.ceil(upToHeader.length / 4);
         try {
             const text = withChatLength(0, () => buildInjection([arc]));
-            assert.ok(text.endsWith('DO NOT:\n- No sudden villains.\n[END STORY ARC]'), text);
+            assert.ok(text.endsWith('PACING RULES:\n- You are in SETUP phase. Plant seeds. Build atmosphere. No revelations. No confrontations.\n- If tempted to resolve something — add a complication instead.\n[END STORY ARC]'), text);
         } finally {
             delete chat_metadata.story_arc.settings.injectionBudget;
         }
@@ -791,5 +828,138 @@ describe('buildInjection — an edited title and premise', () => {
             '=== PAUSED: "Paused One" ===\nAegis stands by her as her defender. — pending',
             '=== PAUSED: "Paused One" ===\nAegis is not her defender. — pending',
         ));
+    });
+});
+
+describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
+    const FOUR_FACTS = [
+        'The guild cannot compel a volunteer: it can only ask, reward or withhold favours.',
+        'The river freezes every winter.',
+        'The mayor wants the guild out of the city.',
+        'Nobody in the city knows the granary is empty.',
+    ];
+
+    function makeFactArc(overrides = {}) {
+        return makeArc({
+            tone: 'Slow dread.',
+            antiPatterns: ['No sudden villains.'],
+            directives: ['Keep it intimate.'],
+            worldFacts: ['The manor has no telephone.', 'Nobody in the village can read.'],
+            ...overrides,
+        });
+    }
+
+    function makeFactMilestoneArc(tier, focus) {
+        return makeArc({
+            id: `${tier}0001-full-id`,
+            title: 'The Long Winter',
+            tier,
+            focus,
+            premise: 'The guild starves the city.',
+            worldFacts: FOUR_FACTS,
+            beats: [{ id: 'cold', pressure: 'The cold keeps coming.', intention: 'x', status: 'active', optional: false }],
+        });
+    }
+
+    const EPISODE_SECTION = [
+        '=== FOREGROUNDED: "The Warmth Behind the Wall" ===',
+        '[Phase: Setup | Pacing: Do not rush]',
+        '',
+        'PREMISE: A premise.',
+        '',
+        'WORLD FACTS (true in this story; keep every scene consistent with them):',
+        '- The manor has no telephone.',
+        '- Nobody in the village can read.',
+        '',
+        'CURRENT PRESSURE:',
+        'The symptoms are getting harder to hide.',
+        '',
+        'PACING RULES:',
+        '- You are in SETUP phase. Plant seeds. Build atmosphere. No revelations. No confrontations.',
+        '- If tempted to resolve something — add a complication instead.',
+        '',
+    ].join('\n');
+
+    const FIRST_THREE_FACTS = [
+        'WORLD FACTS (true in this story; keep every scene consistent with them):',
+        '- The guild cannot compel a volunteer: it can only ask, reward or withhold favours.',
+        '- The river freezes every winter.',
+        '- The mayor wants the guild out of the city.',
+        '',
+    ].join('\n');
+
+    for (const focus of ['normal', 'spotlight']) {
+        it(`prints an episode in ${focus} focus with every world fact and no tone, directive or anti-pattern`, () => {
+            const text = withChatLength(0, () => buildInjection([makeFactArc({ focus })]));
+            assert.equal(text, `${HEADER}\n\n${EPISODE_SECTION}\n[END STORY ARC]`);
+        });
+    }
+
+    for (const tier of ['act', 'saga']) {
+        it(`prints a normal ${tier} with its first three world facts after the premise`, () => {
+            const text = withChatLength(0, () => buildInjection([makeFactMilestoneArc(tier, 'normal')]));
+            const section = [
+                `=== ${tier.toUpperCase()}: "The Long Winter" ===`,
+                'PREMISE: The guild starves the city.',
+                '',
+                FIRST_THREE_FACTS,
+                'STANDING PRESSURES (forces at work across this stretch of the story — let them colour scenes as a mood, a detail or a line in passing; '
+                    + 'one becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
+                    + 'do not resolve them; what the story has already established always wins over a pressure):',
+                '- The cold keeps coming.',
+                '',
+            ].join('\n');
+            assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
+            assert.equal(text.includes('Nobody in the city knows the granary is empty.'), false);
+        });
+
+        it(`prints a spotlit ${tier} with its first three world facts after the premise`, () => {
+            const text = withChatLength(0, () => buildInjection([makeFactMilestoneArc(tier, 'spotlight')]));
+            const section = [
+                `=== ${tier.toUpperCase()}: "The Long Winter" ===`,
+                'PREMISE: The guild starves the city.',
+                '',
+                FIRST_THREE_FACTS,
+                'BRING TO A HEAD:',
+                '- The cold keeps coming.',
+                'Let these pressures intensify over the coming scenes, and let the world act on its own interests.',
+                '',
+            ].join('\n');
+            assert.equal(text, `${HEADER}\n\n${section}\n[END STORY ARC]`);
+            assert.equal(text.includes('Nobody in the city knows the granary is empty.'), false);
+        });
+    }
+
+    it('prints the world facts of an act without a premise right after its header', () => {
+        const act = makeFactMilestoneArc('act', 'normal');
+        act.premise = '';
+        const text = withChatLength(0, () => buildInjection([act]));
+        assert.ok(text.includes(`=== ACT: "The Long Winter" ===\n\n${FIRST_THREE_FACTS}`), text);
+    });
+
+    it('prints no world fact for a background or paused arc of any tier', () => {
+        const arcs = [
+            makeFactArc({ id: 'e-paused', title: 'Paused Episode', focus: 'paused' }),
+            makeFactArc({ id: 'e-background', title: 'Background Episode', focus: 'background' }),
+            { ...makeFactMilestoneArc('act', 'paused'), id: 'a-paused', title: 'Paused Act' },
+            { ...makeFactMilestoneArc('saga', 'background'), id: 's-background', title: 'Background Saga' },
+        ];
+        const text = withChatLength(0, () => buildInjection(arcs));
+        assert.equal(text, `${HEADER}\n\n`
+            + '=== PAUSED: "Paused Episode" ===\nA premise. — pending, not being pursued right now.\n\n'
+            + '=== BACKGROUND: "Background Episode" ===\nRuns off-screen. Leave it out of scenes — no hints, sounds or clues — unless the user\'s character goes to it or brings it up.\n\n'
+            + '=== PAUSED: "Paused Act" ===\nThe guild starves the city. — pending, not being pursued right now.\n\n'
+            + '=== BACKGROUND: "Background Saga" ===\nRuns off-screen. Leave it out of scenes — no hints, sounds or clues — unless the user\'s character goes to it or brings it up.\n'
+            + '\n[END STORY ARC]');
+    });
+
+    it('prints no world-facts block for an arc stored before world facts, or with none', () => {
+        const stored = makeFactArc();
+        delete stored.worldFacts;
+        const actWithout = { ...makeFactMilestoneArc('act', 'normal'), worldFacts: [] };
+        const text = withChatLength(0, () => buildInjection([stored, actWithout]));
+        assert.equal(text.includes('WORLD FACTS'), false);
+        assert.ok(text.includes('PREMISE: A premise.\n\nCURRENT PRESSURE:\n'));
+        assert.ok(text.includes('PREMISE: The guild starves the city.\n\nSTANDING PRESSURES'));
     });
 });
