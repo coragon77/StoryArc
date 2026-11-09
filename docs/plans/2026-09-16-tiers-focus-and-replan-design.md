@@ -7,6 +7,19 @@
 - **ADRs:** `docs/adr/0001` (tier owns shape, focus owns prominence), `0002` (spotlight never names a target), `0003` (re-plan keeps the situation, replaces the road)
 - **Glossary:** `CONTEXT.md` — use its terms (tier, milestone, pressure, fulfillment, recognition, focus, pacing clock, stall)
 
+> **Amendment 2026-11-09: milestones run in order.** The milestone rows of
+> the §1 table below (unordered, all active at once, every unfulfilled
+> pressure in the section) are superseded by ADR-0010. The player's ruling:
+> "is an arc not supposed to be sequential? And if for some reason I skip a
+> step and do the later one - thats ok as well? The skipped one is obsolete
+> now? Thats how a story works => linear in a plotthread?" An arc is one plot
+> thread; its milestones keep the planner's order, the narrator gets only the
+> current (first open) milestone's pressure, recognition still watches every
+> open one, and fulfilling a later one skips the earlier open ones. Every
+> open milestone stays `active` and `unlockAfter` stays stripped, so the
+> activation and recognition rows still describe the stored state. The rest
+> of this spec is unchanged.
+
 ## Problem
 
 Live play: a ~40-message plan diverged after two fulfilled beats. From beat

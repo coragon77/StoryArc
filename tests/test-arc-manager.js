@@ -192,7 +192,7 @@ describe('buildArcAlert — the warning line', () => {
 
     it('a spotlit stalled arc gets no Spotlight it, and the sentence says what the spotlight does', () => {
         const text = textOf(buildArcAlert(makeAct({ focus: 'spotlight' })));
-        assert.equal(text, 'No milestone in 100 messages — about one is due every 30. It is in the spotlight, so the narrator brings its 2 open milestones to a head. Re-plan Ignore');
+        assert.equal(text, 'No milestone in 100 messages — about one is due every 30. It is in the spotlight, so the narrator brings its current milestone to a head. Re-plan Ignore');
     });
 
     it('an ignored stall shows no warning, but the last-beat cell says it is hidden and offers Show', () => {
@@ -286,13 +286,13 @@ describe('buildSummary', () => {
 });
 
 describe('describeWhatNarratorGets', () => {
-    it('a normal act: its premise and its standing pressures as mood', () => {
-        assert.equal(textOf(describeWhatNarratorGets(makeAct(), [])), 'its premise and 2 standing pressures , as mood. No secrets, triggers or clues.');
+    it('a normal act: its premise and its current milestone\'s pressure as mood', () => {
+        assert.equal(textOf(describeWhatNarratorGets(makeAct(), [])), 'its premise and the current milestone\'s pressure , as mood. No secrets, triggers or clues.');
     });
 
-    it('a spotlit act: its pressures to bring to a head plus its open plan items, no named target', () => {
+    it('a spotlit act: its current milestone\'s pressure to bring to a head plus its open plan items, no named target', () => {
         assert.equal(textOf(describeWhatNarratorGets(makeAct({ focus: 'spotlight' }), [])),
-            'its premise and 2 pressures to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
+            'its premise and the current milestone\'s pressure to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
     });
 
     it('a background act: its title only', () => {
@@ -314,9 +314,9 @@ describe('describeWhatNarratorGets', () => {
     it('an act with four world facts counts the three its section prints, normal and spotlit', () => {
         const worldFacts = ['First fact.', 'Second fact.', 'Third fact.', 'Fourth fact.'];
         assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts }), [])),
-            'its premise, 3 world facts and 2 standing pressures , as mood. No secrets, triggers or clues.');
+            'its premise, 3 world facts and the current milestone\'s pressure , as mood. No secrets, triggers or clues.');
         assert.equal(textOf(describeWhatNarratorGets(makeAct({ worldFacts, focus: 'spotlight' }), [])),
-            'its premise, 3 world facts and 2 pressures to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
+            'its premise, 3 world facts and the current milestone\'s pressure to bring to a head , plus 1 secret as its phase allows, 2 triggers and 1 clue to plant. No milestone is named as a target.');
     });
 });
 

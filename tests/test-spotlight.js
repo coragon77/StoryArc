@@ -34,9 +34,9 @@ function makeAct(overrides = {}) {
         triggers: [{ id: 't1', condition: 'anyone counts the sacks', action: 'the tally is short', fired: false }],
         estimatedLength: 100,
         beats: [
+            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
             { id: 'm_hunger', pressure: 'Rations shrink week by week.', intention: 'The valley knows it will not last the winter.', status: 'active', optional: false },
             { id: 'm_lies', pressure: 'The guild ledgers do not add up.', intention: 'Someone has caught the guild in a lie.', status: 'active', optional: false },
-            { id: 'm_done', pressure: 'Old grudges resurface.', intention: 'A feud has turned violent.', status: 'completed', optional: false },
         ],
         ...overrides,
     };
@@ -68,20 +68,18 @@ function makeEpisode(overrides = {}) {
 }
 
 describe('spotlit act / saga — BRING TO A HEAD', () => {
-    it('lists every unfulfilled milestone pressure under BRING TO A HEAD, not as standing pressures', () => {
+    it('puts only the current milestone\'s pressure under BRING TO A HEAD, not as a standing pressure', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
-        assert.ok(text.includes('=== ACT: "The Long Winter" ==='));
-        assert.ok(text.includes('BRING TO A HEAD:'));
-        assert.ok(text.includes('- Rations shrink week by week.'));
-        assert.ok(text.includes('- The guild ledgers do not add up.'));
+        assert.ok(text.includes('=== ACT: "The Long Winter" ===\nPREMISE: The valley is starving and the guild is lying about it.\n\nBRING TO A HEAD:\nRations shrink week by week.\nLet this pressure intensify over the coming scenes, and let the world act on its own interests.\n\n'));
+        assert.equal(text.includes('The guild ledgers do not add up.'), false);
         assert.equal(text.includes('Old grudges resurface.'), false);
-        assert.equal(text.includes('STANDING PRESSURES'), false);
+        assert.equal(text.includes('STANDING PRESSURE'), false);
         assert.equal(text.includes('PAUSED'), false);
     });
 
-    it('asks the pressures to intensify without naming a milestone as the target (ADR-0002)', () => {
+    it('asks the pressure to intensify without naming a milestone as the target (ADR-0002)', () => {
         const text = withChatLength(10, () => buildInjection([makeAct()]));
-        assert.ok(text.includes('Let these pressures intensify over the coming scenes, and let the world act on its own interests.'));
+        assert.ok(text.includes('Let this pressure intensify over the coming scenes, and let the world act on its own interests.'));
         // Fulfillment conditions are the targets; none may appear.
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
         assert.equal(text.includes('Someone has caught the guild in a lie.'), false);
@@ -89,14 +87,13 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
         assert.equal(/steer|choose one|pick one|resolve one|toward/i.test(text), false);
     });
 
-    it('skips a milestone without a pressure under BRING TO A HEAD instead of printing its fulfillment (#13)', () => {
+    it('prints no BRING TO A HEAD for a current milestone without a pressure instead of printing its fulfillment (#13)', () => {
         const arc = makeAct();
-        arc.beats[0].pressure = '';
+        arc.beats[1].pressure = '';
         const text = withChatLength(10, () => buildInjection([arc]));
-        assert.ok(text.includes('BRING TO A HEAD:'));
+        assert.equal(text.includes('BRING TO A HEAD:'), false);
         assert.equal(text.includes('The valley knows it will not last the winter.'), false);
-        assert.equal(text.includes('- \n'), false);
-        assert.ok(text.includes('- The guild ledgers do not add up.'));
+        assert.equal(text.includes('The guild ledgers do not add up.'), false);
     });
 
     it('adds the secrets, triggers and foreshadowing that normal focus leaves out', () => {
@@ -165,12 +162,12 @@ describe('spotlit act / saga — BRING TO A HEAD', () => {
 
         // Two of three done (0.67 → escalation) and 80/100 messages (climax) → escalation still.
         const arc = makeAct();
-        arc.beats[1].status = 'completed';
+        arc.beats[2].status = 'completed';
         const mid = withChatLength(80, () => buildInjection([arc]));
         assert.equal(mid.includes('The guildmaster sold the grain.'), false);
 
         // All done + 80/100 messages → climax.
-        arc.beats[0].status = 'completed';
+        arc.beats[1].status = 'completed';
         const climax = withChatLength(80, () => buildInjection([arc]));
         assert.ok(climax.includes('The guildmaster sold the grain.'));
     });

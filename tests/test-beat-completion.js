@@ -104,7 +104,8 @@ describe('completeBeats — rules', () => {
             { arcId: 'act00001', beatId: 'm3', at: 6 },
         ], [arc]);
         assert.deepEqual(result.completedBeats, ['m2', 'm3']);
-        assert.deepEqual(statuses(arc), ['active', 'completed', 'completed']);
+        // m2 skipped m1, so the second claim at message 5 found it closed anyway.
+        assert.deepEqual(statuses(arc), ['skipped', 'completed', 'completed']);
         assert.equal(arc.lastFulfilledAt, 6);
     });
 
@@ -141,6 +142,7 @@ describe('completeBeats — completion record', () => {
             at: 5,
             messageId: 'm5',
             unlocked: ['b2'],
+            skipped: [],
             arcCompleted: false,
             lastFulfilledBefore: 2,
         });
@@ -162,6 +164,7 @@ describe('completeBeats — completion record', () => {
         assert.deepEqual(arc.beats[0].completion, {
             at: 5,
             unlocked: ['b2'],
+            skipped: [],
             arcCompleted: false,
             lastFulfilledBefore: 2,
         });
@@ -463,7 +466,7 @@ describe('setBeatStatusByHand — a beat marked done in the Arc Manager', () => 
             lastFulfilledAt: 7,
             estimatedLength: 20,
             beats: [
-                { id: 'b1', intention: 'first', status: 'completed', unlockAfter: [], optional: false },
+                { id: 'b1', intention: 'first', status: 'completed', unlockAfter: [], optional: false, completion: { byHand: true, skipped: [] } },
                 { id: 'b2', intention: 'second', status: 'pending', unlockAfter: ['b1'], optional: false },
                 { id: 'b3', intention: 'third', status: 'pending', unlockAfter: [], optional: false },
                 { id: 'b4', intention: 'extra', status: 'pending', unlockAfter: [], optional: true },

@@ -140,6 +140,8 @@
 .s-active i { font-size: 12px; margin-left: 1px; }
 .s-pending { border: 1px dashed var(--line-strong); }
 .s-locked { border: 1px dashed var(--line-strong); color: var(--muted); }
+.s-skipped { border: 1px solid var(--line-strong); color: var(--muted); opacity: 0.55; }
+.s-skipped i { font-size: 10px; }
 .am-count { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .am-count b { color: var(--fg); font-weight: 600; }
 .am-reports { display: inline-flex; gap: 6px; align-items: baseline; font-size: 13px; color: var(--muted); margin-top: 2px; }

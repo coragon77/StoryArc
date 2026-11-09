@@ -545,8 +545,7 @@
     margin: 0;
 }
 
-.story-arc-wizard-premise-choice,
-.story-arc-wizard-secret-choice {
+.story-arc-wizard-premise-choice {
     display: grid;
     gap: 6px;
     margin: 12px 0 0;
@@ -556,8 +555,7 @@
     min-inline-size: 0;
 }
 
-.story-arc-wizard-premise-choice legend,
-.story-arc-wizard-secret-choice legend {
+.story-arc-wizard-premise-choice legend {
     padding: 0 4px;
 }
 
@@ -620,11 +618,6 @@
 .story-arc-wizard-plan.is-revealed .story-arc-wizard-plan-body {
     display: grid;
     animation: story-arc-wizard-in 200ms var(--wz-ease-out);
-}
-
-/* The re-plan's choice per proposed secret spans both columns */
-.story-arc-wizard-secret-choices {
-    grid-column: 1 / -1;
 }
 
 .story-arc-wizard-plan-body h4 {
