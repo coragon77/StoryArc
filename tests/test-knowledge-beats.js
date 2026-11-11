@@ -430,6 +430,28 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: beat recogniti
         assert.deepEqual(chat_metadata.story_arc.arcs, arcsBefore);
     });
 
+    it('the retry of a failed edit of the last reply offers the beats that edit offered, so the beat completes at the edited message', async () => {
+        storeChat({ arcs: [craneAct()], lastUpdatedAt: 4 });
+        const sentPrompts = installExtraction([
+            'not an answer',
+            answerFulfilling(),
+            answerFulfilling({ developmentId: 'crane001:brody_refuses', at: 4 }),
+        ]);
+        chat[4].mes = 'Brody folds his arms in front of the whole crew: "No. Not tonight, Julian."';
+        await updateKnowledgeAfterEdit(4);
+        chat.push(
+            { is_user: true, is_system: false, name: 'Ellie', mes: 'Then we wait.' },
+            { is_user: false, is_system: false, name: 'Noor', mes: 'The crew drifts off to the trailers.' },
+        );
+
+        await updateKnowledgeAfterReply(6);
+
+        assert.equal(sentPrompts.length, 3);
+        assert.ok(sentPrompts[2].includes('- [crane001:brody_refuses] Brody refuses'), sentPrompts[2]);
+        assert.equal(beatOf('crane001-full-id', 'brody_refuses').status, 'completed');
+        assert.equal(beatOf('crane001-full-id', 'brody_refuses').completion.at, 4);
+    });
+
     it('an edit completed again keeps lastFulfilledAt at a later completion', async () => {
         chat.push(
             { is_user: true, is_system: false, name: 'Ellie', mes: 'Then we wait.', extra: { story_arc_message_id: 'm5' } },
