@@ -30,7 +30,6 @@ export const mockContextFields = {};
 export function getContext() {
     return {
         name1: 'TestUser',
-        persona: 'A test persona',
         characters: [],
         characterId: null,
         ...mockContextFields,

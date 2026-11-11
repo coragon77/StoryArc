@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { harvestContext } from '../lib/context/harvester.js';
-import { chat, chat_metadata, extension_settings } from './mocks/st-mocks.js';
+import { chat, chat_metadata, extension_settings, mockContextFields } from './mocks/st-mocks.js';
 
 describe('harvestContext — story messages only', () => {
     async function withChat(messages, arcs, fn) {
@@ -151,5 +151,24 @@ describe('harvestContext — the cast\'s details', () => {
         const context = await harvestWithDetails(false);
 
         assert.deepEqual(context.cast.map(member => member.details), [{}, {}]);
+    });
+});
+
+describe('harvestContext — the persona', () => {
+    it('is the user\'s name and the active persona\'s description from the power-user settings', async () => {
+        mockContextFields.name1 = 'Ellie';
+        mockContextFields.powerUserSettings = { persona_description: 'Ellie has a black layered bob and bright blue eyes.' };
+        try {
+            const context = await harvestContext();
+            assert.deepEqual(context.persona, { name: 'Ellie', description: 'Ellie has a black layered bob and bright blue eyes.' });
+        } finally {
+            delete mockContextFields.name1;
+            delete mockContextFields.powerUserSettings;
+        }
+    });
+
+    it('has an empty description when no persona description is set', async () => {
+        const context = await harvestContext();
+        assert.equal(context.persona.description, '');
     });
 });
