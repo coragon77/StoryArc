@@ -378,7 +378,9 @@ StoryArc/
 │   │   │                       #   for gender/age/role, 4000 chars), the
 │   │   │                       #   find-appearance.txt call, the parse (bad items dropped),
 │   │   │                       #   listOfferedFindings(character, findings) (unknown,
-│   │   │                       #   newer and different, or a refinement; never locked)
+│   │   │                       #   newer and different, or a refinement; never locked);
+│   │   │                       #   listSearchNames and namesPattern also mark the names
+│   │   │                       #   in the sheet's sources well (ui/knowledge-popup.js)
 │   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
 │   │   │                       #   the rule header + every name word on one line,
 │   │   │                       #   sorted by folded form (printTakenNames(ledger),

@@ -300,7 +300,7 @@ describe('listOfferedFindings', () => {
     });
 
     describe('a definition is older than every message', () => {
-        const personaFinding = { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passage: 'Ellie has a black layered bob.' };
+        const personaFinding = { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passages: [{ source: 'persona', text: 'Ellie has a black layered bob.' }] };
 
         it('offers a definition finding for a kind the ledger does not know', () => {
             const character = { id: 'c2', name: 'Ellie', aliases: [], details: {} };
@@ -321,8 +321,8 @@ describe('listOfferedFindings', () => {
         });
 
         it('does not offer back an older story value a definition was accepted over', () => {
-            const olderFinding = { kind: 'hair', value: 'dark', at: 50, sources: [50], passage: 'Ellie\'s dark hair.' };
-            const newerFinding = { kind: 'hair', value: 'short magenta', at: 60, sources: [60], passage: 'Ellie had dyed it magenta.' };
+            const olderFinding = { kind: 'hair', value: 'dark', at: 50, sources: [50], passages: [{ source: 50, text: 'Ellie\'s dark hair.' }] };
+            const newerFinding = { kind: 'hair', value: 'short magenta', at: 60, sources: [60], passages: [{ source: 60, text: 'Ellie had dyed it magenta.' }] };
             const character = {
                 id: 'c2', name: 'Ellie', aliases: [],
                 details: { hair: [{ value: 'dark', at: 50 }, { value: 'dark glossy curls', at: null, by: 'record', source: 'card' }] },
@@ -422,9 +422,9 @@ describe('searchAppearance', () => {
         ].join('\n')]);
         assert.deepEqual(result, {
             findings: [
-                { kind: 'ethnicity', value: 'Indian-American', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
-                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
-                { kind: 'build', value: 'five-two', at: 2, sources: [2], passage: 'Priya had always been shorter, five-two to Ellie\'s five-five.' },
+                { kind: 'ethnicity', value: 'Indian-American', at: 0, sources: [0], passages: [{ source: 0, text: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' }] },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passages: [{ source: 0, text: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' }] },
+                { kind: 'build', value: 'five-two', at: 2, sources: [2], passages: [{ source: 2, text: 'Priya had always been shorter, five-two to Ellie\'s five-five.' }] },
             ],
             sourceCount: 2,
         });
@@ -442,7 +442,7 @@ describe('searchAppearance', () => {
 
         assert.deepEqual(result, {
             findings: [
-                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passages: [{ source: 0, text: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' }] },
             ],
             sourceCount: 2,
         });
@@ -458,7 +458,11 @@ describe('searchAppearance', () => {
         assert.deepEqual(result, {
             findings: [{
                 kind: 'hair', value: 'dark glossy curls', at: 2, sources: ['card', 0, 2],
-                passage: 'Priya Sharma has dark hair. … Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes. … Priya had always been shorter, five-two to Ellie\'s five-five.',
+                passages: [
+                    { source: 'card', text: 'Priya Sharma has dark hair.' },
+                    { source: 0, text: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                    { source: 2, text: 'Priya had always been shorter, five-two to Ellie\'s five-five.' },
+                ],
             }],
             sourceCount: 3,
         });
@@ -473,7 +477,7 @@ describe('searchAppearance', () => {
         assert.deepEqual(result, {
             findings: [{
                 kind: 'hair', value: 'dark curls, shoulder length', at: 0, sources: [0],
-                passage: 'Priya\'s dark curls bounced. … Priya wore her long hair loose.',
+                passages: [{ source: 0, text: 'Priya\'s dark curls bounced. … Priya wore her long hair loose.' }],
             }],
             sourceCount: 2,
         });
@@ -503,7 +507,7 @@ describe('searchAppearance', () => {
             '[#2] Kendra Osei\'s mother pushed her grey curls back.',
         ].join('\n')]);
         assert.deepEqual(result, {
-            findings: [{ kind: 'hair', value: 'short grey', at: 0, sources: [0], passage: 'Kendra\'s mother had short grey hair.' }],
+            findings: [{ kind: 'hair', value: 'short grey', at: 0, sources: [0], passages: [{ source: 0, text: 'Kendra\'s mother had short grey hair.' }] }],
             sourceCount: 2,
         });
     });
@@ -534,9 +538,9 @@ describe('searchAppearance', () => {
         ].join('\n')]);
         assert.deepEqual(result, {
             findings: [
-                { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passage: 'Ellie Masters has a black layered bob and bright blue eyes.' },
-                { kind: 'eyes', value: 'bright blue', at: null, sources: ['persona'], passage: 'Ellie Masters has a black layered bob and bright blue eyes.' },
-                { kind: 'build', value: 'five-five', at: null, sources: ['lorebook: Paragon / Ellie\'s sheet'], passage: 'Height: five-five' },
+                { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passages: [{ source: 'persona', text: 'Ellie Masters has a black layered bob and bright blue eyes.' }] },
+                { kind: 'eyes', value: 'bright blue', at: null, sources: ['persona'], passages: [{ source: 'persona', text: 'Ellie Masters has a black layered bob and bright blue eyes.' }] },
+                { kind: 'build', value: 'five-five', at: null, sources: ['lorebook: Paragon / Ellie\'s sheet'], passages: [{ source: 'lorebook: Paragon / Ellie\'s sheet', text: 'Height: five-five' }] },
             ],
             sourceCount: 2,
         });
@@ -557,7 +561,7 @@ describe('searchAppearance', () => {
 
         assert.deepEqual(sentPrompts, ['[card] Priya Sharma has warm brown eyes.']);
         assert.deepEqual(result, {
-            findings: [{ kind: 'eyes', value: 'warm brown', at: null, sources: ['card'], passage: 'Priya Sharma has warm brown eyes.' }],
+            findings: [{ kind: 'eyes', value: 'warm brown', at: null, sources: ['card'], passages: [{ source: 'card', text: 'Priya Sharma has warm brown eyes.' }] }],
             sourceCount: 1,
         });
     });
@@ -598,7 +602,7 @@ describe('searchAppearance', () => {
 
         assert.deepEqual(sentPrompts, ['(none)\n[#0] Priya Sharma had dark glossy curls.\n[#1] Priya turned twenty-four that spring.']);
         assert.deepEqual(result, {
-            findings: [{ kind: 'age', value: '24', at: 1, sources: [1], passage: 'Priya turned twenty-four that spring.' }],
+            findings: [{ kind: 'age', value: '24', at: 1, sources: [1], passages: [{ source: 1, text: 'Priya turned twenty-four that spring.' }] }],
             sourceCount: 2,
         });
     });
@@ -689,10 +693,10 @@ describe('searchAppearance', () => {
         ].join('\n')]);
         assert.deepEqual(result, {
             findings: [
-                { kind: 'gender', value: 'female', at: 3, sources: [3], passage: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' },
-                { kind: 'age', value: '24', at: 1, sources: [1], passage: 'Priya turned twenty-four that spring.' },
-                { kind: 'role', value: 'junior surgeon, Mercy General', at: 3, sources: [3], passage: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' },
-                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                { kind: 'gender', value: 'female', at: 3, sources: [3], passages: [{ source: 3, text: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' }] },
+                { kind: 'age', value: '24', at: 1, sources: [1], passages: [{ source: 1, text: 'Priya turned twenty-four that spring.' }] },
+                { kind: 'role', value: 'junior surgeon, Mercy General', at: 3, sources: [3], passages: [{ source: 3, text: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' }] },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passages: [{ source: 0, text: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' }] },
             ],
             sourceCount: 3,
         });

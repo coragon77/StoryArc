@@ -171,7 +171,7 @@ State is always carried by shape and words, with colour only as a third signal. 
 There is no palette: the theme's body colour, emphasis colour and surface, mixed at fixed percentages, make every tone in the system.
 
 ### Primary
-- **Theme Emphasis** (`emphasis`): the theme's em/italic colour, the only accent. It draws focus rings, the selected-tab underline, caret, links, the active beat's outline and, mixed into the surface, the primary button (`primary-fill`, edge `primary-edge`, hover `primary-fill-hover`). One primary button per view: Plan a new arc, Activate, Generate.
+- **Theme Emphasis** (`emphasis`): the theme's em/italic colour, the only accent. It draws focus rings, the selected-tab underline, caret, links, the active beat's outline and, mixed into the surface, the primary button (`primary-fill`, edge `primary-edge`, hover `primary-fill-hover`). One primary button per view: Plan a new arc, Activate, Generate, Accept all.
 
 ### Neutral
 - **Theme Body** (`text`): all running text and titles.
@@ -261,6 +261,9 @@ Arc focus (Paused / Background / Normal / Spotlight) and beat status (Open / Don
 
 ### Warning line
 A line under its arc row, not a banner: warning icon, one sentence ("No milestone in 246 messages; about one is due every 15."), then its fixes. Warning tint, 1px warning edge at 26%, 6px corners. A note variant uses the emphasis tint for non-urgent notices.
+
+### Proposal row
+A detail row the appearance search would change becomes the proposal in place, no separate list: the label, the current value struck through in muted (or *unknown* in muted italic, not struck), an emphasis arrow and the found value at 600. The row takes the emphasis tint (9%) with a 1px emphasis edge (34%) and 6px corners; Accept (plain) and Skip (quiet) stand where Set, Edit and Lock were. One sub-line says where it was found ("Found in 10 messages, newest #3293, 4 hidden · Show sources"); Show sources opens a well with a chip per source (a hidden message muted with an eye-slash icon and the word for screen readers) and the three newest passages, each under its #number, the character's names marked. A line with a magnifier under the section head says what the search found. Two or more proposals put the view's one primary button, Accept all, in that head.
 
 ### Holder chips
 The one look of a holder entry: 1px edge, 4px corners, well fill, 13px; the holder's name in 600, how they learned it in muted. Dashed edge for a plan-only spoiler holder; dashed with struck name for a removed one. As a button, hover shows the emphasis edge.

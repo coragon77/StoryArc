@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    acceptAppearanceFinding, buildKnowledgeContent, createKnowledgeView, findSourceMessageRefusal, listChangeLines, lockCharacterDetail, saveCharacterDetails,
+    acceptAppearanceFinding, acceptAppearanceFindings, buildKnowledgeContent, createKnowledgeView, findSourceMessageRefusal, listChangeLines, lockCharacterDetail, saveCharacterDetails,
 } from '../lib/ui/knowledge-popup.js';
 import { dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 
@@ -57,11 +57,13 @@ function detailRowOf(html, kind) {
     return html.slice(start, nextRow === -1 || nextRow > listEnd ? listEnd : nextRow);
 }
 
-/** The markup of one finding line of the open sheet. */
+/** The markup of the row a finding turned into the proposal, up to the next row or the list's end. */
 function findingOf(html, kind) {
-    const start = html.indexOf(`<li class="k-finding" data-finding="${kind}"`);
+    const start = html.indexOf(`<div class="k-detail is-proposal" data-detail="${kind}" data-finding="${kind}"`);
     if (start === -1) return '';
-    return html.slice(start, html.indexOf('</li>', start));
+    const nextRow = html.indexOf('<div class="k-detail', start + 1);
+    const listEnd = html.indexOf('</dl>', start);
+    return html.slice(start, nextRow === -1 || nextRow > listEnd ? listEnd : nextRow);
 }
 
 describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
@@ -90,7 +92,7 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
         assert.ok(html.includes('data-detail="role"'));
         assert.ok(!html.includes('data-detail="hair"'));
         assert.ok(!html.includes('sa-k-sh-appearance'));
-        assert.match(html, /<div class="k-sec-head"><h4 id="sa-k-sh-details">Details <kbd>D<\/kbd><\/h4><button[^>]*data-act="search-appearance" data-cid="c1"/);
+        assert.match(html, /<div class="k-sec-head"><h4 id="sa-k-sh-details">Details <kbd>D<\/kbd><\/h4><div class="k-row-actions"><button[^>]*data-act="search-appearance" data-cid="c1"/);
         assert.ok(html.indexOf('data-act="search-appearance"') < html.indexOf('data-detail="gender"'));
         assert.match(html, /title="[^"]*for their gender, age and role; you accept or skip each finding"/);
     });
@@ -103,21 +105,29 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
         assert.match(html, /title="[^"]*for their gender, age, role and how they look; you accept/);
     });
 
-    it('lists a gender finding under the Details rows and a hair finding under the Appearance rows', () => {
+    it('says in the Details help that a locked value stays, not a set one', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true, sheetViewOf('c1'), true);
+
+        assert.ok(html.includes('<p class="k-help">Recorded only as the story text states them. A value you lock stays: the story no longer changes it.</p>'));
+    });
+
+    it('turns the gender row under Details and the hair row under Appearance into the proposals, each in its own place', () => {
         const view = sheetViewOf('c1');
         view.appearanceFindings.c1 = [
-            { kind: 'gender', value: 'female', at: 5, sources: [5], passage: 'She was the night nurse.', sourceTexts: {} },
-            { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passage: 'Priya pushed her dark glossy curls back.', sourceTexts: {} },
+            { kind: 'gender', value: 'female', at: 5, sources: [5], passages: [{ source: 5, text: 'She was the night nurse.' }], sourceTexts: {} },
+            { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passages: [{ source: 2, text: 'Priya pushed her dark glossy curls back.' }], sourceTexts: {} },
         ];
 
         const html = buildKnowledgeContent(makeLedger(), [], true, view, true);
 
         const genderAt = html.indexOf('data-finding="gender"');
         const hairAt = html.indexOf('data-finding="hair"');
-        assert.ok(html.indexOf('data-detail="status"') < genderAt && genderAt < html.indexOf('sa-k-sh-appearance'), 'gender under the Details rows');
-        assert.ok(html.indexOf('data-detail="features"') < hairAt, 'hair under the Appearance rows');
-        assert.ok(html.slice(genderAt, html.indexOf('</li>', genderAt)).includes('data-area="details:c1"'));
-        assert.ok(html.slice(hairAt, html.indexOf('</li>', hairAt)).includes('data-area="appearance:c1"'));
+        assert.ok(genderAt !== -1 && genderAt < html.indexOf('data-detail="age"'), 'gender in the first Details row');
+        assert.ok(html.indexOf('data-detail="ethnicity"') < hairAt && hairAt < html.indexOf('data-detail="eyes"'), 'hair between ethnicity... and eyes');
+        assert.ok(!html.includes('k-findings'), 'no separate list of findings');
+        assert.equal(html.split('data-detail="gender"').length, 2, 'one gender row, the proposal');
+        assert.ok(findingOf(html, 'gender').includes('data-area="details:c1"'));
+        assert.ok(findingOf(html, 'hair').includes('data-area="appearance:c1"'));
     });
 
     it('shows the search busy, and the button disabled, while it runs', () => {
@@ -131,47 +141,214 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
     });
 });
 
-describe('buildKnowledgeContent: findings of the appearance search', () => {
-    /** Priya's sheet with two findings of her search in the view */
-    function viewWithFindings() {
+describe('buildKnowledgeContent: what each section says the search found', () => {
+    const allKinds = ['gender', 'age', 'role', 'ethnicity', 'skin', 'hair', 'eyes', 'build', 'features'];
+
+    /** Priya's sheet after a search that found gender and role and nothing about her looks */
+    function viewAfterSearch() {
         const view = sheetViewOf('c1');
+        view.appearanceSearches.c1 = { searchedKinds: allKinds, foundKinds: ['gender', 'role'] };
         view.appearanceFindings.c1 = [
-            { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passage: 'Priya pushed her dark glossy curls back.' },
-            { kind: 'build', value: 'five-two, slight', at: 5, sources: [5], passage: 'Priya, five-two and slight, ducked under the tape.' },
+            { kind: 'gender', value: 'female', at: 5, sources: [5], passages: [{ source: 5, text: 'She was the night nurse.' }] },
+            { kind: 'role', value: 'night nurse', at: 5, sources: [5], passages: [{ source: 5, text: 'She was the night nurse.' }] },
         ];
         return view;
     }
 
-    it('shows each finding with its kind, value and source message, hidden when the message is', () => {
-        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, viewWithFindings(), true);
+    /** The texts of the result lines, in page order */
+    function resultLinesOf(html) {
+        return [...html.matchAll(/<p class="k-result">(.*?)<\/p>/g)].map(match => textOf(match[1]));
+    }
 
-        assert.equal(textOf(findingOf(html, 'hair')), 'Hair dark glossy curls · message #2, hidden Show passage Accept Skip');
-        assert.equal(textOf(findingOf(html, 'build')), 'Build five-two, slight · message #5 Show passage Accept Skip');
+    it('says nothing before a search', () => {
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, sheetViewOf('c1'), true);
+
+        assert.deepEqual(resultLinesOf(html), []);
     });
 
-    it('shows a finding from a definition with its source', () => {
+    it('counts the proposals under Details and says Appearance got nothing new, naming what is recorded', () => {
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, viewAfterSearch(), true);
+
+        assert.deepEqual(resultLinesOf(html), [
+            '2 proposals from the search. Accept or skip each, or all at once.',
+            'Nothing new: the story says no more about their looks than the hair and eyes already recorded.',
+        ]);
+        assert.ok(html.indexOf('k-result') < html.indexOf('data-detail="gender"'));
+    });
+
+    it('says one is left once the other is handled, and nothing once both are', () => {
+        const view = viewAfterSearch();
+        view.appearanceFindings.c1 = view.appearanceFindings.c1.slice(1);
+        const oneLeft = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+        view.appearanceFindings.c1 = [];
+        const noneLeft = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.equal(resultLinesOf(oneLeft)[0], 'One proposal from the search: accept or skip it.');
+        assert.deepEqual(resultLinesOf(noneLeft), ['Nothing new: the story says no more about their looks than the hair and eyes already recorded.']);
+    });
+
+    it('says what Details already records when the search found none of its kinds', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceSearches.c1 = { searchedKinds: allKinds, foundKinds: ['hair'] };
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.deepEqual(resultLinesOf(html), ['Nothing new: the story says no more about their gender, age and role than the role already recorded.']);
+    });
+
+    it('says the story says nothing about the looks of a character with none recorded', () => {
+        const view = sheetViewOf('c2');
+        view.appearanceSearches.c2 = { searchedKinds: allKinds, foundKinds: [] };
+        const ledger = makeLedger();
+        ledger.characters[1].details = {};
+
+        const html = buildKnowledgeContent(ledger, makeChat(), true, view, true);
+
+        assert.deepEqual(resultLinesOf(html), [
+            'Nothing new: the story says nothing about their gender, age and role.',
+            'Nothing new: the story says nothing about their looks.',
+        ]);
+    });
+
+    it('says nothing under Appearance when the search did not look at the looks', () => {
+        const view = viewAfterSearch();
+        view.appearanceSearches.c1.searchedKinds = ['gender', 'age', 'role'];
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.deepEqual(resultLinesOf(html), ['2 proposals from the search. Accept or skip each, or all at once.']);
+    });
+});
+
+describe('buildKnowledgeContent: Accept all', () => {
+    /** A finding from message 5 */
+    function findingFor(kind, value) {
+        return { kind, value, at: 5, sources: [5], passages: [{ source: 5, text: 'Priya, five-two and slight.' }] };
+    }
+
+    /** The Accept all buttons: their label and section */
+    function acceptAllButtonsOf(html) {
+        return [...html.matchAll(/<button[^>]*class="menu_button k-btn is-primary" data-act="accept-all-appearance" data-cid="c1" data-section="(\w+)"[^>]*>.*?<span>([^<]*)<\/span><\/button>/g)]
+            .map(match => `${match[2]} (${match[1]})`);
+    }
+
+    it('puts "Accept both" in the Details head for two detail findings', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [findingFor('gender', 'female'), findingFor('age', '24'), findingFor('build', 'slight')];
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.deepEqual(acceptAllButtonsOf(html), ['Accept both (details)']);
+        assert.ok(html.indexOf('data-act="accept-all-appearance"') < html.indexOf('data-act="search-appearance"'));
+    });
+
+    it('puts "Accept all 3" in the Appearance head for three appearance findings and one detail finding', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [findingFor('age', '24'), findingFor('skin', 'warm brown'), findingFor('build', 'slight'), findingFor('features', 'freckles')];
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.deepEqual(acceptAllButtonsOf(html), ['Accept all 3 (appearance)']);
+        assert.ok(html.indexOf('sa-k-sh-appearance') < html.indexOf('data-act="accept-all-appearance"'));
+    });
+
+    it('keeps one primary button: one "Accept all 4" for the sheet when both sections have two', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [findingFor('gender', 'female'), findingFor('age', '24'), findingFor('skin', 'warm brown'), findingFor('build', 'slight')];
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.deepEqual(acceptAllButtonsOf(html), ['Accept all 4 (all)']);
+        assert.equal(html.split('is-primary').length, 2);
+    });
+
+    it('offers no Accept all for one finding per section, nor for appearance findings while appearance is off', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [findingFor('gender', 'female'), findingFor('skin', 'warm brown'), findingFor('build', 'slight')];
+
+        assert.ok(!buildKnowledgeContent(makeLedger(), makeChat(), true, sheetViewOf('c1'), true).includes('accept-all-appearance'));
+        view.appearanceFindings.c1 = [findingFor('gender', 'female'), findingFor('build', 'slight')];
+        assert.ok(!buildKnowledgeContent(makeLedger(), makeChat(), true, view, true).includes('accept-all-appearance'));
+        view.appearanceFindings.c1 = [findingFor('gender', 'female'), findingFor('skin', 'warm brown'), findingFor('build', 'slight')];
+        assert.ok(!buildKnowledgeContent(makeLedger(), makeChat(), true, view, false).includes('accept-all-appearance'));
+    });
+
+});
+
+describe('buildKnowledgeContent: a row that became the proposal', () => {
+    /** Priya's sheet with two findings of her search in the view */
+    function viewWithFindings() {
         const view = sheetViewOf('c1');
         view.appearanceFindings.c1 = [
-            { kind: 'skin', value: 'warm brown', at: null, sources: ['lorebook: Paragon / Priya'], passage: 'Skin: warm brown' },
-            { kind: 'eyes', value: 'dark brown, wide-set', at: 4, sources: ['persona', 2, 4], passage: 'Priya has wide-set eyes. … Her dark eyes … Brown eyes' },
+            {
+                kind: 'hair', value: 'dark glossy curls', at: 5, sources: [1, 2, 4, 5],
+                passages: [
+                    { source: 1, text: 'Priya smiled.' },
+                    { source: 2, text: 'Priya pushed her dark glossy curls back.' },
+                    { source: 4, text: 'Her curls, Priya thought, needed a cut.' },
+                    { source: 5, text: 'Priyanka waved at Priya Nair & co.' },
+                ],
+            },
+            { kind: 'build', value: 'five-two, slight', at: 5, sources: [5], passages: [{ source: 5, text: 'Priya, five-two and slight, ducked under the tape.' }] },
+        ];
+        return view;
+    }
+
+    it('shows the current value struck through, the found value, where it was found, Accept and Skip', () => {
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, viewWithFindings(), true);
+
+        assert.equal(textOf(findingOf(html, 'hair')), 'Hair Now dark , found: dark glossy curls Found in 4 messages, newest #5, 1 hidden · Show sources Accept Skip');
+        assert.ok(findingOf(html, 'hair').includes('<s class="k-was">dark</s>'));
+        assert.ok(findingOf(html, 'hair').includes('<span class="k-new">dark glossy curls</span>'));
+        assert.equal(textOf(findingOf(html, 'build')), 'Build Now unknown , found: five-two, slight Found in message #5 · Show sources Accept Skip');
+        assert.ok(findingOf(html, 'build').includes('<span class="k-was k-unknown">unknown</span>'));
+        assert.ok(!findingOf(html, 'build').includes('data-act="ed-detail"'), 'Set gives way to Accept and Skip');
+    });
+
+    it('says where a finding from the persona, the card and the lorebook was found', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [
+            { kind: 'skin', value: 'warm brown', at: null, sources: ['lorebook: Paragon / Priya'], passages: [{ source: 'lorebook: Paragon / Priya', text: 'Skin: warm brown' }] },
+            { kind: 'build', value: 'five-two', at: 2, sources: ['persona', 'card', 2], passages: [] },
+            { kind: 'features', value: 'freckles', at: 4, sources: ['persona', 'lorebook: A / x', 'lorebook: A / y', 2, 4], passages: [] },
         ];
 
         const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
 
-        assert.equal(textOf(findingOf(html, 'skin')), 'Skin warm brown · lorebook: Paragon / Priya Show passage Accept Skip');
-        assert.equal(textOf(findingOf(html, 'eyes')), 'Eyes dark brown, wide-set · persona + message #2, hidden + message #4 Show passage Accept Skip');
+        assert.ok(textOf(findingOf(html, 'skin')).includes('Found in a lorebook entry ·'));
+        assert.ok(textOf(findingOf(html, 'build')).includes('Found in the persona, the card and message #2, hidden ·'));
+        assert.ok(textOf(findingOf(html, 'features')).includes('Found in the persona, 2 lorebook entries and 2 messages, newest #4, 1 hidden ·'));
     });
 
-    it('shows the passage only once it is asked for', () => {
+    it('shows the sources only once they are asked for: a chip per source and the three newest passages, the names marked', () => {
         const view = viewWithFindings();
         const before = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
-        view.shownPassages.add('c1:hair');
-        const after = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+        view.shownSources.add('c1:hair');
+        const after = findingOf(buildKnowledgeContent(makeLedger(), makeChat(), true, view, true), 'hair');
 
-        assert.ok(!before.includes('Priya pushed her dark glossy curls back.'));
-        assert.ok(findingOf(after, 'hair').includes('<blockquote class="k-passage">Priya pushed her dark glossy curls back.</blockquote>'));
-        assert.ok(textOf(findingOf(after, 'hair')).includes('Hide passage'));
-        assert.ok(!findingOf(after, 'build').includes('k-passage'));
+        assert.ok(!before.includes('k-sources'));
+        assert.ok(after.includes('<div class="k-chips" aria-label="Sources"><span class="k-chip">#1</span>'
+            + '<span class="k-chip is-hidden"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i>#2<span class="k-visually-hidden">, hidden</span></span>'
+            + '<span class="k-chip">#4</span><span class="k-chip">#5</span></div>'));
+        assert.ok(after.includes('<p class="k-quote"><b>#5</b>Priyanka waved at <mark>Priya Nair</mark> &amp; co.</p>'
+            + '<p class="k-quote"><b>#4</b>Her curls, <mark>Priya</mark> thought, needed a cut.</p>'
+            + '<p class="k-quote"><b>#2</b><mark>Priya</mark> pushed her dark glossy curls back.</p></div>'));
+        assert.ok(!after.includes('Priya smiled.'), 'only the three newest');
+        assert.match(after, /data-act="show-sources" data-cid="c1" data-kind="hair" data-fk="show-sources\|c1\|hair" aria-expanded="true">Hide sources</);
+    });
+
+    it('shows a definition source as a chip by its name and its text under it', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [{
+            kind: 'skin', value: 'warm brown', at: null, sources: ['persona', 'lorebook: Paragon / <Priya>'],
+            passages: [{ source: 'persona', text: 'Priya is tall.' }, { source: 'lorebook: Paragon / <Priya>', text: 'Skin: warm brown' }],
+        }];
+        view.shownSources.add('c1:skin');
+
+        const row = findingOf(buildKnowledgeContent(makeLedger(), makeChat(), true, view, true), 'skin');
+
+        assert.ok(row.includes('<span class="k-chip">persona</span><span class="k-chip" title="lorebook: Paragon / &lt;Priya&gt;">lorebook: &lt;Priya&gt;</span>'));
+        assert.ok(row.includes('<p class="k-quote"><b>lorebook: &lt;Priya&gt;</b>Skin: warm brown</p><p class="k-quote"><b>persona</b><mark>Priya</mark> is tall.</p>'));
     });
 
     it('shows no finding of one character on another character\'s sheet', () => {
@@ -180,7 +357,7 @@ describe('buildKnowledgeContent: findings of the appearance search', () => {
 
         const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
 
-        assert.ok(!html.includes('k-finding'));
+        assert.ok(!html.includes('is-proposal'));
     });
 });
 
@@ -419,6 +596,37 @@ describe('acceptAppearanceFinding', () => {
 
         assert.equal(error, null);
         assert.deepEqual(ledger.characters[0].details.hair.at(-1), { value: 'black', at: 7, messageId: 'm7' });
+    });
+});
+
+describe('acceptAppearanceFindings: Accept all as one edit', () => {
+    it('stores each finding with its own source message id, a definition finding as a record entry', () => {
+        const stored = makeLedger();
+        const findings = [
+            { kind: 'gender', value: 'female', at: 5, sources: [5] },
+            { kind: 'build', value: 'five-two', at: null, sources: ['card'] },
+            { kind: 'hair', value: 'black', at: 7, sources: [3, 7] },
+        ];
+
+        const { ledger, error } = acceptAppearanceFindings(stored, 'c1', findings, { gender: 'm5', hair: 'm7' });
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[0].details.gender, [{ value: 'female', at: 5, messageId: 'm5' }]);
+        assert.deepEqual(ledger.characters[0].details.build, [{ value: 'five-two', at: null, by: 'record', source: 'card' }]);
+        assert.deepEqual(ledger.characters[0].details.hair, [{ value: 'dark', at: 6, messageId: 'm6' }, { value: 'black', at: 7, messageId: 'm7' }]);
+        assert.equal(stored.characters[0].details.gender, undefined, 'the stored ledger is left untouched');
+    });
+
+    it('refuses them all when one is refused', () => {
+        const findings = [
+            { kind: 'gender', value: 'female', at: 5, sources: [5] },
+            { kind: 'eyes', value: 'dark brown', at: 5, sources: [5] },
+        ];
+
+        const { ledger, error } = acceptAppearanceFindings(makeLedger(), 'c1', findings, { gender: 'm5', eyes: 'm5' });
+
+        assert.equal(ledger, null);
+        assert.equal(error, 'Priya Nair\'s eyes is locked by you; unlock it to accept a finding.');
     });
 });
 
