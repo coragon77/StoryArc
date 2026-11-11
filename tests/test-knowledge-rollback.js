@@ -536,6 +536,72 @@ describe('updateKnowledgeAfterEdit', () => {
     });
 });
 
+describe('updateKnowledgeAfterEdit on a hidden message', () => {
+    beforeEach(() => {
+        fillChat();
+        setSwitches({ tracker: true });
+        storeLedger();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    it('a hidden message an update read (it carries a message id) is read again as shown and stays hidden', async () => {
+        const sentPrompts = installExtraction([ANSWER_EDITED_MESSAGE_3, ANSWER_EDITED_MESSAGE_3]);
+        chat[3].is_system = true;
+        chat[3].mes = 'Gabriel wants steel latches.';
+
+        // ST fires MESSAGE_EDITED, then MESSAGE_UPDATED while the first call runs.
+        const edited = updateKnowledgeAfterEdit(3);
+        const updatedDuringCall = await updateKnowledgeAfterEdit(3);
+        await edited;
+        // A cancelled edit later fires MESSAGE_UPDATED with the same text.
+        const cancelled = await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[3] Ellie: Gabriel wants steel latches.']);
+        assert.deepEqual(updatedDuringCall, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(cancelled, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES]);
+        assert.equal(chat[3].is_system, true);
+    });
+
+    it('a hidden message read before message ids (holder entries at its index, no id) is read again and gets an id', async () => {
+        const sentPrompts = installExtraction([ANSWER_EDITED_MESSAGE_3]);
+        chat[3] = { is_user: true, is_system: true, name: 'Ellie', mes: 'Gabriel wants steel latches.' };
+
+        await updateKnowledgeAfterEdit(3);
+
+        const messageId = chat[3].extra.story_arc_message_id;
+        assert.equal(typeof messageId, 'string');
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[3] Ellie: Gabriel wants steel latches.']);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F3, FACT_F4, {
+            ...FACT_STEEL_LATCHES,
+            holders: FACT_STEEL_LATCHES.holders.map(holder => ({ ...holder, messageId })),
+        }]);
+        assert.equal(chat[3].is_system, true);
+    });
+
+    it('a hidden message no update read (no message id, nothing at its index) makes no call and changes nothing', async () => {
+        const sentPrompts = installExtraction([ANSWER_EDITED_MESSAGE_3]);
+        chat[2].is_system = true;
+        delete chat[2].extra.story_arc_message_id;
+        chat[2].mes = 'Gauntlet and latches on the bench.';
+        const ledgerBefore = structuredClone(chat_metadata.story_arc.knowledge);
+
+        const updated = await updateKnowledgeAfterEdit(2);
+
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(sentPrompts, []);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, ledgerBefore);
+        assert.equal(chat[2].extra.story_arc_read_text_hash, undefined);
+    });
+});
+
 describe('updateKnowledgeAfterEdit acts only on a text that changed since it was read', () => {
     beforeEach(() => {
         fillChat();
