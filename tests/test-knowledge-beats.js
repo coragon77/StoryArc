@@ -412,6 +412,24 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: beat recogniti
             { at: 4, unlocked: [], skipped: [], arcCompleted: false, lastFulfilledBefore: 0, messageId: 'm4' });
     });
 
+    it('an edit whose re-extraction call fails leaves every beat as it was, a beat the completion unlocked included', async () => {
+        const arc = craneAct();
+        arc.beats[3] = { ...arc.beats[3], status: 'locked', unlockAfter: ['brody_refuses'] };
+        storeChat({ arcs: [arc], lastUpdatedAt: 4 });
+        await completeBeats([{ arcId: 'crane001', beatId: 'brody_refuses', at: 4 }], chat_metadata.story_arc.arcs);
+        // The next user message promoted the unlocked beat.
+        beatOf('crane001-full-id', 'crane_falls').status = 'active';
+        const arcsBefore = structuredClone(chat_metadata.story_arc.arcs);
+        const sentPrompts = installExtraction(['not an answer']);
+
+        const result = await updateKnowledgeAfterEdit(4);
+
+        // The call offered the completed beat as open.
+        assert.ok(sentPrompts[0].includes('- [crane001:brody_refuses] Brody refuses'), sentPrompts[0]);
+        assert.deepEqual(result, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(chat_metadata.story_arc.arcs, arcsBefore);
+    });
+
     it('an edit completed again keeps lastFulfilledAt at a later completion', async () => {
         chat.push(
             { is_user: true, is_system: false, name: 'Ellie', mes: 'Then we wait.', extra: { story_arc_message_id: 'm5' } },

@@ -420,9 +420,11 @@ StoryArc/
 │   │                           #   with a message id follow their message) and
 │   │                           #   dropKnowledgeFrom(ledger, N) (user entries,
 │   │                           #   at null, stay), updateKnowledgeAfterSwipe(i),
-│   │                           #   updateKnowledgeAfterEdit(i) (reopenCompletionsAt
-│   │                           #   first, autoTrack on); the re-extraction completes
-│   │                           #   beats like the update after a reply;
+│   │                           #   updateKnowledgeAfterEdit(i) (the answer replaces
+│   │                           #   what i taught; a failed call keeps it and goes on
+│   │                           #   pendingReextractions, retried after reply updates);
+│   │                           #   the re-extraction completes beats like the update
+│   │                           #   after a reply;
 │   │                           #   Inject — injectKnowledgeBlock(): story_arc_knowledge,
 │   │                           #   then story_arc_names (names.js), both in-chat
 │   │                           #   depth 1, system, '' while off;

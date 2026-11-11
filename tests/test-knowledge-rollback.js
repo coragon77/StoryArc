@@ -404,19 +404,22 @@ describe('updateKnowledgeAfterEdit', () => {
         });
     });
 
-    it('editing a message takes its meeting back, so a failed re-extraction leaves none the edited text may not have', async () => {
+    it('a failed re-extraction of an edited message keeps what the ledger learned there, its meeting included', async () => {
         setSwitches({ tracker: true });
         storeLedger();
-        chat_metadata.story_arc.knowledge.meetings = [
+        const meetings = [
             { at: 3, present: ['c1', 'c2'] },
             { at: 6, present: ['c1', 'c2', 'c3'] },
         ];
+        chat_metadata.story_arc.knowledge.meetings = structuredClone(meetings);
         installExtraction(['not an answer']);
         chat[3].mes = 'Gabriel wants steel latches.';
 
-        await updateKnowledgeAfterEdit(3);
+        const updated = await updateKnowledgeAfterEdit(3);
 
-        assert.deepEqual(chat_metadata.story_arc.knowledge.meetings, [{ at: 6, present: ['c1', 'c2', 'c3'] }]);
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F2, FACT_F3, FACT_F4]);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.meetings, meetings);
     });
 
     it('editing a message between the scene and the end of the ledger leaves the scene and its history as they were', async () => {
@@ -692,6 +695,141 @@ describe('updateKnowledgeAfterEdit acts only on a text that changed since it was
             'MESSAGES:\n[3] Ellie: Gabriel wants steel latches.',
             'MESSAGES:\n[3] Ellie: Gabriel wants steel latches, polished.',
         ]);
+    });
+});
+
+describe('a re-extraction whose call failed is tried again with the next reply update', () => {
+    beforeEach(() => {
+        fillChat();
+        setSwitches({ tracker: true });
+        storeLedger();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    /** The player's next message and the narrator's reply. */
+    function pushExchange() {
+        chat.push(
+            { is_user: true, is_system: false, name: 'Ellie', mes: 'And then?' },
+            { is_user: false, is_system: false, name: 'Noor', mes: 'Then we wait.' },
+        );
+    }
+
+    const factTexts = () => chat_metadata.story_arc.knowledge.facts.map(fact => fact.text);
+
+    it('the next reply update reads the message again, and a success ends the retries', async () => {
+        const sentPrompts = installExtraction(['not an answer', ANSWER_NOOR_ALONE, ANSWER_EDITED_MESSAGE_3, ANSWER_NOOR_ALONE]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        pushExchange();
+        await updateKnowledgeAfterReply(8);
+        pushExchange();
+        await updateKnowledgeAfterReply(10);
+
+        assert.equal(sentPrompts.length, 4);
+        assert.equal(sentPrompts[2], 'MESSAGES:\n[3] Ellie: Gabriel wants steel latches.');
+        assert.ok(factTexts().includes('Gabriel wants steel latches'));
+        assert.ok(!factTexts().includes('Gabriel wants titanium latches'));
+        assert.equal(chat_metadata.story_arc.knowledge.pendingReextractions, undefined);
+    });
+
+    it('a message whose call fails three times is not tried again, and keeps what the ledger learned there', async () => {
+        const sentPrompts = installExtraction([
+            'not an answer', ANSWER_NOOR_ALONE, 'not an answer', ANSWER_NOOR_ALONE, 'not an answer', ANSWER_NOOR_ALONE,
+        ]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        for (const replyIndex of [8, 10, 12]) {
+            pushExchange();
+            await updateKnowledgeAfterReply(replyIndex);
+        }
+
+        // A cancelled edit or a rewrite event with the same text, after the third failure.
+        const eventAfterGivingUp = await updateKnowledgeAfterEdit(3);
+
+        // The edit, then three reply updates; the first two each tried message 3 again.
+        assert.equal(sentPrompts.length, 6);
+        assert.equal(sentPrompts.filter(prompt => prompt.includes('[3] Ellie')).length, 3);
+        assert.deepEqual(eventAfterGivingUp, { ledgerChanged: false, beatsChanged: false });
+        assert.ok(factTexts().includes('Gabriel wants titanium latches'));
+        assert.deepEqual(chat_metadata.story_arc.knowledge.pendingReextractions.map(entry => [entry.messageId, entry.tries]), [['m3', 3]]);
+    });
+
+    it('a new edit of a message that failed before starts its tries again', async () => {
+        installExtraction(['not an answer', 'not an answer', 'not an answer']);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+        await updateKnowledgeAfterEdit(3);
+
+        chat[3].mes = 'Gabriel wants bronze latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(chat_metadata.story_arc.knowledge.pendingReextractions.map(entry => [entry.messageId, entry.tries]), [['m3', 1]]);
+    });
+
+    it('a reply arriving during the retry gets its update but starts no second retry', async () => {
+        const answers = ['not an answer', ANSWER_NOOR_ALONE, ANSWER_EDITED_MESSAGE_3, ANSWER_NOOR_ALONE];
+        const sentPrompts = [];
+        let updateDuringRetry = null;
+        globalThis.fetch = async () => new Response('MESSAGES:\n{{MESSAGES}}');
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            sentPrompts.push(messages[0].content);
+            const text = answers.shift();
+            // The third call is the retry; a reply arrives while it runs.
+            if (sentPrompts.length === 3) {
+                pushExchange();
+                updateDuringRetry = await updateKnowledgeAfterReply(chat.length - 1);
+            }
+            return () => (async function* () { yield { text }; })();
+        };
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+        pushExchange();
+
+        await updateKnowledgeAfterReply(8);
+
+        assert.equal(updateDuringRetry.ledgerChanged, true);
+        // The edit and one retry read message 3; the update during the retry did not retry it again.
+        assert.equal(sentPrompts.filter(prompt => prompt.includes('[3] Ellie')).length, 2);
+        assert.equal(sentPrompts.length, 4);
+        assert.equal(chat_metadata.story_arc.knowledge.pendingReextractions, undefined);
+    });
+
+    it('a message whose retry needs no call (the next update read it anyway) leaves the retries', async () => {
+        const sentPrompts = installExtraction(['not an answer', ANSWER_NOOR_ALONE]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+        // A rollback took the ledger back before message 3, so the next update reads it.
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 2;
+
+        pushExchange();
+        await updateKnowledgeAfterReply(8);
+
+        assert.equal(sentPrompts.length, 2);
+        assert.ok(sentPrompts[1].includes('[3] Ellie: Gabriel wants steel latches.'), sentPrompts[1]);
+        assert.equal(chat_metadata.story_arc.knowledge.pendingReextractions, undefined);
+    });
+
+    it('a message deleted before its retry leaves the retries without a call', async () => {
+        const sentPrompts = installExtraction(['not an answer', ANSWER_NOOR_ALONE, ANSWER_NOOR_ALONE]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+        chat.splice(3, 1);
+        await rollBackKnowledgeFrom(chat.length);
+
+        pushExchange();
+        await updateKnowledgeAfterReply(chat.length - 1);
+
+        assert.equal(sentPrompts.length, 2);
+        assert.equal(chat_metadata.story_arc.knowledge.pendingReextractions, undefined);
     });
 });
 
