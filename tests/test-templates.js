@@ -14,6 +14,11 @@ describe('fillTemplate', () => {
         assert.equal(fillTemplate('Hello {{NAME}}', { NAME: 'World' }), 'Hello World');
     });
 
+    it('inserts a value with dollar signs as it is, not as a replacement pattern', () => {
+        const result = fillTemplate('[{{PASSAGES}}] TASK', { PASSAGES: "it cost $5, he said $' and $& and $$" });
+        assert.equal(result, "[it cost $5, he said $' and $& and $$] TASK");
+    });
+
     it('replaces multiple placeholders', () => {
         const result = fillTemplate('{{A}} and {{B}}', { A: 'X', B: 'Y' });
         assert.equal(result, 'X and Y');
