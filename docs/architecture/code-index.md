@@ -43,9 +43,10 @@ StoryArc/
 │   │                           #   the {{DEVELOPMENTS}} the messages fulfilled
 │   │                           #   (ADR-0008); answers JSON. Character details and
 │   │                           #   appearance live in ledger.js constants (DETAILS_TASK)
-│   ├── find-appearance.txt     # Appearance search prompt: one character's looks from
-│   │                           #   the passages, one value per appearance kind with the
-│   │                           #   newest passage's index; answers JSON
+│   ├── find-appearance.txt     # Appearance search prompt ("Find details"): one
+│   │                           #   character's gender, age, role and looks from the
+│   │                           #   definitions and passages, one value per kind with
+│   │                           #   every source it uses; answers JSON
 │   └── detail-pass.txt         # Old detail-pass draft (not loaded); carries the
 │                               #   one-moment fulfillment rule too
 ├── lib/
@@ -372,7 +373,9 @@ StoryArc/
 │   │   │                       #   persona) → findDefinitions (persona, card, lorebook
 │   │   │                       #   text that names them; labels persona/card/lore N)
 │   │   │                       #   → findAppearancePassages (whole chat, hidden
-│   │   │                       #   messages included, ≤3 per feature, 6000 chars), the
+│   │   │                       #   messages included, ≤3 per feature, 6000 chars)
+│   │   │                       #   → findNamingPassages (newest passages naming them,
+│   │   │                       #   for gender/age/role, 4000 chars), the
 │   │   │                       #   find-appearance.txt call, the parse (bad items dropped),
 │   │   │                       #   listOfferedFindings(character, findings) (unknown,
 │   │   │                       #   newer and different, or a refinement; never locked)

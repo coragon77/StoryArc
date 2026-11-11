@@ -546,12 +546,73 @@ entry, as older than every message:
 - A definition finding that differs from another definition entry is not
   offered unless it refines it.
 
+### Gender, age and role (added 2026-11-11)
+
+Stefan cleared Mateo Reyes's hand-set gender, age and role in the Paragon
+chat by accident and did not want to type them in again. A hand-set value
+is always locked, so the search finds them instead, as unlocked story
+values. He chose the minimal version: "You sure we need everything? That
+takes a lot of time till it is usable", then "yes, do it".
+
+- The same search reports `gender`, `age` and `role` too, in
+  `SEARCHED_KINDS` (those three, then the appearance kinds). Not
+  `relation`, not `status`. The button is "Find details".
+- No new passage search: no age patterns, no introduction search. The call
+  gets the definitions as before, plus the newest sentences of the chat
+  that name the character (`findNamingPassages`: a naming sentence with
+  the pronoun sentence after it, the unit of the appearance passages,
+  newest first until 4,000 characters, a text the appearance passages
+  already hold left out). They are sent only while one of the three kinds
+  is not locked. Add patterns only if this proves too thin, and ask
+  Stefan first.
+- The prompt takes the age and role wording and the never-guess rule from
+  the extraction's DETAILS_TASK. The appearance-only rules (no clothing,
+  no kind word in the value) now name the looks. The answer key is
+  `details`; `appearance` still reads.
+- Accept, locks and offers are unchanged. A detail kind gets no
+  refinement (`isAppearanceRefinement` is for appearance kinds only), so
+  an older gender, age or role is never offered over a known one.
+
+### Save without the lock (added 2026-11-11)
+
+Stefan asked why a hand edit and the lock are one button. A player entry
+(`by: 'user'`) is both the player's value and the lock, but the record entry
+gives an unlocked value a shape. So the detail editor has two buttons, for
+every kind:
+
+- **Save and lock**: a player entry, as before. It is the first button,
+  so Enter keeps it.
+- **Save**: a record entry `{ value, at: null, by: 'record', source:
+  'player' }`. No rollback removes it, and the extraction can still change
+  it with an on-screen change. The sheet shows "Set by you" with the open
+  lock, never "Locked by you".
+
+Decided in the session:
+
+- The player's own value is one entry. Either save, Lock, and an emptied
+  field replace or remove the earlier one, locked or not. A definition
+  record (from the persona, card or lorebook) stays in the history.
+- Save on a locked kind unlocks it, even with the value unchanged: the
+  button does what it says, and Unlock stays for going back to the story's
+  value.
+- An unnamed relative's relation, the record's identity, keeps only "Save
+  and lock".
+- Save at the value shown over a story value makes it the player's own,
+  so no swipe of its message takes it away. Over a record entry it has
+  nothing to change and says so.
+- The search treats the player's unlocked value as newer than every
+  message (`isPlayerRecordEntry` in `ledger.js`), as it does a locked one,
+  so it never offers a chat value over it. Only a refinement of an
+  appearance value is still offered, since that value is not locked.
+
 ### Cost
 
 The search costs one call per press, of about the passage budget plus the
 prompt: roughly 2.5k tokens in, a few hundred out. The definitions add up
 to 3,000 characters per persona or card text and 3,000 for the lorebooks,
-so at most about 2.5k tokens more. It never runs on its own.
+so at most about 2.5k tokens more. The naming passages for gender, age
+and role add up to 4,000 characters, about 1k tokens. It never runs on
+its own.
 
 ## Changes outside the code
 

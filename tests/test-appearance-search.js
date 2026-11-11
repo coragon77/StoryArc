@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, ConnectionManagerRequestService, mockContextFields, mockSortedEntries } from '../tests/mocks/st-mocks.js';
-import { findAppearancePassages, findDefinitions, searchAppearance, listOfferedFindings } from '../lib/knowledge/appearance-search.js';
+import { findAppearancePassages, findDefinitions, findNamingPassages, searchAppearance, listOfferedFindings } from '../lib/knowledge/appearance-search.js';
 import { giveMessageId, isIdFromSearch } from '../lib/knowledge/message-ids.js';
 import { clearTemplateCache } from '../lib/planning/generator.js';
 
@@ -124,6 +124,51 @@ describe('findAppearancePassages', () => {
     });
 });
 
+describe('findNamingPassages', () => {
+    it('takes the newest passages that name the person, with the pronoun sentence after, oldest first', () => {
+        const chatMessages = hiddenChatOf(
+            'Mateo Reyes was a Ward.',
+            'Ellie laughed. Mateo shrugged. He was seventeen.',
+            '<status>Mateo: hoodie</status>Noor waved at Mateo.',
+        );
+
+        assert.deepEqual(findNamingPassages(chatMessages, ['Mateo Reyes', 'Mateo'], [], 4000), [
+            { at: 0, text: 'Mateo Reyes was a Ward.' },
+            { at: 1, text: 'Mateo shrugged. He was seventeen.' },
+            { at: 2, text: 'Noor waved at Mateo.' },
+        ]);
+    });
+
+    it('leaves out a passage the call already gets and a second copy of one text in a message', () => {
+        const chatMessages = hiddenChatOf('Mateo had short black hair.', 'Mateo nodded. Mateo nodded.');
+
+        const passages = findNamingPassages(chatMessages, ['Mateo'], [{ at: 0, text: 'Mateo had short black hair.' }], 4000);
+
+        assert.deepEqual(passages, [{ at: 1, text: 'Mateo nodded.' }]);
+    });
+
+    it('stops at the first passage, newest first, that would pass the budget', () => {
+        // "[#2] Mateo ran." is 15 characters, "[#1] Mateo was a Ward of Sector 2." 34, "[#0] Mateo sat." 15
+        const chatMessages = hiddenChatOf('Mateo sat.', 'Mateo was a Ward of Sector 2.', 'Mateo ran.');
+
+        assert.deepEqual(findNamingPassages(chatMessages, ['Mateo'], [], 48), [{ at: 2, text: 'Mateo ran.' }]);
+        assert.deepEqual(findNamingPassages(chatMessages, ['Mateo'], [], 49), [
+            { at: 1, text: 'Mateo was a Ward of Sector 2.' },
+            { at: 2, text: 'Mateo ran.' },
+        ]);
+    });
+
+    it('skips one passage longer than the whole budget and goes on with the older ones', () => {
+        const chatMessages = hiddenChatOf('Mateo was a Ward.', `Mateo ran ${'and ran '.repeat(10)}`);
+
+        assert.deepEqual(findNamingPassages(chatMessages, ['Mateo'], [], 40), [{ at: 0, text: 'Mateo was a Ward.' }]);
+    });
+
+    it('finds nothing without a name of the person', () => {
+        assert.deepEqual(findNamingPassages(hiddenChatOf('Mateo ran.'), [''], [], 4000), []);
+    });
+});
+
 describe('findDefinitions', () => {
     const ellieNames = ['Ellie Masters', 'Ellie'];
 
@@ -226,6 +271,28 @@ describe('listOfferedFindings', () => {
         assert.deepEqual(listOfferedFindings(character, [hairFinding]), []);
     });
 
+    it('offers an unknown age, but not a locked gender', () => {
+        const ageFinding = { kind: 'age', value: '17', at: 50, passage: 'Mateo was seventeen.' };
+        const genderFinding = { kind: 'gender', value: 'male', at: 50, passage: 'Mateo was seventeen.' };
+        const character = { id: 'c1', name: 'Mateo', aliases: [], details: { gender: [{ value: 'male', at: null, by: 'user' }] } };
+
+        assert.deepEqual(listOfferedFindings(character, [genderFinding, ageFinding]), [ageFinding]);
+    });
+
+    it('does not offer an older role that holds every word of the current one: only appearance refines', () => {
+        const roleFinding = { kind: 'role', value: 'cleaner, double shifts, Oakland', at: 5, passage: 'She cleaned offices in Oakland, double shifts.' };
+        const character = { id: 'c1', name: 'Rosa', aliases: [], details: { role: [{ value: 'cleaner', at: 10 }] } };
+
+        assert.deepEqual(listOfferedFindings(character, [roleFinding]), []);
+    });
+
+    it('does not offer a message value over the player\'s value saved unlocked, which is newer than every message', () => {
+        const roleFinding = { kind: 'role', value: 'Ward, Sector 2', at: 3000, passage: 'Mateo, a Ward of Sector 2.' };
+        const character = { id: 'c1', name: 'Mateo', aliases: [], details: { role: [{ value: 'Ward (Switchback)', at: 10 }, { value: 'Ward (Switchback), Halstead Annex', at: null, by: 'record', source: 'player' }] } };
+
+        assert.deepEqual(listOfferedFindings(character, [roleFinding]), []);
+    });
+
     it('does not offer a newer finding with the same value, case aside', () => {
         const character = { id: 'c1', name: 'Priya', aliases: [], details: { hair: [{ value: 'Dark Glossy Curls', at: 100 }] } };
 
@@ -280,7 +347,7 @@ describe('searchAppearance', () => {
     let sentPrompts;
 
     /** A search template that shows the placeholders, and an answer queue for the call. */
-    function installSearch(answers, template = '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_APPEARANCE}}\n{{PASSAGES}}') {
+    function installSearch(answers, template = '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_DETAILS}}\n{{PASSAGES}}') {
         sentPrompts = [];
         // loadTemplate keeps a template once loaded: each test's template is fetched anew
         clearTemplateCache();
@@ -451,12 +518,12 @@ describe('searchAppearance', () => {
                 { kind: 'features', value: 'freckles', sources: [0] },
                 { kind: 'ethnicity', value: 'Irish', sources: ['#0', '[#7]'] },
             ],
-        })], '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_APPEARANCE}}\n{{DEFINITIONS}}\n{{PASSAGES}}');
+        })], '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_DETAILS}}\n{{DEFINITIONS}}\n{{PASSAGES}}');
         mockContextFields.powerUserSettings = { persona_description: '{{user}} has a black layered bob and bright blue eyes.' };
         mockSortedEntries.push({ world: 'Paragon', comment: 'Ellie\'s sheet', key: ['Ellie'], content: 'Height: five-five', disable: false, order: 100 });
         const ledger = { characters: [{ id: 'c2', name: 'Ellie Masters', aliases: ['Ellie'] }], facts: [] };
 
-        const result = await searchAppearance(ledger, 'c2', hiddenChatOf('Ellie laughed.'), 'Ellie Masters');
+        const result = await searchAppearance(ledger, 'c2', hiddenChatOf('Noor laughed.'), 'Ellie Masters');
 
         assert.deepEqual(sentPrompts, [[
             'Ellie Masters | Ellie',
@@ -486,7 +553,7 @@ describe('searchAppearance', () => {
             { name: 'Ellie', avatar: 'ellie.png', description: 'Ellie has a black bob.' },
         ];
 
-        const result = await searchAppearance(makeLedger(), 'c1', hiddenChatOf('Priya laughed.'), 'Steve');
+        const result = await searchAppearance(makeLedger(), 'c1', hiddenChatOf('Ellie laughed.'), 'Steve');
 
         assert.deepEqual(sentPrompts, ['[card] Priya Sharma has warm brown eyes.']);
         assert.deepEqual(result, {
@@ -495,9 +562,9 @@ describe('searchAppearance', () => {
         });
     });
 
-    it('makes no call when no passage describes the character', async () => {
+    it('makes no call when nothing names the character', async () => {
         installSearch([]);
-        const chatMessages = hiddenChatOf('Priya laughed.');
+        const chatMessages = hiddenChatOf('Ellie laughed.');
 
         const result = await searchAppearance(makeLedger(), 'c1', chatMessages, 'Ellie');
 
@@ -505,12 +572,62 @@ describe('searchAppearance', () => {
         assert.deepEqual(sentPrompts, []);
     });
 
+    it('sends no passage that only names the character while gender, age and role are all locked', async () => {
+        installSearch([]);
+        const ledger = makeLedger();
+        ledger.characters[0].details.gender = [{ value: 'female', at: null, by: 'user' }];
+        ledger.characters[0].details.age = [{ value: '24', at: null, by: 'user' }];
+        ledger.characters[0].details.role = [{ value: 'surgeon', at: null, by: 'user' }];
+
+        const result = await searchAppearance(ledger, 'c1', hiddenChatOf('Priya laughed.'), 'Ellie');
+
+        assert.deepEqual(result, { findings: [], sourceCount: 0 });
+        assert.deepEqual(sentPrompts, []);
+    });
+
+    it('sends the newest passages that name the character for gender, age and role, and reads those kinds first', async () => {
+        installSearch([JSON.stringify({
+            details: [
+                { kind: 'hair', value: 'dark glossy curls', sources: [0] },
+                { kind: 'role', value: 'junior surgeon, Mercy General', sources: [3] },
+                { kind: 'age', value: 24, sources: [1] },
+                { kind: 'gender', value: 'female', sources: [3] },
+            ],
+        })], '{{KNOWN_DETAILS}}\n{{PASSAGES}}');
+        const ledger = makeLedger();
+        ledger.characters[0].details.gender = [{ value: 'woman', at: 1 }];
+        const chatMessages = [
+            ...hiddenChatOf('Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.', 'Priya turned twenty-four that spring.'),
+            { name: 'Narrator', is_user: false, is_system: false, mes: 'Ellie laughed.' },
+            { name: 'Narrator', is_user: false, is_system: false, mes: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' },
+        ];
+
+        const result = await searchAppearance(ledger, 'c1', chatMessages, 'Ellie');
+
+        assert.deepEqual(sentPrompts, [[
+            '- gender: woman',
+            '- eyes: brown',
+            '[#0] Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.',
+            '[#1] Priya turned twenty-four that spring.',
+            '[#3] Priya scrubbed in. She was the junior surgeon at Mercy General.',
+        ].join('\n')]);
+        assert.deepEqual(result, {
+            findings: [
+                { kind: 'gender', value: 'female', at: 3, sources: [3], passage: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' },
+                { kind: 'age', value: '24', at: 1, sources: [1], passage: 'Priya turned twenty-four that spring.' },
+                { kind: 'role', value: 'junior surgeon, Mercy General', at: 3, sources: [3], passage: 'Priya scrubbed in. She was the junior surgeon at Mercy General.' },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+            ],
+            sourceCount: 3,
+        });
+    });
+
     it('gives an error for an unreadable answer', async () => {
         installSearch(['I cannot help with that.']);
 
         const result = await searchAppearance(makeLedger(), 'c1', makeChat(), 'Ellie');
 
-        assert.deepEqual(result, { error: 'The appearance search gave an unreadable answer. Try again.' });
+        assert.deepEqual(result, { error: 'The search gave an unreadable answer. Try again.' });
     });
 
     it('gives an error for a failed call', async () => {
@@ -518,7 +635,7 @@ describe('searchAppearance', () => {
 
         const result = await searchAppearance(makeLedger(), 'c1', makeChat(), 'Ellie');
 
-        assert.deepEqual(result, { error: 'The appearance search failed. Try again later.' });
+        assert.deepEqual(result, { error: 'The search failed. Try again later.' });
     });
 
     it('gives an error for a character not in the ledger', async () => {

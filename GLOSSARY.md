@@ -185,7 +185,7 @@ A fuller value of an appearance kind that keeps every word of the stored one, th
 _Avoid_: update, enrichment
 
 **Appearance search**:
-The search for how one character looks, run from that character's sheet in the Knowledge popup: the persona or card description and the lorebook entries that name them, the passages of the whole chat (hidden messages included) that describe them, then one call that reads them all. It proposes one value per kind, the latest the texts state; the persona, card and lorebook count as older than every message, so the chat wins over them and they fill in what it never states. It proposes a value only where it adds to the ledger (an unknown kind, a newer different value, or an older refinement), and each finding names every source it uses. Nothing counts until the player accepts it, kind by kind. An accepted finding that uses a message is a story entry at the newest message it uses and rolls back with it; one from the persona, card or lorebook alone has no message and stays.
+The search for how one character looks, run from that character's sheet in the Knowledge popup: the persona or card description and the lorebook entries that name them, the passages of the whole chat (hidden messages included) that describe them, then one call that reads them all. It proposes one value per kind, the latest the texts state; the persona, card and lorebook count as older than every message, so the chat wins over them and they fill in what it never states. It proposes a value only where it adds to the ledger (an unknown kind, a newer different value, or an older refinement), and each finding names every source it uses. Nothing counts until the player accepts it, kind by kind. An accepted finding that uses a message is a story entry at the newest message it uses and rolls back with it; one from the persona, card or lorebook alone has no message and stays. The same search ("Find details") also finds the character's gender, age and role, from the same texts and the newest passages that name them.
 _Avoid_: backfill (in UI text), scan, import
 
 **Unnamed relative**:
@@ -225,7 +225,7 @@ _Avoid_: erase, purge
 _Avoid_: unretract, revert
 
 **Lock** (character detail):
-Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand locks it the same way.
+Keeping a detail at the value the story set: the player's entry with that same value goes on top, so the extraction no longer changes the detail and a swipe of the message that stated it does not take it away. Setting a detail by hand with "Save and lock" locks it the same way; "Save" sets it unlocked, so the story can still change it on screen and no swipe takes it away.
 _Avoid_: pin, freeze
 
 **Undo** (hand edit):

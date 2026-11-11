@@ -73,7 +73,7 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
         assert.equal(textOf(detailRowOf(html, 'eyes')), 'Eyes brown Locked by you · the story says the same (message #3) Edit Unlock');
         assert.equal(textOf(detailRowOf(html, 'ethnicity')), 'Ethnicity unknown The story has not stated it. Set');
         for (const kind of ['skin', 'build', 'features']) assert.ok(html.includes(`data-detail="${kind}"`), kind);
-        assert.ok(textOf(html).includes('Find appearance'));
+        assert.ok(textOf(html).includes('Find details'));
     });
 
     it('puts the appearance rows after the other details, so D still lands on the first detail row', () => {
@@ -331,6 +331,29 @@ describe('acceptAppearanceFinding', () => {
         assert.equal(ledger.characters[0].details.build, undefined);
     });
 
+    it('stores a found gender from a message as a story entry, which the sheet shows unlocked and a rollback removes', () => {
+        const finding = { kind: 'gender', value: 'female', at: 5, sources: [5], passage: 'Priya tucked her badge away. She was the night nurse.' };
+
+        const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', finding, 'm5');
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[0].details.gender, [{ value: 'female', at: 5, messageId: 'm5' }]);
+        const html = buildKnowledgeContent(ledger, [], true, sheetViewOf('c1'), true);
+        assert.equal(textOf(detailRowOf(html, 'gender')), 'Gender female From the story, message #5 Edit Lock');
+
+        dropKnowledgeFrom(ledger, 5);
+        assert.equal(ledger.characters[0].details.gender, undefined);
+    });
+
+    it('stores a found age from the card alone as a record entry, unlocked, named after the card', () => {
+        const finding = { kind: 'age', value: '17', at: null, sources: ['card'], passage: 'Priya is 17.' };
+
+        const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', finding);
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[0].details.age, [{ value: '17', at: null, by: 'record', source: 'card' }]);
+        const html = buildKnowledgeContent(ledger, [], true, sheetViewOf('c1'), true);
+        assert.equal(textOf(detailRowOf(html, 'age')), 'Age 17 From the card Edit Lock');
+    });
+
     it('refuses a locked kind', () => {
         const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', { kind: 'eyes', value: 'dark brown', at: 5, passage: '' }, 'm5');
 
@@ -338,9 +361,9 @@ describe('acceptAppearanceFinding', () => {
         assert.equal(error, 'Priya Nair\'s eyes is locked by you; unlock it to accept a finding.');
     });
 
-    it('refuses an unknown character and a kind outside the appearance kinds', () => {
+    it('refuses an unknown character and a kind the search does not find', () => {
         assert.equal(acceptAppearanceFinding(makeLedger(), 'c9', { kind: 'hair', value: 'red', at: 5 }, 'm5').error, 'This character is no longer in the ledger.');
-        assert.equal(acceptAppearanceFinding(makeLedger(), 'c1', { kind: 'role', value: 'surgeon', at: 5 }, 'm5').error, 'There is no appearance kind "role".');
+        assert.equal(acceptAppearanceFinding(makeLedger(), 'c1', { kind: 'relation', value: 'mother', at: 5 }, 'm5').error, 'The search does not find the kind "relation".');
     });
 
     it('leaves its input unchanged', () => {

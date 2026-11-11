@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildKnowledgeContent, createKnowledgeView, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
+import { buildKnowledgeContent, createKnowledgeView, lockCharacterDetail, saveCharacterDetails } from '../lib/ui/knowledge-popup.js';
+import { dropKnowledgeFrom, isDetailLocked } from '../lib/knowledge/ledger.js';
 
 /**
  * Kendra Osei and her mother Ama in the Paragon chat: the story stated Ama's
@@ -316,5 +317,84 @@ describe('buildKnowledgeContent: the detail editor', () => {
         assert.ok(textOf(rowHtml).includes('Of Kendra Osei'));
         assert.ok(rowHtml.includes('data-pick="sheet" data-cid="c1"'));
         assert.ok(!rowHtml.includes('data-pick="sheet" data-cid="c2"'), 'a character is no relative of themselves');
+    });
+});
+
+describe('saveCharacterDetails and lockCharacterDetail: Save without the lock', () => {
+    it('writes a value saved unlocked as a player record entry, which locks nothing, a rollback keeps and the sheet shows as set by you', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), gender: 'female' }, amaAsShown(), { lock: false });
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[1].details.gender, [{ value: 'female', at: null, by: 'record', source: 'player' }]);
+        assert.equal(isDetailLocked(ledger.characters[1], 'gender'), false);
+
+        dropKnowledgeFrom(ledger, 0);
+        assert.deepEqual(ledger.characters[1].details.gender, [{ value: 'female', at: null, by: 'record', source: 'player' }]);
+        const html = buildKnowledgeContent(ledger, [], true, sheetViewOf('c2'));
+        assert.ok(textOf(detailRowOf(html, 'gender')).endsWith('Gender female Set by you Edit Lock'), detailRowOf(html, 'gender'));
+        assert.ok(!detailRowOf(html, 'gender').includes('Locked by you'));
+    });
+
+    it('puts a value saved unlocked after the story\'s entry, and a second one in place of the first', () => {
+        const once = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), role: 'night cleaner' }, amaAsShown(), { lock: false }).ledger;
+        const twice = saveCharacterDetails(once, 'c2', { ...amaAsShown(), role: 'night cleaner, Highland Hospital' }, { ...amaAsShown(), role: 'night cleaner' }, { lock: false }).ledger;
+
+        assert.deepEqual(twice.characters[1].details.role, [
+            { value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' },
+            { value: 'night cleaner, Highland Hospital', at: null, by: 'record', source: 'player' },
+        ]);
+    });
+
+    it('unlocks a locked kind when saved unlocked, even with the value left as shown', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', { age: '40s' }, { age: '40s' }, { lock: false });
+
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[1].details.age, [{ value: '40s', at: null, by: 'record', source: 'player' }]);
+    });
+
+    it('keeps a story value saved unlocked as it is as the player\'s own, past the rollback of its message', () => {
+        const { ledger, error } = saveCharacterDetails(makeLedger(), 'c2', amaAsShown(), amaAsShown(), { lock: false });
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[1].details.role, [
+            { value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' },
+            { value: 'cleaner, double shifts, Oakland', at: null, by: 'record', source: 'player' },
+        ]);
+
+        dropKnowledgeFrom(ledger, 12);
+        assert.deepEqual(ledger.characters[1].details.role, [{ value: 'cleaner, double shifts, Oakland', at: null, by: 'record', source: 'player' }]);
+    });
+
+    it('replaces a value saved unlocked when it is saved and locked, or locked as it is', () => {
+        const unlocked = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), gender: 'female' }, amaAsShown(), { lock: false }).ledger;
+
+        const savedAndLocked = saveCharacterDetails(unlocked, 'c2', { ...amaAsShown(), gender: 'woman' }, { ...amaAsShown(), gender: 'female' }).ledger;
+        assert.deepEqual(savedAndLocked.characters[1].details.gender, [{ value: 'woman', at: null, by: 'user' }]);
+
+        const locked = lockCharacterDetail(unlocked, 'c2', 'gender').ledger;
+        assert.deepEqual(locked.characters[1].details.gender, [{ value: 'female', at: null, by: 'user' }]);
+    });
+
+    it('removes a value saved unlocked when its field is emptied', () => {
+        const unlocked = saveCharacterDetails(makeLedger(), 'c2', { ...amaAsShown(), role: 'night cleaner' }, amaAsShown(), { lock: false }).ledger;
+
+        const { ledger } = saveCharacterDetails(unlocked, 'c2', { ...amaAsShown(), role: '' }, { ...amaAsShown(), role: 'night cleaner' });
+
+        assert.deepEqual(ledger.characters[1].details.role, [{ value: 'cleaner, double shifts, Oakland', at: 12, messageId: 'm12' }]);
+    });
+
+    it('offers Save next to Save and lock, but only Save and lock for an unnamed relative\'s relation', () => {
+        const ledger = makeLedger();
+        ledger.characters.push({ id: 'c3', name: '', aliases: [], details: { relation: [{ value: { kind: 'father', of: 'c1' }, at: null, by: 'record' }] } });
+        const editorRowOf = (characterId, kind) => {
+            const view = sheetViewOf(characterId);
+            view.editors.set('sheet', { mode: 'detail', characterId, kind });
+            return detailRowOf(buildKnowledgeContent(ledger, [], true, view), kind);
+        };
+
+        const genderRow = editorRowOf('c2', 'gender');
+        assert.ok(genderRow.includes('data-act="save-detail" data-area="sheet" data-cid="c2" data-kind="gender" data-lock="off"'), genderRow);
+        assert.ok(genderRow.indexOf('Save and lock') < genderRow.indexOf('data-lock="off"'), 'Enter keeps Save and lock');
+        const relativeRow = editorRowOf('c3', 'relation');
+        assert.ok(textOf(relativeRow).includes('Save and lock'));
+        assert.ok(!relativeRow.includes('data-lock="off"'));
     });
 });
