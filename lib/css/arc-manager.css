@@ -38,7 +38,7 @@
 .am-summary { margin: 0; color: var(--muted); line-height: 1.45; }
 .am-summary b { color: var(--fg); font-weight: 600; }
 .am-head-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.am .menu_button { padding: 4px 10px; min-height: 30px; }
+.am .menu_button { padding: 4px 10px; min-height: 30px; gap: 6px; white-space: nowrap; }
 .am .menu_button:active { transform: translateY(1px); }
 .am .menu_button i { font-size: 13px; }
 .am-primary {
