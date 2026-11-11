@@ -56,6 +56,7 @@ Out of scope:
 | No blacklists | "Name blacklists and so on are out of scope - that can be handled in Authors Notes." |
 | All three pieces: prevention, detection, and the planner with the plan check | "yes to your recommendations", to the question "Do you want all three, or prevention only?" with the three pieces as listed under Scope |
 | Relatedness is left to the narrator | "yes to your recommendations", to "I'd leave relatedness to the narrator." |
+| A taken name inside a double or hyphenated surname is reuse; a relative shares a name only when the story says how they are related (2026-11-11) | "1. yes", to tightening the rule text after the Paragon ledger showed Vance-Geller, Vance-Grier, Vance-Horton and other compounds of taken names |
 
 ## Open questions
 
@@ -82,6 +83,7 @@ Status log:
 
 - 2026-11-04: opened after the discussion in a Fable session, right after the act-drift goals document.
 - 2026-11-04: all chapters are implemented on `integration/act-drift-npc-names` as tickets #37–#49, with a review fix pass on top. Not merged into main and not live-checked; no chapter is ticked until its last ticket closes.
+- 2026-11-11: the Paragon ledger after go-live (message 2739) showed the narrator dodging the block with double surnames built from taken names: hyphenated surnames 5% of new records before, 13% after; reuse of a taken name word 17% before, 25% after. The narrator header, the planner's rule and checklist line, and the plan check's rename rule now name the double surname and require the story to say how a relative is related.
 
 ## Chapters
 

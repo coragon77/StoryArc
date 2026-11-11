@@ -358,7 +358,7 @@ The plan's own list of characters. It can be incomplete: the secrets, triggers, 
 
 RENAMES. For each character the plan names, decide whether it is a cast member or a new character.
 - A cast member named differently from the cast (a changed surname, another spelling) is renamed to the cast's name.
-- A new character whose first name or surname is a taken name, and whom the plan does not make related to the character who has it, is renamed to a full name that uses no taken name.
+- A new character whose first name, surname or part of a double or hyphenated surname is a taken name, and whom the plan does not make related to the character who has it, is renamed to a full name that uses no taken name.
 - A name that extends a cast name by one more name ("Julian Vance" for the cast's "Vance") may be that cast member. Leave it unless the plan makes clear it is someone else.
 - Never rename a character the author's direction names.
 - Give one pair for each form the plan uses for the character: the full name, and any short form that means that character alone in this plan.

@@ -201,7 +201,7 @@ A name or alias that is one single name word ("Sterling", "Marcus"; titles and s
 _Avoid_: duplicate alias, ambiguous name
 
 **Taken name**:
-A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name unless the story makes them related to the character who has it. The narrator and the planner are told the taken names; nothing is banned outright.
+A first name, surname or codename a character in the knowledge ledger already uses, derived in code from each character's name and aliases; titles and lowercase surname particles are not names. A new character gets no taken name, not even as part of a double or hyphenated surname, unless the story makes them related to the character who has it and says how. The narrator and the planner are told the taken names; nothing is banned outright.
 _Avoid_: used name, reserved name, blacklist
 
 **Name clash**:

@@ -42,7 +42,8 @@ const EXPECTED_BLOCK = [
 /** The taken-names block for Noor and Dougal. */
 const EXPECTED_NAMES = [
     '[NAMES ALREADY IN THIS STORY — first names, surnames and codenames of characters who have appeared. '
-        + 'A new character gets none of these names, as a first name or as a surname, unless the new character is related to the character who has it. '
+        + 'A new character gets none of these names, as a first name, as a surname or as part of a double or hyphenated surname: adding a second surname does not make a taken name new. '
+        + 'Only a relative of the character who has a name may share it, and only when the story says how they are related. '
         + 'Characters already in the story keep their names.]',
     'Dougal, Noor',
 ].join('\n');
