@@ -258,6 +258,7 @@ describe('a rollback drops the reviewed marks of the items it removes', () => {
 
     it('an edit of message 3 drops the mark of the holder learned there and keeps the others', async () => {
         installExtraction([JSON.stringify({ present: ['Noor'], newCharacters: [], learned: [] })]);
+        chat[3].mes = 'Gabriel wants steel latches.';
 
         await updateKnowledgeAfterEdit(3);
 
@@ -483,7 +484,9 @@ describe('each new record has its own record id, so item keys never collide', ()
     it('two re-extractions of one message give different record ids and keys', async () => {
         installExtraction([READ_NOOR_ROLE, READ_NOOR_ROLE]);
 
+        chat[1].mes = 'Hi, Noor.';
         await updateKnowledgeAfterEdit(1);
+        chat[1].mes = 'Hello Noor.';
         await updateKnowledgeAfterEdit(1);
 
         const [first, second] = chat_metadata.story_arc.knowledge.updateLog;

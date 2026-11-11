@@ -1,7 +1,7 @@
 # SillyTavern Extension Patterns
 
 - **Coverage:** `index.js`, `lib/`
-- **Last Updated:** 2026-11-09
+- **Last Updated:** 2026-11-11
 
 Reference for SillyTavern extension development, extracted from the Story Mode extension codebase. This documents the actual working patterns, not the ST docs. Coverage points at this repo's ST-facing code: the doc's claims rot when commits change *which* ST APIs StoryArc calls — and also when SillyTavern itself changes, which git here cannot see.
 
@@ -129,6 +129,7 @@ Story Arc's knowledge tracker and pending marks roll back on these; the handlers
   - `saveMetadata()` is `saveChatConditional()`: it saves the whole chat, messages and metadata in one file, so an `extra` key written before it persists with it.
 - **`MESSAGE_SWIPED(mesId)`** fires both for a swipe that generates a new reply and for switching to a swipe that already exists, with the message's index. To tell them apart: ST sets `swipe_id` before it fires the event, and on a new swipe `swipe_id === swipes.length` (the slot the generation will fill). The new reply then arrives through `MESSAGE_RECEIVED`.
 - **`MESSAGE_EDITED(mesId)`** fires once the new text is saved into `chat[mesId]`, with the message's index.
+- **`MESSAGE_UPDATED(mesId)`** (verified in `public/script.js` and ST Copilot's `feature-chatedit-engine.js`, 2026-11-11): ST fires it after `MESSAGE_EDITED` for the same edit (`messageEditDone`) and on its own after a cancelled edit (`messageEditCancel`, text unchanged); `/message-edit`-style slash commands fire both too. An extension that rewrites `mes` itself may fire only this one: ST Copilot does (`_saveChatMessage`: `saveChat()`, then `MESSAGE_UPDATED`); LALib fires both. A listener that must see every text change listens to both and compares the text, because one ST edit fires both and a cancel fires one with no change.
 - **`CHAT_CHANGED`** fires after the chat's messages are printed, so `chat.length` is the loaded chat's length. ST copies the chat metadata whole when it branches, so state keyed to message indices past the branch point arrives with the branch and has to be dropped on load.
 
 ## Prompt Injection

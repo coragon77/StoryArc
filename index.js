@@ -249,6 +249,10 @@ export async function onMessageSwiped(messageIndex) {
  * learned from that message, keeping everything learned after it, and the
  * beats completed and the rulings stored at it (reopened and removed
  * first, see updateKnowledgeAfterEdit).
+ * Listens to MESSAGE_EDITED and MESSAGE_UPDATED: an extension that rewrites
+ * a message (ST Copilot) fires only the second. updateKnowledgeAfterEdit
+ * acts only when the text differs from the one the extraction read, so ST's
+ * own edit, which fires both, re-extracts once and a cancelled edit not at all.
  * Not awaited, like the update after a reply.
  * @param {number} messageIndex - Index of the edited message
  */
@@ -296,6 +300,7 @@ jQuery(async () => {
     eventSource.on(event_types.MESSAGE_DELETED, onMessageDeleted);
     eventSource.on(event_types.MESSAGE_SWIPED, onMessageSwiped);
     eventSource.on(event_types.MESSAGE_EDITED, onMessageEdited);
+    eventSource.on(event_types.MESSAGE_UPDATED, onMessageEdited);
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
 
     // Initialize state for current chat

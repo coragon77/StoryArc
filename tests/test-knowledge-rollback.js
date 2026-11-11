@@ -536,6 +536,99 @@ describe('updateKnowledgeAfterEdit', () => {
     });
 });
 
+describe('updateKnowledgeAfterEdit acts only on a text that changed since it was read', () => {
+    beforeEach(() => {
+        fillChat();
+        setSwitches({ tracker: true });
+        storeLedger();
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    it('ST\'s edit fires MESSAGE_EDITED and MESSAGE_UPDATED: the second event makes no call and keeps the re-extracted knowledge', async () => {
+        const sentPrompts = installExtraction([ANSWER_EDITED_MESSAGE_3, ANSWER_EDITED_MESSAGE_3]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+
+        await updateKnowledgeAfterEdit(3);
+        const second = await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(second, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[3] Ellie: Gabriel wants steel latches.']);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES]);
+    });
+
+    it('a cancelled edit of a message a reply update read (MESSAGE_UPDATED, same text) makes no call', async () => {
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 4;
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE, ANSWER_NOOR_ALONE]);
+        await updateKnowledgeAfterReply(6);
+
+        const updated = await updateKnowledgeAfterEdit(5);
+
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
+        assert.equal(sentPrompts.length, 1);
+    });
+
+    it('a rewrite by another extension after the read (MESSAGE_UPDATED alone) re-extracts the new text', async () => {
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 4;
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE, ANSWER_NOOR_ALONE]);
+        await updateKnowledgeAfterReply(6);
+        chat[5].mes = 'Thanks, Noor.';
+
+        const updated = await updateKnowledgeAfterEdit(5);
+
+        assert.equal(updated.ledgerChanged, true);
+        assert.deepEqual(sentPrompts.slice(1), ['MESSAGES:\n[5] Ellie: Thanks, Noor.']);
+    });
+
+    it('after a failed re-extraction, saving the same text again tries again', async () => {
+        const sentPrompts = installExtraction(['not an answer', ANSWER_EDITED_MESSAGE_3]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+
+        const retried = await updateKnowledgeAfterEdit(3);
+
+        assert.equal(retried.ledgerChanged, true);
+        assert.equal(sentPrompts.length, 2);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.facts, [FACT_F1, FACT_F3, FACT_F4, FACT_STEEL_LATCHES]);
+    });
+
+    it('a message edited during a reply update keeps the old text\'s hash, so its next event re-extracts', async () => {
+        chat_metadata.story_arc.knowledge.lastUpdatedAt = 4;
+        const sentPrompts = installExtraction([]);
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            sentPrompts.push(messages[0].content);
+            // Another extension rewrote message 5 while the call ran.
+            if (sentPrompts.length === 1) chat[5].mes = 'Thanks, Noor.';
+            return () => (async function* () { yield { text: ANSWER_NOOR_ALONE }; })();
+        };
+        await updateKnowledgeAfterReply(6);
+
+        await updateKnowledgeAfterEdit(5);
+
+        assert.deepEqual(sentPrompts.slice(1), ['MESSAGES:\n[5] Ellie: Thanks, Noor.']);
+    });
+
+    it('a second edit to another text re-extracts again', async () => {
+        const sentPrompts = installExtraction([ANSWER_EDITED_MESSAGE_3, ANSWER_EDITED_MESSAGE_3]);
+        chat[3].mes = 'Gabriel wants steel latches.';
+        await updateKnowledgeAfterEdit(3);
+        chat[3].mes = 'Gabriel wants steel latches, polished.';
+
+        await updateKnowledgeAfterEdit(3);
+
+        assert.deepEqual(sentPrompts, [
+            'MESSAGES:\n[3] Ellie: Gabriel wants steel latches.',
+            'MESSAGES:\n[3] Ellie: Gabriel wants steel latches, polished.',
+        ]);
+    });
+});
+
 describe('an index the answer gives outside the messages it covered', () => {
     beforeEach(() => {
         fillChat();
