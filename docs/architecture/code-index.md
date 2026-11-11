@@ -584,9 +584,12 @@ StoryArc/
 │       └── progress.css        # Layout of the progress rows; tokens, beat squares
 │                               #   and the warning come from arc-manager.css (#72)
 ├── scripts/
-│   └── rebuild-knowledge-block.mjs # Diagnosis: the knowledge block the narrator got at
-│                               #   one message of a chat file, ledger cut back to then;
-│                               #   run with node --import ./tests/setup.js
+│   ├── rebuild-knowledge-block.mjs # Diagnosis: the knowledge block the narrator got at
+│   │                           #   one message of a chat file, ledger cut back to then;
+│   │                           #   run with node --import ./tests/setup.js
+│   └── rename-characters.mjs   # Rename characters across a chat file (text, swipes,
+│                               #   extras, metadata, ledger) and its lorebooks; dry run
+│                               #   unless --commit, which backs up first
 ├── tests/
 │   ├── run.sh                  # Node.js test runner (node:test)
 │   ├── smoke.sh                # HTTP smoke tests against live ST instance

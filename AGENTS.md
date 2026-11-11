@@ -89,6 +89,9 @@ StoryArc/
 │       ├── arc-manager.css     # Arc manager styles
 │       ├── knowledge.css       # Knowledge popup styles
 │       └── progress.css        # Progress row layout
+├── scripts/
+│   ├── rebuild-knowledge-block.mjs # The knowledge block the narrator got at one message
+│   └── rename-characters.mjs   # Rename characters across a chat file and its lorebooks
 ├── tests/
 │   ├── run.sh                  # Node.js test runner
 │   ├── smoke.sh                # HTTP smoke tests
