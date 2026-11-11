@@ -1,7 +1,7 @@
 # Character Appearance in the Knowledge Ledger — Design Note
 
 - **Date:** 2026-11-11
-- **Status:** Rulings by Stefan 2026-11-11 (relayed from the StoryImage session: "Perfect, lets go with your recommendations then"; the three open questions: "yes to all three recommendations"). Part A (the appearance kinds) and Part B (the appearance search) built together on 2026-11-11. Implementation plan: `docs/plans/2026-11-11-character-appearance.md` (one deviation: `extractKnowledge` filters appearance items while the switch is off, instead of a `withAppearance` parameter on the apply).
+- **Status:** Rulings by Stefan 2026-11-11 (relayed from the StoryImage session: "Perfect, lets go with your recommendations then"; the three open questions: "yes to all three recommendations"). Part A (the appearance kinds) and Part B (the appearance search) built together on 2026-11-11; the search reads the persona, card and lorebooks too since the same day (Part B, "The definitions"). Implementation plan: `docs/plans/2026-11-11-character-appearance.md` (one deviation: `extractKnowledge` filters appearance items while the switch is off, instead of a `withAppearance` parameter on the apply).
 - **Builds on:** spec issue #50 (character details), issues #52 (restatements), #53 (rollback) and #54 (details in the popup)
 - **ADRs touched:** `0007` (Story Arc tracks who knows what), as a new amendment
 - **Glossary:** `GLOSSARY.md`: Character details (extended), Appearance (new), Refinement (new), Appearance search (new)
@@ -440,10 +440,118 @@ Rollback treats it like any story entry:
 - an edit of a hidden source message no update read keeps it, with no call
   (above).
 
+### The definitions (added 2026-11-11)
+
+The first search read only the chat. For Ellie Masters in Paragon it found
+nothing usable: she is the player's persona, her look is in the persona
+description and the lorebook, and in the chat almost every sentence names
+her next to someone else. Stefan: "I think the search should first check
+the connected lorebooks, then user character definition and then the
+chat." He accepted one change to that order ("please do"): the chat wins
+on a disagreement, since card and lorebook are written once at the start
+and the chat is where looks change. Each finding shows its source. No new
+spec or plan ("Cut down on ceremony - I think thats a minor change").
+
+What the search reads besides the chat (`findDefinitions`):
+
+- **The persona description**, when the persona's name is one of the
+  character's names (`power_user.persona_description`; `getContext()` has
+  no `persona` field).
+- **The card description** of a card character of this chat: the one
+  character, or the group's members. Cards of other chats are left out,
+  because another story may have a card of the same name.
+- **Lorebook text** from the books ST scans for this chat
+  (`fetchLorebookEntries`: chat, persona, character and global books). An
+  entry whose keys or comment name the character and that has at most
+  1,500 characters is their sheet and goes whole. Every other entry that
+  names them goes through the chat's sentence filter
+  (`findAppearancePassages`). Whole sheets go first, within 3,000
+  characters in all. Paragon's book has two entries named after Ellie, of
+  6 and 9.5 KB; the filter keeps one sentence of them.
+
+The persona and card texts are capped at 3,000 characters each. `{{user}}`
+becomes the persona's name in every text and `{{char}}` the card's name in
+a card description. Line breaks become " / ", so each text is one line.
+
+Lorebook entries written during the story (arc summaries, long-term-memory
+books) count as older than every message too. This is accepted: the chat
+they summarise is searched as well and wins over them, so they only fill a
+kind the chat never states, and the player sees the entry as the source.
+
+The prompt gets a section "Written before the story", one `[persona]`,
+`[card]` or `[lore N]` line per text. They count as older than every
+passage: on a disagreement the passage wins, and they fill in what the
+passages never state. Each item lists every text its value uses in
+`sources`: message indexes and these labels, `[2825, "persona"]`.
+
+**Every source is shown (Stefan, 2026-11-11, on the first live run).** The
+first version had one `at` per item, the newest text used. On Paragon,
+Ellie's build "about 166 cm … C-cup" came out as message #1753, whose
+passage only says "lean curve of her waist"; the height came from the
+persona. In Amy, "lithe and toned" was labelled "card" although the card
+does not say it, and it was stored as an entry no rollback removes.
+Stefan ruled: list every source a value uses, and store an accepted value
+without a message only when all its sources are definitions. As soon as
+one part comes from a chat message, store it under the newest message it
+uses, so it rolls back with that message.
+
+So a finding has `sources`: the definitions' sources ("persona", "card",
+"lorebook: <book> / <entry>") in the order sent, then the message indexes,
+oldest first. Its `at` is the newest message among them, or null when it
+uses definitions only. The finding line shows them all ("persona +
+message #2825, hidden"), and Show passage shows every text used. An answer
+with a single `at` instead of `sources` still reads as one source. A
+source that was not sent is left out; an item with none left is dropped.
+
+A finding with a message is accepted as before: the source-message check
+on its newest message, a message id for it, a story entry at it. A finding
+from definitions only skips the check and gives no message an id.
+
+It is stored as a record entry `{ value, at: null, by: 'record', source }`,
+its sources joined with " and ", the shape the relation of an unnamed
+relative already has. It holds at
+every message and no rollback removes it, since it comes from no message.
+It locks nothing, so the extraction can still change it with a change
+event. The sheet shows "From the persona" (or the card, or the lorebook
+entry), and an update line it overtook says "Changed later, from the
+persona".
+
+The sheet's button is now "Find appearance" instead of "Search the chat",
+since it reads more than the chat (Stefan, 2026-11-11).
+
+Settled in the review of the final diff:
+
+- A persona or card named by the first name alone ("Amy" for the ledger's
+  "Amy Chen"), or the other way round, is the character. Its name then also
+  names the character in lorebook text.
+- In a chat with one card, `{{char}}` in lorebook text, keys and the
+  persona becomes that card's name. A group chat has no single `{{char}}`,
+  so the macro stays.
+- A record entry accepted over story entries (a refinement) counts as the
+  newest of them in `listOfferedFindings`, so their older, vaguer values
+  are not offered back.
+- Accept checks every message a finding uses, not only the newest one.
+- Accepted as is: the forward extraction treats a record entry like any
+  current value, so a different chat value without a change event is a
+  restatement and is ignored. Letting it replace a definition would let a
+  vague "red hair" overwrite the card's "fiery red curls". The search
+  still offers the chat's value over a definition.
+
+`listOfferedFindings` counts a definition, as a finding or as the current
+entry, as older than every message:
+
+- A definition finding is offered for an unknown kind, or when it refines
+  the story's value.
+- A chat finding that differs from a definition entry is offered.
+- A definition finding that differs from another definition entry is not
+  offered unless it refines it.
+
 ### Cost
 
 The search costs one call per press, of about the passage budget plus the
-prompt: roughly 2.5k tokens in, a few hundred out. It never runs on its own.
+prompt: roughly 2.5k tokens in, a few hundred out. The definitions add up
+to 3,000 characters per persona or card text and 3,000 for the lorebooks,
+so at most about 2.5k tokens more. It never runs on its own.
 
 ## Changes outside the code
 

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
     acceptAppearanceFinding, buildKnowledgeContent, createKnowledgeView, findSourceMessageRefusal, listChangeLines, lockCharacterDetail, saveCharacterDetails,
 } from '../lib/ui/knowledge-popup.js';
+import { dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 
 /**
  * Priya and Ellie: the story said Priya's hair is dark at message 6 and her
@@ -72,7 +73,7 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
         assert.equal(textOf(detailRowOf(html, 'eyes')), 'Eyes brown Locked by you · the story says the same (message #3) Edit Unlock');
         assert.equal(textOf(detailRowOf(html, 'ethnicity')), 'Ethnicity unknown The story has not stated it. Set');
         for (const kind of ['skin', 'build', 'features']) assert.ok(html.includes(`data-detail="${kind}"`), kind);
-        assert.ok(textOf(html).includes('Search the chat'));
+        assert.ok(textOf(html).includes('Find appearance'));
     });
 
     it('puts the appearance rows after the other details, so D still lands on the first detail row', () => {
@@ -108,8 +109,8 @@ describe('buildKnowledgeContent: findings of the appearance search', () => {
     function viewWithFindings() {
         const view = sheetViewOf('c1');
         view.appearanceFindings.c1 = [
-            { kind: 'hair', value: 'dark glossy curls', at: 2, passage: 'Priya pushed her dark glossy curls back.' },
-            { kind: 'build', value: 'five-two, slight', at: 5, passage: 'Priya, five-two and slight, ducked under the tape.' },
+            { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passage: 'Priya pushed her dark glossy curls back.' },
+            { kind: 'build', value: 'five-two, slight', at: 5, sources: [5], passage: 'Priya, five-two and slight, ducked under the tape.' },
         ];
         return view;
     }
@@ -119,6 +120,19 @@ describe('buildKnowledgeContent: findings of the appearance search', () => {
 
         assert.equal(textOf(findingOf(html, 'hair')), 'Hair dark glossy curls · message #2, hidden Show passage Accept Skip');
         assert.equal(textOf(findingOf(html, 'build')), 'Build five-two, slight · message #5 Show passage Accept Skip');
+    });
+
+    it('shows a finding from a definition with its source', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [
+            { kind: 'skin', value: 'warm brown', at: null, sources: ['lorebook: Paragon / Priya'], passage: 'Skin: warm brown' },
+            { kind: 'eyes', value: 'dark brown, wide-set', at: 4, sources: ['persona', 2, 4], passage: 'Priya has wide-set eyes. … Her dark eyes … Brown eyes' },
+        ];
+
+        const html = buildKnowledgeContent(makeLedger(), makeChat(), true, view, true);
+
+        assert.equal(textOf(findingOf(html, 'skin')), 'Skin warm brown · lorebook: Paragon / Priya Show passage Accept Skip');
+        assert.equal(textOf(findingOf(html, 'eyes')), 'Eyes dark brown, wide-set · persona + message #2, hidden + message #4 Show passage Accept Skip');
     });
 
     it('shows the passage only once it is asked for', () => {
@@ -162,6 +176,16 @@ describe('listChangeLines: appearance detail lines', () => {
 
         assert.deepEqual(detailKindsOf(listChangeLines(ledgerWithUpdate(), true, true)), ['role', 'hair']);
         assert.deepEqual(detailKindsOf(listChangeLines(ledgerWithUpdate(), true, false)), ['role']);
+    });
+
+    it('says a later value from the persona came from the persona, not from a message', () => {
+        const ledger = ledgerWithUpdate();
+        ledger.characters[0].details.hair.push({ value: 'dark glossy curls', at: null, by: 'record', source: 'persona' });
+
+        const text = textOf(buildKnowledgeContent(ledger, [], true, createKnowledgeView(), true));
+
+        assert.ok(text.includes('Changed later, from the persona, to dark glossy curls.'), text);
+        assert.ok(!text.includes('#null'));
     });
 });
 
@@ -255,7 +279,7 @@ describe('buildKnowledgeContent: the message search lists appearance the story s
 
 describe('acceptAppearanceFinding', () => {
     it('appends an older refining finding after the newer entry, so it is current', () => {
-        const finding = { kind: 'hair', value: 'dark glossy curls', at: 2, passage: 'Priya pushed her dark glossy curls back.' };
+        const finding = { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passage: 'Priya pushed her dark glossy curls back.' };
 
         const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', finding, 'm2');
 
@@ -271,6 +295,40 @@ describe('acceptAppearanceFinding', () => {
 
         assert.deepEqual(ledger.characters[0].details.build, [{ value: 'five-two, slight', at: 5, messageId: 'm5' }]);
         assert.deepEqual(ledger.characters[0].details.role, [{ value: 'nurse', at: 1, messageId: 'm1' }]);
+    });
+
+    it('stores a finding from a definition as a record entry with its source, which a rollback keeps and the sheet names', () => {
+        const finding = { kind: 'build', value: 'five-two', at: null, sources: ['persona', 'card'], passage: 'Priya is five-two. … Priya is slight.' };
+
+        const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', finding);
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[0].details.build, [{ value: 'five-two', at: null, by: 'record', source: 'persona and card' }]);
+
+        dropKnowledgeFrom(ledger, 0);
+        assert.deepEqual(ledger.characters[0].details.build, [{ value: 'five-two', at: null, by: 'record', source: 'persona and card' }]);
+        const html = buildKnowledgeContent(ledger, [], true, sheetViewOf('c1'), true);
+        assert.equal(textOf(detailRowOf(html, 'build')), 'Build five-two From the persona and card Edit Lock');
+    });
+
+    it('shows a lorebook source on the sheet as text, not as markup', () => {
+        const finding = { kind: 'build', value: 'slight', at: null, sources: ['lorebook: Book / <img src=x>'], passage: 'Priya is slight.' };
+
+        const { ledger } = acceptAppearanceFinding(makeLedger(), 'c1', finding);
+        const html = buildKnowledgeContent(ledger, [], true, sheetViewOf('c1'), true);
+
+        assert.ok(detailRowOf(html, 'build').includes('From the lorebook: Book / &lt;img src=x&gt;'));
+        assert.ok(!html.includes('<img src=x>'));
+    });
+
+    it('stores a finding that also uses a message as a story entry at that message, which rolls back with it', () => {
+        const finding = { kind: 'build', value: 'five-two, slight', at: 5, sources: ['persona', 5], passage: 'Priya is five-two. … Priya ducked under the tape.' };
+
+        const { ledger, error } = acceptAppearanceFinding(makeLedger(), 'c1', finding, 'm5');
+        assert.equal(error, null);
+        assert.deepEqual(ledger.characters[0].details.build, [{ value: 'five-two, slight', at: 5, messageId: 'm5' }]);
+
+        dropKnowledgeFrom(ledger, 5);
+        assert.equal(ledger.characters[0].details.build, undefined);
     });
 
     it('refuses a locked kind', () => {
@@ -316,17 +374,29 @@ describe('acceptAppearanceFinding', () => {
 
 describe('findSourceMessageRefusal', () => {
     it('lets a finding through while its message still has the text the search read', () => {
-        assert.equal(findSourceMessageRefusal(makeChat(), { at: 2, sourceText: 'message 2' }), null);
+        assert.equal(findSourceMessageRefusal(makeChat(), { at: 2, sources: [2], sourceTexts: { 2: 'message 2' } }), null);
     });
 
     it('refuses a finding whose message is gone', () => {
-        assert.equal(findSourceMessageRefusal(makeChat(), { at: 9, sourceText: 'message 9' }), 'Message #9 is no longer in the chat; search again.');
+        assert.equal(findSourceMessageRefusal(makeChat(), { at: 9, sources: [9], sourceTexts: { 9: 'message 9' } }), 'Message #9 is no longer in the chat; search again.');
+    });
+
+    it('refuses a finding when an older one of its messages changed, not only its newest', () => {
+        const chatMessages = makeChat();
+        chatMessages[1].mes = 'message 1, edited';
+
+        const finding = { at: 4, sources: ['persona', 1, 4], sourceTexts: { 1: 'message 1', 4: 'message 4' } };
+        assert.equal(findSourceMessageRefusal(chatMessages, finding), 'Message #1 changed since the search; search again.');
+    });
+
+    it('lets a finding from definitions only through: it has no message', () => {
+        assert.equal(findSourceMessageRefusal([], { at: null, sources: ['persona', 'card'], sourceTexts: {} }), null);
     });
 
     it('refuses a finding whose index now holds another text: an edit, or a deletion moved the messages', () => {
         const chatMessages = makeChat();
         chatMessages.splice(1, 1);
 
-        assert.equal(findSourceMessageRefusal(chatMessages, { at: 2, sourceText: 'message 2' }), 'Message #2 changed since the search; search again.');
+        assert.equal(findSourceMessageRefusal(chatMessages, { at: 2, sources: [2], sourceTexts: { 2: 'message 2' } }), 'Message #2 changed since the search; search again.');
     });
 });

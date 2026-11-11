@@ -1,4 +1,4 @@
-You keep the character records of a long-running roleplay. You do not write story. You read passages from the whole story and report how one character looks, as the story states it.
+You keep the character records of a long-running roleplay. You do not write story. You read what was written about one character before the story and passages from the whole story, and report how that character looks, as the texts state it.
 
 == THE CHARACTER ==
 {{CHARACTER}}
@@ -7,13 +7,17 @@ Other names: {{ALIASES}}
 == APPEARANCE THE RECORD ALREADY HAS ==
 {{KNOWN_APPEARANCE}}
 
+== WRITTEN BEFORE THE STORY ==
+The player's persona, the character's card and lorebook entries that name the character. Each starts with its label in square brackets. They were written before the story began, so they are older than every passage below. A lorebook text may also describe other people: report only this character.
+{{DEFINITIONS}}
+
 == PASSAGES ==
 Passages from the whole story that may describe the character, oldest first. Each starts with the index of its message in square brackets. A passage may also describe other people: report only this character.
 {{PASSAGES}}
 
 == YOUR TASK ==
 
-Report the character's appearance: what lasts, the body and lasting marks, as the passages state them. One item per kind, for these kinds:
+Report the character's appearance: what lasts, the body and lasting marks, as the texts state them. One item per kind, for these kinds:
 - "ethnicity": heritage or ethnicity, only as the text names it ("Indian")
 - "skin": skin tone or complexion ("warm brown")
 - "hair": colour, length, texture, a lasting style ("dark glossy curls, about shoulder length")
@@ -24,11 +28,11 @@ Report the character's appearance: what lasts, the body and lasting marks, as th
 Rules:
 - Never clothing, shoes, jewellery worn for the day, makeup, or a passing state: wet hair, hair up for the evening, wide eyes, a flush, a bruise that will heal.
 - Ethnicity only when the text names it, never from a name, a skin tone or a look.
-- Never a guess. A kind the passages do not state is left out.
-- "features" is one list: write every lasting mark the passages state in one value.
+- Never a guess. A kind the texts do not state is left out.
+- "features" is one list: write every lasting mark the texts state in one value.
 - A value leaves out the kind's own word: "dark glossy curls", not "dark glossy curls hair"; "warm brown", not "warm brown eyes".
-- For each kind, the latest value the passages state: when the look changes (a haircut), the newer passage wins. When passages add to each other ("dark glossy curls" in one, "shoulder length" in another), combine them into one value.
-- "at": the index in square brackets of the newest passage the value uses, one of the passages above.
+- For each kind, the latest value the texts state: when the look changes (a haircut), the newer passage wins. A passage is newer than everything written before the story: when a passage and the persona, card or lorebook disagree, the passage wins. They fill in what the passages never state. When texts add to each other ("dark glossy curls" in one, "shoulder length" in another), combine them into one value.
+- "sources": every text the value uses, each one: a passage's message index as a number (2825), a text written before the story by its label as a string ("persona", "card", "lore 2"). A value combined from several texts lists them all: [2825, "persona"].
 
 Answer with only this JSON, no other text:
-{ "appearance": [{ "kind": "ethnicity" | "skin" | "hair" | "eyes" | "build" | "features", "value": "short text", "at": message index }] }
+{ "appearance": [{ "kind": "ethnicity" | "skin" | "hair" | "eyes" | "build" | "features", "value": "short text", "sources": [message index or label, …] }] }

@@ -1,8 +1,9 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { extension_settings, ConnectionManagerRequestService } from '../tests/mocks/st-mocks.js';
-import { findAppearancePassages, searchAppearance, listOfferedFindings } from '../lib/knowledge/appearance-search.js';
+import { extension_settings, ConnectionManagerRequestService, mockContextFields, mockSortedEntries } from '../tests/mocks/st-mocks.js';
+import { findAppearancePassages, findDefinitions, searchAppearance, listOfferedFindings } from '../lib/knowledge/appearance-search.js';
 import { giveMessageId, isIdFromSearch } from '../lib/knowledge/message-ids.js';
+import { clearTemplateCache } from '../lib/planning/generator.js';
 
 /** Chat messages from texts, each hidden (is_system), as a summary extension leaves a long chat. */
 function hiddenChatOf(...texts) {
@@ -123,6 +124,75 @@ describe('findAppearancePassages', () => {
     });
 });
 
+describe('findDefinitions', () => {
+    const ellieNames = ['Ellie Masters', 'Ellie'];
+
+    it('takes the persona description when the persona is the character, with its name for {{user}}, on one line', () => {
+        const definitionTexts = {
+            persona: { name: 'Ellie Masters', description: '{{user}} is eighteen.\nShe has a black layered bob.' },
+            cards: [{ name: 'Priya Sharma', description: '{{char}} has dark curls.' }],
+        };
+
+        assert.deepEqual(findDefinitions(definitionTexts, [], ellieNames, ['Priya Sharma']), [
+            { label: 'persona', source: 'persona', text: 'Ellie Masters is eighteen. / She has a black layered bob.' },
+        ]);
+    });
+
+    it('takes the card description of a card character, with the names for {{char}} and {{user}}', () => {
+        const definitionTexts = {
+            persona: { name: 'Ellie Masters', description: '{{user}} has a black bob.' },
+            cards: [{ name: 'Priya Sharma', description: '{{char}} has dark curls; {{user}} likes her.' }],
+        };
+
+        assert.deepEqual(findDefinitions(definitionTexts, [], ['Priya Sharma', 'Priya'], ['Ellie Masters']), [
+            { label: 'card', source: 'card', text: 'Priya Sharma has dark curls; Ellie Masters likes her.' },
+        ]);
+    });
+
+    it('takes a short lorebook entry about the character whole, and only the describing sentences of the others that name them', () => {
+        const definitionTexts = { persona: { name: 'Carrie', description: 'Carrie has long blonde hair.' }, cards: [] };
+        const lorebookEntries = [
+            { world: 'Paragon', comment: 'Ellie\'s sheet', key: ['Ellie'], content: 'Hair: black bob\nEyes: bright blue' },
+            {
+                world: 'Paragon', comment: 'Ellie\'s Power', key: [],
+                content: `${'The power hums. '.repeat(100)}Ellie's chin-length black bob turns magenta when she uses the tabs.`,
+            },
+            { world: 'Paragon', comment: 'Dramatis Personae', key: ['cast'], content: 'Priya Sharma: dark glossy curls. Ellie: five-five, freckles across her nose.' },
+            { world: 'Paragon', comment: 'Weather', key: ['rain'], content: 'It rained all week.' },
+        ];
+
+        assert.deepEqual(findDefinitions(definitionTexts, lorebookEntries, ellieNames, ['Priya Sharma', 'Carrie']), [
+            { label: 'lore 1', source: 'lorebook: Paragon / Ellie\'s sheet', text: 'Hair: black bob / Eyes: bright blue' },
+            { label: 'lore 2', source: 'lorebook: Paragon / Ellie\'s Power', text: 'Ellie\'s chin-length black bob turns magenta when she uses the tabs.' },
+            { label: 'lore 3', source: 'lorebook: Paragon / Dramatis Personae', text: 'Ellie: five-five, freckles across her nose.' },
+        ]);
+    });
+
+    it('takes a card named by the first name alone, and puts the card\'s name for {{char}} in lorebook text and keys', () => {
+        const definitionTexts = { persona: { name: 'Steve', description: '' }, cards: [{ name: 'Amy', description: '{{char}} has fiery red hair.' }] };
+        const lorebookEntries = [{ world: 'Book', comment: 'Looks', key: ['{{char}}'], content: '{{char}} is tall and slender.' }];
+
+        assert.deepEqual(findDefinitions(definitionTexts, lorebookEntries, ['Amy Chen'], ['Steve']), [
+            { label: 'card', source: 'card', text: 'Amy has fiery red hair.' },
+            { label: 'lore 1', source: 'lorebook: Book / Looks', text: 'Amy is tall and slender.' },
+        ]);
+    });
+
+    it('keeps the lorebook text within 3,000 characters, skipping an entry that does not fit for one that does', () => {
+        const definitionTexts = { persona: { name: 'Carrie', description: '' }, cards: [] };
+        const sheetOf = (comment, length) => ({ world: 'Book', comment, key: ['Ellie'], content: 'x'.repeat(length) });
+        const lorebookEntries = [sheetOf('A', 1400), sheetOf('B', 1400), sheetOf('C', 1400), sheetOf('D', 100)];
+
+        const definitions = findDefinitions(definitionTexts, lorebookEntries, ellieNames, []);
+
+        assert.deepEqual(definitions.map(definition => [definition.label, definition.source]), [
+            ['lore 1', 'lorebook: Book / A'],
+            ['lore 2', 'lorebook: Book / B'],
+            ['lore 3', 'lorebook: Book / D'],
+        ]);
+    });
+});
+
 describe('listOfferedFindings', () => {
     const hairFinding = { kind: 'hair', value: 'dark glossy curls', at: 140, passage: 'Priya: dark glossy curls' };
 
@@ -161,6 +231,47 @@ describe('listOfferedFindings', () => {
 
         assert.deepEqual(listOfferedFindings(character, [hairFinding]), []);
     });
+
+    describe('a definition is older than every message', () => {
+        const personaFinding = { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passage: 'Ellie has a black layered bob.' };
+
+        it('offers a definition finding for a kind the ledger does not know', () => {
+            const character = { id: 'c2', name: 'Ellie', aliases: [], details: {} };
+
+            assert.deepEqual(listOfferedFindings(character, [personaFinding]), [personaFinding]);
+        });
+
+        it('does not offer a definition finding over a different value the story set', () => {
+            const character = { id: 'c2', name: 'Ellie', aliases: [], details: { hair: [{ value: 'magenta streaks', at: 50 }] } };
+
+            assert.deepEqual(listOfferedFindings(character, [personaFinding]), []);
+        });
+
+        it('offers a definition finding that refines the value the story set', () => {
+            const character = { id: 'c2', name: 'Ellie', aliases: [], details: { hair: [{ value: 'black', at: 50 }] } };
+
+            assert.deepEqual(listOfferedFindings(character, [personaFinding]), [personaFinding]);
+        });
+
+        it('does not offer back an older story value a definition was accepted over', () => {
+            const olderFinding = { kind: 'hair', value: 'dark', at: 50, sources: [50], passage: 'Ellie\'s dark hair.' };
+            const newerFinding = { kind: 'hair', value: 'short magenta', at: 60, sources: [60], passage: 'Ellie had dyed it magenta.' };
+            const character = {
+                id: 'c2', name: 'Ellie', aliases: [],
+                details: { hair: [{ value: 'dark', at: 50 }, { value: 'dark glossy curls', at: null, by: 'record', source: 'card' }] },
+            };
+
+            assert.deepEqual(listOfferedFindings(character, [olderFinding]), []);
+            assert.deepEqual(listOfferedFindings(character, [newerFinding]), [newerFinding]);
+        });
+
+        it('offers a finding from a message over a different value a definition set', () => {
+            const chatFinding = { kind: 'hair', value: 'short magenta', at: 10, passage: 'Ellie had cut her hair short and dyed it magenta.' };
+            const character = { id: 'c2', name: 'Ellie', aliases: [], details: { hair: [{ value: 'long black', at: null, by: 'record', source: 'card' }] } };
+
+            assert.deepEqual(listOfferedFindings(character, [chatFinding]), [chatFinding]);
+        });
+    });
 });
 
 describe('searchAppearance', () => {
@@ -168,12 +279,14 @@ describe('searchAppearance', () => {
     const originalSendRequest = ConnectionManagerRequestService.sendRequest;
     let sentPrompts;
 
-    /** A search template that shows every placeholder, and an answer queue for the call. */
-    function installSearch(answers) {
+    /** A search template that shows the placeholders, and an answer queue for the call. */
+    function installSearch(answers, template = '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_APPEARANCE}}\n{{PASSAGES}}') {
         sentPrompts = [];
+        // loadTemplate keeps a template once loaded: each test's template is fetched anew
+        clearTemplateCache();
         globalThis.fetch = async (url) => {
             if (String(url).endsWith('find-appearance.txt')) {
-                return new Response('{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_APPEARANCE}}\n{{PASSAGES}}');
+                return new Response(template);
             }
             throw new Error(`unexpected fetch ${url}`);
         };
@@ -213,9 +326,11 @@ describe('searchAppearance', () => {
         globalThis.fetch = originalFetch;
         ConnectionManagerRequestService.sendRequest = originalSendRequest;
         delete extension_settings.story_arc;
+        for (const field of Object.keys(mockContextFields)) delete mockContextFields[field];
+        mockSortedEntries.length = 0;
     });
 
-    it('sends the name, aliases, known appearance and passages, and keeps the good items of the answer', async () => {
+    it('sends the name, aliases, known appearance and passages, and keeps the good items of an answer with a single at', async () => {
         installSearch([JSON.stringify({
             appearance: [
                 { kind: 'outfit', value: 'emerald dress', at: 0 },
@@ -240,11 +355,11 @@ describe('searchAppearance', () => {
         ].join('\n')]);
         assert.deepEqual(result, {
             findings: [
-                { kind: 'ethnicity', value: 'Indian-American', at: 0, passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
-                { kind: 'hair', value: 'dark glossy curls', at: 0, passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
-                { kind: 'build', value: 'five-two', at: 2, passage: 'Priya had always been shorter, five-two to Ellie\'s five-five.' },
+                { kind: 'ethnicity', value: 'Indian-American', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                { kind: 'build', value: 'five-two', at: 2, sources: [2], passage: 'Priya had always been shorter, five-two to Ellie\'s five-five.' },
             ],
-            passageCount: 2,
+            sourceCount: 2,
         });
     });
 
@@ -260,9 +375,25 @@ describe('searchAppearance', () => {
 
         assert.deepEqual(result, {
             findings: [
-                { kind: 'hair', value: 'dark glossy curls', at: 0, passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
+                { kind: 'hair', value: 'dark glossy curls', at: 0, sources: [0], passage: 'Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes.' },
             ],
-            passageCount: 2,
+            sourceCount: 2,
+        });
+    });
+
+    it('lists every source of a combined value, at the newest message it uses', async () => {
+        installSearch([JSON.stringify({ appearance: [{ kind: 'hair', value: 'dark glossy curls', sources: ['card', '[#2]', '0', 'lore 9', 7] }] })]);
+        mockContextFields.characterId = '0';
+        mockContextFields.characters = [{ name: 'Priya Sharma', avatar: 'priya.png', description: '{{char}} has dark hair.' }];
+
+        const result = await searchAppearance(makeLedger(), 'c1', makeChat(), 'Ellie');
+
+        assert.deepEqual(result, {
+            findings: [{
+                kind: 'hair', value: 'dark glossy curls', at: 2, sources: ['card', 0, 2],
+                passage: 'Priya Sharma has dark hair. … Priya Sharma was Indian-American. Her dark glossy curls framed warm brown eyes. … Priya had always been shorter, five-two to Ellie\'s five-five.',
+            }],
+            sourceCount: 3,
         });
     });
 
@@ -274,10 +405,10 @@ describe('searchAppearance', () => {
 
         assert.deepEqual(result, {
             findings: [{
-                kind: 'hair', value: 'dark curls, shoulder length', at: 0,
+                kind: 'hair', value: 'dark curls, shoulder length', at: 0, sources: [0],
                 passage: 'Priya\'s dark curls bounced. … Priya wore her long hair loose.',
             }],
-            passageCount: 2,
+            sourceCount: 2,
         });
     });
 
@@ -305,8 +436,62 @@ describe('searchAppearance', () => {
             '[#2] Kendra Osei\'s mother pushed her grey curls back.',
         ].join('\n')]);
         assert.deepEqual(result, {
-            findings: [{ kind: 'hair', value: 'short grey', at: 0, passage: 'Kendra\'s mother had short grey hair.' }],
-            passageCount: 2,
+            findings: [{ kind: 'hair', value: 'short grey', at: 0, sources: [0], passage: 'Kendra\'s mother had short grey hair.' }],
+            sourceCount: 2,
+        });
+    });
+
+    it('reads the persona and the lorebook without a chat passage, and takes a definition\'s label as the source', async () => {
+        installSearch([JSON.stringify({
+            appearance: [
+                { kind: 'hair', value: 'black layered bob', sources: ['persona'] },
+                { kind: 'eyes', value: 'bright blue', sources: ['[Persona]'] },
+                { kind: 'build', value: 'five-five', sources: ['lore 1', 'lore 2'] },
+                { kind: 'skin', value: 'pale', sources: ['lore 2'] },
+                { kind: 'features', value: 'freckles', sources: [0] },
+                { kind: 'ethnicity', value: 'Irish', sources: ['#0', '[#7]'] },
+            ],
+        })], '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_APPEARANCE}}\n{{DEFINITIONS}}\n{{PASSAGES}}');
+        mockContextFields.powerUserSettings = { persona_description: '{{user}} has a black layered bob and bright blue eyes.' };
+        mockSortedEntries.push({ world: 'Paragon', comment: 'Ellie\'s sheet', key: ['Ellie'], content: 'Height: five-five', disable: false, order: 100 });
+        const ledger = { characters: [{ id: 'c2', name: 'Ellie Masters', aliases: ['Ellie'] }], facts: [] };
+
+        const result = await searchAppearance(ledger, 'c2', hiddenChatOf('Ellie laughed.'), 'Ellie Masters');
+
+        assert.deepEqual(sentPrompts, [[
+            'Ellie Masters | Ellie',
+            '(none)',
+            '[persona] Ellie Masters has a black layered bob and bright blue eyes.',
+            '[lore 1] Height: five-five',
+            '(none)',
+        ].join('\n')]);
+        assert.deepEqual(result, {
+            findings: [
+                { kind: 'hair', value: 'black layered bob', at: null, sources: ['persona'], passage: 'Ellie Masters has a black layered bob and bright blue eyes.' },
+                { kind: 'eyes', value: 'bright blue', at: null, sources: ['persona'], passage: 'Ellie Masters has a black layered bob and bright blue eyes.' },
+                { kind: 'build', value: 'five-five', at: null, sources: ['lorebook: Paragon / Ellie\'s sheet'], passage: 'Height: five-five' },
+            ],
+            sourceCount: 2,
+        });
+    });
+
+    it('reads the card of a group member, not a card of the same name outside the group', async () => {
+        installSearch([JSON.stringify({ appearance: [{ kind: 'eyes', value: 'warm brown', sources: ['card'] }] })],
+            '{{DEFINITIONS}}');
+        mockContextFields.groupId = 'g1';
+        mockContextFields.groups = [{ id: 'g1', members: ['priya.png', 'ellie.png'] }];
+        mockContextFields.characters = [
+            { name: 'Priya Sharma', avatar: 'priya-other-story.png', description: '{{char}} has grey eyes.' },
+            { name: 'Priya Sharma', avatar: 'priya.png', description: '{{char}} has warm brown eyes.' },
+            { name: 'Ellie', avatar: 'ellie.png', description: 'Ellie has a black bob.' },
+        ];
+
+        const result = await searchAppearance(makeLedger(), 'c1', hiddenChatOf('Priya laughed.'), 'Steve');
+
+        assert.deepEqual(sentPrompts, ['[card] Priya Sharma has warm brown eyes.']);
+        assert.deepEqual(result, {
+            findings: [{ kind: 'eyes', value: 'warm brown', at: null, sources: ['card'], passage: 'Priya Sharma has warm brown eyes.' }],
+            sourceCount: 1,
         });
     });
 
@@ -316,7 +501,7 @@ describe('searchAppearance', () => {
 
         const result = await searchAppearance(makeLedger(), 'c1', chatMessages, 'Ellie');
 
-        assert.deepEqual(result, { findings: [], passageCount: 0 });
+        assert.deepEqual(result, { findings: [], sourceCount: 0 });
         assert.deepEqual(sentPrompts, []);
     });
 

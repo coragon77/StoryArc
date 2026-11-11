@@ -369,7 +369,9 @@ StoryArc/
 │   │   │                       #   ledger, planning/beat-completion.js and ui/knowledge-popup.js
 │   │   ├── appearance-search.js # The appearance search (2026-11-11), in the order it
 │   │   │                       #   runs: searchAppearance(ledger, characterId, chat,
-│   │   │                       #   persona) → findAppearancePassages (whole chat, hidden
+│   │   │                       #   persona) → findDefinitions (persona, card, lorebook
+│   │   │                       #   text that names them; labels persona/card/lore N)
+│   │   │                       #   → findAppearancePassages (whole chat, hidden
 │   │   │                       #   messages included, ≤3 per feature, 6000 chars), the
 │   │   │                       #   find-appearance.txt call, the parse (bad items dropped),
 │   │   │                       #   listOfferedFindings(character, findings) (unknown,
@@ -903,7 +905,8 @@ lib/injection/
 
 lib/knowledge/
 ├── message-ids.js (imports: /scripts/utils.js uuidv4)
-├── appearance-search.js (imports: core/constants.js APPEARANCE_KINDS, planning/generator.js
+├── appearance-search.js (imports: /scripts/extensions.js getContext, core/constants.js
+│                APPEARANCE_KINDS, context/harvester.js fetchLorebookEntries, planning/generator.js
 │                callLlm + templates, planning/validation.js parseLlmJson, ledger.js
 │                characterDisplayName + currentDetailText + isAppearanceRefinement +
 │                isDetailLocked + isSameDetailValue + isSharedNameWord +

@@ -25,12 +25,15 @@ export function getRequestHeaders() { return {}; }
 
 // --- /scripts/extensions.js mocks ---
 export const extension_settings = {};
+/** Fields a test lays over the context getContext returns — clear it in the test that sets it. */
+export const mockContextFields = {};
 export function getContext() {
     return {
         name1: 'TestUser',
         persona: 'A test persona',
         characters: [],
         characterId: null,
+        ...mockContextFields,
     };
 }
 
