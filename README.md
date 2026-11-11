@@ -29,7 +29,7 @@ Open the **Extensions** drawer and expand **Story Arc**.
 1. **Enable Story Arc.**
 2. **Generation profile**: the Connection Manager profile that plans arcs. "Current API" uses the chat's own. Planning needs a capable model and a long response length.
 3. **Create arc preset** (recommended): creates a `Story Arc Generation` preset and connection profile tuned for planning. Select it as the generation profile afterwards.
-4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it.
+4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it, and **Appearance** adds how each character looks.
 
 The arc preset holds two entries you toggle in SillyTavern's prompt manager. Save the preset after changing them.
 
@@ -114,10 +114,14 @@ With **Character details** on, it also records what the story states about each 
 
 A stated detail changes only when the story shows the change happening.
 
+With **Appearance** on as well, it also records how each character looks: ethnicity, skin, hair, eyes, build, and lasting features such as scars, tattoos, freckles or glasses. Never clothes. A fuller description replaces a vaguer one, and a new haircut replaces the old one. [Story Image](https://github.com/coragon77/StoryImage) uses this to draw each character the way the story describes them.
+
 **Knowledge** opens the Knowledge popup, where you fix what the tracker got wrong:
 
 - **What changed** lists the latest updates, each with its fix: **Move to…**, **Not true**, **Same person as…**, **Not their name**. **Fine** marks a line as reviewed.
-- **Cast & facts** lets you find, edit, add, merge or delete characters and facts. A detail you edit or **Lock** is no longer changed by the tracker.
+- **Cast & facts** lets you find, edit, add, merge or delete characters and facts.
+- **Find details** on a character fills in what the tracker never recorded, for example for someone introduced long before you turned it on. It reads the whole chat, hidden messages included, your persona, the character card and the lorebook, and proposes each detail with where it found it. You accept or skip each one.
+- A detail you type in yourself is saved with **Save**, and the story can still change it later, or with **Save and lock**, and then it stays as you wrote it. **Lock** keeps a recorded detail fixed the same way.
 - **Map** shows the cast in rings around the current scene. Drag one character onto another to merge them.
 
 Every edit can be undone while the popup is open.
