@@ -14,7 +14,7 @@ function createFakeJquery() {
     const handlers = [];
     const textById = {};
     const propsById = {};
-    const trackerDependentIds = ['#story-arc-knowledge-details', '#story-arc-knowledge-interval', '#story-arc-knowledge-btn', '#story-arc-knowledge-btn-hint'];
+    const trackerDependentIds = ['#story-arc-knowledge-details', '#story-arc-knowledge-appearance', '#story-arc-knowledge-interval', '#story-arc-knowledge-btn', '#story-arc-knowledge-btn-hint'];
 
     const documentChain = {
         on(events, selector, handler) {
@@ -129,7 +129,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false, appearance: false });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -139,7 +139,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-interval', { value: '4' });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4, characterDetails: false, appearance: false });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -154,7 +154,7 @@ describe('knowledge tracker controls in the settings panel', () => {
             assert.equal(intervalField.value, '2', `input ${JSON.stringify(badInput)}`);
         }
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2, characterDetails: false, appearance: false });
         assert.equal(mockCalls.saveSettingsDebounced, 0);
     });
 
@@ -175,7 +175,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-details', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: true });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: true, appearance: false });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -206,6 +206,7 @@ describe('settings that depend on the knowledge tracker', () => {
 
         assert.deepEqual(fake.propsById, {
             '#story-arc-knowledge-details': { disabled: true },
+            '#story-arc-knowledge-appearance': { disabled: true },
             '#story-arc-knowledge-interval': { disabled: true },
             '#story-arc-knowledge-btn': { disabled: true },
             '#story-arc-knowledge-btn-hint': { hidden: false },
@@ -221,6 +222,8 @@ describe('settings that depend on the knowledge tracker', () => {
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: true });
         assert.deepEqual(fake.propsById, {
             '#story-arc-knowledge-details': { disabled: false },
+            // Character details are still off.
+            '#story-arc-knowledge-appearance': { disabled: true },
             '#story-arc-knowledge-interval': { disabled: false },
             '#story-arc-knowledge-btn': { disabled: false },
             '#story-arc-knowledge-btn-hint': { hidden: true },
@@ -229,10 +232,72 @@ describe('settings that depend on the knowledge tracker', () => {
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: false });
         assert.deepEqual(fake.propsById, {
             '#story-arc-knowledge-details': { disabled: true },
+            '#story-arc-knowledge-appearance': { disabled: true },
             '#story-arc-knowledge-interval': { disabled: true },
             '#story-arc-knowledge-btn': { disabled: true },
             '#story-arc-knowledge-btn-hint': { hidden: false },
         });
+    });
+});
+
+describe('the appearance switch in the settings panel', () => {
+    it('comes right after the character details switch, off for a settings file from before it', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true } };
+        loadSettings();
+
+        const html = settingsPanel.renderSettingsPanel();
+
+        assert.match(html, /<span>Character details<\/span>\s*<\/label>\s*<label class="checkbox_label" title="[^"]*never clothing[^"]*StoryImage[^"]*">\s*<input type="checkbox" id="story-arc-knowledge-appearance" \/>\s*<span>Appearance<\/span>/);
+    });
+
+    it('shows a stored switch checked', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true, appearance: true } };
+        loadSettings();
+
+        assert.match(settingsPanel.renderSettingsPanel(), /<input type="checkbox" id="story-arc-knowledge-appearance" checked \/>/);
+    });
+
+    it('is rendered disabled while character details are off', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: false, appearance: true } };
+        loadSettings();
+
+        assert.match(settingsPanel.renderSettingsPanel(), /<input type="checkbox" id="story-arc-knowledge-appearance" checked disabled \/>/);
+    });
+
+    it('stores the switch in extension_settings and saves it', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true } };
+        loadSettings();
+        settingsPanel.setupSettingsPanelEvents();
+
+        fake.trigger('change', '#story-arc-knowledge-appearance', { checked: true });
+
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: true, appearance: true });
+        assert.equal(mockCalls.saveSettingsDebounced, 1);
+    });
+
+    it('is enabled at setup only while the tracker and character details are both on', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true } };
+        loadSettings();
+        settingsPanel.setupSettingsPanelEvents();
+        assert.deepEqual(fake.propsById['#story-arc-knowledge-appearance'], { disabled: false });
+
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: true } };
+        loadSettings();
+        settingsPanel.setupSettingsPanelEvents();
+        assert.deepEqual(fake.propsById['#story-arc-knowledge-appearance'], { disabled: true });
+    });
+
+    it('follows the character details switch', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: false } };
+        loadSettings();
+        settingsPanel.setupSettingsPanelEvents();
+        assert.deepEqual(fake.propsById['#story-arc-knowledge-appearance'], { disabled: true });
+
+        fake.trigger('change', '#story-arc-knowledge-details', { checked: true });
+        assert.deepEqual(fake.propsById['#story-arc-knowledge-appearance'], { disabled: false });
+
+        fake.trigger('change', '#story-arc-knowledge-details', { checked: false });
+        assert.deepEqual(fake.propsById['#story-arc-knowledge-appearance'], { disabled: true });
     });
 });
 

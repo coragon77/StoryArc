@@ -157,7 +157,7 @@ describe('rollBackKnowledgeFrom', () => {
                     kind: 'update', recordId: 'u1', from: 6, to: 6, messageId: 'm6b',
                     answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
                 },
@@ -273,7 +273,7 @@ describe('updateKnowledgeAfterSwipe', () => {
                     kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: swipeMessageId,
                     answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                     factsCreated: ['f5'], holdersAdded: 1, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [{ factId: 'f5', characterId: 'c1', messageId: swipeMessageId }], details: [], names: [], scene: ['c1'] },
                 },
@@ -397,7 +397,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 kind: 'reextract', recordId: 'u1', from: 3, to: 3, messageId: 'm3',
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
@@ -446,7 +446,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 kind: 'reextract', recordId: 'u1', from: 5, to: 5, messageId: 'm5',
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [], details: [], names: [], scene: null },
             }],
@@ -475,7 +475,7 @@ describe('updateKnowledgeAfterEdit', () => {
                 kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: 'm6',
                 answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [], details: [], names: [], scene: ['c1'] },
             }],
@@ -531,11 +531,86 @@ describe('updateKnowledgeAfterEdit', () => {
                 kind: 'reextract', recordId: 'u1', from: 3, to: 3, messageId: 'm3',
                 answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f5'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [{ factId: 'f5', characterId: 'c2', messageId: 'm3' }, { factId: 'f5', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],
         });
+    });
+});
+
+describe('rollBackKnowledgeFrom when the last read message is gone and the appearance search gave a later one an id', () => {
+    /**
+     * A chat of 105 messages, the tracker updating every 3 replies. The last
+     * update read 97 to 100 (m97 … m100) and the scene before it is from 97;
+     * 101 to 104 are not read yet. The player accepted an appearance finding
+     * from the unread 103, so it carries the id m103, created and marked by
+     * the search, and Noor's hair entry.
+     * With `withHashes`, the read messages carry read-text hashes; without,
+     * the ledger is from before them and only the ids an update gave show
+     * what was read.
+     */
+    function setUp({ withHashes }) {
+        extension_settings.story_arc = {
+            enabled: true,
+            defaultConnectionProfile: 'profile-1',
+            knowledgeTracker: { enabled: true, updateInterval: 3, characterDetails: true, appearance: true },
+        };
+        chat.length = 0;
+        for (let index = 0; index < 105; index++) {
+            chat.push({ is_user: index % 2 === 1, is_system: false, name: index % 2 === 1 ? 'Ellie' : 'Noor', mes: `Line ${index}.`, extra: {} });
+        }
+        for (const index of [97, 98, 99, 100]) {
+            chat[index].extra.story_arc_message_id = `m${index}`;
+            if (withHashes) chat[index].extra.story_arc_read_text_hash = 1000 + index;
+        }
+        chat[103].extra.story_arc_message_id = 'm103';
+        chat[103].extra.story_arc_message_id_by_search = true;
+        chat_metadata.story_arc = {
+            knowledge: {
+                characters: [{ id: 'c1', name: 'Noor', aliases: [], details: { hair: [{ value: 'dark braids', at: 103, messageId: 'm103' }] } }],
+                facts: [{
+                    id: 'f1', text: 'The gauntlet is cracked', public: false,
+                    holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 99, messageId: 'm99' }],
+                }],
+                scene: { at: 100, messageId: 'm100', present: ['c1'] },
+                sceneHistory: [{ at: 97, messageId: 'm97', present: ['c1'] }],
+                lastUpdatedAt: 100,
+                lastUpdatedMessageId: 'm100',
+            },
+        };
+    }
+
+    afterEach(() => {
+        delete extension_settings.story_arc;
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+    });
+
+    it('ends the ledger at the last message an update read, not at the one whose id the search created', async () => {
+        setUp({ withHashes: true });
+
+        // The player deletes message 100; ST passes only the new length.
+        chat.splice(100, 1);
+        await rollBackKnowledgeFrom(chat.length);
+
+        const knowledge = chat_metadata.story_arc.knowledge;
+        assert.equal(knowledge.lastUpdatedAt, 99);
+        assert.equal(knowledge.lastUpdatedMessageId, 'm99');
+        assert.deepEqual(knowledge.scene, { at: 97, messageId: 'm97', present: ['c1'] });
+        // The accepted finding follows its message, now at 102.
+        assert.deepEqual(knowledge.characters[0].details, { hair: [{ value: 'dark braids', at: 102, messageId: 'm103' }] });
+    });
+
+    it('in a ledger from before read-text hashes, a message an update gave its id counts as read', async () => {
+        setUp({ withHashes: false });
+
+        chat.splice(100, 1);
+        await rollBackKnowledgeFrom(chat.length);
+
+        const knowledge = chat_metadata.story_arc.knowledge;
+        assert.equal(knowledge.lastUpdatedAt, 99);
+        assert.equal(knowledge.lastUpdatedMessageId, 'm99');
     });
 });
 
@@ -602,6 +677,68 @@ describe('updateKnowledgeAfterEdit on a hidden message', () => {
         assert.deepEqual(sentPrompts, []);
         assert.deepEqual(chat_metadata.story_arc.knowledge, ledgerBefore);
         assert.equal(chat[2].extra.story_arc_read_text_hash, undefined);
+    });
+
+    it('a hidden message with an id an update gave it, no read-text hash and nothing learned there counts as read: its edit extracts again', async () => {
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
+        chat[2].is_system = true;
+        chat[2].mes = 'Gauntlet and latches on the bench.';
+
+        await updateKnowledgeAfterEdit(2);
+
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[2] Noor: Gauntlet and latches on the bench.']);
+        assert.equal(chat[2].is_system, true);
+    });
+
+    it('a hidden message whose id the appearance search created (an accepted appearance entry, no read) makes no call and keeps the entry', async () => {
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
+        chat[2].is_system = true;
+        chat[2].extra.story_arc_message_id_by_search = true;
+        chat[2].mes = 'Gauntlet and latches on the bench.';
+        const noor = chat_metadata.story_arc.knowledge.characters[0];
+        noor.details = { hair: [{ value: 'dark braids', at: 2, messageId: 'm2' }] };
+        const ledgerBefore = structuredClone(chat_metadata.story_arc.knowledge);
+
+        // MESSAGE_EDITED and MESSAGE_UPDATED of one edit.
+        const edited = await updateKnowledgeAfterEdit(2);
+        const updated = await updateKnowledgeAfterEdit(2);
+
+        assert.deepEqual(edited, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(updated, { ledgerChanged: false, beatsChanged: false });
+        assert.deepEqual(sentPrompts, []);
+        assert.deepEqual(chat_metadata.story_arc.knowledge, ledgerBefore);
+        assert.deepEqual(chat_metadata.story_arc.knowledge.characters[0].details, { hair: [{ value: 'dark braids', at: 2, messageId: 'm2' }] });
+        assert.equal(chat[2].extra.story_arc_read_text_hash, undefined);
+    });
+
+    it('a hidden message whose id the search created but which a read-text hash shows read counts as read', async () => {
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
+        // The hash of the text an update read (any number other than the new text's).
+        chat[2].extra.story_arc_read_text_hash = 12345;
+        chat[2].extra.story_arc_message_id_by_search = true;
+        chat[2].is_system = true;
+        chat[2].mes = 'Gauntlet and latches on the bench.';
+
+        await updateKnowledgeAfterEdit(2);
+
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[2] Noor: Gauntlet and latches on the bench.']);
+        assert.equal(chat[2].is_system, true);
+    });
+
+    it('a hidden message read before message ids whose only trace is a holder of a fact retracted later counts as read', async () => {
+        const sentPrompts = installExtraction([ANSWER_NOOR_ALONE]);
+        chat_metadata.story_arc.knowledge.retractedFacts = [{
+            at: 5,
+            fact: {
+                id: 'f5', text: 'The gauntlet is cracked', public: false,
+                holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 2 }],
+            },
+        }];
+        chat[2] = { is_user: false, is_system: true, name: 'Noor', mes: 'Gauntlet and latches on the bench.' };
+
+        await updateKnowledgeAfterEdit(2);
+
+        assert.deepEqual(sentPrompts, ['MESSAGES:\n[2] Noor: Gauntlet and latches on the bench.']);
     });
 });
 

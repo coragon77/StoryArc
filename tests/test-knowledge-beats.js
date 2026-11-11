@@ -355,7 +355,7 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
             kind: 'update', recordId: 'u1', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
             answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 2, rulings: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 1, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [], details: [], names: [], scene: null },
         }]);

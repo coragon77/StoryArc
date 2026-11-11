@@ -100,7 +100,7 @@ describe('update records list their items', () => {
             kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
             answer: { present: 3, newCharacters: 1, learned: 1, retracted: 1, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f2'], holdersAdded: 1, factsRetracted: ['f1'], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 1, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 1, newNamesRefused: 0, newNamesUnknown: 0,
             items: {
                 characters: ['c3'],
@@ -126,7 +126,7 @@ describe('update records list their items', () => {
             kind: 'reextract', recordId: 'u1', from: 1, to: 1, messageId: 'm1',
             answer: { present: 1, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
             factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 1, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 1, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: {
                 characters: [],

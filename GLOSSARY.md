@@ -173,8 +173,20 @@ The Knowledge popup's view of the cast as rings around the scene: present charac
 _Avoid_: graph, network, cast map (in UI text)
 
 **Character details**:
-A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded and shown while the knowledge tracker and its character details switch are both on; the switch is off by default.
+A cast member's gender, age, role (job or place in the world, plus where it puts them), relation (kinship to another cast member) and status (alive or dead), each recorded only as the story text states it. A detail the text has not stated is unknown and is never guessed. A detail the story has set is binding: a different value the narrator merely states later does not replace it. Shown to the narrator in the knowledge block for the characters present or talked about. Only recorded and shown while the knowledge tracker and its character details switch are both on; the switch is off by default. The appearance belongs to the character details too, with a switch of its own and its own rules.
 _Avoid_: character profile, attributes, character sheet, stats
+
+**Appearance**:
+A cast member's lasting looks as the story states them, in six kinds of character details: ethnicity, skin, hair, eyes, build (height and body) and features (scars, tattoos, freckles, birthmarks, piercings, glasses, a beard, in one list). Never clothing, makeup or a passing state (wet hair, a flush). A feature the text never states is unknown; ethnicity is never inferred from a name, a skin tone or a look. Shown to the narrator only for present characters, never for those talked about and never to the planner. Recorded and shown only while character details and the appearance switch are both on; the switch is off by default.
+_Avoid_: look, looks (StoryImage's word for its image tags), description, outfit
+
+**Refinement** (appearance):
+A fuller value of an appearance kind that keeps every word of the stored one, the kind's own word ("hair", "eyes", "skin") aside: "dark" → "dark glossy curls, about shoulder length". It replaces the stored value without an on-screen change; a value that drops or swaps a word ("dark" → "black") is a restatement and is ignored unless the story shows the change. Only for appearance kinds.
+_Avoid_: update, enrichment
+
+**Appearance search**:
+The search of the whole chat, hidden messages included, for how one character looks, run from that character's sheet in the Knowledge popup: the passages that describe them, then one call that reads them. It proposes one value per kind, the latest the passages state, and only where it adds to the ledger (an unknown kind, a newer different value, or an older refinement). Nothing counts until the player accepts it, kind by kind; an accepted finding is a story entry from its source message and rolls back with it.
+_Avoid_: backfill (in UI text), scan, import
 
 **Unnamed relative**:
 A cast member the story knows only through their kinship to another cast member ("Kendra Osei's mother"): a record without a name, called after its relation wherever a name is printed. It adds no taken name and is never a name clash. When the story names them on screen, the record takes the name and keeps its details.

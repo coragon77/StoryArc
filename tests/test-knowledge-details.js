@@ -144,7 +144,7 @@ describe('applyExtractionAnswer — character details, first statements', () => 
         assert.deepEqual(ledger.characters[1].details, {
             role: [{ value: 'cleaner, double shifts, Oakland', at: null, by: 'user' }],
         });
-        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 1 });
+        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 1 });
     });
 
     it('keeps the first of two items for one kind in the same answer', () => {

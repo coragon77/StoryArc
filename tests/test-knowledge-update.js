@@ -171,7 +171,7 @@ describe('updateKnowledgeAfterReply', () => {
                 kind: 'update', recordId: 'u1', from: 3, to: 6, messageId: 'm6',
                 answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
                 factsCreated: ['f2'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
-            detailsSet: 0, detailsChanged: 0, restatementsIgnored: 0, detailsLocked: 0,
+            detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
             items: { characters: [], holders: [{ factId: 'f2', characterId: 'c2', messageId: 'm3' }, { factId: 'f2', characterId: 'c1', messageId: 'm3' }], details: [], names: [], scene: null },
             }],

@@ -256,6 +256,13 @@
 .story-arc-knowledge .k-detail .k-src.is-locked { color: var(--k-text); }
 .story-arc-knowledge .k-detail .k-src i { font-size: 11px; }
 .story-arc-knowledge .k-detail > .k-editor { grid-column: 2 / -1; margin-top: 6px; }
+.story-arc-knowledge .k-subhead { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin: 14px 0 0; }
+.story-arc-knowledge .k-subhead h5 { font-size: var(--fs-m); font-weight: 600; margin: 0; }
+.story-arc-knowledge .k-findings { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--k-line); }
+.story-arc-knowledge .k-finding { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 2px 12px; padding: 7px 0; border-bottom: 1px solid var(--k-line); align-items: baseline; }
+.story-arc-knowledge .k-finding-kind { font-size: var(--fs-s); font-weight: 600; color: var(--k-muted); }
+.story-arc-knowledge .k-finding-main { min-width: 0; }
+.story-arc-knowledge .k-passage { grid-column: 2 / -1; margin: 4px 0 0; padding: 4px 10px; border-left: 2px solid var(--k-edge); font-size: var(--fs-s); color: var(--k-muted); font-style: italic; }
 .story-arc-knowledge .k-unknown { color: var(--k-muted); font-style: italic; }
 .story-arc-knowledge .k-filter { display: flex; gap: 10px; align-items: center; margin: 6px 0 8px; }
 .story-arc-knowledge .k-filter .text_pole { width: 320px; max-width: 100%; }

@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { MODULE_NAME, defaultSettings, createDefaultArc, TIER_TABLE, KNOWLEDGE_PROMPT_KEY } from '../lib/core/constants.js';
-import { loadSettings, getSettings, isEnabled, getKnowledgeTrackerSettings, isKnowledgeTrackerEnabled, isCharacterDetailsEnabled, beatRecognitionPath } from '../lib/core/settings.js';
+import { loadSettings, getSettings, isEnabled, getKnowledgeTrackerSettings, isKnowledgeTrackerEnabled, isCharacterDetailsEnabled, isAppearanceEnabled, beatRecognitionPath } from '../lib/core/settings.js';
 import { calculatePhase } from '../lib/injection/pacing.js';
 import { chat, chat_metadata, extension_settings } from './mocks/st-mocks.js';
 
@@ -141,7 +141,7 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(extension_settings.story_arc, {
             enabled: false,
             defaultConnectionProfile: null,
-            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false },
+            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false, appearance: false },
         });
     });
 
@@ -151,18 +151,18 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(extension_settings.story_arc, {
             enabled: false,
             defaultConnectionProfile: 'profile-7',
-            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false },
+            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false, appearance: false },
         });
     });
 
     it('loadSettings fills a missing tracker key and keeps the stored one', () => {
         extension_settings.story_arc = { enabled: true, knowledgeTracker: { updateInterval: 3 } };
         loadSettings();
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 3, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 3, characterDetails: false, appearance: false });
 
         extension_settings.story_arc = { knowledgeTracker: { enabled: true } };
         loadSettings();
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false, appearance: false });
     });
 
     it('stored tracker settings survive a settings reload', () => {
@@ -170,7 +170,7 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         getKnowledgeTrackerSettings().enabled = true;
         getKnowledgeTrackerSettings().updateInterval = 4;
         loadSettings();
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 4, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 4, characterDetails: false, appearance: false });
     });
 
     it('changing one install\'s tracker settings leaves the defaults alone', () => {
@@ -178,11 +178,11 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         getKnowledgeTrackerSettings().enabled = true;
         delete extension_settings.story_arc;
         loadSettings();
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: false });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: false, appearance: false });
     });
 
     it('getKnowledgeTrackerSettings returns the stored group, or the defaults before loadSettings', () => {
-        assert.deepEqual(getKnowledgeTrackerSettings(), { enabled: false, updateInterval: 1, characterDetails: false });
+        assert.deepEqual(getKnowledgeTrackerSettings(), { enabled: false, updateInterval: 1, characterDetails: false, appearance: false });
         extension_settings.story_arc = { knowledgeTracker: { enabled: true, updateInterval: 2 } };
         assert.equal(getKnowledgeTrackerSettings(), extension_settings.story_arc.knowledgeTracker);
     });
@@ -208,6 +208,22 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.equal(isCharacterDetailsEnabled(), false);
     });
 
+    it('isAppearanceEnabled is true only while character details and the appearance switch are both on', () => {
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true, appearance: true } };
+        assert.equal(isAppearanceEnabled(), true);
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: false, appearance: true } };
+        assert.equal(isAppearanceEnabled(), false);
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: true, appearance: true } };
+        assert.equal(isAppearanceEnabled(), false);
+        extension_settings.story_arc = { enabled: false, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true, appearance: true } };
+        assert.equal(isAppearanceEnabled(), false);
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true, appearance: 'yes' } };
+        assert.equal(isAppearanceEnabled(), false);
+        // A settings file from before the switch.
+        extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1, characterDetails: true } };
+        assert.equal(isAppearanceEnabled(), false);
+    });
+
     it('a settings file from before the details switch reads it as off', () => {
         extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: true, updateInterval: 1 } };
         assert.equal(isCharacterDetailsEnabled(), false);
@@ -225,7 +241,7 @@ describe('global settings — loadSettings, getSettings, isEnabled', () => {
         assert.deepEqual(getSettings(), {
             enabled: false,
             defaultConnectionProfile: null,
-            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false },
+            knowledgeTracker: { enabled: false, updateInterval: 1, characterDetails: false, appearance: false },
         });
     });
 

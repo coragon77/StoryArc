@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-09
+- **Last Updated:** 2026-11-11
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -41,7 +41,11 @@ StoryArc/
 │   │                           #   new characters, who learned which fact and how,
 │   │                           #   revealed secrets with what was heard, and (task 6)
 │   │                           #   the {{DEVELOPMENTS}} the messages fulfilled
-│   │                           #   (ADR-0008); answers JSON
+│   │                           #   (ADR-0008); answers JSON. Character details and
+│   │                           #   appearance live in ledger.js constants (DETAILS_TASK)
+│   ├── find-appearance.txt     # Appearance search prompt: one character's looks from
+│   │                           #   the passages, one value per appearance kind with the
+│   │                           #   newest passage's index; answers JSON
 │   └── detail-pass.txt         # Old detail-pass draft (not loaded); carries the
 │                               #   one-moment fulfillment rule too
 ├── lib/
@@ -358,8 +362,18 @@ StoryArc/
 │   │   ├── message-ids.js      # Story Arc's message id in a message's extra
 │   │   │                       #   (MESSAGE_ID_KEY): assignCoveredMessageIds(chat,
 │   │   │                       #   from, last) gives one to every read message,
-│   │   │                       #   messageIdOf(message) reads it; shared by the
-│   │   │                       #   ledger and planning/beat-completion.js
+│   │   │                       #   messageIdOf(message) reads it, giveMessageId(message)
+│   │   │                       #   gives one message an id, hidden or not, marking an id it
+│   │   │                       #   creates (SEARCH_ID_KEY, isIdFromSearch: not a read; the
+│   │   │                       #   appearance search's accepted finding); shared by the
+│   │   │                       #   ledger, planning/beat-completion.js and ui/knowledge-popup.js
+│   │   ├── appearance-search.js # The appearance search (2026-11-11), in the order it
+│   │   │                       #   runs: searchAppearance(ledger, characterId, chat,
+│   │   │                       #   persona) → findAppearancePassages (whole chat, hidden
+│   │   │                       #   messages included, ≤3 per feature, 6000 chars), the
+│   │   │                       #   find-appearance.txt call, the parse (bad items dropped),
+│   │   │                       #   listOfferedFindings(character, findings) (unknown,
+│   │   │                       #   newer and different, or a refinement; never locked)
 │   │   ├── names.js            # Taken names (#39): buildTakenNamesBlock(ledger) —
 │   │   │                       #   the rule header + every name word on one line,
 │   │   │                       #   sorted by folded form (printTakenNames(ledger),
@@ -889,6 +903,11 @@ lib/injection/
 
 lib/knowledge/
 ├── message-ids.js (imports: /scripts/utils.js uuidv4)
+├── appearance-search.js (imports: core/constants.js APPEARANCE_KINDS, planning/generator.js
+│                callLlm + templates, planning/validation.js parseLlmJson, ledger.js
+│                characterDisplayName + currentDetailText + isAppearanceRefinement +
+│                isDetailLocked + isSameDetailValue + isSharedNameWord +
+│                listNameWordCarriers + withoutTaggedElements)
 ├── names.js    (imports: none)
 └── ledger.js   (imports: message-ids.js, names.js, core/constants.js, core/settings.js,
                  injection/pacing.js, injection/signals.js flushPendingMarks,
@@ -932,7 +951,8 @@ lib/ui/
 │                              knowledge/ledger.js characterDisplayName + characterName + isDetailLocked +
 │                              isSameDetailValue + listChangeItems + nextLedgerId,
 │                              knowledge/names.js foldName + listCharactersWithNames + listTakenNames + nameWords,
-│                              knowledge/message-ids.js messageIdOf, knowledge-status.js
+│                              knowledge/message-ids.js messageIdOf + giveMessageId,
+│                              knowledge/appearance-search.js searchAppearance, knowledge-status.js
 │                              updateKnowledgeStatus, /scripts/popup.js,
 │                              /scripts/utils.js)
 └── undo-stack.js    (imports: nothing)

@@ -189,6 +189,78 @@ describe('character details switch off — the extraction prompt', () => {
     });
 });
 
+/** Task 8 as it was before appearance (lib/knowledge/ledger.js at d8bfb3f), with its blank line. */
+const DETAILS_TASK_BEFORE_APPEARANCE = `8. DETAILS. The characters list shows the details the ledger knows about each character. For a character from the ledger, report a detail only when the ledger does not know that kind of detail for the character yet and the new messages state it, or when the new messages show it changing on screen: an event the text shows happening, such as a transfer, a new job, a death, or a dead character seen alive again. A new character from task 2 may carry details too. Write one item per detail:
+- "character": the character's name from the ledger or from your new characters.
+- "kind": "gender"; "age" (as exact or as vague as the text puts it: "18", "twenty-something"); "role" (the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland"); "relation" (kinship to another character in the ledger or in your new characters: "mother", "brother", "husband"); or "status" ("dead" when the text shows or states a death; "alive" only for a character the ledger lists as dead whom the text shows alive again, never for a character merely seen or mentioned).
+- "value": the detail in a few words, always as a string. For a relation the kinship word only; for a status "alive" or "dead".
+- "of": only for a relation, the name of the other character ("Kendra Osei" for Kendra Osei's mother).
+- "change": only for a detail the ledger already knows, the on-screen event that changes it, in one short sentence ("Vera transfers to the Wards."). Leave it out for a detail the ledger does not know yet.
+- "at": the index in square brackets of the message that states it, one of the new messages.
+Record only what the text states. Never guess a detail from a name, a look, a trope or what would be likely. A detail the ledger already knows is not reported again unless the new messages show it changing. A different value merely stated, with no such event, is not a change: do not report it. The ledger's value stays, and the narrator stated it wrongly. Out-of-character lines set no detail.
+
+`;
+
+/** The details list of the answer as it was before appearance. */
+const DETAILS_SCHEMA_BEFORE_APPEARANCE = `,
+  "details": [
+    { "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "change": "only for a changed detail: the on-screen event", "at": <index of the message> }
+  ]`;
+
+describe('appearance switch off — the extraction prompt', () => {
+    /** Kendra with her details and an appearance; the new messages name her. */
+    function makeLedgerWithAppearance() {
+        const ledger = makeLedger(true);
+        ledger.characters[0].details = {
+            ...ledger.characters[0].details,
+            hair: [{ value: 'tight braids', at: 4 }],
+            eyes: [{ value: 'dark brown', at: 4 }],
+        };
+        return ledger;
+    }
+
+    function filledPrompt(ledger, withAppearance) {
+        const variables = buildKnowledgeExtractionVariables(ledger, makeChat(), 11, 'Ellie', [], [], [], true, withAppearance);
+        return fillTemplate(TEMPLATE, variables);
+    }
+
+    it('fills task 8 and the details schema byte for byte as before appearance', () => {
+        const withoutArgument = buildKnowledgeExtractionVariables(makeLedgerWithAppearance(), makeChat(), 11, 'Ellie', [], [], [], true);
+        const switchedOff = buildKnowledgeExtractionVariables(makeLedgerWithAppearance(), makeChat(), 11, 'Ellie', [], [], [], true, false);
+
+        assert.equal(withoutArgument.DETAILS_TASK, DETAILS_TASK_BEFORE_APPEARANCE);
+        assert.equal(withoutArgument.DETAILS_SCHEMA, DETAILS_SCHEMA_BEFORE_APPEARANCE);
+        assert.equal(switchedOff.DETAILS_TASK, DETAILS_TASK_BEFORE_APPEARANCE);
+        assert.equal(switchedOff.DETAILS_SCHEMA, DETAILS_SCHEMA_BEFORE_APPEARANCE);
+    });
+
+    it('lists the characters with their details only, though the ledger holds an appearance and the messages name her', () => {
+        const variables = buildKnowledgeExtractionVariables(makeLedgerWithAppearance(), makeChat(), 11, 'Ellie', [], [], [], true, false);
+
+        assert.equal(variables.CHARACTERS,
+            "- Kendra Osei (also: Kendra) — gender: female; age: 17\n- Ama Osei (also: Ama) — role: cleaner; status: dead\n- Kendra Osei's father (unnamed) — role: night porter; relation: Kendra Osei's father");
+    });
+
+    it('is the same prompt as for the ledger without the appearance', () => {
+        assert.equal(filledPrompt(makeLedgerWithAppearance(), false), filledPrompt(makeLedger(true), false));
+    });
+
+    it('leaves no appearance placeholder in the prompt, off or on', () => {
+        assert.ok(!filledPrompt(makeLedgerWithAppearance(), false).includes('{{'));
+        assert.ok(!filledPrompt(makeLedgerWithAppearance(), true).includes('{{'));
+    });
+
+    it('asks for the appearance kinds and lists Kendra\'s appearance while the switch is on', () => {
+        const prompt = filledPrompt(makeLedgerWithAppearance(), true);
+
+        assert.ok(prompt.includes('- Kendra Osei (also: Kendra) — gender: female; age: 17; hair: tight braids; eyes: dark brown\n'));
+        assert.ok(prompt.includes('never for a character merely seen or mentioned). For appearance, the kind is also "ethnicity"'));
+        assert.ok(prompt.includes('Out-of-character lines set no detail.\nAppearance is what lasts:'));
+        assert.ok(prompt.includes('("Priya cuts her hair short.").\n\nAnswer with ONLY this JSON object'));
+        assert.ok(prompt.includes('"kind": "gender | age | role | relation | status | ethnicity | skin | hair | eyes | build | features"'));
+    });
+});
+
 describe('character details switch — the extraction answer', () => {
     /** Noor in the ledger, updated through message 0; the answer states her age. */
     function storeLedger() {
