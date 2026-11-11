@@ -242,7 +242,9 @@
 .story-arc-knowledge .k-sheet-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px 40px; margin-top: 14px; }
 @container (max-width: 1000px) { .story-arc-knowledge .k-sheet-grid { grid-template-columns: minmax(0, 1fr); } }
 .story-arc-knowledge .k-sec + .k-sec { margin-top: 26px; }
-.story-arc-knowledge .k-sec > h4 { font-size: var(--fs-l); font-weight: 600; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; }
+.story-arc-knowledge .k-sec > h4, .story-arc-knowledge .k-sec-head > h4 { font-size: var(--fs-l); font-weight: 600; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; }
+.story-arc-knowledge .k-sec-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 4px; }
+.story-arc-knowledge .k-sec-head > h4 { margin: 0; }
 .story-arc-knowledge .k-sec > h4 .k-small { font-weight: 400; color: var(--k-muted); }
 .story-arc-knowledge .k-clashbox { margin-top: 12px; padding: 8px 12px 10px; border: 1px solid var(--k-edge); border-radius: 6px; background: var(--k-tint); max-width: 900px; }
 .story-arc-knowledge .k-clashbox .k-row-actions { margin-top: 6px; }

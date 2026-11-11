@@ -557,6 +557,15 @@ takes a lot of time till it is usable", then "yes, do it".
 - The same search reports `gender`, `age` and `role` too, in
   `SEARCHED_KINDS` (those three, then the appearance kinds). Not
   `relation`, not `status`. The button is "Find details".
+- Stefan, the same day: the button sits at the top of the sheet's
+  details, beside the Details heading, whenever character details are
+  on. Each finding is listed under the rows it would change: gender, age
+  and role under the Details rows, the looks under the Appearance rows.
+  The prompt asks only for the kinds the search can offer
+  (`{{KIND_LINES}}`, `{{KIND_NAMES}}`): never a locked kind, and with
+  appearance off no look. Appearance passages go only while a look is
+  searched, naming passages only while gender, age or role is. With every
+  kind locked there is no call.
 - No new passage search: no age patterns, no introduction search. The call
   gets the definitions as before, plus the newest sentences of the chat
   that name the character (`findNamingPassages`: a naming sentence with

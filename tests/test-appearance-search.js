@@ -585,6 +585,82 @@ describe('searchAppearance', () => {
         assert.deepEqual(sentPrompts, []);
     });
 
+    it('sends no appearance passage and offers only gender, age and role while appearance is off', async () => {
+        installSearch([JSON.stringify({
+            details: [
+                { kind: 'hair', value: 'dark glossy curls', sources: [0] },
+                { kind: 'age', value: '24', sources: [1] },
+            ],
+        })], '{{KNOWN_DETAILS}}\n{{PASSAGES}}');
+        const chatMessages = hiddenChatOf('Priya Sharma had dark glossy curls.', 'Priya turned twenty-four that spring.');
+
+        const result = await searchAppearance(makeLedger(), 'c1', chatMessages, 'Ellie', false);
+
+        assert.deepEqual(sentPrompts, ['(none)\n[#0] Priya Sharma had dark glossy curls.\n[#1] Priya turned twenty-four that spring.']);
+        assert.deepEqual(result, {
+            findings: [{ kind: 'age', value: '24', at: 1, sources: [1], passage: 'Priya turned twenty-four that spring.' }],
+            sourceCount: 2,
+        });
+    });
+
+    it('makes no call while appearance is off and gender, age and role are all locked', async () => {
+        installSearch([]);
+        const ledger = makeLedger();
+        for (const kind of ['gender', 'age', 'role']) ledger.characters[0].details[kind] = [{ value: 'x', at: null, by: 'user' }];
+
+        const result = await searchAppearance(ledger, 'c1', makeChat(), 'Ellie', false);
+
+        assert.deepEqual(result, { error: 'Everything the search finds is locked for Priya Sharma: unlock a detail to search for it.' });
+        assert.deepEqual(sentPrompts, []);
+    });
+
+    it('makes no call while appearance is on and every searched kind is locked', async () => {
+        installSearch([]);
+        const ledger = makeLedger();
+        for (const kind of ['gender', 'age', 'role', 'ethnicity', 'skin', 'hair', 'eyes', 'build', 'features']) {
+            ledger.characters[0].details[kind] = [{ value: 'x', at: null, by: 'user' }];
+        }
+
+        const result = await searchAppearance(ledger, 'c1', makeChat(), 'Ellie', true);
+
+        assert.deepEqual(result, { error: 'Everything the search finds is locked for Priya Sharma: unlock a detail to search for it.' });
+        assert.deepEqual(sentPrompts, []);
+    });
+
+    it('asks only for the kinds it can offer: no locked kind, no look while appearance is off', async () => {
+        installSearch([JSON.stringify({ details: [] }), JSON.stringify({ details: [] })], '{{KIND_NAMES}}\n{{KIND_LINES}}');
+        const ledger = makeLedger();
+        ledger.characters[0].details.gender = [{ value: 'female', at: null, by: 'user' }];
+
+        await searchAppearance(ledger, 'c1', makeChat(), 'Ellie', false);
+        await searchAppearance(ledger, 'c1', makeChat(), 'Ellie', true);
+
+        assert.deepEqual(sentPrompts.map(prompt => prompt.split('\n')[0]), [
+            '"age" | "role"',
+            '"age" | "role" | "ethnicity" | "skin" | "hair" | "eyes" | "build" | "features"',
+        ]);
+        assert.equal(sentPrompts[0].split('\n')[1], '- "age": as exact or as vague as the text puts it: "18", "twenty-something"');
+    });
+
+    it('sends no appearance passage while every appearance kind is locked, only the newest passages that name the character', async () => {
+        installSearch([JSON.stringify({ details: [] }), JSON.stringify({ details: [] })], '{{PASSAGES}}');
+        // An old look, then more newer naming sentences than the 4,000-character naming budget holds
+        const newerMessages = Array.from({ length: 200 }, (_, index) => `Priya nodded at the board, beat ${index}.`);
+        const chatMessages = hiddenChatOf('Priya Sharma had dark glossy curls.', ...newerMessages);
+        const unlockedLedger = makeLedger();
+        const lockedLedger = makeLedger();
+        for (const kind of ['ethnicity', 'skin', 'hair', 'eyes', 'build', 'features']) {
+            lockedLedger.characters[0].details[kind] = [{ value: 'x', at: null, by: 'user' }];
+        }
+
+        await searchAppearance(unlockedLedger, 'c1', chatMessages, 'Ellie', true);
+        await searchAppearance(lockedLedger, 'c1', chatMessages, 'Ellie', true);
+
+        assert.ok(sentPrompts[0].startsWith('[#0] Priya Sharma had dark glossy curls.\n'), 'the look goes while hair is searched');
+        assert.ok(!sentPrompts[1].includes('[#0]'), 'and not while every look is locked');
+        assert.ok(sentPrompts[1].endsWith('[#200] Priya nodded at the board, beat 199.'));
+    });
+
     it('sends the newest passages that name the character for gender, age and role, and reads those kinds first', async () => {
         installSearch([JSON.stringify({
             details: [

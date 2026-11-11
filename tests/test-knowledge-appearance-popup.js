@@ -84,13 +84,40 @@ describe('buildKnowledgeContent: appearance rows on a character sheet', () => {
         assert.ok(html.indexOf('sa-k-sh-appearance') < html.indexOf('data-detail="ethnicity"'));
     });
 
-    it('shows no appearance row and no search while appearance is off', () => {
+    it('shows no appearance row while appearance is off, but Find details at the top of the details', () => {
         const html = buildKnowledgeContent(makeLedger(), [], true, sheetViewOf('c1'));
 
         assert.ok(html.includes('data-detail="role"'));
         assert.ok(!html.includes('data-detail="hair"'));
         assert.ok(!html.includes('sa-k-sh-appearance'));
-        assert.ok(!html.includes('search-appearance'));
+        assert.match(html, /<div class="k-sec-head"><h4 id="sa-k-sh-details">Details <kbd>D<\/kbd><\/h4><button[^>]*data-act="search-appearance" data-cid="c1"/);
+        assert.ok(html.indexOf('data-act="search-appearance"') < html.indexOf('data-detail="gender"'));
+        assert.match(html, /title="[^"]*for their gender, age and role; you accept or skip each finding"/);
+    });
+
+    it('puts Find details above the details and out of the Appearance heading while appearance is on', () => {
+        const html = buildKnowledgeContent(makeLedger(), [], true, sheetViewOf('c1'), true);
+
+        assert.ok(html.includes('<div class="k-subhead"><h5 id="sa-k-sh-appearance">Appearance</h5></div>'));
+        assert.ok(html.indexOf('data-act="search-appearance"') < html.indexOf('data-detail="gender"'));
+        assert.match(html, /title="[^"]*for their gender, age, role and how they look; you accept/);
+    });
+
+    it('lists a gender finding under the Details rows and a hair finding under the Appearance rows', () => {
+        const view = sheetViewOf('c1');
+        view.appearanceFindings.c1 = [
+            { kind: 'gender', value: 'female', at: 5, sources: [5], passage: 'She was the night nurse.', sourceTexts: {} },
+            { kind: 'hair', value: 'dark glossy curls', at: 2, sources: [2], passage: 'Priya pushed her dark glossy curls back.', sourceTexts: {} },
+        ];
+
+        const html = buildKnowledgeContent(makeLedger(), [], true, view, true);
+
+        const genderAt = html.indexOf('data-finding="gender"');
+        const hairAt = html.indexOf('data-finding="hair"');
+        assert.ok(html.indexOf('data-detail="status"') < genderAt && genderAt < html.indexOf('sa-k-sh-appearance'), 'gender under the Details rows');
+        assert.ok(html.indexOf('data-detail="features"') < hairAt, 'hair under the Appearance rows');
+        assert.ok(html.slice(genderAt, html.indexOf('</li>', genderAt)).includes('data-area="details:c1"'));
+        assert.ok(html.slice(hairAt, html.indexOf('</li>', hairAt)).includes('data-area="appearance:c1"'));
     });
 
     it('shows the search busy, and the button disabled, while it runs', () => {
