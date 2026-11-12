@@ -140,14 +140,16 @@ describe('the record of the last send', () => {
         assert.ok(lastSent.parts[1].text.includes('Ellie is Dice'));
     });
 
-    it('belongs to the newest message for a swipe and a continue', () => {
+    it('belongs to the newest message for a swipe and a continue; a swipe\'s request reads up to the message before', () => {
         noteGenerationType('swipe', false);
         onChatCompletionPromptReady({ chat: outgoingRequest(), dryRun: false });
         assert.equal(chat_metadata.story_arc.lastSent.replyIndex, 1);
+        assert.equal(chat_metadata.story_arc.lastSent.newestMessageIndex, 0);
 
         noteGenerationType('continue', false);
         onChatCompletionPromptReady({ chat: outgoingRequest(), dryRun: false });
         assert.equal(chat_metadata.story_arc.lastSent.replyIndex, 1);
+        assert.equal(chat_metadata.story_arc.lastSent.newestMessageIndex, 1);
     });
 
     it('a dry run notes no type: the swipe before it still counts', () => {
