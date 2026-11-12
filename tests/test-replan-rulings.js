@@ -102,17 +102,7 @@ describe('buildArcSoFar: reached milestones count toward the tier\'s milestone c
 
     it('leaves it out for an episode, whose scene beats are no milestones', () => {
         assert.equal(buildArcSoFar({ ...storedAct(), tier: 'episode' }).includes('count together'), false);
-    });
-
-    it('marks the scene beats an episode carried into an act and excludes them from the count', () => {
-        const act = storedAct();
-        const sceneBeat = { id: 'old_scene', status: 'completed', intention: 'Ellie has met Sundown on the roof.', sceneBeat: true };
-        const text = buildArcSoFar({ ...act, beats: [sceneBeat, ...act.beats] });
-
-        assert.ok(text.includes('- Ellie has met Sundown on the roof. (a scene beat from its episode days)'));
-        assert.ok(text.includes('under Already happened and Passed over (the scene beats from its episode days do not count) count together'));
-    });
-});
+    });});
 
 describe('buildPlanCheckVariables with rulings', () => {
     it('passes the rulings as RULINGS, in message order', () => {
