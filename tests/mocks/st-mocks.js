@@ -15,7 +15,13 @@ export const mockCalls = { saveSettingsDebounced: 0 };
 export function saveSettingsDebounced() { mockCalls.saveSettingsDebounced += 1; }
 /** Every setExtensionPrompt call as its argument list — clear it in the test that reads it. */
 export const extensionPromptCalls = [];
-export function setExtensionPrompt(...args) { extensionPromptCalls.push(args); }
+/** ST's prompt registry, which setExtensionPrompt fills as ST's does. */
+export const extension_prompts = {};
+export function setExtensionPrompt(...args) {
+    extensionPromptCalls.push(args);
+    const [key, value, position, depth, scan = false, role = 0] = args;
+    extension_prompts[key] = { value: String(value), position: Number(position), depth: Number(depth), scan: !!scan, role: Number(role) };
+}
 // Values as in ST's script.js
 export const extension_prompt_types = { IN_PROMPT: 0, IN_CHAT: 1 };
 export const extension_prompt_roles = { SYSTEM: 0 };

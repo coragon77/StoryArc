@@ -8,11 +8,16 @@ import {
     buildKnowledgeExtractionVariables,
     characterDetailTexts,
     dropKnowledgeFrom,
-    injectKnowledgeBlock,
     parseKnowledgeExtractionAnswer,
     updateKnowledgeAfterReply,
 } from '../lib/knowledge/ledger.js';
 import { harvestContext } from '../lib/context/harvester.js';
+import { listStoryArcPrompts } from '../lib/injection/narrator-prompts.js';
+
+/** The knowledge block the next generation would get. */
+function knowledgePromptText() {
+    return listStoryArcPrompts().find(prompt => prompt.key === 'story_arc_knowledge').text;
+}
 
 /**
  * Appearance (design 2026-11-11, Part A): the six appearance kinds in the
@@ -555,12 +560,9 @@ describe('the appearance switch — the extraction answer and the block', () => 
         chat_metadata.story_arc.knowledge.characters[0].details.gender = [{ value: 'female', at: 0 }];
 
         setSwitches(true);
-        injectKnowledgeBlock();
-        assert.equal(extensionPromptCalls[0][1], [HEADER_WITH_DETAILS, '', 'NOOR (present)', '- Details: female', '- Appearance: hair dark'].join('\n'));
+        assert.equal(knowledgePromptText(), [HEADER_WITH_DETAILS, '', 'NOOR (present)', '- Details: female', '- Appearance: hair dark'].join('\n'));
 
-        extensionPromptCalls.length = 0;
         setSwitches(false);
-        injectKnowledgeBlock();
-        assert.equal(extensionPromptCalls[0][1], [HEADER_WITH_DETAILS, '', 'NOOR (present)', '- Details: female'].join('\n'));
+        assert.equal(knowledgePromptText(), [HEADER_WITH_DETAILS, '', 'NOOR (present)', '- Details: female'].join('\n'));
     });
 });

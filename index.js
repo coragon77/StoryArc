@@ -7,17 +7,15 @@ import {
     eventSource,
     event_types,
     setExtensionPrompt,
-    extension_prompt_types,
-    extension_prompt_roles,
     chat,
     saveMetadata,
 } from '/script.js';
 
 import { loadSettings, isEnabled, ensureChatState, getKnowledgeLedger } from './lib/core/settings.js';
 import { getArcs, getActiveArcs } from './lib/planning/storage.js';
-import { buildInjection, buildSignalInjection } from './lib/injection/builder.js';
+import { listStoryArcPrompts, noteGenerationType, saveLastSent, dropLastSentPastEnd } from './lib/injection/narrator-prompts.js';
 import { stampPromptMessages } from './lib/injection/stamping.js';
-import { injectKnowledgeBlock, updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
+import { updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
 import { listCharactersWithNames } from './lib/knowledge/names.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { reopenCompletionsFrom, removeRulingsFrom } from './lib/planning/beat-completion.js';
@@ -30,65 +28,49 @@ import { closeWizard } from './lib/ui/wizard.js';
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
 /**
- * Before each LLM call: inject active arc plans and the knowledge block into the prompt.
+ * Before each LLM call: note the generation's type for the record of the
+ * send, and inject active arc plans and the knowledge block into the prompt.
+ * @param {string} type - The generation type ('quiet', 'swipe', …)
+ * @param {object} options - Generation options, unused
+ * @param {boolean} dryRun - A token-counting pass
  */
-async function onGenerationStarted() {
+async function onGenerationStarted(type, options, dryRun) {
+    noteGenerationType(type, dryRun);
     injectStoryArcPrompts();
 }
 
 /**
- * Set every Story Arc prompt from the current chat and arc state: the arc
- * plan, the in-chat signal directive and the knowledge block. Before each
- * generation, and again after messages were deleted (onMessageDeleted),
- * because a regenerate deletes the old reply only after GENERATION_STARTED.
- * Exported for the tests.
+ * Set every Story Arc prompt from the current chat and arc state
+ * (listStoryArcPrompts: the arc plan, the knowledge and taken-names blocks,
+ * the in-chat signal directive). Every key is set, empty when its part is
+ * off, so no earlier text lingers. Before each generation, and again after
+ * messages were deleted (onMessageDeleted), because a regenerate deletes
+ * the old reply only after GENERATION_STARTED. Exported for the tests.
  */
 export function injectStoryArcPrompts() {
-    // Always set the prompt, empty when disabled or no active arcs —
-    // otherwise a previously set injection would linger after the last
-    // arc completes or the extension is turned off.
-    const arcs = isEnabled() ? getActiveArcs() : [];
-    const injection = arcs.length ? buildInjection(arcs) : '';
-    setExtensionPrompt(
-        'story_arc_plan',
-        injection,
-        extension_prompt_types.IN_PROMPT,
-        0,
-        false,
-        extension_prompt_roles.SYSTEM,
-    );
-
-    // Signal directive goes in-chat near the generation point — models
-    // ignore it when it sits far back in the system prompt.
-    const signalInjection = arcs.length ? buildSignalInjection(arcs) : '';
-    setExtensionPrompt(
-        'story_arc_signals',
-        signalInjection,
-        extension_prompt_types.IN_CHAT,
-        0,
-        false,
-        extension_prompt_roles.SYSTEM,
-    );
-
-    // Who knows what, in-chat at depth 1 — empty while the tracker is off.
-    injectKnowledgeBlock();
+    for (const prompt of listStoryArcPrompts()) {
+        setExtensionPrompt(prompt.key, prompt.text, prompt.position, prompt.depth, false, prompt.role);
+    }
 }
 
 /**
  * Last stop before the request goes out: stamp each user message in the
- * outgoing prompt with its own arc counter.
+ * outgoing prompt with its own arc counter, then keep what Story Arc sent
+ * with this request for the view of what the narrator gets (saveLastSent).
  *
  * ST fires this after squashing system messages and hands us the very array it
  * then sends (openai.js:1616-1623), so in-place mutation reaches the wire and
  * nothing re-merges afterwards. Stored chat and the displayed chat are
  * untouched. Dry runs are token-counting passes and must be left alone.
+ * Exported for the tests.
  * @param {{ chat: Array<object>, dryRun: boolean }} eventData
  */
-function onChatCompletionPromptReady(eventData) {
+export function onChatCompletionPromptReady(eventData) {
     if (eventData?.dryRun || !isEnabled()) return;
     const arcs = getActiveArcs();
-    if (!arcs.length) return;
-    stampPromptMessages(eventData.chat, arcs);
+    if (arcs.length) stampPromptMessages(eventData.chat, arcs);
+    // A request with only the knowledge block is kept too.
+    saveLastSent(eventData.chat);
 }
 
 /**
@@ -265,7 +247,8 @@ function onMessageEdited(messageIndex) {
  * and refresh the progress display and the knowledge tracker status line.
  * ST copies the chat metadata whole when it branches, so the beats completed
  * past the loaded chat's end are reopened, the rulings stored there are
- * removed, and the knowledge ledger drops what it learned there.
+ * removed, the record of a send for a reply there is dropped, and the
+ * knowledge ledger drops what it learned there.
  */
 async function onChatChanged() {
     // An open wizard holds the old chat's context and would save into the new chat.
@@ -273,7 +256,8 @@ async function onChatChanged() {
     ensureChatState();
     const completionsReopened = reopenCompletionsFrom(chat.length);
     const rulingsRemoved = removeRulingsFrom(chat.length);
-    if (completionsReopened || rulingsRemoved) await saveMetadata();
+    const lastSentDropped = dropLastSentPastEnd(chat.length);
+    if (completionsReopened || rulingsRemoved || lastSentDropped) await saveMetadata();
     updateProgress();
     await rollBackKnowledgeFrom(chat.length);
     updateKnowledgeStatus();

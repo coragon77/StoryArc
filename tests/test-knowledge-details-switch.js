@@ -6,10 +6,10 @@ import {
     buildKnowledgeBlock,
     buildKnowledgeExtractionVariables,
     dropKnowledgeFrom,
-    injectKnowledgeBlock,
     updateKnowledgeAfterReply,
 } from '../lib/knowledge/ledger.js';
 import { fillTemplate } from '../lib/planning/generator.js';
+import { listStoryArcPrompts } from '../lib/injection/narrator-prompts.js';
 
 /**
  * The character details switch (knowledgeTracker.characterDetails): while
@@ -105,7 +105,7 @@ describe('character details switch off — the knowledge block', () => {
     });
 });
 
-describe('character details switch off — injectKnowledgeBlock reads the switch', () => {
+describe('character details switch off — the knowledge prompt reads the switch', () => {
     afterEach(() => {
         delete extension_settings.story_arc;
         delete chat_metadata.story_arc;
@@ -118,9 +118,7 @@ describe('character details switch off — injectKnowledgeBlock reads the switch
         chat_metadata.story_arc = { knowledge: makeLedger(true) };
         chat.length = 0;
         chat.push(...MESSAGES);
-        extensionPromptCalls.length = 0;
-        injectKnowledgeBlock();
-        return extensionPromptCalls[0][1];
+        return listStoryArcPrompts().find(prompt => prompt.key === 'story_arc_knowledge').text;
     }
 
     it('injects no details while the switch is off, and for a settings file without the switch', () => {

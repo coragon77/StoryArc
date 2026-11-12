@@ -1,7 +1,22 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, before, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, chat_metadata, chat, extensionPromptCalls } from '../tests/mocks/st-mocks.js';
-import { injectKnowledgeBlock } from '../lib/knowledge/ledger.js';
+let injectStoryArcPrompts;
+
+before(async () => {
+    // index.js registers its listeners in a jQuery ready callback and the
+    // progress display looks for its container: neither exists here.
+    globalThis.jQuery = () => {};
+    globalThis.$ = () => ({ length: 0 });
+    ({ injectStoryArcPrompts } = await import('../index.js'));
+});
+
+/** Set every Story Arc prompt, as before a generation, and return the calls for the knowledge and names keys. */
+function injectKnowledgeCalls() {
+    extensionPromptCalls.length = 0;
+    injectStoryArcPrompts();
+    return extensionPromptCalls.filter(call => call[0] === 'story_arc_knowledge' || call[0] === 'story_arc_names');
+}
 
 /** ST's extension_prompt_types.IN_CHAT and extension_prompt_roles.SYSTEM */
 const IN_CHAT = 1;
@@ -48,7 +63,7 @@ const EXPECTED_NAMES = [
     'Dougal, Noor',
 ].join('\n');
 
-describe('injectKnowledgeBlock', () => {
+describe('injectStoryArcPrompts — the knowledge and names keys', () => {
     beforeEach(() => {
         extensionPromptCalls.length = 0;
         chat.length = 0;
@@ -65,9 +80,7 @@ describe('injectKnowledgeBlock', () => {
     it('sets the knowledge block and the taken names in-chat at depth 1 with the system role while the tracker is on', () => {
         setSwitches({ extension: true, tracker: true });
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', EXPECTED_BLOCK, IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -76,9 +89,7 @@ describe('injectKnowledgeBlock', () => {
     it('sets both keys to an empty string while the tracker is off', () => {
         setSwitches({ extension: true, tracker: false });
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -91,9 +102,7 @@ describe('injectKnowledgeBlock', () => {
             status: [{ value: 'dead', at: 3 }],
         };
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -102,9 +111,7 @@ describe('injectKnowledgeBlock', () => {
     it('sets both keys to an empty string while Story Arc itself is off', () => {
         setSwitches({ extension: false, tracker: true });
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -114,9 +121,7 @@ describe('injectKnowledgeBlock', () => {
         setSwitches({ extension: true, tracker: true });
         chat_metadata.story_arc.knowledge.facts = [];
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -128,9 +133,7 @@ describe('injectKnowledgeBlock', () => {
         chat_metadata.story_arc.knowledge.facts = [];
         chat_metadata.story_arc.knowledge.scene = { at: null, present: [] };
 
-        injectKnowledgeBlock();
-
-        assert.deepEqual(extensionPromptCalls, [
+        assert.deepEqual(injectKnowledgeCalls(), [
             ['story_arc_knowledge', '', IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', '', IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
@@ -138,7 +141,7 @@ describe('injectKnowledgeBlock', () => {
 
     it('sets the same names text byte for byte when the scene and the facts changed in between', () => {
         setSwitches({ extension: true, tracker: true });
-        injectKnowledgeBlock();
+        const namesBefore = injectKnowledgeCalls().filter(call => call[0] === 'story_arc_names');
         const knowledge = chat_metadata.story_arc.knowledge;
         knowledge.scene = { at: 5, present: ['c2'] };
         knowledge.facts.push({
@@ -146,10 +149,9 @@ describe('injectKnowledgeBlock', () => {
             holders: [{ characterId: 'c2', how: 'witnessed', toldBy: null, at: 5 }],
         });
 
-        injectKnowledgeBlock();
+        const namesAfter = injectKnowledgeCalls().filter(call => call[0] === 'story_arc_names');
 
-        const namesCalls = extensionPromptCalls.filter(call => call[0] === 'story_arc_names');
-        assert.deepEqual(namesCalls, [
+        assert.deepEqual([...namesBefore, ...namesAfter], [
             ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
             ['story_arc_names', EXPECTED_NAMES, IN_CHAT, 1, false, SYSTEM_ROLE],
         ]);
