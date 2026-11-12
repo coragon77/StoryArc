@@ -99,6 +99,10 @@ describe('buildTakenNamesBlock — derivation', () => {
         assert.equal(buildTakenNamesBlock(ledger), blockListing('Ellie, Julien, Mara, Masters, Morel'));
     });
 
+    it('keeps a one-letter name that stands alone: the codenames M and Q', () => {
+        assert.equal(buildTakenNamesBlock(ledgerOf(['M'], ['Eve Moneypenny', ['Q']])), blockListing('Eve, M, Moneypenny, Q'));
+    });
+
     it('drops a lowercase word inside a capitalised name: Woman with Umbrella gives Umbrella, Woman', () => {
         assert.equal(buildTakenNamesBlock(ledgerOf(['Woman with Umbrella'])), blockListing('Umbrella, Woman'));
     });

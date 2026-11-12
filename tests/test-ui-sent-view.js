@@ -122,6 +122,26 @@ describe('maskSpoilerLines — what the view hides until the plan is revealed', 
     });
 });
 
+describe('maskSpoilerLines — an unnamed relative as planned holder', () => {
+    it('hides the line that names them by their display name', () => {
+        const ledger = {
+            characters: [
+                { id: 'c1', name: 'Kendra Osei', aliases: [] },
+                { id: 'c2', name: '', aliases: [], details: { relation: [{ value: { kind: 'mother', of: 'c1' }, at: 3 }] } },
+            ],
+            facts: [{ id: 'f1', text: 'The deed is forged', public: false, holders: [
+                { characterId: 'c1', how: 'witnessed', toldBy: null, at: 3 },
+                { characterId: 'c2', how: 'plan', toldBy: null, at: null },
+            ] }],
+        };
+        const block = 'KENDRA OSEI (present)\n- Knows: The deed is forged (shared only with Kendra Osei\'s mother)';
+
+        const runs = maskSpoilerLines('story_arc_knowledge', block, listSpoilers([], ledger));
+
+        assert.deepEqual(runs.map(run => run.hidden), [false, true]);
+    });
+});
+
 describe('buildSentViewContent — the strip, the reader and their states', () => {
     const noSpoilers = { spoilerLines: [], plannedHolderNames: [] };
 
@@ -132,7 +152,7 @@ describe('buildSentViewContent — the strip, the reader and their states', () =
             { key: 'story_arc_names', text: texts.names ?? '' },
             { key: 'story_arc_signals', text: texts.signals ?? '' },
         ];
-        return { parts: partsInReadingOrder(prompts, stamp), newestMessageIndex: 4, replyIndex: 5, savedAt: '2026-11-12T10:00:00.000Z' };
+        return { parts: partsInReadingOrder(prompts, stamp), newestMessageIndex: 4, stampMessageIndex: 3, replyIndex: 5, savedAt: '2026-11-12T10:00:00.000Z' };
     }
 
     function viewOf(overrides) {
@@ -156,6 +176,7 @@ describe('buildSentViewContent — the strip, the reader and their states', () =
             ['story_arc_signals', 'Pacing and checks', '5'],
         ]);
         assert.ok(html.includes('5 tokens of a 3,000 budget'), html);
+        assert.ok(html.includes('<span class="sv-block-where">On message #3</span>'), html);
         assert.ok(html.includes('Story Arc would add <b>21 tokens</b> to the next request'), html);
     });
 

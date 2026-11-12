@@ -159,11 +159,15 @@ describe('the record of the last send', () => {
         assert.equal(chat_metadata.story_arc.lastSent.type, 'swipe');
     });
 
-    it('keeps nothing for a dry run, a quiet generation or a request without Story Arc text', () => {
+    it('keeps nothing for a dry run, a quiet generation, an impersonation or a request without Story Arc text', () => {
         onChatCompletionPromptReady({ chat: outgoingRequest(), dryRun: true });
         assert.equal(chat_metadata.story_arc.lastSent, undefined);
 
         noteGenerationType('quiet', false);
+        onChatCompletionPromptReady({ chat: outgoingRequest(), dryRun: false });
+        assert.equal(chat_metadata.story_arc.lastSent, undefined);
+
+        noteGenerationType('impersonate', false);
         onChatCompletionPromptReady({ chat: outgoingRequest(), dryRun: false });
         assert.equal(chat_metadata.story_arc.lastSent, undefined);
 
@@ -189,12 +193,26 @@ describe('the record of the last send', () => {
         assert.equal(chat_metadata.story_arc.lastSent, undefined);
     });
 
-    it('is dropped on a branch that ends before its reply, kept up to the chat end', () => {
+    it('puts the stamp on the player\'s message it came from when a narrator message is the newest', () => {
+        chat.push({ is_user: false, is_system: false, name: 'Noor', mes: 'The crane groans overhead.' });
+        injectStoryArcPrompts();
+
+        onChatCompletionPromptReady({ chat: [...outgoingRequest(), { role: 'assistant', content: chat[2].mes }], dryRun: false });
+
+        const lastSent = chat_metadata.story_arc.lastSent;
+        assert.equal(lastSent.replyIndex, 3);
+        assert.equal(lastSent.newestMessageIndex, 2);
+        assert.equal(lastSent.stampMessageIndex, 1);
+        assert.equal(lastSent.stamp, '[Arc: message 2 of ~60]');
+    });
+
+    it('is dropped on a branch that does not reach its reply, kept while the reply is in the chat', () => {
         chat_metadata.story_arc.lastSent = { replyIndex: 5, parts: [] };
-        assert.equal(dropLastSentPastEnd(5), false);
+        assert.equal(dropLastSentPastEnd(6), false);
         assert.ok(chat_metadata.story_arc.lastSent);
 
-        assert.equal(dropLastSentPastEnd(4), true);
+        // A branch at message 4 has length 5: reply 5 is not in it
+        assert.equal(dropLastSentPastEnd(5), true);
         assert.equal(chat_metadata.story_arc.lastSent, undefined);
     });
 });
