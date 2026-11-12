@@ -90,6 +90,21 @@ describe('buildArcSoFar with rulings', () => {
     });
 });
 
+describe('buildArcSoFar: reached milestones count toward the tier\'s milestone count', () => {
+    const countSentence = 'Your milestones and the ones below under Already happened and Passed over count together toward the TIER block\'s minimum and its usual ceiling: write only the steps that remain, and always at least one.';
+
+    it('tells an act and a saga re-plan, right after "what comes NEXT"', () => {
+        for (const tier of ['act', 'saga']) {
+            const text = buildArcSoFar({ ...storedAct(), tier });
+            assert.ok(text.includes(`your beats are what comes NEXT. ${countSentence} The current premise`), tier);
+        }
+    });
+
+    it('leaves it out for an episode, whose scene beats are no milestones', () => {
+        assert.equal(buildArcSoFar({ ...storedAct(), tier: 'episode' }).includes('count together'), false);
+    });
+});
+
 describe('buildPlanCheckVariables with rulings', () => {
     it('passes the rulings as RULINGS, in message order', () => {
         const variables = buildPlanCheckVariables(storedAct(), { analysis: 'A.', chatHistory: [] });
