@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-11
+- **Last Updated:** 2026-11-12
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -337,6 +337,12 @@ StoryArc/
 │   │   │                       #   a countdown, progress card only. Both return 0
 │   │   │                       #   (not NaN) for arcs without estimatedLength or
 │   │   │                       #   messageStart
+│   │   ├── narrator-prompts.js # listStoryArcPrompts() — the four prompt keys with
+│   │   │                       #   every gate, position and depth, for the injection
+│   │   │                       #   and the view of what the narrator gets (#83);
+│   │   │                       #   noteGenerationType, saveLastSent(outgoingChat) —
+│   │   │                       #   the record of the last send (lastSent), read back
+│   │   │                       #   from ST's extension_prompts; dropLastSentPastEnd
 │   │   ├── stamping.js         # buildStamp(arc, chatIndex) — "[Arc: message N of ~M]",
 │   │   │                       #   a pure function of the index and fixed arc metadata;
 │   │   │                       #   stampPromptMessages(promptChat, arcs) — prepends the
@@ -466,6 +472,11 @@ StoryArc/
 │   │   │                       #   setupSettingsPanelEvents() also wires the drawer's
 │   │   │                       #   stall nudge (#story-arc-settings .story-arc-stall-btn
 │   │   │                       #   → showWizard(arcId))
+│   │   ├── sent-view.js        # showSentView() — What the narrator gets (#83): the
+│   │   │                       #   request as a strip, the chosen part beside it, Last
+│   │   │                       #   sent / Next request; maskSpoilerLines + listSpoilers
+│   │   │                       #   hide secrets, triggers, clues and fulfillments until
+│   │   │                       #   Reveal plan; buildSentViewContent(view) is pure
 │   │   ├── wand-menu.js        # registerWandMenuEntry() — adds a "Story Arc" item to
 │   │   │                       #   #extensionsMenu (the wand next to the chat bar);
 │   │   │                       #   showWandPopup() closes itself before the wizard,
@@ -581,8 +592,10 @@ StoryArc/
 │       │                       #   status strip (ST theme variables only)
 │       ├── knowledge.css       # Knowledge popup (#70): tabs, lines, chips, sheets,
 │       │                       #   picker, status bar; ST theme variables only
-│       └── progress.css        # Layout of the progress rows; tokens, beat squares
-│                               #   and the warning come from arc-manager.css (#72)
+│       ├── progress.css        # Layout of the progress rows; tokens, beat squares
+│       │                       #   and the warning come from arc-manager.css (#72)
+│       └── sent-view.css       # What the narrator gets: strip, blocks, reader,
+│                               #   placeholders; on the .am tokens (#83)
 ├── scripts/
 │   ├── rebuild-knowledge-block.mjs # Diagnosis: the knowledge block the narrator got at
 │   │                           #   one message of a chat file, ledger cut back to then;
@@ -663,6 +676,12 @@ StoryArc/
 │   │                           #   replannedAt shifted on resume, nudge rendering,
 │   │                           #   reactivation stamp, ignoreStall (hidden, shown again
 │   │                           #   after the next beat, a re-plan, a reactivation)
+│   ├── test-narrator-prompts.js # Tests: injectStoryArcPrompts keys, positions and
+│   │                           #   depths; the record of the last send (dry run,
+│   │                           #   quiet, foreign request, swipe, continue, branch)
+│   ├── test-ui-sent-view.js    # Tests: maskSpoilerLines outcome on real builder text
+│   │                           #   (items with a line break, a blank line), planned
+│   │                           #   holders, the strip and reader, Next request marks
 │   ├── test-stamping.js        # Tests: buildStamp purity + stampPromptMessages
 │   │                           #   (numbering, old positions unchanged as the chat
 │   │                           #   grows, foreign-entry and rewritten-text handling,
@@ -908,8 +927,12 @@ lib/injection/
 ├── stamping.js (imports: clock.js, core/constants.js, core/settings.js, /script.js)
 ├── signals.js  (imports: planning/storage.js, planning/beat-completion.js completeBeats,
 │                core/settings.js, /script.js)
-└── builder.js  (imports: pacing.js, clock.js, core/settings.js,
-                 core/constants.js, context/chat-history.js)
+├── builder.js  (imports: pacing.js, clock.js, core/settings.js,
+│                core/constants.js, context/chat-history.js)
+└── narrator-prompts.js (imports: builder.js, stamping.js STAMP_PREFIX,
+                 knowledge/ledger.js buildKnowledgeBlock, knowledge/names.js,
+                 planning/storage.js, core/settings.js, core/constants.js,
+                 /script.js chat + chat_metadata + extension_prompts)
 
 lib/knowledge/
 ├── message-ids.js (imports: /scripts/utils.js uuidv4)
@@ -946,6 +969,12 @@ lib/ui/
 │                              /scripts/popup.js, /scripts/utils.js)
 ├── wand-menu.js     (imports: core/settings.js, planning/storage.js, progress.js,
 │                              wizard.js, arc-manager.js, knowledge-popup.js,
+│                              sent-view.js, /scripts/popup.js, /scripts/utils.js)
+├── sent-view.js     (imports: injection/narrator-prompts.js, injection/builder.js
+│                              header and check-line constants, injection/stamping.js,
+│                              injection/clock.js, planning/storage.js, core/settings.js,
+│                              core/constants.js, context/chat-history.js estimateTokens,
+│                              beat-strip.js formatNumber, /script.js,
 │                              /scripts/popup.js, /scripts/utils.js)
 ├── arc-manager.js   (imports: /script.js chat + chat_metadata + saveMetadata,
 │                              planning/storage.js, planning/arc-edit.js,
@@ -969,7 +998,7 @@ lib/ui/
 └── undo-stack.js    (imports: nothing)
 
 index.js  (imports: core/settings.js, planning/storage.js,
-                    planning/beat-completion.js reopenCompletionsFrom, injection/builder.js,
+                    planning/beat-completion.js reopenCompletionsFrom, injection/narrator-prompts.js,
                     injection/stamping.js, injection/signals.js,
                     knowledge/ledger.js, ui/settings-panel.js, ui/knowledge-status.js,
                     ui/wand-menu.js, ui/wizard.js closeWizard,
@@ -1009,5 +1038,6 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
+| What the narrator gets (#83) | `lib/ui/sent-view.js` | `lib/injection/narrator-prompts.js` (`listStoryArcPrompts`, `saveLastSent`), `index.js` (`injectStoryArcPrompts`, `onChatCompletionPromptReady`, `onChatChanged`), `lib/injection/builder.js` (header and check-line constants), `lib/css/sent-view.css`, `lib/ui/settings-panel.js` and `lib/ui/wand-menu.js` (entry buttons) |
 | Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |

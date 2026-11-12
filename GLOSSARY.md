@@ -74,7 +74,7 @@ Making a past arc active again, in normal focus, with its beats as they stand. I
 _Avoid_: revive, reopen (the word for a beat whose completion a rollback takes back)
 
 **Reveal plan**:
-The Arc Manager's switch, one per arc, that shows the arc's plan text: premise, pressures and fulfillments, secrets, clues and triggers. Off whenever the Arc Manager opens, so the plan stays secret unless the player asks for it; the title, the focus, the beat strip and the warnings show either way.
+The Arc Manager's switch, one per arc, that shows the arc's plan text: premise, pressures and fulfillments, secrets, clues and triggers. Off whenever the Arc Manager opens, so the plan stays secret unless the player asks for it; the title, the focus, the beat strip and the warnings show either way. What the narrator gets has one switch of the same name for the whole view, which hides less: secrets, triggers, clues and fulfillments wait for it, while premise, world facts and pressures always show, because they steer every reply and reveal no plot (#83).
 _Avoid_: spoilers on, unhide, show plan
 
 ### Beats

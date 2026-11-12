@@ -278,7 +278,7 @@ Text tabs on a hairline: muted 500 weight, selected in body colour, 600 weight a
 Dots in body colour, their fill fading from the scene outwards and hollow for no facts; dotted rings with muted titles; a name-family band at body 9%; relation lines at body 50%, the selected one in emphasis. Names sit on a surface backing at 13px and show on hover with the tooltip shadow; a name to check is a warning triangle and a dashed ring, never colour alone. The map holds a tinted container with 6px corners; the filter dims what it does not match to a quarter.
 
 ### Reveal switch
-A checkbox with `role="switch"` drawn as a track: well fill and edge when off, `selected` fill with a body-colour edge and knob when on, a "shown" word beside it. One per plan; it hides again when the popup closes.
+A checkbox with `role="switch"` drawn as a track: well fill and edge when off, `selected` fill with a body-colour edge and knob when on, a "shown" word beside it. One per plan; it hides again when the popup closes. What the narrator gets has one for the whole view, its state word counting the hidden lines ("11 lines hidden"); there the premise, world facts and pressures show without it, and each hidden run is a dashed placeholder with an eye-slash icon that says what it hides ("3 triggers, 4 clues hidden · 455 tokens").
 
 ### Status bar
 The popup's bottom row, on SillyTavern's controls line above a frame-border rule: the last save message with its icon, Undo with what it undoes, keyboard hints in `kbd` caps, and Close.

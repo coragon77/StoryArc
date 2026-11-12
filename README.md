@@ -40,7 +40,7 @@ The arc preset holds two entries you toggle in SillyTavern's prompt manager. Sav
 
 ## Using it
 
-Click the **wand menu** next to the chat input and choose **Story Arc**. The popup has **Plan a new arc**, **Manage**, **Knowledge**, and a row for each active arc. The Extensions drawer has the same.
+Click the **wand menu** next to the chat input and choose **Story Arc**. The popup has **Plan a new arc**, **Manage**, **Knowledge**, **What the narrator gets**, and a row for each active arc. The Extensions drawer has the same.
 
 ### Planning an arc
 
@@ -129,6 +129,7 @@ Every edit can be undone while the popup is open.
 ## Good to know
 
 - **Beats never complete?** Your model isn't reporting them. Mark them done by hand in the Arc Manager, or turn on the knowledge tracker, which recognises them itself.
+- **A reply went somewhere odd?** Open **What the narrator gets**. It shows everything Story Arc added to the last request and what it will add to the next one, part by part, with spoilers hidden until you reveal the plan.
 - **Summaries of earlier arcs**: give a lorebook entry a title starting with `[ARC ` (for example `[ARC 3] The Harbour Heist`) and the planner treats it as one.
 - **Your data**: everything is stored in the chat file. Story Arc only reads your lorebook, card and persona; removing the extension leaves your chats intact.
 

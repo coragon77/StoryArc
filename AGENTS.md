@@ -64,6 +64,7 @@ StoryArc/
 │   │   └── arc-preset.js       # The arc generation preset and connection profile
 │   ├── injection/
 │   │   ├── builder.js          # Every prompt section per arc by (tier, focus), budget trim, beat check
+│   │   ├── narrator-prompts.js # What goes to the narrator, in one list; the record of the last send
 │   │   ├── clock.js            # Pacing clock selection, pauseArc/resumeArc
 │   │   ├── stamping.js         # Per-message arc counters on the outgoing prompt
 │   │   ├── pacing.js           # Phase calculation + directives
@@ -80,6 +81,7 @@ StoryArc/
 │   │   ├── arc-manager.js      # Arc list + controls popup
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
 │   │   ├── knowledge-status.js # The tracker's status line in the drawer (popup, panel, index.js)
+│   │   ├── sent-view.js        # What the narrator gets: the request as a strip, each part as sent
 │   │   ├── beat-strip.js       # The beat squares and tier words (Arc Manager, progress rows)
 │   │   ├── undo-stack.js       # A popup session's undo (Knowledge popup, Arc Manager)
 │   │   └── progress.js         # The active arcs' rows (drawer, wand popup)
@@ -88,7 +90,8 @@ StoryArc/
 │       ├── settings-panel.css  # Settings drawer and wand popup styles
 │       ├── arc-manager.css     # Arc manager styles
 │       ├── knowledge.css       # Knowledge popup styles
-│       └── progress.css        # Progress row layout
+│       ├── progress.css        # Progress row layout
+│       └── sent-view.css       # What the narrator gets: strip and reader
 ├── scripts/
 │   ├── rebuild-knowledge-block.mjs # The knowledge block the narrator got at one message
 │   └── rename-characters.mjs   # Rename characters across a chat file and its lorebooks

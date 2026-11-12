@@ -84,6 +84,7 @@ Status log:
 - 2026-11-04: opened after the discussion in a Fable session, right after the act-drift goals document.
 - 2026-11-04: all chapters are implemented on `integration/act-drift-npc-names` as tickets #37–#49, with a review fix pass on top. Not merged into main and not live-checked; no chapter is ticked until its last ticket closes.
 - 2026-11-11: the Paragon ledger after go-live (message 2739) showed the narrator dodging the block with double surnames built from taken names: hyphenated surnames 5% of new records before, 13% after; reuse of a taken name word 17% before, 25% after. The narrator header, the planner's rule and checklist line, and the plan check's rename rule now name the double surname and require the story to say how a relative is related.
+- 2026-11-12: #83's view of what the narrator gets showed junk on the Amy chat's names list (`07, 904, A, K, with`). The derivation now drops hyphen pieces without a letter, single-letter initials, lowercase words inside a capitalised name and six more titles (nurse, corporal, admiral, rear, principal, coach); the extraction lists a character without a name under a lowercase "the …" description. Paragon's list went from 237 to 226 names; Title Case labels stored before ("Waiter #4", "SFX Tech", "Club Steward", "Welder Accomplice") stay until renamed by hand.
 
 ## Chapters
 
