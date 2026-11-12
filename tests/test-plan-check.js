@@ -387,6 +387,18 @@ describe('buildPlanCheckVariables', () => {
         assert.ok(variables.STORY_BLOCK.endsWith('step 1 judges these.\n(none)\n\n'), variables.STORY_BLOCK);
     });
 
+    it('gives an act and a saga the process-milestone rule, an episode or an unknown tier none', () => {
+        for (const tier of ['act', 'saga']) {
+            const rule = buildPlanCheckVariables({ ...makeReplannedAct(), tier }, null).PROCESS_MILESTONE_RULE;
+            assert.ok(rule.includes('a process the story lives through over many scenes'), tier);
+            assert.ok(rule.includes('rewrite it as the moment that shows the process has taken hold'), tier);
+            assert.ok(rule.includes('replaces "The guild has done her a favour."'), tier);
+            assert.ok(rule.endsWith('keeps the event. '), tier);
+        }
+        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'episode' }, null).PROCESS_MILESTONE_RULE, '');
+        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'chapter' }, null).PROCESS_MILESTONE_RULE, '');
+    });
+
     it('writes (none) for an empty list', () => {
         const arc = { ...makeReplannedAct(), secrets: [], triggers: [], beats: [] };
 

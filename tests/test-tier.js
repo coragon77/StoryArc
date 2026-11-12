@@ -83,6 +83,14 @@ describe('buildTierBlock', () => {
         }
     });
 
+    it('act and saga: a process milestone is fulfilled once it has taken hold, a one-off event by the event', () => {
+        for (const tier of ['act', 'saga']) {
+            const text = buildTierBlock(tier);
+            assert.ok(text.includes('- A milestone that is a process the story lives through over many scenes (a honeymoon, a slow slide, trust growing, a habit taking hold) is fulfilled at the moment that shows the process has taken hold, never at its first occurrence: the first scene in which its pressure plays must not already fulfil it. "She has come to count on the guild\'s favour: she plans her week around it, or defends it to a friend", not "The guild has done her a favour." A milestone that is a one-off event (a death, a betrayal, a first meeting) is fulfilled by the event itself.\n'), tier);
+        }
+        assert.equal(buildTierBlock('episode').includes('taken hold'), false);
+    });
+
     it('saga: milestones, 2-4 of them, 400-1500 messages', () => {
         const text = buildTierBlock('saga');
         assert.ok(text.includes('SAGA'));
@@ -100,8 +108,8 @@ describe('buildTierBlock', () => {
     });
 
     it('keeps one instruction per line, each "- " bullet after the header and the scale line, ending in a newline', () => {
-        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 10 bullets
-        for (const [tier, bulletCount] of [['episode', 4], ['act', 10], ['saga', 10]]) {
+        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 11 bullets
+        for (const [tier, bulletCount] of [['episode', 4], ['act', 11], ['saga', 11]]) {
             const text = buildTierBlock(tier);
             assert.ok(text.endsWith('.\n'), tier);
             const lines = text.slice(0, -1).split('\n');

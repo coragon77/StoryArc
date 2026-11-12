@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fillTemplate, loadTemplate } from '../lib/planning/generator.js';
+import { buildPlanCheckVariables, fillTemplate, loadTemplate } from '../lib/planning/generator.js';
 
 describe('loadTemplate', () => {
     it('refuses the unbuilt detail-pass prompt like any unknown name', async () => {
@@ -59,6 +59,21 @@ describe('every fulfillment is one on-screen moment', () => {
         assert.ok(text.includes('== FULFILLMENTS ==\n{{FULFILLMENTS}}\n'));
         assert.ok(text.includes('3. FULFILLMENTS. Find every fulfillment that is a tally of many scenes or a chain of separate events, and rewrite it as the ONE on-screen moment at which the development shows'));
         assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact | secret"'));
+    });
+
+    it('the plan check states the process-milestone rule for an act, before the leave-alone clause, and not for an episode', () => {
+        const template = read('check-plan.txt');
+        const arc = { premise: 'A debt.', secrets: [], triggers: [], beats: [] };
+        const actPrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'act' }, null));
+        const episodePrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'episode' }, null));
+
+        const ruleAt = actPrompt.indexOf('rewrite it as the moment that shows the process has taken hold');
+        const leaveAloneAt = actPrompt.indexOf('Leave any other fulfillment that is already one moment and needs no particular incident alone.');
+        assert.ok(ruleAt > actPrompt.indexOf('3. FULFILLMENTS.'), 'the rule sits in step 3');
+        assert.ok(leaveAloneAt > ruleAt, 'the rule comes before the leave-alone clause');
+        assert.equal(episodePrompt.includes('taken hold'), false);
+        assert.ok(episodePrompt.includes('needs no particular incident alone. Answer each rewrite'));
+        assert.equal(actPrompt.includes('{{'), false);
     });
 });
 
