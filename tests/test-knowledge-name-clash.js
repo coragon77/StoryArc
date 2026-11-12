@@ -48,6 +48,20 @@ describe('applyExtractionAnswer flags a new character whose name is taken', () =
         });
     });
 
+    it('flags no title or initial: Nurse Patel and Julien M. next to Nurse Cruz and Marcus M. Bishop', () => {
+        const ledger = ledgerWith([
+            { id: 'c1', name: 'Nurse Cruz', aliases: [] },
+            { id: 'c2', name: 'Marcus Bishop', aliases: ['Bishop, M.'] },
+        ]);
+
+        applyExtractionAnswer(ledger, newCharactersAnswer([{ name: 'Nurse Patel', aliases: [] }, { name: 'Julien M.', aliases: [] }]), 10, 11);
+
+        assert.deepEqual(ledger.characters.slice(2), [
+            { id: 'c3', name: 'Nurse Patel', aliases: [] },
+            { id: 'c4', name: 'Julien M.', aliases: [] },
+        ]);
+    });
+
     it('compares names without their titles', () => {
         const ledger = ledgerWith([{ id: 'c1', name: 'Dr. Thorne', aliases: [] }]);
 

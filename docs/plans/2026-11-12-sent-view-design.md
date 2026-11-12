@@ -279,18 +279,22 @@ blacklists, and a list of role words would never be complete.
 3. **In a name of several words, a lowercase word is no name word**, not
    only a particle: `Woman with Umbrella` loses `with`. A single lowercase
    word ("zoe") still counts, as now.
-4. **A name or alias that starts with a lowercase "the", "a" or "an" is a
-   description and gives no words**, whatever its other capitals: "the
-   Obsidian Lounge hostess". Today only a description without any capital
-   is caught.
-5. **The extraction writes descriptions that way.** NEW CHARACTERS in
+4. *(Dropped while building.)* A name starting with a lowercase "the"
+   would have counted as a description whatever its capitals. It would also
+   have dropped codename aliases such as "the Vanguard", which the block
+   exists to protect, and the existing test that keeps "the Brown-Haired
+   Junior". Rule 3 already takes the lowercase words out of such a name.
+5. **The extraction writes descriptions in lowercase.** NEW CHARACTERS in
    `prompts/extract-knowledge.txt` gets one sentence: a character the
    messages give no name is listed under a short lowercase description that
    starts with "the" ("the woman with the umbrella"), never a made-up name
-   or a Title Case label ("Unknown Caller"); a name learned later goes under
-   newNames. Rule 4 then keeps it out of the taken names.
-6. **"nurse" joins the title words**, next to "doctor" and "officer": `Nurse
-   Cruz` gives `Cruz`.
+   or a capitalised label ("Unknown Caller"); a name the messages give them
+   later goes under NEW NAMES. A description without a capital gives no
+   names (the rule from #39).
+6. **Missing titles join the title words**, next to "doctor" and "officer":
+   nurse, corporal, admiral, rear, principal, coach, all found on Paragon
+   records (`Nurse Cruz` gives `Cruz`, `Rear Admiral Keller` gives `Keller`).
+   Paragon's list goes from 237 to 226 names with rules 1 to 3 and 6.
 
 The records already stored are not rewritten. Rules 1 to 3 and 6 clean the
 ones they cover on the next build of the block; the Title Case
@@ -327,7 +331,7 @@ prompt-cache miss (ADR-0005), then stable again.
     one with a blank line inside; every one appears with Reveal on.
 - Part B, unit tests on `listTakenNames` / `printTakenNames` with the
   measured inputs as fixtures (`HH-904`, `ID #07-A`, `Mara K.`, `M. G.`,
-  `Woman with Umbrella`, `the Obsidian Lounge hostess`, `Nurse Cruz`) and
+  `Woman with Umbrella`, `Charles d'Artagnan`, `Nurse Cruz`) and
   hand-written expected lists; and that `listSharedNames` no longer flags
   "Nurse Patel" against "Nurse Cruz".
 - Live check in the Amy chat (never Paragon): open the view from the drawer

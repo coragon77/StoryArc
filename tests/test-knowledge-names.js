@@ -90,6 +90,28 @@ describe('buildTakenNamesBlock — derivation', () => {
             blockListing('Brown, Haired, Junior, Tessa'));
     });
 
+    it('drops the pieces of a designation that are no name: HH-904 gives HH, ID #07-A gives ID', () => {
+        assert.equal(buildTakenNamesBlock(ledgerOf(['Amy', ['HH-904', 'ID #07-A']])), blockListing('Amy, HH, ID'));
+    });
+
+    it('drops initials wherever they stand: Mara K., M. G., Julien M., W-04', () => {
+        const ledger = ledgerOf(['Mara', ['Mara K.', 'M. G.']], ['Julien Morel', ['Julien M.']], ['Ellie Masters', ['W-04']]);
+        assert.equal(buildTakenNamesBlock(ledger), blockListing('Ellie, Julien, Mara, Masters, Morel'));
+    });
+
+    it('drops a lowercase word inside a capitalised name: Woman with Umbrella gives Umbrella, Woman', () => {
+        assert.equal(buildTakenNamesBlock(ledgerOf(['Woman with Umbrella'])), blockListing('Umbrella, Woman'));
+    });
+
+    it('keeps a name whose capital follows an apostrophe: Charles d\'Artagnan', () => {
+        assert.equal(buildTakenNamesBlock(ledgerOf(['Charles d\'Artagnan'])), blockListing('Charles, d\'Artagnan'));
+    });
+
+    it('drops the titles of Paragon\'s records: Nurse Cruz, Corporal Horton, Rear Admiral Keller, Principal Vance-Horton, Coach Harmon', () => {
+        const ledger = ledgerOf(['Nurse Cruz'], ['Corporal Horton'], ['Rear Admiral Keller'], ['Principal Vance-Horton'], ['Coach Harmon']);
+        assert.equal(buildTakenNamesBlock(ledger), blockListing('Cruz, Harmon, Horton, Keller, Vance'));
+    });
+
     it('sorts by the folded form, not by case or accent', () => {
         const ledger = ledgerOf(['zoe'], ['Émile'], ['Bram'], ['adler'], ['Ezra']);
         assert.equal(buildTakenNamesBlock(ledger), blockListing('adler, Bram, Émile, Ezra, zoe'));

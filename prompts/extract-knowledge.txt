@@ -34,7 +34,7 @@ Each message starts with its index in square brackets.
 
 1. PRESENT. List the characters who are in the scene at the end of the new messages. Use the names from the ledger where the character is in it.
 
-2. NEW CHARACTERS. List every character who appears or is talked about in the new messages and is not in the ledger under any name, with the other names the messages give them. Do not list a character the ledger already has under another name.{{UNNAMED_RELATIVES_TASK}}
+2. NEW CHARACTERS. List every character who appears or is talked about in the new messages and is not in the ledger under any name, with the other names the messages give them. Do not list a character the ledger already has under another name. A character the messages give no name is listed under a short lowercase description that starts with "the" ("the woman with the umbrella"), never under a made-up name or a capitalised label such as "Unknown Caller"; a name the messages give them later goes under NEW NAMES.{{UNNAMED_RELATIVES_TASK}}
 
 NEW NAMES. When a character the ledger already has goes by a name in the new messages that the ledger does not list for them (a codename, a first name, a nickname), do not list them as a new character. Write one item under "newNames" instead:
 - "character": the character's name from the ledger.
