@@ -73,8 +73,8 @@ The **tier** is an arc's size:
 | Tier | Length | Beats | Use it for |
 |---|---|---|---|
 | Episode | 8–20 messages | 5–8 scene beats, in order | One job, one evening's play |
-| Act | 60–150 messages | 3–5 milestones, in order | A leg of the larger story |
-| Saga | 400–1500 messages | 2–4 milestones, in order | The overarching storyline |
+| Act | 60–150 messages | 3–7 milestones, in order | A leg of the larger story |
+| Saga | 400–1500 messages | 3–7 milestones, in order | The overarching storyline |
 
 Several arcs can run at once, like episodes inside seasons inside a series.
 

@@ -391,7 +391,9 @@ describe('buildPlanCheckVariables', () => {
         for (const tier of ['act', 'saga']) {
             const rule = buildPlanCheckVariables({ ...makeReplannedAct(), tier }, null).PROCESS_MILESTONE_RULE;
             assert.ok(rule.includes('a process the story lives through over many scenes'), tier);
-            assert.ok(rule.includes('rewrite it as the moment that shows the process has taken hold'), tier);
+            assert.ok(rule.includes('rewrite it as the moment that shows the process has taken hold, in what a character does'), tier);
+            assert.ok(rule.includes('or which something a character only says would meet'), tier);
+            assert.equal(rule.includes('defends it to a friend'), false, tier);
             assert.ok(rule.includes('replaces "The guild has done her a favour."'), tier);
             assert.ok(rule.endsWith('keeps the event. '), tier);
         }

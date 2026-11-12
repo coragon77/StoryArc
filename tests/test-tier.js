@@ -56,10 +56,10 @@ describe('buildTierBlock', () => {
         assert.ok(text.includes('- unlockAfter is allowed and welcome'));
     });
 
-    it('act: at least 3 milestones, no maximum, 60-150 messages, no unlockAfter, no scene-bound fulfillment', () => {
+    it('act: at least 3 milestones, usually no more than 7, 60-150 messages, no unlockAfter, no scene-bound fulfillment', () => {
         const text = buildTierBlock('act');
         assert.ok(text.includes('ACT'));
-        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats, as many as the story\'s steps need, each one a stage that lasts many scenes, never a single scene.'));
+        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats, as many as the story\'s steps need and usually no more than 7, each one a stage that lasts many scenes, never a single scene.'));
         assert.equal(/\d+-\d+ MILESTONES/.test(text), false);
         assert.ok(text.includes('60 and 150'));
         assert.ok(/milestone/i.test(text));
@@ -75,6 +75,7 @@ describe('buildTierBlock', () => {
     it('act and saga: milestones in story order, only the current one seen, one plot thread per arc', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildTierBlock(tier);
+            assert.ok(text.includes('On a re-plan, the milestones the story has already reached count toward that minimum: write only the steps that remain.'), tier);
             assert.ok(text.includes('List them in the order the story should reach them. The arc is ONE plot thread, and its milestones are the steps of that thread.\n'), tier);
             assert.ok(text.includes('- The narrating AI sees only the current milestone\'s pressure: the first one not yet fulfilled. So the first milestone is what presses from the first message on, and each later one presses only once the story has reached the one before it. A later milestone the story fulfils first still counts, and the earlier ones are then skipped as obsolete.\n'), tier);
             assert.ok(text.includes('- Order them so each one sets up the next: benefits before they can be taken away, a reveal after its clues.\n'), tier);
@@ -87,15 +88,15 @@ describe('buildTierBlock', () => {
     it('act and saga: a process milestone is fulfilled once it has taken hold, a one-off event by the event', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildTierBlock(tier);
-            assert.ok(text.includes('- A milestone that is a process the story lives through over many scenes (a honeymoon, a slow slide, trust growing, a habit taking hold) is fulfilled at the moment that shows the process has taken hold, never at its first occurrence: the first scene in which its pressure plays must not already fulfil it. "She has come to count on the guild\'s favour: she plans her week around it, or defends it to a friend", not "The guild has done her a favour." A milestone that is a one-off event (a death, a betrayal, a first meeting) is fulfilled by the event itself.\n'), tier);
+            assert.ok(text.includes('- A milestone that is a process the story lives through over many scenes (a honeymoon, a slow slide, trust growing, a habit taking hold) is fulfilled at the moment that shows the process has taken hold, never at its first occurrence: the first scene in which its pressure plays must not already fulfil it, and words alone never do: name what she does that shows it. "She has come to count on the guild\'s favour: she plans her week around it, or turns down something she used to want for it", not "The guild has done her a favour." A milestone that is a one-off event (a death, a betrayal, a first meeting) is fulfilled by the event itself.\n'), tier);
         }
         assert.equal(buildTierBlock('episode').includes('taken hold'), false);
     });
 
-    it('saga: at least 3 milestones, no maximum, 400-1500 messages', () => {
+    it('saga: at least 3 milestones, usually no more than 7, 400-1500 messages', () => {
         const text = buildTierBlock('saga');
         assert.ok(text.includes('SAGA'));
-        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats'));
+        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats, as many as the story\'s steps need and usually no more than 7,'));
         assert.equal(/\d+-\d+ MILESTONES/.test(text), false);
         assert.ok(text.includes('400 and 1500'));
         assert.ok(text.includes('This arc is a SAGA: the overarching storyline of this whole roleplay'));
