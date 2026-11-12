@@ -78,6 +78,19 @@ function generatedPlan(overrides = {}) {
 }
 
 describe('mergeReplan', () => {
+    it('marks the closed scene beats of an episode growing into an act or saga, and nothing else', () => {
+        for (const tier of ['act', 'saga']) {
+            const merged = mergeReplan(storedEpisode(), generatedPlan({ tier }));
+            const kept = merged.beats.filter(beat => beat.status === 'completed');
+            assert.deepEqual(kept.map(beat => [beat.id, beat.sceneBeat]), [['beat_1', true], ['beat_2', true]], tier);
+            assert.equal(merged.beats.some(beat => beat.status !== 'completed' && 'sceneBeat' in beat), false, tier);
+        }
+        const episodeAgain = mergeReplan(storedEpisode(), generatedPlan());
+        assert.equal(episodeAgain.beats.some(beat => 'sceneBeat' in beat), false);
+        const actToSaga = mergeReplan({ ...storedEpisode(), tier: 'act' }, generatedPlan({ tier: 'saga' }));
+        assert.equal(actToSaga.beats.some(beat => 'sceneBeat' in beat), false);
+    });
+
     it('keeps a closed beat without its completion record: the history before a re-plan is frozen', () => {
         const existing = {
             ...storedEpisode(),

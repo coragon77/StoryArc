@@ -91,9 +91,9 @@ describe('buildArcSoFar with rulings', () => {
 });
 
 describe('buildArcSoFar: reached milestones count toward the tier\'s milestone count', () => {
-    const countSentence = 'Your milestones and the ones below under Already happened and Passed over count together toward the TIER block\'s minimum and its usual ceiling: write only the steps that remain, and always at least one.';
+    const countSentence = 'On a re-plan the TIER block\'s count covers the whole arc: your milestones and the milestones below under Already happened and Passed over count together toward its minimum and its usual ceiling. Write only the steps that remain, and always at least one, even when that leaves fewer new milestones than the minimum.';
 
-    it('tells an act and a saga re-plan, right after "what comes NEXT"', () => {
+    it('tells an act and a saga re-plan, right after "what comes NEXT", that it overrides the TIER block\'s minimum', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildArcSoFar({ ...storedAct(), tier });
             assert.ok(text.includes(`your beats are what comes NEXT. ${countSentence} The current premise`), tier);
@@ -102,6 +102,15 @@ describe('buildArcSoFar: reached milestones count toward the tier\'s milestone c
 
     it('leaves it out for an episode, whose scene beats are no milestones', () => {
         assert.equal(buildArcSoFar({ ...storedAct(), tier: 'episode' }).includes('count together'), false);
+    });
+
+    it('marks the scene beats an episode carried into an act and excludes them from the count', () => {
+        const act = storedAct();
+        const sceneBeat = { id: 'old_scene', status: 'completed', intention: 'Ellie has met Sundown on the roof.', sceneBeat: true };
+        const text = buildArcSoFar({ ...act, beats: [sceneBeat, ...act.beats] });
+
+        assert.ok(text.includes('- Ellie has met Sundown on the roof. (a scene beat from its episode days)'));
+        assert.ok(text.includes('under Already happened and Passed over (the scene beats from its episode days do not count) count together'));
     });
 });
 
