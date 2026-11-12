@@ -56,10 +56,11 @@ describe('buildTierBlock', () => {
         assert.ok(text.includes('- unlockAfter is allowed and welcome'));
     });
 
-    it('act: milestones, 3-5 of them, 60-150 messages, no unlockAfter, no scene-bound fulfillment', () => {
+    it('act: at least 3 milestones, no maximum, 60-150 messages, no unlockAfter, no scene-bound fulfillment', () => {
         const text = buildTierBlock('act');
         assert.ok(text.includes('ACT'));
-        assert.ok(text.includes('3-5'));
+        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats, as many as the story\'s steps need, each one a stage that lasts many scenes, never a single scene.'));
+        assert.equal(/\d+-\d+ MILESTONES/.test(text), false);
         assert.ok(text.includes('60 and 150'));
         assert.ok(/milestone/i.test(text));
         assert.ok(text.includes('unlockAfter'));
@@ -74,7 +75,7 @@ describe('buildTierBlock', () => {
     it('act and saga: milestones in story order, only the current one seen, one plot thread per arc', () => {
         for (const tier of ['act', 'saga']) {
             const text = buildTierBlock(tier);
-            assert.ok(text.includes('MILESTONES instead of scene beats, listed in the order the story should reach them. The arc is ONE plot thread, and its milestones are the steps of that thread.\n'), tier);
+            assert.ok(text.includes('List them in the order the story should reach them. The arc is ONE plot thread, and its milestones are the steps of that thread.\n'), tier);
             assert.ok(text.includes('- The narrating AI sees only the current milestone\'s pressure: the first one not yet fulfilled. So the first milestone is what presses from the first message on, and each later one presses only once the story has reached the one before it. A later milestone the story fulfils first still counts, and the earlier ones are then skipped as obsolete.\n'), tier);
             assert.ok(text.includes('- Order them so each one sets up the next: benefits before they can be taken away, a reveal after its clues.\n'), tier);
             assert.ok(text.includes('- One plot thread per arc: a second, independent thread belongs in a second arc, not in this arc\'s milestones.\n'), tier);
@@ -91,10 +92,11 @@ describe('buildTierBlock', () => {
         assert.equal(buildTierBlock('episode').includes('taken hold'), false);
     });
 
-    it('saga: milestones, 2-4 of them, 400-1500 messages', () => {
+    it('saga: at least 3 milestones, no maximum, 400-1500 messages', () => {
         const text = buildTierBlock('saga');
         assert.ok(text.includes('SAGA'));
-        assert.ok(text.includes('2-4'));
+        assert.ok(text.includes('- Write at least 3 MILESTONES instead of scene beats'));
+        assert.equal(/\d+-\d+ MILESTONES/.test(text), false);
         assert.ok(text.includes('400 and 1500'));
         assert.ok(text.includes('This arc is a SAGA: the overarching storyline of this whole roleplay'));
         assert.equal(text.includes('an ACT'), false);
