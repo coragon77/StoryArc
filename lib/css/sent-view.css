@@ -1,0 +1,64 @@
+/* ============================================================================
+   WHAT THE NARRATOR GETS (#83)
+   A strip of the narrator's request on the left, the chosen part's text on
+   the right. Built on the Arc Manager's tokens and grammar (.am, head,
+   segmented control, Reveal switch, note line, status bar); this file holds
+   only what that stylesheet lacks. Theme variables only.
+   ============================================================================ */
+
+.am.sv { container-type: inline-size; }
+.sv .am-head { align-items: center; }
+.sv .am-head-actions { align-items: center; gap: 18px; }
+.sv-note { margin: 0 4px 12px; }
+.sv-note .am-alert { padding: 6px 8px 6px 12px; }
+
+/* The strip and the reader each scroll; the head and the status bar stay */
+.sv-split { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 22px; }
+@container (max-width: 860px) { .sv-split { grid-template-columns: 220px minmax(0, 1fr); gap: 14px; } }
+
+.sv-strip { overflow-y: auto; padding: 2px 4px 12px 2px; display: flex; flex-direction: column; gap: 4px; }
+.sv-strip-label { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+.sv-block {
+    flex-shrink: 0; display: grid; grid-template-columns: 1fr auto; align-content: start; gap: 0 8px;
+    text-align: left; font: inherit; color: var(--fg); cursor: pointer;
+    padding: 6px 10px; border-radius: 5px; border: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 8%, transparent);
+    transition: background-color 150ms var(--ease-out);
+}
+.sv-block:hover { background: color-mix(in srgb, var(--SmartThemeBodyColor) 13%, transparent); }
+.sv-block[aria-pressed="true"] { border: 2px solid var(--em); padding: 5px 9px; background: var(--selected); }
+.sv-block:focus-visible { outline: 2px solid var(--em); outline-offset: 1px; }
+.sv-block.is-empty { background: transparent; color: var(--muted); }
+.sv-block b { font-weight: 600; }
+.sv-block-tokens { font-size: 13px; color: var(--muted); }
+.sv-block-where { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+/* Dashed: SillyTavern's own parts, not shown here */
+.sv-gap { flex-shrink: 0; padding: 6px 10px; border-radius: 5px; border: 1px dashed var(--line); color: var(--muted); font-size: 13px; }
+
+.sv-reader { overflow-y: auto; padding: 0 4px 18px 0; }
+.sv-reader h3 { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
+.sv-where { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; margin: 0 0 10px; }
+.sv-where .muted { font-size: 13px; }
+
+/* The part's text as sent: line breaks kept, the theme's main font */
+.sv-text {
+    padding: 10px 14px 12px; background: var(--black30a); border-radius: 6px;
+    font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 110ch;
+}
+.sv-head { font-weight: 600; }
+.sv-changed {
+    background: color-mix(in srgb, var(--SmartThemeEmColor) 12%, transparent);
+    box-shadow: -8px 0 0 color-mix(in srgb, var(--SmartThemeEmColor) 12%, transparent);
+}
+/* A hidden run: dashed, as everything not shown */
+.sv-hidden {
+    display: inline-flex; align-items: center; gap: 8px; margin: 2px 0; padding: 3px 9px;
+    border: 1px dashed var(--line-strong); border-radius: 4px; color: var(--muted); font-size: 13px; white-space: normal;
+}
+.sv-hidden i { font-size: 12px; }
+.sv-empty { color: var(--muted); font-style: italic; margin: 8px 0; }
+.sv-status { font-size: 13px; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+    .sv-block { transition: none; }
+}

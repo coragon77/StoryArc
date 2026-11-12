@@ -16,3 +16,6 @@
 
 /* Progress rows (drawer and wand popup) */
 @import url('./lib/css/progress.css');
+
+/* What the narrator gets (strip and reader) */
+@import url('./lib/css/sent-view.css');

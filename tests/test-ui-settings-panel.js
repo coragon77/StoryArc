@@ -80,6 +80,7 @@ describe('setupSettingsPanelEvents', () => {
             'click #story-arc-knowledge-btn',
             'click #story-arc-manage-btn',
             'click #story-arc-plan-btn',
+            'click #story-arc-sent-btn',
             'click #story-arc-settings .story-arc-ignore-stall-btn',
             'click #story-arc-settings .story-arc-stall-btn',
             'click .story-arc-knowledge-names-btn',
