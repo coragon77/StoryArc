@@ -29,7 +29,7 @@ Open the **Extensions** drawer and expand **Story Arc**.
 1. **Enable Story Arc.**
 2. **Generation profile**: the Connection Manager profile that plans arcs. "Current API" uses the chat's own. Planning needs a capable model and a long response length.
 3. **Create arc preset** (recommended): creates a `Story Arc Generation` preset and connection profile tuned for planning. Select it as the generation profile afterwards.
-4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it, and **Appearance** adds how each character looks.
+4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it, and **Appearance** adds how each character looks. **Tracker profile** lets it run on a cheaper model than planning; empty, it uses the generation profile.
 
 The arc preset holds two entries you toggle in SillyTavern's prompt manager. Save the preset after changing them.
 

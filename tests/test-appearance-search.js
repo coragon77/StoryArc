@@ -345,10 +345,12 @@ describe('searchAppearance', () => {
     const originalFetch = globalThis.fetch;
     const originalSendRequest = ConnectionManagerRequestService.sendRequest;
     let sentPrompts;
+    let sentProfileIds;
 
     /** A search template that shows the placeholders, and an answer queue for the call. */
     function installSearch(answers, template = '{{CHARACTER}} | {{ALIASES}}\n{{KNOWN_DETAILS}}\n{{PASSAGES}}') {
         sentPrompts = [];
+        sentProfileIds = [];
         // loadTemplate keeps a template once loaded: each test's template is fetched anew
         clearTemplateCache();
         globalThis.fetch = async (url) => {
@@ -359,6 +361,7 @@ describe('searchAppearance', () => {
         };
         ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
             sentPrompts.push(messages[0].content);
+            sentProfileIds.push(profileId);
             const answer = answers.shift();
             if (answer instanceof Error) throw answer;
             return () => (async function* () { yield { text: answer }; })();
@@ -395,6 +398,23 @@ describe('searchAppearance', () => {
         delete extension_settings.story_arc;
         for (const field of Object.keys(mockContextFields)) delete mockContextFields[field];
         mockSortedEntries.length = 0;
+    });
+
+    it('goes through the tracker profile when one is set, not the generation profile', async () => {
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1', knowledgeTracker: { connectionProfile: 'tracker-profile' } };
+        installSearch([JSON.stringify({ appearance: [] })]);
+
+        await searchAppearance(makeLedger(), 'c1', makeChat(), 'Ellie');
+
+        assert.deepEqual(sentProfileIds, ['tracker-profile']);
+    });
+
+    it('goes through the generation profile while the tracker has none', async () => {
+        installSearch([JSON.stringify({ appearance: [] })]);
+
+        await searchAppearance(makeLedger(), 'c1', makeChat(), 'Ellie');
+
+        assert.deepEqual(sentProfileIds, ['profile-1']);
     });
 
     it('sends the name, aliases, known appearance and passages, and keeps the good items of an answer with a single at', async () => {

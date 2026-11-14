@@ -5,20 +5,24 @@ import { updateKnowledgeAfterReply } from '../lib/knowledge/ledger.js';
 
 const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
+/** The profile id of each extraction call, in order; installExtraction empties it. */
+let sentProfileIds = [];
 
 /**
  * Replace the extraction template with one that only lists the messages,
  * and the connection profile's transport with one that records each prompt
- * and answers with the next queued answer text.
+ * and profile id and answers with the next queued answer text.
  */
 function installExtraction(answers) {
     const sentPrompts = [];
+    sentProfileIds = [];
     globalThis.fetch = async (url) => {
         if (String(url).endsWith('extract-knowledge.txt')) return new Response('MESSAGES:\n{{MESSAGES}}');
         throw new Error(`unexpected fetch ${url}`);
     };
     ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
         sentPrompts.push(messages[0].content);
+        sentProfileIds.push(profileId);
         const text = answers.shift();
         return () => (async function* () { yield { text }; })();
     };
@@ -115,6 +119,27 @@ describe('updateKnowledgeAfterReply', () => {
         delete extension_settings.story_arc;
         delete chat_metadata.story_arc;
         chat.length = 0;
+    });
+
+    it('sends the extraction through the tracker profile when one is set, not the generation profile', async () => {
+        setSwitches({ tracker: true });
+        extension_settings.story_arc.knowledgeTracker.connectionProfile = 'tracker-profile';
+        storeLedger();
+        installExtraction([ANSWER_NOOR_LEARNS_LATCHES]);
+
+        await updateKnowledgeAfterReply(6);
+
+        assert.deepEqual(sentProfileIds, ['tracker-profile']);
+    });
+
+    it('sends the extraction through the generation profile while the tracker has none', async () => {
+        setSwitches({ tracker: true });
+        storeLedger();
+        installExtraction([ANSWER_NOOR_LEARNS_LATCHES]);
+
+        await updateKnowledgeAfterReply(6);
+
+        assert.deepEqual(sentProfileIds, ['profile-1']);
     });
 
     it('makes no extraction call while the tracker is off', async () => {

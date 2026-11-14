@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-12
+- **Last Updated:** 2026-11-14
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -68,7 +68,8 @@ StoryArc/
 │   │                           #   messageStart fallbacks, named once;
 │   │                           #   arcWorldFacts(arc) — the world facts, [] on arcs
 │   │                           #   stored before them (ADR-0009);
-│   │                           #   getKnowledgeTrackerSettings(),
+│   │                           #   getKnowledgeTrackerSettings(), trackerConnectionProfile()
+│   │                           #   (the tracker calls' profile, else the generation one),
 │   │                           #   isKnowledgeTrackerEnabled(), isCharacterDetailsEnabled(),
 │   │                           #   getKnowledgeLedger()
 │   │                           #   (ensureChatState creates an empty ledger),
@@ -464,11 +465,11 @@ StoryArc/
 │   │   ├── settings-panel.js   # renderSettingsPanel() — extension drawer HTML:
 │   │   │                       #   actions row first (Plan / Manage / Knowledge),
 │   │   │                       #   progress container, then groups Arcs (enable),
-│   │   │                       #   Knowledge tracker (switch, details, interval,
-│   │   │                       #   status line from knowledge-status.js; details,
-│   │   │                       #   interval and Knowledge disabled while it is off),
 │   │   │                       #   Connection (generation profile dropdown, 'Create
-│   │   │                       #   arc preset' → handleCreateArcPreset());
+│   │   │                       #   arc preset' → handleCreateArcPreset()),
+│   │   │                       #   Knowledge tracker (switch, details, interval, tracker profile,
+│   │   │                       #   status line from knowledge-status.js; details,
+│   │   │                       #   interval, tracker profile and Knowledge disabled while it is off);
 │   │   │                       #   setupSettingsPanelEvents() also wires the drawer's
 │   │   │                       #   stall nudge (#story-arc-settings .story-arc-stall-btn
 │   │   │                       #   → showWizard(arcId))

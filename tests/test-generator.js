@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { register } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { isRetryableError, generateArc, callLlm } from '../lib/planning/generator.js';
+import { extension_settings, ConnectionManagerRequestService } from '../tests/mocks/st-mocks.js';
 
 describe('isRetryableError', () => {
     it('retries bad gateway responses', () => {
@@ -28,6 +29,26 @@ describe('isRetryableError', () => {
 
     it('does not retry an empty detail string', () => {
         assert.equal(isRetryableError(''), false);
+    });
+});
+
+describe('callLlm profile choice', () => {
+    it('without a profileId goes through the generation profile, whatever the tracker profile is', async () => {
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1', knowledgeTracker: { connectionProfile: 'tracker-profile' } };
+        const originalSendRequest = ConnectionManagerRequestService.sendRequest;
+        const sentProfileIds = [];
+        ConnectionManagerRequestService.sendRequest = async (profileId) => {
+            sentProfileIds.push(profileId);
+            return () => (async function* () { yield { text: 'an answer' }; })();
+        };
+        try {
+            await callLlm('PROMPT');
+        } finally {
+            ConnectionManagerRequestService.sendRequest = originalSendRequest;
+            delete extension_settings.story_arc;
+        }
+
+        assert.deepEqual(sentProfileIds, ['profile-1']);
     });
 });
 
