@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { register } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { isRetryableError, generateArc } from '../lib/planning/generator.js';
+import { isRetryableError, generateArc, callLlm } from '../lib/planning/generator.js';
 
 describe('isRetryableError', () => {
     it('retries bad gateway responses', () => {
@@ -114,6 +114,40 @@ function installFetch(backendReplies) {
 }
 
 describe('generateArc over the direct backend stream', { skip: !sillyTavernAvailable && `no SillyTavern checkout at ${SILLYTAVERN_SCRIPTS_DIR}` }, () => {
+    it('sends the backend request with the caller\'s abort signal', async () => {
+        const signalsSent = [];
+        globalThis.fetch = async (url, init) => {
+            if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
+            signalsSent.push(init.signal);
+            return new Response(streamOfChunks(['data: {"choices":[{"delta":{"content":"The story stands at a crossroads."}}]}\n\n']));
+        };
+        const controller = new AbortController();
+        const callbacks = { signal: controller.signal, isCancelled: () => controller.signal.aborted };
+
+        await generateArc(harvestedContext, '', callbacks);
+
+        assert.equal(signalsSent[0], controller.signal);
+    });
+
+    it('an abort while a failed call waits for its retry ends the call at once, the retry never sent', async () => {
+        let backendCalls = 0;
+        const controller = new AbortController();
+        globalThis.fetch = async () => {
+            backendCalls += 1;
+            setTimeout(() => controller.abort(), 50);
+            return new Response('Bad Gateway', { status: 504 });
+        };
+
+        // The first retry waits 2 s; an abort-aware wait settles long before that.
+        const outcome = await Promise.race([
+            callLlm('PROMPT', { signal: controller.signal }).then(() => 'resolved', err => err.name),
+            new Promise(resolve => setTimeout(() => resolve('still waiting'), 500)),
+        ]);
+
+        assert.equal(outcome, 'AbortError');
+        assert.equal(backendCalls, 1);
+    });
+
     it('keeps a data line that arrives split across two network chunks', async () => {
         const backendRequests = installFetch([
             [

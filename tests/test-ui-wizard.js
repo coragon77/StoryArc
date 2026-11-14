@@ -623,9 +623,10 @@ These are the author's own words about this arc, and they bind like the directio
      * `held.gate` is set waits for its release before it answers.
      */
     function installHeldAnswers(answers) {
-        const held = { sentPrompts: [], gate: null };
-        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+        const held = { sentPrompts: [], signals: [], gate: null };
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages, maxTokens, custom) => {
             held.sentPrompts.push(messages[0].content);
+            held.signals.push(custom.signal);
             if (held.gate) await held.gate.promise;
             const text = answers.shift();
             return () => (async function* () { yield { text }; })();
@@ -685,6 +686,39 @@ These are the author's own words about this arc, and they bind like the directio
         assert.deepEqual(held.sentPrompts, ['ANALYZE', 'ASK', `OUTLINE\n${answersBlockForPressure}END`]);
         assert.equal(fake.htmlById['story-arc-wizard-content'].includes('The Granary'), false);
         assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-plan-arc"/);
+    });
+
+    it('Back while Generate runs aborts the call already sent', async () => {
+        const held = installHeldAnswers(['The story stands at a crossroads.', pressureQuestions]);
+        const gate = holdCalls(held);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        assert.equal(held.signals[0].aborted, false);
+
+        fake.trigger('click', '#story-arc-wizard-back');
+
+        assert.equal(held.signals[0].aborted, true);
+        gate.release();
+        await settle();
+    });
+
+    it('Cancel while Plan the arc runs aborts the call already sent', async () => {
+        const held = installHeldAnswers(['The story stands at a crossroads.', pressureQuestions, granaryPlan, 'no check']);
+        const popup = await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        const gate = holdCalls(held);
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-cancel');
+        await settle();
+
+        assert.equal(popup.completedWith, 0);
+        assert.equal(held.signals[2].aborted, true);
+        gate.release();
+        await settle();
     });
 
     it('Generate again after Back: the run left behind asks nothing and shows nothing', async () => {
