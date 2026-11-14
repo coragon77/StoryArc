@@ -618,6 +618,92 @@ These are the author's own words about this arc, and they bind like the directio
         return sentPrompts;
     }
 
+    /**
+     * The transport, recording every prompt sent; a call made while
+     * `held.gate` is set waits for its release before it answers.
+     */
+    function installHeldAnswers(answers) {
+        const held = { sentPrompts: [], gate: null };
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            held.sentPrompts.push(messages[0].content);
+            if (held.gate) await held.gate.promise;
+            const text = answers.shift();
+            return () => (async function* () { yield { text }; })();
+        };
+        return held;
+    }
+
+    /** Hold every call from now on until the returned gate is released. */
+    function holdCalls(held) {
+        const gate = {};
+        gate.promise = new Promise(resolve => { gate.release = resolve; });
+        held.gate = gate;
+        return gate;
+    }
+
+    it('Back while Generate runs returns to Direction with the typed direction and keeps the wizard open; the late result is dropped', async () => {
+        const held = installHeldAnswers(['The story stands at a crossroads.', pressureQuestions]);
+        const gate = holdCalls(held);
+        const popup = await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-back"/);
+        fake.trigger('click', '#story-arc-wizard-back');
+
+        assert.match(fake.htmlById['story-arc-wizard-content'], /id="story-arc-direction-input"[^>]*>Count the sacks\.<\/textarea>/);
+        assert.ok(fake.htmlById['story-arc-wizard-steps'].includes('<li id="story-arc-wizard-step-direction" aria-current="step"><span class="story-arc-wizard-step-number">1</span>Direction</li>'));
+
+        gate.release();
+        await settle();
+
+        assert.equal(popup.completedWith, undefined);
+        assert.deepEqual(held.sentPrompts, ['ANALYZE']);
+        assert.match(fake.htmlById['story-arc-wizard-content'], /id="story-arc-direction-input"/);
+        assert.equal(fake.htmlById['story-arc-wizard-content'].includes('How does the pressure work?'), false);
+    });
+
+    it('Back while Plan the arc runs returns to the Questions with the typed answers; the late plan is dropped', async () => {
+        const held = installHeldAnswers(['The story stands at a crossroads.', pressureQuestions, granaryPlan, 'no check']);
+        const popup = await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.valueById['story-arc-answer-0'] = 'Deniable hints nobody admits';
+        const gate = holdCalls(held);
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+
+        fake.trigger('click', '#story-arc-wizard-back');
+
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
+        assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-plan-arc"/);
+
+        gate.release();
+        await settle();
+
+        assert.equal(popup.completedWith, undefined);
+        assert.deepEqual(held.sentPrompts, ['ANALYZE', 'ASK', `OUTLINE\n${answersBlockForPressure}END`]);
+        assert.equal(fake.htmlById['story-arc-wizard-content'].includes('The Granary'), false);
+        assert.match(fake.htmlById['story-arc-wizard-footer'], /id="story-arc-wizard-plan-arc"/);
+    });
+
+    it('Generate again after Back: the run left behind asks nothing and shows nothing', async () => {
+        const held = installHeldAnswers(['The story stands at a crossroads.', 'The story stands at a crossroads.', pressureQuestions]);
+        const gate = holdCalls(held);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-back');
+        typeDirectionAndGenerate('Count the sacks twice.');
+        await settle();
+
+        gate.release();
+        await settle();
+
+        assert.deepEqual(held.sentPrompts, ['ANALYZE', 'ANALYZE', 'ASK']);
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes('<label class="story-arc-wizard-label" for="story-arc-answer-0">How does the pressure work?</label>'));
+    });
+
     function storedArc(overrides = {}) {
         return {
             id: 'arc00001-full-id', title: 'The Granary', status: 'active', tier: 'episode', focus: 'normal',
