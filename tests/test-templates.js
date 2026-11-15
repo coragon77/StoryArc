@@ -36,6 +36,21 @@ describe('fillTemplate', () => {
     it('only replaces placeholders present in variables', () => {
         assert.equal(fillTemplate('{{A}} and {{B}}', { A: 'X' }), 'X and {{B}}');
     });
+
+    it('leaves a placeholder inside an inserted value as it is, whatever the order of the variables', () => {
+        const template = '== FACTS ==\n{{FACTS}}\n== NEW MESSAGES ==\n{{MESSAGES}}';
+        const variables = { FACTS: 'Ellie typed {{MESSAGES}} into the terminal', MESSAGES: '[7] Noor: Hi.' };
+
+        assert.equal(fillTemplate(template, variables), '== FACTS ==\nEllie typed {{MESSAGES}} into the terminal\n== NEW MESSAGES ==\n[7] Noor: Hi.');
+    });
+
+    it('fills an empty or missing value as nothing, not as the word', () => {
+        assert.equal(fillTemplate('[{{A}}][{{B}}][{{C}}]', { A: '', B: undefined, C: null }), '[][][]');
+    });
+
+    it('does not take a placeholder name from the object\'s prototype', () => {
+        assert.equal(fillTemplate('{{constructor}} {{toString}}', {}), '{{constructor}} {{toString}}');
+    });
 });
 
 describe('every fulfillment is one on-screen moment', () => {
