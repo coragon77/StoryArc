@@ -2,33 +2,7 @@ You keep the knowledge ledger of a long-running roleplay: which character knows 
 
 The player writes as the persona {{PERSONA}}. The persona is a character like any other: it knows only what it witnessed or was told on screen.
 
-== CHARACTERS IN THE LEDGER ==
-Each with the other names they go by{{CHARACTERS_DETAILS_NOTE}}.
-{{CHARACTERS}}
-
-== FACTS IN THE LEDGER ==
-Each with its id and who already knows it. A public fact is known to everyone.
-{{FACTS}}
-
-== SECRETS OF THE STORY ARCS ==
-Each with its id and the characters the arc says already hold it. Only these secrets can be revealed in the new messages.
-{{SECRETS}}
-
-== DEVELOPMENTS OF THE STORY ARCS ==
-Each with its id. These are developments the story may reach; most will not happen in the new messages. The developments an arc lists under "done" have already happened: they show how far the arc has come and are never reported.
-{{DEVELOPMENTS}}
-
-== PLANS OF THE STORY ARCS ==
-Each arc with its id, its premise and its pressures: where the story arc is headed. They are listed only so you can tell when the player overrules them; they are never reported as anything else.
-{{PLANS}}
-
-== MESSAGE BEFORE THE NEW MESSAGES ==
-Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, when a new message of the player answers options offered in it.
-{{CONTEXT_MESSAGE}}
-
-== NEW MESSAGES ==
-Each message starts with its index in square brackets.
-{{MESSAGES}}
+Your task comes first. After it come the ledger (its facts, then its characters), the story arcs, and the messages: the one before the new messages, already read, and last the new messages the task is about.
 
 == YOUR TASK ==
 
@@ -99,3 +73,33 @@ Only the player's own out-of-character lines count, never the narrator's. A ruli
   ]{{DETAILS_SCHEMA}}
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.
+
+== FACTS IN THE LEDGER ==
+Each with its id and who already knows it. A public fact is known to everyone.
+{{FACTS}}
+
+== CHARACTERS IN THE LEDGER ==
+Each with the other names they go by{{CHARACTERS_DETAILS_NOTE}}.
+{{CHARACTERS}}
+
+== SECRETS OF THE STORY ARCS ==
+Each with its id and the characters the arc says already hold it. Only these secrets can be revealed in the new messages.
+{{SECRETS}}
+
+== DEVELOPMENTS OF THE STORY ARCS ==
+Each with its id. These are developments the story may reach; most will not happen in the new messages. The developments an arc lists under "done" have already happened: they show how far the arc has come and are never reported.
+{{DEVELOPMENTS}}
+
+== PLANS OF THE STORY ARCS ==
+Each arc with its id, its premise and its pressures: where the story arc is headed. They are listed only so you can tell when the player overrules them; they are never reported as anything else.
+{{PLANS}}
+{{APPEARANCE_SECTION}}
+== MESSAGE BEFORE THE NEW MESSAGES ==
+Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, when a new message of the player answers options offered in it.
+{{CONTEXT_MESSAGE}}
+
+== NEW MESSAGES ==
+Each message starts with its index in square brackets.
+{{MESSAGES}}
+
+Now do the task from the top for these new messages, and answer with ONLY the JSON object, no prose before or after it.

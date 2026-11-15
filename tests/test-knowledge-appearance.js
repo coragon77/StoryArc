@@ -238,7 +238,7 @@ describe('applyExtractionAnswer — appearance and refinement', () => {
     });
 });
 
-describe('buildKnowledgeExtractionVariables — appearance in the characters list', () => {
+describe('buildKnowledgeExtractionVariables — the appearance section', () => {
     /**
      * Priya with details and an appearance, Ellie with an appearance only,
      * Julian and Solomon Stern sharing the name word "Stern" (Julian has it
@@ -265,67 +265,54 @@ describe('buildKnowledgeExtractionVariables — appearance in the characters lis
         };
     }
 
-    function charactersList(messages, withAppearance) {
+    function extractionVariables(messages, withAppearance) {
         const chatMessages = [];
         messages.forEach((message, offset) => {
             chatMessages[10 + offset] = { name: 'Narrator', is_user: false, is_system: false, ...message };
         });
-        return buildKnowledgeExtractionVariables(makeLedger(), chatMessages, 10, 'Ellie', [], [], [], true, withAppearance).CHARACTERS;
+        return buildKnowledgeExtractionVariables(makeLedger(), chatMessages, 10, 'Ellie', [], [], [], true, withAppearance);
     }
 
-    it('adds the appearance, in kind order after the details, only for a character the new messages name', () => {
-        const list = charactersList([{ mes: 'Priya tucks a curl behind her ear.' }], true);
+    /** The characters list carries the details only, whoever the messages name: it stays the same from call to call. */
+    const CHARACTERS_WITHOUT_APPEARANCE = [
+        '- Priya Mehta (also: Priya) — gender: female',
+        '- Ellie Lin (also: Ellie)',
+        '- Julian Stern (also: Stern)',
+        '- Solomon Stern',
+    ].join('\n');
 
-        assert.equal(list, [
-            '- Priya Mehta (also: Priya) — gender: female; ethnicity: Indian; hair: dark glossy curls',
-            '- Ellie Lin (also: Ellie)',
-            '- Julian Stern (also: Stern)',
-            '- Solomon Stern',
-        ].join('\n'));
+    const SECTION_HEAD = '\n== APPEARANCE OF THE CHARACTERS THE NEW MESSAGES NAME ==\nThe appearance the ledger knows about each of them, by kind.\n';
+
+    it('lists the appearance, in kind order, only for a character the new messages name, and leaves the characters list as it is', () => {
+        const variables = extractionVariables([{ mes: 'Priya tucks a curl behind her ear.' }], true);
+
+        assert.equal(variables.APPEARANCE_SECTION, `${SECTION_HEAD}- Priya Mehta — ethnicity: Indian; hair: dark glossy curls\n`);
+        assert.equal(variables.CHARACTERS, CHARACTERS_WITHOUT_APPEARANCE);
     });
 
     it('gives none to a character named only inside a status block', () => {
-        const list = charactersList([{ mes: 'The bell rings.\n<trk>Ellie: at home</trk>' }], true);
+        const variables = extractionVariables([{ mes: 'The bell rings.\n<trk>Ellie: at home</trk>' }], true);
 
-        assert.equal(list, [
-            '- Priya Mehta (also: Priya) — gender: female',
-            '- Ellie Lin (also: Ellie)',
-            '- Julian Stern (also: Stern)',
-            '- Solomon Stern',
-        ].join('\n'));
+        assert.equal(variables.APPEARANCE_SECTION, `${SECTION_HEAD}(none)\n`);
     });
 
     it('gives none for a shared name word, which names nobody', () => {
-        const list = charactersList([{ mes: 'Stern nods at the door.' }], true);
+        const variables = extractionVariables([{ mes: 'Stern nods at the door.' }], true);
 
-        assert.equal(list, [
-            '- Priya Mehta (also: Priya) — gender: female',
-            '- Ellie Lin (also: Ellie)',
-            '- Julian Stern (also: Stern)',
-            '- Solomon Stern',
-        ].join('\n'));
+        assert.equal(variables.APPEARANCE_SECTION, `${SECTION_HEAD}(none)\n`);
     });
 
     it('gives none for a name in a hidden message', () => {
-        const list = charactersList([{ mes: 'Ellie waves.', is_system: true }, { mes: 'The bell rings.' }], true);
+        const variables = extractionVariables([{ mes: 'Ellie waves.', is_system: true }, { mes: 'The bell rings.' }], true);
 
-        assert.equal(list, [
-            '- Priya Mehta (also: Priya) — gender: female',
-            '- Ellie Lin (also: Ellie)',
-            '- Julian Stern (also: Stern)',
-            '- Solomon Stern',
-        ].join('\n'));
+        assert.equal(variables.APPEARANCE_SECTION, `${SECTION_HEAD}(none)\n`);
     });
 
-    it('gives none while appearance is off', () => {
-        const list = charactersList([{ mes: 'Priya and Ellie walk in with Julian Stern.' }], false);
+    it('has no section at all while appearance is off', () => {
+        const variables = extractionVariables([{ mes: 'Priya and Ellie walk in with Julian Stern.' }], false);
 
-        assert.equal(list, [
-            '- Priya Mehta (also: Priya) — gender: female',
-            '- Ellie Lin (also: Ellie)',
-            '- Julian Stern (also: Stern)',
-            '- Solomon Stern',
-        ].join('\n'));
+        assert.equal(variables.APPEARANCE_SECTION, '');
+        assert.equal(variables.CHARACTERS, CHARACTERS_WITHOUT_APPEARANCE);
     });
 });
 

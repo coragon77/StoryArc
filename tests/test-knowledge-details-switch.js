@@ -248,10 +248,24 @@ describe('appearance switch off — the extraction prompt', () => {
         assert.ok(!filledPrompt(makeLedgerWithAppearance(), true).includes('{{'));
     });
 
+    it('labels an unnamed relative in the appearance section as the characters list does, unnamed mark included', () => {
+        const ledger = makeLedgerWithAppearance();
+        ledger.characters[2].details = { ...ledger.characters[2].details, hair: [{ value: 'grey', at: 4 }] };
+        const chatMessages = [];
+        chatMessages[11] = { name: 'Narrator', is_user: false, mes: 'Kendra\'s father looks up from the paper.' };
+
+        const variables = buildKnowledgeExtractionVariables(ledger, chatMessages, 11, 'Ellie', [], [], [], true, true);
+
+        assert.ok(variables.CHARACTERS.includes('- Kendra Osei\'s father (unnamed) — role: night porter'));
+        assert.ok(variables.APPEARANCE_SECTION.includes('- Kendra Osei\'s father (unnamed) — hair: grey\n'));
+    });
+
     it('asks for the appearance kinds and lists Kendra\'s appearance while the switch is on', () => {
         const prompt = filledPrompt(makeLedgerWithAppearance(), true);
 
-        assert.ok(prompt.includes('- Kendra Osei (also: Kendra) — gender: female; age: 17; hair: tight braids; eyes: dark brown\n'));
+        assert.ok(prompt.includes('- Kendra Osei (also: Kendra) — gender: female; age: 17\n'));
+        assert.ok(prompt.includes('== APPEARANCE OF THE CHARACTERS THE NEW MESSAGES NAME ==\nThe appearance the ledger knows about each of them, by kind.\n- Kendra Osei — hair: tight braids; eyes: dark brown\n'));
+        assert.ok(prompt.includes('8. DETAILS. The characters list shows the details the ledger knows about each character, and the appearance section the appearance it knows about each character the new messages name. For a character'));
         assert.ok(prompt.includes('never for a character merely seen or mentioned). For appearance, the kind is also "ethnicity"'));
         assert.ok(prompt.includes('Out-of-character lines set no detail.\nAppearance is what lasts:'));
         assert.ok(prompt.includes('("Priya cuts her hair short.").\n\nAnswer with ONLY this JSON object'));

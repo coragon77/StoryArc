@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildKnowledgeExtractionVariables, parseKnowledgeExtractionAnswer } from '../lib/knowledge/ledger.js';
+import { fillTemplate } from '../lib/planning/generator.js';
 
 /** The workshop chat after breakfast: three characters, one told fact, one public fact. */
 function makeLedger() {
@@ -66,6 +67,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            APPEARANCE_SECTION: '',
             CONTEXT_MESSAGE: '[2063] Gabriel Marin: Lock it on with titanium latches.',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
@@ -91,6 +93,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            APPEARANCE_SECTION: '',
             // 2065 is hidden: the context message is the one before it.
             CONTEXT_MESSAGE: '[2064] Ellie: I head to the workshop.',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',
@@ -274,5 +277,55 @@ describe('parseKnowledgeExtractionAnswer', () => {
         assert.equal(parseKnowledgeExtractionAnswer(learnedItemWith('"toldBy": 7')), null);
         assert.equal(parseKnowledgeExtractionAnswer(learnedItemWith('"at": "2079"')), null);
         assert.equal(parseKnowledgeExtractionAnswer(learnedItemWith('"factId": 12')), null);
+    });
+});
+
+describe('the extraction prompt — order for the provider\'s cache', () => {
+    const TEMPLATE = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+    /** Noor with a known appearance, Ellie without; one fact. */
+    function makeLedgerWithAppearance() {
+        return {
+            characters: [
+                { id: 'c1', name: 'Noor', aliases: [], details: { gender: [{ value: 'female', at: 1 }], hair: [{ value: 'black', at: 1 }] } },
+                { id: 'c2', name: 'Ellie', aliases: [] },
+            ],
+            facts: [{ id: 'f1', text: 'Noor rebuilt the gauntlet', public: false, holders: [{ characterId: 'c1', how: 'witnessed', toldBy: null, at: 1 }] }],
+            scene: { at: 1, present: ['c1', 'c2'] },
+            lastUpdatedAt: 1,
+        };
+    }
+
+    function promptFor(newMessage) {
+        const chatMessages = [
+            { name: 'Ellie', is_user: true, mes: 'Morning.' },
+            { name: 'Narrator', is_user: false, mes: 'The workshop is quiet.' },
+            { name: 'Ellie', is_user: true, mes: newMessage },
+        ];
+        const variables = buildKnowledgeExtractionVariables(makeLedgerWithAppearance(), chatMessages, 2, 'Ellie', [], [], [], true, true);
+        return fillTemplate(TEMPLATE, variables);
+    }
+
+    it('puts the task first, then the facts, then the characters, and the new messages last', () => {
+        const prompt = promptFor('Noor waves.');
+
+        const taskAt = prompt.indexOf('== YOUR TASK ==');
+        const factsAt = prompt.indexOf('== FACTS IN THE LEDGER ==');
+        const charactersAt = prompt.indexOf('== CHARACTERS IN THE LEDGER ==');
+        const plansAt = prompt.indexOf('== PLANS OF THE STORY ARCS ==');
+        const appearanceAt = prompt.indexOf('== APPEARANCE OF THE CHARACTERS THE NEW MESSAGES NAME ==');
+        const newMessagesAt = prompt.indexOf('== NEW MESSAGES ==');
+        assert.ok(taskAt > 0 && taskAt < factsAt && factsAt < charactersAt && charactersAt < plansAt && plansAt < appearanceAt && appearanceAt < newMessagesAt);
+        assert.ok(prompt.endsWith('[2] Ellie: Noor waves.\n\nNow do the task from the top for these new messages, and answer with ONLY the JSON object, no prose before or after it.\n'));
+    });
+
+    it('is the same up to the appearance section for new messages that name different characters', () => {
+        const namingNoor = promptFor('Noor waves.');
+        const namingNobody = promptFor('The kettle whistles.');
+
+        const sharedUpTo = namingNoor.indexOf('== APPEARANCE OF THE CHARACTERS THE NEW MESSAGES NAME ==');
+        assert.equal(namingNobody.slice(0, sharedUpTo), namingNoor.slice(0, sharedUpTo));
+        assert.ok(namingNoor.includes('- Noor — hair: black\n'));
+        assert.ok(!namingNobody.includes('- Noor — hair: black\n'));
     });
 });
