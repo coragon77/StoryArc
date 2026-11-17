@@ -1,11 +1,13 @@
 You keep the standing state of one character in a long roleplay: how they are now, lastingly. You get what the story's knowledge ledger knows about them: their details, the facts they hold (newest first), and the always-on lorebook entries that name them.
 
-From that, write their standing state as it is NOW, after everything the facts say happened:
+From that, write their standing state as it is NOW, after everything the facts say happened. Standing state is never an event: not what they did, said, bought, received or planned, not where they went or whom they answer to. It is what the events show about them, as a trait that holds from scene to scene.
 - "style": how they dress and present as a lasting habit, never one scene's outfit. Where they changed their style, the later style wins and may say what it replaced ("fitted and feminine; no longer the school uniform").
-- "manner": how they behave now, lastingly, as behaviour that can be played, in a few words. Lasting abilities and lasting changes count. Where the facts show a change over time, the later state wins.
-- "stances": how they stand toward the other characters listed below, one item for each where the facts show it: feeling and conduct, not kinship, in a few words ("devoted to her; stays close as her assistant").
+- "manner": how they behave now, as traits the narrator can play in any scene, in a few words ("dry-witted and guarded; warms up only in private; decisive under pressure"). Lasting abilities and lasting changes count. Where the facts show a change over time, the later state wins. Wrong: "answers to the board" (a fact), "kissed Amy in the kitchen" (an event).
+- "stances": how they feel about and behave toward each of the other characters listed below, where the facts show it, in a few words ("devoted to her; stays close as her assistant", "trusts him with his secrets"). Wrong: "left the party with her", "received a pass from him" (events).
 
-Write only what the facts and the entries support. Never guess from a name, a look, a trope or what would be likely. Leave a field empty, or a stance out, rather than invent it. Never write a single scene, a mood of one evening, or what happened; only how they are.
+Keep each field short: style and manner at most 30 words each, each stance at most 20 words. The narrator reads them every turn.
+
+Write only what the facts and the entries support. Never guess from a name, a look, a trope or what would be likely. Leave a field empty, or a stance out, rather than invent it or fill it with an event.
 
 Answer with ONLY this JSON object, no prose before or after it:
 {

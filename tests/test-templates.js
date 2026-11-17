@@ -7,6 +7,12 @@ describe('loadTemplate', () => {
     it('refuses the unbuilt detail-pass prompt like any unknown name', async () => {
         await assert.rejects(loadTemplate('detail-pass.txt'), /Invalid template: detail-pass\.txt/);
     });
+
+    it('accepts the standing state seed prompt', async () => {
+        // Loading may fail for other reasons in the test runner; it must not be refused by name.
+        const failure = await loadTemplate('seed-state.txt').then(() => null, err => err);
+        assert.doesNotMatch(String(failure), /Invalid template/);
+    });
 });
 
 describe('fillTemplate', () => {

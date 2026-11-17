@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fillTemplate } from '../lib/planning/generator.js';
 import { dropKnowledgeFrom } from '../lib/knowledge/ledger.js';
 import {
     applySeededState,
@@ -94,6 +96,18 @@ describe('buildSeedVariables', () => {
     });
 });
 
+describe('seed-state.txt', () => {
+    it('leaves no placeholder unfilled with the seed\'s variables', () => {
+        const template = readFileSync(new URL('../prompts/seed-state.txt', import.meta.url), 'utf8');
+        const ledger = makeLedger(3);
+
+        const prompt = fillTemplate(template, buildSeedVariables(ledger, ledger.characters[1], []));
+
+        assert.doesNotMatch(prompt, /\{\{[A-Z_]+\}\}/);
+        assert.ok(prompt.includes('== FACTS THEY HOLD, NEWEST FIRST ==\n- Vera fact 3.'));
+    });
+});
+
 describe('parseSeedAnswer', () => {
     it('trims the fields and leaves out stances without a name or a text', () => {
         const answer = parseSeedAnswer('{"style": " fitted ", "manner": "", "stances": [{"toward": "Ellie", "text": " devoted "}, {"toward": "", "text": "x"}, {"toward": "Jalen"}]}');
@@ -134,5 +148,42 @@ describe('applySeededState', () => {
 
         assert.equal(applySeededState(ledger, ledger.characters[1], { style: '', manner: '', stances: [] }), false);
         assert.equal(ledger.characters[1].details, undefined);
+    });
+});
+
+describe('buildSeedVariables — lorebook entries', () => {
+    it('takes an entry that names them as a whole word, skips a too long one and still takes the next', () => {
+        const ledger = makeLedger(3);
+        ledger.characters.push({ id: 'c5', name: 'Al', aliases: [] });
+        const lorebookEntries = [
+            { comment: 'World', content: `Vera Lin ${'x'.repeat(7000)}`, constant: true },
+            { comment: 'Also', content: 'Also note the harbor.', constant: true },
+            { comment: 'Cast', content: 'Al runs the bakery.', constant: true },
+        ];
+
+        const variables = buildSeedVariables(ledger, ledger.characters[3], lorebookEntries);
+
+        assert.equal(variables.LOREBOOK, '[Cast]\nAl runs the bakery.');
+        const veraVariables = buildSeedVariables(ledger, ledger.characters[1], lorebookEntries);
+        assert.equal(veraVariables.LOREBOOK, '(none)');
+    });
+});
+
+describe('buildSeedVariables — lorebook ranking', () => {
+    it('puts an entry named after them first, then their own cast line, then paragraphs that only mention them', () => {
+        const ledger = makeLedger(3);
+        const lorebookEntries = [
+            { comment: 'Arc notes', content: 'The gala runs late.\n\nEllie and Vera Lin arrive together.', constant: true },
+            { comment: 'Dramatis Personae', content: '* **Ellie Masters:** Bratty.\n* **Vera Lin (Fletchette):** Guarded since six.', constant: true },
+            { comment: "Vera's Wardrobe", content: 'Fitted and feminine.', constant: true },
+        ];
+
+        const variables = buildSeedVariables(ledger, ledger.characters[1], lorebookEntries);
+
+        assert.equal(variables.LOREBOOK, [
+            "[Vera's Wardrobe]\nFitted and feminine.",
+            '[Dramatis Personae]\n* **Vera Lin (Fletchette):** Guarded since six.',
+            '[Arc notes]\nEllie and Vera Lin arrive together.',
+        ].join('\n\n'));
     });
 });

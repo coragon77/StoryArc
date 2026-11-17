@@ -6,6 +6,7 @@ import {
     applyExtractionAnswer,
     buildKnowledgeBlock,
     buildKnowledgeExtractionVariables,
+    listChangeItems,
     parseKnowledgeExtractionAnswer,
 } from '../lib/knowledge/ledger.js';
 
@@ -216,5 +217,46 @@ describe('buildKnowledgeExtractionVariables — standing state', () => {
         assert.ok(!prompt.includes('only for style, manner or stance'));
         assert.ok(!prompt.includes('| style | manner | stance'));
         assert.ok(!prompt.includes('{{STATE'));
+    });
+});
+
+describe('standing state — review fixes', () => {
+    it('drops a state item whose quote has fewer than three words, even when the words are in the message', () => {
+        const ledger = makeLedger();
+        const counts = {};
+
+        applyExtractionAnswer(ledger, answerWithDetails([
+            { character: 'Vera', kind: 'manner', value: 'cold and distant', quote: 'Vera folded', at: 12 },
+        ]), 11, 12, makeChat(), counts);
+
+        assert.equal(ledger.characters[1].details, undefined);
+        assert.equal(counts.stateUnquoted, 1);
+    });
+
+    it('lists one change item per character a new stance is toward, each keyed by that character', () => {
+        const record = {
+            kind: 'update', from: 11, to: 12, messageId: 'm12',
+            items: { characters: [], holders: [], details: [
+                { characterId: 'c2', kind: 'stance', of: 'c1', messageId: 'm12' },
+                { characterId: 'c2', kind: 'stance', of: 'c3', messageId: 'm12' },
+            ], names: [] },
+        };
+
+        assert.deepEqual(listChangeItems(record), [
+            { key: 'm12:update:detail:c2:stance:c1', kind: 'detail', detailKind: 'stance', characterId: 'c2', of: 'c1', messageId: 'm12' },
+            { key: 'm12:update:detail:c2:stance:c3', kind: 'detail', detailKind: 'stance', characterId: 'c2', of: 'c3', messageId: 'm12' },
+        ]);
+    });
+});
+
+describe('buildKnowledgeBlock — Has met keeps lowercase names that are names', () => {
+    it('leaves out "the courier" and keeps "de la Cruz"', () => {
+        const ledger = makeLedger();
+        ledger.characters.push({ id: 'c4', name: 'de la Cruz', aliases: [] }, { id: 'c5', name: 'the courier', aliases: [] });
+        ledger.meetings = [{ at: 9, present: ['c1', 'c4', 'c5'] }];
+
+        const block = buildKnowledgeBlock(ledger, [], true, false, false);
+
+        assert.ok(block.endsWith('ELLIE MASTERS (present)\n- Has met: de la Cruz'));
     });
 });
