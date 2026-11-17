@@ -1,7 +1,7 @@
 # Long-Term Memory in the Knowledge Block — Design Note
 
 - **Date:** 2026-11-17
-- **Status:** Built 2026-11-17 on Stefan's "implement it please", without a separate implementation plan. The two open questions were not answered explicitly; both were built as recommended (an OOC reminder sets the state; the seed runs automatically) and are his to overrule. The replay decided the fill order: fewest facts first, `KNOWLEDGE_FACT_BUDGET` = 5600 (4085: Jalen's promise and the dock story in, 10,727 characters against 11,472 before; 4063 and 4065 about 3.5k and 4.6k smaller). Standing state is off by default (`knowledgeTracker.standingState`). Not built: an update record for a seed.
+- **Status:** Built 2026-11-17 on Stefan's "implement it please", without a separate implementation plan. The two open questions were not answered explicitly; both were built as recommended (an OOC reminder sets the state; the seed runs automatically) and are his to overrule. The replay decided the fill order: fewest facts first, `KNOWLEDGE_FACT_BUDGET` = 5600 (4085: Jalen's promise and the dock story in, 10,727 characters against 11,472 before; 4063 and 4065 about 3.5k and 4.6k smaller). Standing state is off by default (`knowledgeTracker.standingState`). Measured on the final code: 4085 is 10,646 characters without state; with the dry-run seeds of Ellie and Vera (Paragon ledger, nothing stored) 11,875, about 400 characters (~100 tokens) more than the old block, so the "does not grow" criterion is missed by that much once state prints. Not built: an update record for a seed; style and manner in the popup's message search; the secret-keeping comparison of the two block formats.
 - **Builds on:** ADR-0007 and its amendments (character details, meetings, appearance), `docs/plans/2026-11-11-character-appearance-design.md`
 - **ADRs touched:** `0007` (Story Arc tracks who knows what), as a new amendment
 - **Glossary:** `GLOSSARY.md`: Standing state (new), Stance (new), Knowledge block (changed)
@@ -59,7 +59,7 @@ raises the odds; it does not guarantee.
   to be kept in details - like personality, outfit, status etc." A character
   who changed over an arc must not revert.
 - **2026-11-17, rejected: showing the player the contradictions.** "I don't
-  want the extension to show me where it fucked up - the goal is for
+  want the extension to show me where it [went wrong] - the goal is for
   StoryArc to do this in the background so the user can focus on writing
   the story." Everything here runs in the background. No review queue, no
   acceptance step, no warnings to act on. The Knowledge popup stays the
