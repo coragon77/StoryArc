@@ -68,6 +68,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
             APPEARANCE_SECTION: '',
+            STATE_SECTION: '',
             CONTEXT_MESSAGE: '[2063] Gabriel Marin: Lock it on with titanium latches.',
             MESSAGES: [
                 '[2064] Ellie: I head to the workshop.',
@@ -94,6 +95,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
             APPEARANCE_SECTION: '',
+            STATE_SECTION: '',
             // 2065 is hidden: the context message is the one before it.
             CONTEXT_MESSAGE: '[2064] Ellie: I head to the workshop.',
             MESSAGES: '[2066] Narrator: Noor looks up from the bench.',

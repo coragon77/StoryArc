@@ -31,7 +31,8 @@ const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
 
 const HEADER_WITH_DETAILS = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. '
     + 'A character keeps the details listed for them; a detail changes only when the story shows it changing.]';
@@ -95,8 +96,8 @@ describe('applyExtractionAnswer — appearance and refinement', () => {
         return detailCounts;
     }
 
-    const REFINED_ONCE = { detailsSet: 0, detailsChanged: 0, detailsRefined: 1, restatementsIgnored: 0, detailsLocked: 0 };
-    const IGNORED_ONCE = { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 1, detailsLocked: 0 };
+    const REFINED_ONCE = { detailsSet: 0, detailsChanged: 0, detailsRefined: 1, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0 };
+    const IGNORED_ONCE = { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 1, detailsLocked: 0, stateUnquoted: 0 };
 
     it('"dark hair" → "dark glossy curls, about shoulder length" refines: the kind\'s own word is left out', () => {
         const ledger = ledgerWithPriya('hair', 'dark hair');
@@ -197,7 +198,7 @@ describe('applyExtractionAnswer — appearance and refinement', () => {
         const detailCounts = applyOne(ledger, { kind: 'hair', value: 'dark pixie cut', change: 'Priya cuts her hair short.', at: 5 });
 
         assert.deepEqual(ledger.characters[0].details.hair, [{ value: 'dark', at: 3 }, { value: 'dark pixie cut', at: 5 }]);
-        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 1, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0 });
+        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 1, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0 });
     });
 
     it('sets an appearance kind the ledger does not know yet', () => {
@@ -206,7 +207,7 @@ describe('applyExtractionAnswer — appearance and refinement', () => {
         const detailCounts = applyOne(ledger, { kind: 'eyes', value: 'warm brown', at: 5 });
 
         assert.deepEqual(ledger.characters[0].details, { hair: [{ value: 'dark', at: 3 }], eyes: [{ value: 'warm brown', at: 5 }] });
-        assert.deepEqual(detailCounts, { detailsSet: 1, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0 });
+        assert.deepEqual(detailCounts, { detailsSet: 1, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0 });
     });
 
     it('skips a locked appearance kind, even for a refinement', () => {
@@ -216,7 +217,7 @@ describe('applyExtractionAnswer — appearance and refinement', () => {
         const detailCounts = applyOne(ledger, { kind: 'hair', value: 'dark glossy curls', at: 5 });
 
         assert.deepEqual(ledger.characters[0].details.hair, [{ value: 'dark', at: 3 }, { value: 'dark', at: null, by: 'user' }]);
-        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 1 });
+        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 1, stateUnquoted: 0 });
     });
 
     it('never refines a detail kind: "cleaner" → "cleaner, double shifts" stays a restatement', () => {
@@ -371,7 +372,9 @@ describe('buildKnowledgeBlock — the appearance line', () => {
             '- Has met: Priya Mehta',
             '',
             'VERA LIN (talked about, not present)',
-            '- Knows: Vera joined the Wards (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Vera joined the Wards — known only to Vera Lin',
         ].join('\n'));
     });
 
@@ -403,7 +406,9 @@ describe('buildKnowledgeBlock — the appearance line', () => {
             '- Has met: Priya Mehta',
             '',
             'VERA LIN (talked about, not present)',
-            '- Knows: Vera joined the Wards (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Vera joined the Wards — known only to Vera Lin',
         ].join('\n');
 
         assert.equal(buildKnowledgeBlock(makeLedger(), MESSAGES, true, false), expectedWithoutAppearance);

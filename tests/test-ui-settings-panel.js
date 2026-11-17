@@ -75,6 +75,7 @@ describe('setupSettingsPanelEvents', () => {
             'change #story-arc-knowledge-details',
             'change #story-arc-knowledge-enabled',
             'change #story-arc-knowledge-interval',
+            'change #story-arc-knowledge-state',
             'change #story-arc-profile',
             'change #story-arc-tracker-profile',
             'click #story-arc-create-preset-btn',

@@ -22,7 +22,8 @@ const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
 
 const PLAIN_HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]';
 
@@ -87,10 +88,12 @@ describe('character details switch off — the knowledge block', () => {
             PLAIN_HEADER,
             '',
             'KENDRA OSEI (present)',
-            '- Knows: Kendra skipped school on Friday (known only to them)',
             '',
             "KENDRA OSEI'S FATHER (talked about, not present)",
-            '- Knows: The rent is two months late (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Kendra skipped school on Friday — known only to Kendra Osei',
+            "- The rent is two months late — known only to Kendra Osei's father",
         ].join('\n');
 
         assert.equal(buildKnowledgeBlock(makeLedger(true), MESSAGES, false), expectedBlock);

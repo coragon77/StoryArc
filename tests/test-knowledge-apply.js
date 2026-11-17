@@ -284,20 +284,21 @@ describe('applying an extraction answer, then building the block', () => {
             { is_user: false, mes: 'Noor looks up from the bench.' },
         ];
         assert.equal(buildKnowledgeBlock(ledger, messages), [
-            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. A character knows the face, looks and voice only of someone they have met: a name on their Has met line, or someone the story put in front of them on-screen. Hearing a name is not meeting.]',
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each fact line names everyone who knows that fact; a character knows only the facts that name them, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. A character knows the face, looks and voice only of someone they have met: a name on their Has met line, or someone the story put in front of them on-screen. Hearing a name is not meeting.]',
             '',
             // Ellie met Gabriel at breakfast and Noor in the workshop.
             'ELLIE (present)',
             '- Has met: Gabriel Marin, Noor',
-            '- Knows (told by Gabriel Marin): Noor should lock the gauntlet on with titanium latches. (shared only with Gabriel Marin)',
             '',
             'NOOR (present)',
             '- Has met: Ellie',
             '',
             'GABRIEL MARIN (talked about, not present)',
             '- Has met: Ellie',
-            '- Knows: Noor should lock the gauntlet on with titanium latches. (shared only with Ellie)',
             '- Has told only Ellie: Noor should lock the gauntlet on with titanium latches.',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Noor should lock the gauntlet on with titanium latches. — known only to Gabriel Marin and Ellie; Ellie was told by Gabriel Marin',
         ].join('\n'));
     });
 });

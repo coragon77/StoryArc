@@ -93,7 +93,7 @@ Each with its id. These are developments the story may reach; most will not happ
 == PLANS OF THE STORY ARCS ==
 Each arc with its id, its premise and its pressures: where the story arc is headed. They are listed only so you can tell when the player overrules them; they are never reported as anything else.
 {{PLANS}}
-{{APPEARANCE_SECTION}}
+{{APPEARANCE_SECTION}}{{STATE_SECTION}}
 == MESSAGE BEFORE THE NEW MESSAGES ==
 Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, when a new message of the player answers options offered in it.
 {{CONTEXT_MESSAGE}}

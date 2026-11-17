@@ -5,7 +5,8 @@ import { applyExtractionAnswer, buildKnowledgeBlock, dropKnowledgeFrom } from '.
 import { deleteCharacter, mergeCharacters, saveLedgerEdit } from '../lib/ui/knowledge-popup.js';
 
 const HEADER_WITH_MEETINGS = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. '
     + 'A character knows the face, looks and voice only of someone they have met: '
@@ -146,7 +147,7 @@ describe('buildKnowledgeBlock — the Has met line', () => {
         ].join('\n'));
     });
 
-    it('prints the Has met line after the details and before the knowledge lines, also with details switched off', () => {
+    it('prints the Has met line after the details, the fact list after the section, also with details switched off', () => {
         const ledger = makePierLedger();
         ledger.scene = { at: 3010, present: ['c19'] };
         ledger.characters[1] = { ...ledger.characters[1], details: { gender: [{ value: 'male', at: null, by: 'user' }] } };
@@ -162,12 +163,16 @@ describe('buildKnowledgeBlock — the Has met line', () => {
             'LEVI (present)',
             '- Details: male',
             '- Has met: Ellie Masters',
-            '- Knows: Vasquez has the brass keycard (known only to them)',
+        ].join('\n'), [
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Vasquez has the brass keycard — known only to Levi',
         ].join('\n')]);
         assert.deepEqual(withoutDetails, [[
             'LEVI (present)',
             '- Has met: Ellie Masters',
-            '- Knows: Vasquez has the brass keycard (known only to them)',
+        ].join('\n'), [
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Vasquez has the brass keycard — known only to Levi',
         ].join('\n')]);
     });
 });

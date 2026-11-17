@@ -268,7 +268,7 @@ describe('a revealed secret, from the answer text to the knowledge block', () =>
             { is_user: false, mes: 'The crane comes down tonight.' },
         ]);
         assert.equal(block, [
-            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. A character knows the face, looks and voice only of someone they have met: a name on their Has met line, or someone the story put in front of them on-screen. Hearing a name is not meeting.]',
+            '[WHO KNOWS WHAT — characters in this scene and characters being talked about. Each fact line names everyone who knows that fact; a character knows only the facts that name them, what everyone knows, and what happened in front of them on-screen. A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. A character knows the face, looks and voice only of someone they have met: a name on their Has met line, or someone the story put in front of them on-screen. Hearing a name is not meeting.]',
             '',
             // The three of them are in the scene together: each has met the other two.
             'JULIAN (present)',
@@ -276,10 +276,12 @@ describe('a revealed secret, from the answer text to the knowledge block', () =>
             '',
             'ELLIE (present)',
             '- Has met: Julian, Noor',
-            '- Knows: Julian means to bring the crane down tonight (shared only with Julian)',
             '',
             'NOOR (present)',
             '- Has met: Julian, Ellie',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Julian means to bring the crane down tonight — known only to Ellie and Julian',
         ].join('\n'));
         assert.ok(!block.includes('on the Annex'));
     });

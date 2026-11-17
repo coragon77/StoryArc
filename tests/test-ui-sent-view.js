@@ -98,7 +98,7 @@ describe('maskSpoilerLines — what the view hides until the plan is revealed', 
         assert.equal(describeHiddenRun(run), '2 triggers, 1 clue hidden · 8 tokens');
     });
 
-    it('hides a knowledge line whose "shared only with" names a planned holder, and no other', () => {
+    it('hides a knowledge line whose holders name a planned holder, and no other', () => {
         const ledger = {
             characters: [{ id: 'c1', name: 'Noor', aliases: [] }, { id: 'c2', name: 'Bram', aliases: [] }, { id: 'c3', name: 'Ellie', aliases: [] }],
             facts: [{ id: 'f1', text: 'The ballots are forged', public: false, holders: [
@@ -108,16 +108,22 @@ describe('maskSpoilerLines — what the view hides until the plan is revealed', 
         };
         const block = [
             'NOOR (present)',
-            '- Knows: The ballots are forged (shared only with Bram)',
-            '- Knows: The tide is late (shared only with Ellie)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- The ballots are forged — known only to Noor and Bram',
+            '- Bram — the mayor\'s aide — is late — known only to Noor and Ellie',
         ].join('\n');
 
         const masked = renderRuns(maskSpoilerLines('story_arc_knowledge', block, listSpoilers([], ledger)), false);
 
+        // The hidden line is 54 characters: 14 tokens. The second line names
+        // Bram only in its fact text, before the holders, so it stays.
         assert.equal(masked, [
             'NOOR (present)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
             '[1 knowledge line hidden · 14 tokens]',
-            '- Knows: The tide is late (shared only with Ellie)',
+            '- Bram — the mayor\'s aide — is late — known only to Noor and Ellie',
         ].join('\n'));
     });
 });
@@ -134,7 +140,7 @@ describe('maskSpoilerLines — an unnamed relative as planned holder', () => {
                 { characterId: 'c2', how: 'plan', toldBy: null, at: null },
             ] }],
         };
-        const block = 'KENDRA OSEI (present)\n- Knows: The deed is forged (shared only with Kendra Osei\'s mother)';
+        const block = 'KENDRA OSEI (present)\n- The deed is forged — known only to Kendra Osei and Kendra Osei\'s mother';
 
         const runs = maskSpoilerLines('story_arc_knowledge', block, listSpoilers([], ledger));
 

@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-14
+- **Last Updated:** 2026-11-17
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -47,6 +47,9 @@ StoryArc/
 │   │                           #   character's gender, age, role and looks from the
 │   │                           #   definitions and passages, one value per kind with
 │   │                           #   every source it uses; answers JSON
+│   ├── seed-state.txt          # Standing state seed prompt (2026-11-17): one character's
+│   │                           #   style, manner and stances now, from their details,
+│   │                           #   facts and always-on lorebook entries; answers JSON
 │   └── detail-pass.txt         # Old detail-pass draft (not loaded); carries the
 │                               #   one-moment fulfillment rule too
 ├── lib/
@@ -398,6 +401,11 @@ StoryArc/
 │   │   │                       #   and the plan check's rename guards (#49);
 │   │   │                       #   listCharactersWithNames(ledger, names, exceptId)
 │   │   │                       #   → who has the flagged names now (the notice)
+│   │   ├── state-seed.js       # The standing state seed (2026-11-17): seedStandingState-
+│   │   │                       #   AfterUpdate() from index.js after a reply's update;
+│   │   │                       #   listCharactersToSeed (present, ≥ STATE_SEED_MIN_FACTS,
+│   │   │                       #   no state), buildSeedVariables, parseSeedAnswer,
+│   │   │                       #   applySeededState → seed entries { at: null, by: 'seed' }
 │   │   └── ledger.js           # The knowledge tracker's process (ADR-0007), sections in
 │   │                           #   the order it runs, helpers after their first caller;
 │   │                           #   every ledger operation changes the stored ledger in
@@ -1040,5 +1048,5 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
 | What the narrator gets (#83) | `lib/ui/sent-view.js` | `lib/injection/narrator-prompts.js` (`listStoryArcPrompts`, `saveLastSent`), `index.js` (`injectStoryArcPrompts`, `onChatCompletionPromptReady`, `onChatChanged`), `lib/injection/builder.js` (header and check-line constants), `lib/css/sent-view.css`, `lib/ui/settings-panel.js` and `lib/ui/wand-menu.js` (entry buttons) |
-| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/state-seed.js` (standing state seed), `prompts/seed-state.txt`, `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Styles | `style.css` | `lib/css/*.css` |

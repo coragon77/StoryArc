@@ -144,7 +144,7 @@ describe('applyExtractionAnswer — character details, first statements', () => 
         assert.deepEqual(ledger.characters[1].details, {
             role: [{ value: 'cleaner, double shifts, Oakland', at: null, by: 'user' }],
         });
-        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 1 });
+        assert.deepEqual(detailCounts, { detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 1, stateUnquoted: 0 });
     });
 
     it('keeps the first of two items for one kind in the same answer', () => {
@@ -304,7 +304,8 @@ describe('extract-knowledge.txt — details', () => {
 });
 
 const HEADER_WITH_DETAILS = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. '
     + 'A character keeps the details listed for them; a detail changes only when the story shows it changing.]';
@@ -351,10 +352,12 @@ describe('buildKnowledgeBlock — details', () => {
             '',
             'KENDRA OSEI (present)',
             '- Details: 17',
-            '- Knows: Kendra skipped school on Friday (known only to them)',
             '',
             'AMA OSEI (dead, talked about, not present)',
             '- Details: cleaner',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Kendra skipped school on Friday — known only to Kendra Osei',
         ].join('\n'));
     });
 
@@ -386,12 +389,15 @@ describe('buildKnowledgeBlock — details', () => {
 
         assert.equal(block, [
             '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-                + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+                + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+                + 'what everyone knows, and what happened in front of them on-screen. '
                 + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
                 + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]',
             '',
             'KENDRA OSEI (present)',
-            '- Knows: Kendra skipped school on Friday (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Kendra skipped school on Friday — known only to Kendra Osei',
         ].join('\n'));
     });
 });

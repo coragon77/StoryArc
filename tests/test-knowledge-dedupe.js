@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { applyExtractionAnswer, buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
 
 const HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for. '
     + 'A character knows the face, looks and voice only of someone they have met: '
@@ -59,14 +60,14 @@ describe('applyExtractionAnswer joins learned items with the same text', () => {
             '',
             'AMY (present)',
             '- Has met: Steve',
-            '- Knows (told by Steve): Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Steve)',
             '',
             'STEVE (present)',
             '- Has met: Amy',
-            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Mara and Amy)',
             '',
             'MARA (talked about, not present)',
-            '- Knows: Mara from the night shift rewrote Amy\'s diagnostic logs. (shared only with Steve and Amy)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Mara from the night shift rewrote Amy\'s diagnostic logs. — known only to Mara, Steve and Amy; Amy was told by Steve',
         ].join('\n'));
     });
 

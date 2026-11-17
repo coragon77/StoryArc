@@ -8,7 +8,8 @@ const IN_CHAT = 1;
 const SYSTEM_ROLE = 0;
 
 const WHO_KNOWS_WHAT_HEADER = '[WHO KNOWS WHAT — characters in this scene and characters being talked about. '
-    + 'Each character knows only their own list, what everyone knows, and what happened in front of them on-screen. '
+    + 'Each fact line names everyone who knows that fact; a character knows only the facts that name them, '
+    + 'what everyone knows, and what happened in front of them on-screen. '
     + 'A private fact reaches nobody off-screen: not through rumors, teammates, news reports, logs, records or their own deduction. '
     + 'A character not listed here knows only what everyone knows, plus any secret the SECRETS section names them for.]';
 
@@ -79,10 +80,12 @@ describe('onMessageDeleted — the prompts are set again after a regenerate dele
             WHO_KNOWS_WHAT_HEADER,
             '',
             'NOOR (present)',
-            '- Knows: Ellie is Dice (known only to them)',
             '',
             'DOUGAL (present)',
-            '- Knows: Ellie wears a mask (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Ellie wears a mask — known only to Dougal',
+            '- Ellie is Dice — known only to Noor',
         ].join('\n'), IN_CHAT, 1, false, SYSTEM_ROLE]);
 
         // Then ST deletes the reply at 3 and fires MESSAGE_DELETED with the new length.
@@ -93,7 +96,9 @@ describe('onMessageDeleted — the prompts are set again after a regenerate dele
             WHO_KNOWS_WHAT_HEADER,
             '',
             'NOOR (present)',
-            '- Knows: Ellie is Dice (known only to them)',
+            '',
+            'WHAT THE CHARACTERS HERE KNOW',
+            '- Ellie is Dice — known only to Noor',
         ].join('\n'), IN_CHAT, 1, false, SYSTEM_ROLE]);
     });
 

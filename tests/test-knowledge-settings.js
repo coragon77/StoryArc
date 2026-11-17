@@ -134,7 +134,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-enabled', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false, appearance: false, connectionProfile: null });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: false, appearance: false, standingState: false, connectionProfile: null });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -144,7 +144,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-interval', { value: '4' });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4, characterDetails: false, appearance: false, connectionProfile: null });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 4, characterDetails: false, appearance: false, standingState: false, connectionProfile: null });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -159,7 +159,7 @@ describe('knowledge tracker controls in the settings panel', () => {
             assert.equal(intervalField.value, '2', `input ${JSON.stringify(badInput)}`);
         }
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2, characterDetails: false, appearance: false, connectionProfile: null });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 2, characterDetails: false, appearance: false, standingState: false, connectionProfile: null });
         assert.equal(mockCalls.saveSettingsDebounced, 0);
     });
 
@@ -180,7 +180,7 @@ describe('knowledge tracker controls in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-details', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: true, appearance: false, connectionProfile: null });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: false, updateInterval: 1, characterDetails: true, appearance: false, standingState: false, connectionProfile: null });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 
@@ -292,7 +292,7 @@ describe('the appearance switch in the settings panel', () => {
 
         fake.trigger('change', '#story-arc-knowledge-appearance', { checked: true });
 
-        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: true, appearance: true, connectionProfile: null });
+        assert.deepEqual(extension_settings.story_arc.knowledgeTracker, { enabled: true, updateInterval: 1, characterDetails: true, appearance: true, standingState: false, connectionProfile: null });
         assert.equal(mockCalls.saveSettingsDebounced, 1);
     });
 

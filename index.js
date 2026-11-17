@@ -17,6 +17,7 @@ import { listStoryArcPrompts, noteGenerationType, saveLastSent, dropLastSentPast
 import { stampPromptMessages } from './lib/injection/stamping.js';
 import { updateKnowledgeAfterReply, rollBackKnowledgeFrom, updateKnowledgeAfterSwipe, updateKnowledgeAfterEdit } from './lib/knowledge/ledger.js';
 import { listCharactersWithNames } from './lib/knowledge/names.js';
+import { seedStandingStateAfterUpdate } from './lib/knowledge/state-seed.js';
 import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendingMarks, dropPendingMarksFrom, scrubArcInternals, promoteNextBeats } from './lib/injection/signals.js';
 import { reopenCompletionsFrom, removeRulingsFrom } from './lib/planning/beat-completion.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
@@ -108,7 +109,16 @@ async function onMessageReceived(messageIndex) {
     // After signal processing, so the extraction reads the reply without its
     // markers. Not awaited: ST waits for its listeners, and the extraction
     // must not hold up the next generation.
-    refreshKnowledgeStatusWhenChanged(updateKnowledgeAfterReply(messageIndex), 'Knowledge update failed:');
+    const knowledgeUpdate = updateKnowledgeAfterReply(messageIndex);
+    refreshKnowledgeStatusWhenChanged(knowledgeUpdate, 'Knowledge update failed:');
+    // The standing state seed runs after the update, never beside it, so the
+    // tracker's profile serves one call at a time.
+    knowledgeUpdate
+        .then(() => seedStandingStateAfterUpdate())
+        .then(seeded => {
+            if (seeded) updateKnowledgeStatus();
+        })
+        .catch(err => console.warn('[Story Arc] Standing state seed failed:', err));
 }
 
 /**

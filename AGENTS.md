@@ -46,7 +46,8 @@ StoryArc/
 │   ├── generate-arc.txt        # Phase 2: arc outline generation
 │   ├── detail-pass.txt         # Phase 3: detail expansion
 │   ├── extract-knowledge.txt   # Knowledge tracker: who learned what in the new messages
-│   └── find-appearance.txt     # Appearance search: how one character looks, from passages
+│   ├── find-appearance.txt     # Appearance search: how one character looks, from passages
+│   └── seed-state.txt          # Standing state seed: one character's first style, manner, stances
 ├── lib/
 │   ├── core/
 │   │   ├── constants.js        # MODULE_NAME, defaults, phases, schema
@@ -73,6 +74,7 @@ StoryArc/
 │   │   ├── message-ids.js      # Story Arc message id on a chat message (ledger, beat completions, search)
 │   │   ├── appearance-search.js # The appearance search: passages of the whole chat, the call, the offers
 │   │   ├── names.js            # Taken names: derivation from the ledger + the names block
+│   │   ├── state-seed.js       # The standing state seed: who, the call, the seed entries
 │   │   └── ledger.js           # The whole knowledge tracker: update, extraction, apply, rollback, block
 │   ├── ui/
 │   │   ├── settings-panel.js   # Extension drawer content

@@ -180,6 +180,18 @@ _Avoid_: character profile, attributes, character sheet, stats
 A cast member's lasting looks as the story states them, in six kinds of character details: ethnicity, skin, hair, eyes, build (height and body) and features (scars, tattoos, freckles, birthmarks, piercings, glasses, a beard, in one list). Never clothing, makeup or a passing state (wet hair, a flush). A feature the text never states is unknown; ethnicity is never inferred from a name, a skin tone or a look. Shown to the narrator only for present characters, never for those talked about and never to the planner. Recorded and shown only while character details and the appearance switch are both on; the switch is off by default.
 _Avoid_: look, looks (StoryImage's word for its image tags), description, outfit
 
+**Standing state**:
+How a cast member is now, lastingly, in three kinds of character details: style (how they dress and present as a habit, never one scene's outfit), manner (how they behave, as behaviour the narrator can play, lasting abilities and changes included) and stance (how they stand toward one other cast member). It changes only at a turning point the story shows (a decision, a confession, a lasting choice), proven by a quote the code finds in the message, or when the player states it in an out-of-character reminder ("Vera is still soft"); a scene direction ("bratty tonight") does not set it. Behaviour that merely differs is the narrator drifting, and the state stays. A cast member with a long history and no state gets their first one from the seed. Shown to the narrator for present characters (a talked-about one: only their stances toward present characters). Recorded and shown only while character details and the standing state switch are both on; the switch is off by default.
+_Avoid_: personality, mood, profile, disposition (in UI text)
+
+**Stance**:
+The standing state kind for how one cast member stands toward another: feeling and conduct, not kinship ("devoted to her; stays close as her assistant"). A cast member has one current stance toward each other one; a newer stance toward someone replaces only that one.
+_Avoid_: relationship (kinship is a relation), attitude, opinion
+
+**Seed** (standing state):
+The one background call that gives a cast member with a long history (40 facts or more) and no standing state their first style, manner and stances, from the facts the ledger holds for them and the always-on lorebook entries that name them. At most one per reply, never waiting for the player. A seeded value has no message: it survives every rollback and locks nothing, so a later turning point replaces it.
+_Avoid_: backfill (in UI text), catch-up (in code), import
+
 **Refinement** (appearance):
 A fuller value of an appearance kind that keeps every word of the stored one, the kind's own word ("hair", "eyes", "skin") aside: "dark" → "dark glossy curls, about shoulder length". It replaces the stored value without an on-screen change; a value that drops or swaps a word ("dark" → "black") is a restatement and is ignored unless the story shows the change. Only for appearance kinds.
 _Avoid_: update, enrichment

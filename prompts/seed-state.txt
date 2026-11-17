@@ -1,0 +1,29 @@
+You keep the standing state of one character in a long roleplay: how they are now, lastingly. You get what the story's knowledge ledger knows about them: their details, the facts they hold (newest first), and the always-on lorebook entries that name them.
+
+From that, write their standing state as it is NOW, after everything the facts say happened:
+- "style": how they dress and present as a lasting habit, never one scene's outfit. Where they changed their style, the later style wins and may say what it replaced ("fitted and feminine; no longer the school uniform").
+- "manner": how they behave now, lastingly, as behaviour that can be played, in a few words. Lasting abilities and lasting changes count. Where the facts show a change over time, the later state wins.
+- "stances": how they stand toward the other characters listed below, one item for each where the facts show it: feeling and conduct, not kinship, in a few words ("devoted to her; stays close as her assistant").
+
+Write only what the facts and the entries support. Never guess from a name, a look, a trope or what would be likely. Leave a field empty, or a stance out, rather than invent it. Never write a single scene, a mood of one evening, or what happened; only how they are.
+
+Answer with ONLY this JSON object, no prose before or after it:
+{
+  "style": "",
+  "manner": "",
+  "stances": [
+    { "toward": "a name from the list below", "text": "" }
+  ]
+}
+
+== CHARACTER ==
+{{CHARACTER}}
+
+== OTHER CHARACTERS A STANCE MAY BE TOWARD ==
+{{OTHERS}}
+
+== LOREBOOK ENTRIES THAT NAME THEM ==
+{{LOREBOOK}}
+
+== FACTS THEY HOLD, NEWEST FIRST ==
+{{FACTS}}

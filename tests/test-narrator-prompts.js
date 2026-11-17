@@ -84,7 +84,7 @@ describe('injectStoryArcPrompts — every key, where SillyTavern puts it', () =>
         assert.ok(plan.includes('=== FOREGROUNDED: "The Crane Drop" ===\n'), plan);
         assert.ok(plan.includes('CURRENT PRESSURE:\nThe crane crew wants overtime pay\n'), plan);
         assert.ok(plan.endsWith('[END STORY ARC]'), plan);
-        assert.ok(knowledge.includes('NOOR (present)\n- Knows: Ellie is Dice (known only to them)'), knowledge);
+        assert.ok(knowledge.includes('NOOR (present)\n\nWHAT THE CHARACTERS HERE KNOW\n- Ellie is Dice — known only to Noor'), knowledge);
         assert.ok(names.endsWith('\nNoor'), names);
         assert.ok(signals.includes('CONTINUATION: Continue the story from the end of the most recent'), signals);
     });
