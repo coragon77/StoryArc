@@ -14,7 +14,7 @@ import { isStalled } from '../lib/ui/progress.js';
 // only the current one, recognition sees them all (ADR-0010).
 
 const HEADER = '[STORY ARC - NARRATIVE DIRECTION]';
-const STANDING_HEADER = 'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing; '
+const STANDING_HEADER = 'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing, and give that line only to a character the story has let know about it; '
     + 'it becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
     + 'do not resolve it; what the story has already established always wins over it):';
 

@@ -179,16 +179,29 @@ describe('extract-knowledge.txt', () => {
             + 'goes into separate facts, not into one sentence joined by "and".'), 'missing the one-piece-per-fact rule');
     });
 
-    it('records what a crowd watched, a broadcast or a report as a public fact', () => {
+    it('records a broadcast, a report or a crowd out in the open as a public fact', () => {
         // Live: a party scene printed no public fact, so bystanders had nothing they were allowed to talk about.
         const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
 
         assert.ok(template.includes(
-            '- "public": true when the fact is public knowledge that bystanders may talk about: '
-            + 'what a crowd watched happen, what was broadcast, what was reported in the news. '
-            + 'false for knowledge only some characters hold.'), 'missing the public-knowledge rule');
+            '- "public": true when the fact is known beyond the people who were there, so bystanders anywhere may talk about it: '
+            + 'what was broadcast, reported in the news or announced to everyone, '
+            + 'or what a crowd watched happen out in the open, on a street or in a stadium.'), 'missing the public-knowledge rule');
         assert.ok(!template.includes('"public": true only when the fact is made known to everyone'),
             'the old, narrower public rule is still there');
+    });
+
+    it('keeps what a crowd watched inside one place private to the watchers', () => {
+        // Aegis chat, message 363: half a ward watched a patient walk again, the fact went public,
+        // and a flyer fresh off the roof pad knew about it at message 387.
+        const template = readFileSync(new URL('../prompts/extract-knowledge.txt', import.meta.url), 'utf8');
+
+        assert.ok(template.includes(
+            'false for knowledge only some characters hold, and false for what people watched inside one place, '
+            + 'such as a ward, an office, a party or a team\'s base: the characters there who watched it hold it as "witnessed", '
+            + 'and it reaches anyone else only when the story shows someone telling them.'), 'missing the one-place rule');
+        assert.ok(!template.includes('what a crowd watched happen, what was broadcast'),
+            'the old rule that made any crowd public is still there');
     });
 });
 

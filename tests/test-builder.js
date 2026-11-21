@@ -904,7 +904,7 @@ describe('buildInjection — world facts by tier and focus (ADR-0009)', () => {
                 'PREMISE: The guild starves the city.',
                 '',
                 ALL_FOUR_FACTS,
-                'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing; '
+                'STANDING PRESSURE (the force at work in this stretch of the story — let it colour scenes as a mood, a detail or a line in passing, and give that line only to a character the story has let know about it; '
                     + 'it becomes an event — an arrival, an interruption, a new agenda — only when the user\'s character goes toward it or brings it up; '
                     + 'do not resolve it; what the story has already established always wins over it):',
                 'The cold keeps coming.',
