@@ -172,6 +172,10 @@ Status log:
 
   Stefan hid Aegis 419–424 himself: "I didn't want the wrong stuff to get stored in memory by SummaryCeption".
   - Correction to the Facts row "The tracker keeps what a rewrite rejected": f379 is recorded at 409, not 411, and 387 carries f354.
+- 2026-11-22: C4 built on Stefan's "please crate the plan and then implement … just implement it". Plan `docs/plans/2026-11-22-rejected-replies.md`; built in a worktree and landed on main after one `/code-review` pass (ten findings, nine fixed).
+  - Replay gate, one sample per case, tracker profile (`scripts/replay-extraction.mjs`): 5 of 5 rewrite requests recognised, 0 of 7 ordinary out-of-character lines (continue, "So?", objection plus report, rejected but not rewritten).
+  - Paragon 3054 had been listed as a request; it ends "Report back, stop the RP and lets discuss further", a stop-and-report by the task's own rule, so it was relabelled rather than the prompt reworded. Stefan may overrule.
+  - Not yet: the live check in the Amy chat (the chapter's `done =`). C4 stays open until it has run.
 
 ## Chapters
 
