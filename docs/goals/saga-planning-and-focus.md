@@ -91,7 +91,8 @@ Out:
 | A reply that breaks a world fact is not reported on the card | "no to your question - you don't have to report it seperately." (2026-11-22) |
 | The recommendation package of 2026-11-22, items 1–5 below | "go" (2026-11-22). He had asked for it: "give me recommendations instead of asking me for every small decision" |
 | The second package of 2026-11-22, items 6–9 below | "ok then go" (2026-11-22) |
-| The C4 package, items 1–7 of `docs/plans/2026-11-22-rejected-replies-design.md`, Decisions: Story Arc offers to take a rejected span out and the player confirms, recognition runs in the existing extraction, the whole span is ticked by default, the new version is read again at one call per take-out, and a replay comes before code | "go" (2026-11-22) |
+| The C4 package, items 1–7 of `docs/plans/2026-11-22-rejected-replies-design.md`, Decisions: Story Arc offers to take a rejected span out and the player confirms, recognition runs in the existing extraction, the whole span is ticked by default (superseded, next row), the new version is read again at one call per take-out, and a replay comes before code | "go" (2026-11-22) |
+| A take-out hides only the rejected story; the out-of-character exchange, both sides of it, stays with the narrator | "if the takeout hides my OOC instructions as well, the LLM will instantly snap back to putting the focus onto Ellie" and "If I tick the parts you said, I'll remove the parts why the LLMS explained what it does and it has to guess what made my answers appear" (2026-11-22); "go for your recommendations", to the default that ticks only the story |
 
 The package Stefan approved:
 

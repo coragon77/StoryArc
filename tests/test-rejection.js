@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, chat_metadata, chat, ConnectionManagerRequestService, hideCalls } from '../tests/mocks/st-mocks.js';
-import { clearMarksOfShownMessages, findNewVersionAfter, proposeRejectedSpan, proposeSpanFromMessage, takeOutRejectedSpan } from '../lib/knowledge/rejection.js';
+import { clearMarksOfShownMessages, findNewVersionAfter, proposeRejectedSpan, proposeSpanFromMessage, proposeTickedIndices, takeOutRejectedSpan } from '../lib/knowledge/rejection.js';
 import { updateKnowledgeAfterEdit, updateKnowledgeAfterReply, updateKnowledgeAfterSwipe } from '../lib/knowledge/ledger.js';
 import { getRecentChat } from '../lib/context/chat-history.js';
 import { clearTemplateCache } from '../lib/planning/generator.js';
@@ -427,6 +427,9 @@ describe('takeOutRejectedSpan: Aegis 411–414', () => {
     });
 
     it('puts the scene back to the latest kept one before it, when the ticks leave a gap', async () => {
+        // A gap of story the player kept: out-of-character messages in it would be forgotten too.
+        chat[412].mes = 'Koster taps her clipboard.';
+        chat[413].mes = 'Hale signs the form.';
         ledger().scene = { at: 414, present: ['c1', 'c97'], messageId: 'm414' };
         ledger().sceneHistory = [
             { at: 409, present: ['c1', 'c2'], messageId: 'm409' },
@@ -523,5 +526,67 @@ describe('getRecentChat and rejected messages', () => {
 
         chat[1].is_system = false;
         assert.deepEqual(getRecentChat().map(message => message.content), ['Kept.', 'Rejected.', 'Hidden by a summary.']);
+    });
+});
+
+describe('the story-only default (owner ruling 2026-11-22)', () => {
+    afterEach(resetAll);
+
+    it('ticks only the story of a proposed span, never its out-of-character exchange (Claim the Sky 35–43)', () => {
+        const chatMessages = [
+            player('"They didn\'t drop my real name?"'),
+            narrator('Ellie pushed her hip off the warm radiator.'),
+            player('"I don\'t care. Maybe its because I\'m hot?"'),
+            narrator('Ellie exhaled a long breath.'),
+            player('[OOC: Stop the RP - your message does not make sense. Report back.]'),
+            narrator('[OOC: Pausing RP. You are completely right.]'),
+            player('[OOC: Tell me first why you focused so much on that.]'),
+            narrator('[OOC: Pausing RP. Here is a straightforward breakdown.]'),
+            player('[OOC: Yes, lets do this like you said.]'),
+        ];
+        assert.deepEqual(proposeTickedIndices(chatMessages, { start: 0, end: 8 }), [0, 1, 2, 3]);
+        assert.deepEqual(proposeTickedIndices(chatMessages, { start: 3, end: 8 }), [3]);
+    });
+
+    it('forgets at the exchange it leaves shown: the report\'s meeting goes, the ruling stays (Aegis 425–427)', async () => {
+        chat.length = 0;
+        chat.push(
+            { ...player('"Hale, Ward Two."'), extra: { story_arc_message_id: 'm0' } },
+            { ...narrator('Roman DeLuca storms in, his sword hand limp.'), extra: { story_arc_message_id: 'm1' } },
+            { ...player('[OOC: Damon left TODAY. And suddenly everyone knows? REALLY?]'), extra: { story_arc_message_id: 'm2' } },
+            { ...narrator('[OOC: Stopping RP. You\'re completely right.]'), extra: { story_arc_message_id: 'm3' } },
+        );
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1', knowledgeTracker: { enabled: true, updateInterval: 1 } };
+        const arc = aegisArc();
+        arc.rulings = [{ id: 'r1', text: 'Damon left TODAY.', at: 2, messageId: 'm2' }];
+        arc.beats[0].completion = { at: 1, messageId: 'm1', unlocked: [], skipped: [], arcCompleted: false, lastFulfilledBefore: 0 };
+        chat_metadata.story_arc = {
+            version: 1, arcs: [arc], settings: { autoTrack: true }, pendingMarks: [],
+            knowledge: {
+                characters: [{ id: 'c1', name: 'Ellie Masters', aliases: [] }, { id: 'c102', name: 'Roman DeLuca', aliases: ['Daybreak'] }],
+                facts: [{ id: 'f391', text: 'DeLuca asked Ellie to wake his hand.', public: false, holders: [
+                    { characterId: 'c1', how: 'witnessed', toldBy: null, at: 1, messageId: 'm1' },
+                    { characterId: 'c102', how: 'witnessed', toldBy: null, at: 1, messageId: 'm1' },
+                ] }],
+                meetings: [{ at: 1, present: ['c1', 'c102'], messageId: 'm1' }, { at: 3, present: ['c1', 'c102'], messageId: 'm3' }],
+                scene: { at: 3, present: ['c1', 'c102'], messageId: 'm3' },
+                sceneHistory: [{ at: 1, present: ['c1', 'c102'], messageId: 'm1' }],
+                lastUpdatedAt: 3,
+                lastUpdatedMessageId: 'm3',
+                updateLog: [{ kind: 'update', recordId: 'u1', from: 0, to: 1, messageId: 'm1', items: { characters: ['c102'] } }],
+            },
+        };
+        const sentPrompts = installExtraction([]);
+        const result = await takeOutRejectedSpan(proposeTickedIndices(chat, proposeSpanFromMessage(chat, 1)));
+        await result.reread;
+
+        assert.deepEqual(chat.map(message => `${message.is_system ? 'H' : '-'}${message.extra.story_arc_rejected ? 'R' : ''}`), ['-', 'HR', '-', '-']);
+        assert.deepEqual(ledger().meetings, []);
+        assert.deepEqual(ledger().scene, { at: null, present: [] });
+        assert.deepEqual(ledger().facts, []);
+        assert.deepEqual(ledger().characters.map(character => character.id), ['c1']);
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].rulings.map(ruling => ruling.at), [2]);
+        assert.equal(result.newVersionIndex, null);
+        assert.equal(sentPrompts.length, 0);
     });
 });

@@ -169,7 +169,7 @@ A scene the knowledge tracker saw with two or more characters present: everyone 
 _Avoid_: encounter, acquaintance, contact
 
 **Rejected span**:
-Messages the player took out after rejecting a reply: usually the rejected story reply and the out-of-character exchange about it, up to the new version. They are hidden from the narrator and from summaries, the knowledge ledger forgets what it learned from them, and characters known only from them leave the cast; the player's rulings and corrections stated in them stay. Unhiding a message makes it story again, but its knowledge does not come back.
+The story messages the player took out after rejecting a reply, up to the new version: the rejected story reply, and any of the player's turns inside it when the narrator rewound further. They are hidden from the narrator and from summaries, the knowledge ledger forgets what it learned from them, and characters known only from them leave the cast. The out-of-character exchange about them stays with the narrator, both sides of it, as the correction; the ledger forgets only what it recorded there, and the player's rulings and corrections stated there stay. Unhiding a message makes it story again, but its knowledge does not come back.
 _Avoid_: deleted messages, discarded reply
 
 **Cast**:

@@ -43,7 +43,7 @@ Stefan answered "go" to this package as a whole (2026-11-22):
 
 1. **Story Arc offers, the player confirms.** When a rewrite the player asked for arrives, a dialog proposes the span to take out. The player can move its start back, and nothing happens without his click. The same dialog opens from the message menu, for what recognition misses and for a reply rejected without a rewrite (Aegis 425).
 2. **The existing extraction recognises the rewrite request.** It is one more task in the call after each reply, so no call is added per reply. The item must quote the player's words, and the quote is checked like a ruling's. "Continue", "So?" or a stop-and-report on its own are not rewrite requests.
-3. **The whole span is ticked by default, the player's out-of-character lines included.** Each message can be unticked. This matches what Stefan does by hand, and his reason: the wrong content must not reach Summaryception's memory.
+3. **Superseded 2026-11-22, after the first take-out in play (Claim the Sky 35–43).** It was: the whole span is ticked by default, the player's out-of-character lines included. Stefan's ruling: "if the takeout hides my OOC instructions as well, the LLM will instantly snap back to putting the focus onto Ellie", and "If I tick the parts you said, I'll remove the parts why the LLMS explained what it does and it has to guess what made my answers appear". Now only the rejected story starts ticked. The out-of-character exchange, both sides of it, is the correction and stays with the narrator; the take-out still forgets what the tracker recorded at it (`listForgottenIndices`). Summaryception summarises visible out-of-character messages, so the exchange reaches its summaries too.
 4. **What "taken out" means:**
    - hidden in SillyTavern;
    - marked by Story Arc, so the planner and the appearance search skip it;
@@ -99,7 +99,7 @@ The proposal and the dialog need to tell the narrator's reports from story. Code
 
 - **Proposed start:** the latest narrator message before the rewrite request that is not hidden and not marked by the test, the reply the request is about.
 - **Proposed end:** the message before the new version.
-- **Ticked by default:** every message from start to end, including the player's out-of-character lines and the narrator's reports (Decided, item 3).
+- **Ticked by default:** the story messages from start to end (`proposeTickedIndices`), not the player's out-of-character lines or the narrator's reports (Decisions, item 3 as superseded). The take-out forgets what the tracker recorded at the out-of-character messages between the first tick and the new version, without hiding them.
 
 For Aegis 414→415 the proposal is 411–414, and for 424→425 it is 423–424. 419 was taken out when 423 arrived. For Paragon 3032→3033 the proposal is 3027–3032, and Stefan moves the start back to 3023.
 
