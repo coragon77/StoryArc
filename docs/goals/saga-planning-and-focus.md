@@ -21,6 +21,8 @@ His diagnosis, 2026-11-21: "What an arc does works very well for an episode or m
 
 A saga lasts 400 to 1,500 messages. A pressure written for the next few scenes is sent for a hundred messages or more, and when the story has moved on, the narrator bends the story to the plan. The cost is the one Stefan named on 2026-11-09 in `keeping-the-story-on-track.md`: every correction pulls him out of the story.
 
+Stefan named his three biggest problems on 2026-11-22: "pacing and omniscience problems btw. are the two biggest problems I'm noticing in my roleplays. Well and tonal clashes." C1 scores every reply on all three.
+
 The focus levels have the same defect at a different place. Today they are defined by how much of the narrator's attention an arc gets, and the tier only changes the label. Stefan redefined them on 2026-11-22 by what he wants from the arc right now (see Decided). The code disagrees with those meanings in three places (see Facts).
 
 ## Scope
@@ -123,13 +125,21 @@ Status log:
 
 - 2026-11-22: opened after the discussion of 2026-11-21 and 2026-11-22. Stefan approved the recommendation package with "go".
 - 2026-11-22: C1 set up. Branch "Aegis Central Internship System (Superhero Sim) - 2026-11-17@22h12m23s996ms - Branch \#1", messages 0–406, last message Stefan's "\[OOC: Ellies does, continue\]". The branch carries the test premise, the test pressure on `angel_field_sponsorship` and the five test world facts, written through `updateArc`. The knowledge ledger rolled back to 406 (f374 absent). The original chat is unchanged. No reply played yet.
+- 2026-11-22: C1 run, on Stefan's request ("can't you do that on your own"). The session played Ellie's turns through Playwright in a short in-character style, without steering toward or away from Damon. 15 narrator replies (408–436), every one sent with the test pressure (`lastSent`), milestone statuses unchanged throughout. The first browser session crashed the tab for lack of memory after three turns; later turns loaded a fresh page per turn and closed it after.
+  - Setup note: the first turn was generated from an empty input, so the preset's "send if empty" text entered the branch as message 407: "(POV Character stays silent or continues doing previous action. Advance the story with a new beat)". Stefan always types, so his original chat has no such message. Every later turn was typed.
+  - Omniscience: replies 408–428 (11 replies) are clean. The first clear leak is 430: a patroller just in from the field says "you're 884, right? Hardpoint's miracle kid from Bed Nine", justified by an invented locker-room channel. It compounds in 432 (she knows of "whatever third-floor physical therapy trial Hale has you running") and 434 ("your green slip had 884's code pinned right beside his name"; this last channel follows from Hale's pre-406 line about Ellie's number going on paper). The test pressure does not mention Damon. Baseline: 3 clear leaks in 8 replies, the first in the first reply (407).
+  - Pressure as an event: 420 (a records clerk arrives uninvited because the mainframe flags Damon's gain against Ellie's zero reading), continued in 422, and 436 (a Third Floor summons card for Ellie, following from the audit warning in 422). The header says a pressure becomes an arrival only when the user's character goes toward it; this narrator ignores that.
+  - Pacing: 418 (the twelve-day Sledge manhunt ends by radio within the hour) and 428 (a third emergency arrives unprompted). New casualties arrive in most replies, as the card and Author's Note invite.
+  - Tone: 420 and 422 are in the procedural register Stefan objected to at the original 420 (mainframe parsers, Section Four, File 302-M). 428 hands the untrained apprentice a splint and a nerve check, the over-competence Stefan objected to at 44.
+  - Reading, the session's and not Stefan's: the rewritten saga text delayed omniscience from the first reply to the twelfth but did not prevent it; the narrator spread the biggest recent event without the pressure pointing at it. A rewritten pressure still turns into arrivals. Both point at the narrator and preset as the base driver, with the old saga text as an amplifier.
 
 ## Chapters
 
 Order: C1 first, because its result decides whether C2 and C3 are worth building. C2 before C3, because background's world facts are safe only once saga world facts are rules only.
 
-- [ ] **C1. The test** — branch the Aegis chat at 406, apply the test text from Facts, play 15–20 turns.
+- [x] **C1. The test** — branch the Aegis chat at 406, apply the test text from Facts, play 15–20 turns.
   - done = the status log records the branch name, the number of narrator replies played under the test text, and the message numbers of every reply in which a character uses knowledge the knowledge block does not give them. Only replies whose `lastSent` carries the test pressure count. The result is compared with the baseline row in Facts.
+  - Completed 2026-11-22: 15 replies (408–436), all under the test pressure; leaks at 430, 432 and 434, against 3 in 8 replies from 407 in the baseline. Details in the status log.
 - [ ] **C2. Saga planning rules** — the planner and the plan check apply the saga rules from Decided, item 2.
   - done = two sagas freshly planned in the Amy chat each have milestones that name no single event. No pressure names a non-protagonist character or a single event. Every world fact states a rule, not a situation. The unit tests pin the saga rule fragments literally.
 - [ ] **C3. Focus semantics** — the injection follows Decided, item 3; ADR-0001 and the glossary entries Focus, Paused, Background and Spotlight are amended.
