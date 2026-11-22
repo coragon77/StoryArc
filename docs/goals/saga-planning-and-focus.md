@@ -176,6 +176,11 @@ Status log:
   - Replay gate, one sample per case, tracker profile (`scripts/replay-extraction.mjs`): 5 of 5 rewrite requests recognised, 0 of 7 ordinary out-of-character lines (continue, "So?", objection plus report, rejected but not rewritten).
   - Paragon 3054 had been listed as a request; it ends "Report back, stop the RP and lets discuss further", a stop-and-report by the task's own rule, so it was relabelled rather than the prompt reworded. Stefan may overrule.
   - Not yet: the live check in the Amy chat (the chapter's `done =`). C4 stays open until it has run.
+- 2026-11-22: C4 live check in the Amy chat. Stefan played one turn (80–81), a rewrite request (82, "[OOC: Rewrite that - it resolved itself too quickly]") and the new version (83).
+  - The extraction recognised the request (`rewrites: 1`), and 83 got the offered mark, but Stefan saw no notice. Not explained. Called directly afterwards, the notice appeared and stayed. Possibly it came after he had stopped looking: the reply took over three minutes, and the tracker read follows it.
+  - Regenerating 83 gave no offer. After the rollback, the update window starts at the new reply, so the request at 82 lies outside it. A known gap; the menu entry covers it.
+  - The session then drove the dialog. It proposed 81–82, with 83 as the new version. "Take out" hid and marked 81 and 82, and dropped the meeting recorded at 81 (81 had taught no fact). It wrote the `rejected` record and read 83 again (`reextract`, nothing pending).
+  - Afterwards the ledger holds no holder entry, meeting or scene at 81 or 82. Words found only in 81 appear in the next Story Arc prompts only through the header, the plan and facts from before 80. 81 is hidden (`is_system`), so ST leaves it out of the next prompt.
 
 ## Chapters
 
@@ -194,11 +199,13 @@ Order: C1 first, because its result decides whether C2 and C3 are worth building
 
   - done = unit tests with literal expected sections show: a paused arc sends nothing, a saga in background sends its world facts and no premise or pressure, an act in background sends its title line only, and a spotlit act or saga is back in normal focus after its current milestone is fulfilled. A live check in the Amy chat shows the same for one spotlit act.
 
-- [ ] **C4. A correction cleans up after itself** — when Stefan rejects a reply, what the tracker recorded from it is removed, and the rejected reply no longer reaches the narrator. Takes over "cleaning up a correction" from the tail of `keeping-the-story-on-track.md`.
+- [x] **C4. A correction cleans up after itself** — when Stefan rejects a reply, what the tracker recorded from it is removed, and the rejected reply no longer reaches the narrator. Takes over "cleaning up a correction" from the tail of `keeping-the-story-on-track.md`.
 
-  - Spec: `docs/plans/2026-11-22-rejected-replies-design.md` (Stefan: "go", 2026-11-22).
+  - Spec: `docs/plans/2026-11-22-rejected-replies-design.md` (Stefan: "go", 2026-11-22). Plan: `docs/plans/2026-11-22-rejected-replies.md`.
 
   - done = in the Amy chat, after an out-of-character rewrite request and the narrator's corrected reply, the ledger holds no fact, holder entry or meeting recorded from the rejected reply, the rejected reply is not in the next prompt, and the next knowledge block carries none of its content.
+
+  - Completed 2026-11-22: live check in the Amy chat, 80–83 (status log). Open: why Stefan saw no notice in his own run, and that regenerating a rewrite gives no offer.
 
 - [ ] **C5. Story Arc on against off** — the same turn of a story generated with Story Arc on and with it off, under a rubric fixed in the chapter brief.
 
