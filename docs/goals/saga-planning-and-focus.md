@@ -108,6 +108,7 @@ The package Stefan approved:
 | What happens to the stored sagas that are shaped like acts (Sovereign's Gilded Orbit, The Kept Girl Theory)? | Stefan | C2 shipping |
 | How much of the leaking comes from the preset? C1 did not answer it (status log, 2026-11-22) | Stefan | Repeated regenerations of the first reply after 406, under the old and the new saga text, in throwaway branches |
 | Do a pressure's words set the register? At 420 the test pressure's words ("measure", "on paper") were followed by a records clerk and two replies in the procedural register, against the Author's Note's "Keep bureaucracy … as brief background texture" | The C2 spec | C2's spec work |
+| Does paperwork carry knowledge? The ledger holds Hale's line that routing Damon's clearance "puts Ellie's provisional number on paper outside Ward Two", while the block's header says nothing reaches anyone through "logs, records". Most of the paperwork spread in both arms rides on that contradiction, a scope gap like the one the `public` flag had | Stefan | — |
 | Does spotlight on a saga need a tempo phrase (ADR-0002)? | Stefan | Live play after C3 |
 
 ## Living rules
@@ -133,7 +134,10 @@ Status log:
   - Pacing: 418 (the twelve-day Sledge manhunt ends by radio within the hour) and 428 (a third emergency arrives unprompted). New casualties arrive in most replies, as the card and Author's Note invite.
   - Tone: 420 and 422 are in the procedural register Stefan objected to at the original 420 (mainframe parsers, Section Four, File 302-M). 428 hands the untrained apprentice a splint and a nerve check, the over-competence Stefan objected to at 44.
   - The knowledge block rebuilt for 430 (`scripts/rebuild-knowledge-block.mjs` on the branch, ledger up to 428) lists Damon's recovery as "known only to" seven characters, not Halstead. No public fact names the recovery; the public facts name Sledge's capture and Hardpoint on scene.
-  - Two counts, because the two arms were first scored by different rubrics. Strict (a character uses knowledge the block does not give them, whatever the channel): test 3 of 15 (430, 432, 434), baseline 8 of 8 (407–425). Lenient (replies that use a channel the story had set up, such as the clearance paperwork, do not count): test 0 to 3 of 15, depending on whether 430's locker-room channel counts, baseline 3 of 8 (407, 423, 425). Stefan rules which count applies.
+  - Two counts, because the two arms were first scored by different rubrics. Strict (a character uses knowledge the block does not give them, whatever the channel; the block's header rules out "logs, records"): test 5 of 15 (420 and 422, the records clerk; 430, 432, 434), baseline 7 of 8 (all but 417). Lenient (replies that use a channel the story had set up, such as the clearance paperwork, do not count): test 0 to 3 of 15, depending on whether 430's locker-room channel counts, baseline 3 of 8 (407, 423, 425). Stefan rules which count applies.
+  - The baseline's eight replies are five turns: 411 and 415 are one turn (415 is the rewrite), and 419, 423 and 425 are one turn (two rewrites). By turns the strict baseline is 4 of 5.
+  - Stefan answered 407 in character. His first out-of-character stop after 406 was 412 (Koster's threat made no sense), and his first stop about omniscience was 426. "The baseline went wrong at its first reply" is the session's scoring, not his.
+  - Correction, 2026-11-22: an earlier entry and the first report to Stefan gave the strict count as 3 of 15 against 8 of 8. The records clerk was missed in the test arm, and 417 holds no leak.
   - Not answered by C1: how much comes from the preset. One run per arm, with a different player in each, and one test turn (410, "Nobody knows anything") touched the topic. The only like-for-like pair is the first reply after 406.
 
 ## Chapters
@@ -142,7 +146,7 @@ Order: C1 first, because its result decides whether C2 and C3 are worth building
 
 - [x] **C1. The test** — branch the Aegis chat at 406, apply the test text from Facts, play 15–20 turns.
   - done = the status log records the branch name, the number of narrator replies played under the test text, and the message numbers of every reply in which a character uses knowledge the knowledge block does not give them. Only replies whose `lastSent` carries the test pressure count. The result is compared with the baseline row in Facts.
-  - Completed 2026-11-22: 15 replies (408–436), all under the test pressure. Strict count 3 of 15 (430, 432, 434) against 8 of 8 in the baseline; lenient count 0 to 3 of 15 against 3 of 8. Details in the status log.
+  - Completed 2026-11-22: 15 replies (408–436), all under the test pressure. Strict count 5 of 15 (420, 422, 430, 432, 434) against 7 of 8 in the baseline (4 of 5 turns); lenient count 0 to 3 of 15 against 3 of 8. Details in the status log.
 - [ ] **C2. Saga planning rules** — the planner and the plan check apply the saga rules from Decided, item 2.
   - done = two sagas freshly planned in the Amy chat each have milestones that name no single event. No pressure names a non-protagonist character or a single event. Every world fact states a rule, not a situation. The unit tests pin the saga rule fragments literally.
 - [ ] **C3. Focus semantics** — the injection follows Decided, item 3; ADR-0001 and the glossary entries Focus, Paused, Background and Spotlight are amended.
