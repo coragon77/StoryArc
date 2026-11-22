@@ -119,6 +119,7 @@ The package Stefan approved:
 Status log:
 
 - 2026-11-22: opened after the discussion of 2026-11-21 and 2026-11-22. Stefan approved the recommendation package with "go".
+- 2026-11-22: C1 set up. Branch "Aegis Central Internship System (Superhero Sim) - 2026-11-17@22h12m23s996ms - Branch \#1", messages 0–406, last message Stefan's "\[OOC: Ellies does, continue\]". The branch carries the test premise, the test pressure on `angel_field_sponsorship` and the five test world facts, written through `updateArc`. The knowledge ledger rolled back to 406 (f374 absent). The original chat is unchanged. No reply played yet.
 
 ## Chapters
 
