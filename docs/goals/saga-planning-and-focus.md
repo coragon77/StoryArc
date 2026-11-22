@@ -162,6 +162,15 @@ Status log:
   - Correction, 2026-11-22: an earlier entry and the first report to Stefan gave the strict count as 3 of 15 against 8 of 8. The records clerk was missed in the test arm, and 417 holds no leak.
   - Not answered by C1: how much comes from the preset. One run per arm, with a different player in each, and one test turn (410, "Nobody knows anything") touched the topic. The only like-for-like pair is the first reply after 406.
 - 2026-11-22: Stefan stated the goal (Why). Read-only checks on the original chat found the tracker keeping rejected replies, unstored corrections, a trigger shoved into a scene and the knowledge block keeping the secret in view (Facts). Stefan approved the second package ("ok then go"): C2 and C3 wait, C4 (corrections) and C5 (on/off) come first. The comparison runs of the C1 open question wait as well.
+- 2026-11-22: C4 spec written, `docs/plans/2026-11-22-rejected-replies-design.md`. Stefan said "go" to its package:
+  - Story Arc offers to take out the rejected span, and the player confirms.
+  - The existing extraction recognises the rewrite request.
+  - The whole span is ticked by default.
+  - The new version is read again, at one call per confirmed take-out.
+  - A replay of recognition on nine real cases comes before code.
+
+  Stefan hid Aegis 419–424 himself: "I didn't want the wrong stuff to get stored in memory by SummaryCeption".
+  - Correction to the Facts row "The tracker keeps what a rewrite rejected": f379 is recorded at 409, not 411, and 387 carries f354.
 
 ## Chapters
 
@@ -181,6 +190,8 @@ Order: C1 first, because its result decides whether C2 and C3 are worth building
   - done = unit tests with literal expected sections show: a paused arc sends nothing, a saga in background sends its world facts and no premise or pressure, an act in background sends its title line only, and a spotlit act or saga is back in normal focus after its current milestone is fulfilled. A live check in the Amy chat shows the same for one spotlit act.
 
 - [ ] **C4. A correction cleans up after itself** — when Stefan rejects a reply, what the tracker recorded from it is removed, and the rejected reply no longer reaches the narrator. Takes over "cleaning up a correction" from the tail of `keeping-the-story-on-track.md`.
+
+  - Spec: `docs/plans/2026-11-22-rejected-replies-design.md` (Stefan: "go", 2026-11-22).
 
   - done = in the Amy chat, after an out-of-character rewrite request and the narrator's corrected reply, the ledger holds no fact, holder entry or meeting recorded from the rejected reply, the rejected reply is not in the next prompt, and the next knowledge block carries none of its content.
 
