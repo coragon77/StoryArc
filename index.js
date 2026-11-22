@@ -25,6 +25,7 @@ import { updateKnowledgeStatus } from './lib/ui/knowledge-status.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
 import { closeWizard } from './lib/ui/wizard.js';
+import { addRejectMenuEntry, closeRewriteOffer, showRewriteOffer } from './lib/ui/rejection-popup.js';
 
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
@@ -126,17 +127,19 @@ async function onMessageReceived(messageIndex) {
  * settings panel's status line when it changed the ledger, and the progress
  * display when it completed or reopened beats (the extraction recognises
  * beats with the tracker on). A character the update added with a taken
- * name gets one notice, now. A failure is logged, never thrown into ST's
- * event loop.
+ * name gets one notice, now, and so does a recognised rewrite request
+ * (the offer to take out what its new version replaces). A failure is
+ * logged, never thrown into ST's event loop.
  * @param {Promise<import('./lib/knowledge/ledger.js').KnowledgeUpdateResult>} knowledgeUpdate
  * @param {string} failureText - Log text for a failed update
  */
 function refreshKnowledgeStatusWhenChanged(knowledgeUpdate, failureText) {
     knowledgeUpdate
-        .then(({ ledgerChanged, beatsChanged, flaggedCharacters = [] }) => {
+        .then(({ ledgerChanged, beatsChanged, flaggedCharacters = [], rewriteOffer }) => {
             if (ledgerChanged) updateKnowledgeStatus();
             if (beatsChanged) updateProgress();
             for (const flaggedCharacter of flaggedCharacters) showNameClashNotice(flaggedCharacter);
+            if (rewriteOffer) return showRewriteOffer(rewriteOffer);
         })
         .catch(err => console.warn(`[Story Arc] ${failureText}`, err));
 }
@@ -191,6 +194,7 @@ async function onUserMessageRendered() {
  * @param {number} chatLength - Chat length after the deletion
  */
 export async function onMessageDeleted(chatLength) {
+    closeRewriteOffer();
     const marksDropped = dropPendingMarksFrom(chatLength);
     const completionsReopened = reopenCompletionsFrom(chatLength);
     const rulingsRemoved = removeRulingsFrom(chatLength);
@@ -223,6 +227,7 @@ export async function onMessageDeleted(chatLength) {
  * @param {number} messageIndex - Index of the swiped message
  */
 export async function onMessageSwiped(messageIndex) {
+    closeRewriteOffer();
     const swipedIndex = Number(messageIndex);
     const marksDropped = dropPendingMarksFrom(swipedIndex);
     // Before the knowledge rollback below, which takes the swiped message's
@@ -263,6 +268,7 @@ function onMessageEdited(messageIndex) {
 async function onChatChanged() {
     // An open wizard holds the old chat's context and would save into the new chat.
     closeWizard();
+    closeRewriteOffer();
     ensureChatState();
     const completionsReopened = reopenCompletionsFrom(chat.length);
     const rulingsRemoved = removeRulingsFrom(chat.length);
@@ -285,6 +291,8 @@ jQuery(async () => {
 
     // Add the Story Arc entry to the wand menu next to the chat bar
     registerWandMenuEntry();
+    // "Reject from here…" in every message's menu
+    addRejectMenuEntry();
 
     // Register SillyTavern event listeners
     eventSource.on(event_types.GENERATION_STARTED, onGenerationStarted);

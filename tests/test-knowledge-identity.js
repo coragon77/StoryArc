@@ -364,7 +364,7 @@ describe('updateKnowledgeAfterSwipe and the message ids', () => {
                 { kind: 'rollback', from: 6, factsDropped: ['f3'], holdersDropped: 1, factsRestored: [], detailsDropped: 0 },
                 {
                     kind: 'reextract', recordId: 'u1', from: 6, to: 6, messageId: swipeMessageId,
-                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                    answer: { present: 2, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0, rewrites: 0 },
                     factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,
@@ -437,7 +437,7 @@ describe('the message ids an update leaves on the messages it read', () => {
             // Only the update: the deletion moved the entries and took nothing back.
             updateLog: [{
                 kind: 'update', recordId: 'u1', from: 1, to: 2, messageId: replyMessageId,
-                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0 },
+                answer: { present: 2, newCharacters: 0, learned: 1, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 0, rewrites: 0 },
                 factsCreated: ['f1'], holdersAdded: 2, factsRetracted: [], beatsCompleted: 0, rulingsStored: 0,
             detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,

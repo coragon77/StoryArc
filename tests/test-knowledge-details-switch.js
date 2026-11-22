@@ -169,11 +169,11 @@ describe('character details switch off — the extraction prompt', () => {
         assert.equal(filledPrompt(makeLedger(true), false), filledPrompt(makeLedger(false), false));
     });
 
-    it('has the characters header, task 7 ending and answer end as before character details', () => {
+    it('has the characters header, task 8 ending and answer end as before character details', () => {
         const prompt = filledPrompt(makeLedger(true), false);
 
         assert.ok(prompt.includes('== CHARACTERS IN THE LEDGER ==\nEach with the other names they go by.\n- Kendra Osei (also: Kendra)\n'));
-        assert.ok(prompt.includes('New direction that contradicts nothing in the plans list is not a ruling either. When in doubt, leave it out.\n\nAnswer with ONLY this JSON object'));
+        assert.ok(prompt.includes('an out-of-character report of the narrator is not a new version. Write at most one item. When in doubt, leave it out.\n\nAnswer with ONLY this JSON object'));
         assert.ok(prompt.includes('"at": <index of the player\'s message> }\n  ]\n}\nWrite either "factId" or "text" in an item, not both. Empty lists are fine.'));
         assert.ok(!prompt.includes('DETAILS'));
         assert.ok(!prompt.includes('"details"'));
@@ -184,14 +184,14 @@ describe('character details switch off — the extraction prompt', () => {
         const prompt = filledPrompt(makeLedger(true), true);
 
         assert.ok(prompt.includes('Each with the other names they go by, and after a dash the details the ledger knows about them.\n- Kendra Osei (also: Kendra) — gender: female; age: 17\n'));
-        assert.ok(prompt.includes('When in doubt, leave it out.\n\n8. DETAILS. The characters list shows'));
+        assert.ok(prompt.includes('When in doubt, leave it out.\n\n9. DETAILS. The characters list shows'));
         assert.ok(prompt.includes('Out-of-character lines set no detail.\n\nAnswer with ONLY this JSON object'));
         assert.ok(prompt.includes('"at": <index of the player\'s message> }\n  ],\n  "details": [\n    { "character": "name", "kind": "gender | age | role | relation | status", "value": "the detail as a string", "of": "name, only for a relation", "change": "only for a changed detail: the on-screen event", "at": <index of the message> }\n  ]\n}\nWrite either'));
     });
 });
 
 /** Task 8 as it was before appearance (lib/knowledge/ledger.js at d8bfb3f), with its blank line. */
-const DETAILS_TASK_BEFORE_APPEARANCE = `8. DETAILS. The characters list shows the details the ledger knows about each character. For a character from the ledger, report a detail only when the ledger does not know that kind of detail for the character yet and the new messages state it, or when the new messages show it changing on screen: an event the text shows happening, such as a transfer, a new job, a death, or a dead character seen alive again. A new character from task 2 may carry details too. Write one item per detail:
+const DETAILS_TASK_BEFORE_APPEARANCE = `9. DETAILS. The characters list shows the details the ledger knows about each character. For a character from the ledger, report a detail only when the ledger does not know that kind of detail for the character yet and the new messages state it, or when the new messages show it changing on screen: an event the text shows happening, such as a transfer, a new job, a death, or a dead character seen alive again. A new character from task 2 may carry details too. Write one item per detail:
 - "character": the character's name from the ledger or from your new characters.
 - "kind": "gender"; "age" (as exact or as vague as the text puts it: "18", "twenty-something"); "role" (the job or place in the world, plus where it puts them: "cleaner, double shifts, Oakland"); "relation" (kinship to another character in the ledger or in your new characters: "mother", "brother", "husband"); or "status" ("dead" when the text shows or states a death; "alive" only for a character the ledger lists as dead whom the text shows alive again, never for a character merely seen or mentioned).
 - "value": the detail in a few words, always as a string. For a relation the kinship word only; for a status "alive" or "dead".
@@ -268,7 +268,7 @@ describe('appearance switch off — the extraction prompt', () => {
 
         assert.ok(prompt.includes('- Kendra Osei (also: Kendra) — gender: female; age: 17\n'));
         assert.ok(prompt.includes('== APPEARANCE OF THE CHARACTERS THE NEW MESSAGES NAME ==\nThe appearance the ledger knows about each of them, by kind.\n- Kendra Osei — hair: tight braids; eyes: dark brown\n'));
-        assert.ok(prompt.includes('8. DETAILS. The characters list shows the details the ledger knows about each character, and the appearance section the appearance it knows about each character the new messages name. For a character'));
+        assert.ok(prompt.includes('9. DETAILS. The characters list shows the details the ledger knows about each character, and the appearance section the appearance it knows about each character the new messages name. For a character'));
         assert.ok(prompt.includes('never for a character merely seen or mentioned). For appearance, the kind is also "ethnicity"'));
         assert.ok(prompt.includes('Out-of-character lines set no detail.\nAppearance is what lasts:'));
         assert.ok(prompt.includes('("Priya cuts her hair short.").\n\nAnswer with ONLY this JSON object'));
@@ -333,7 +333,7 @@ describe('character details switch — the extraction answer', () => {
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.characters, [{ id: 'c1', name: 'Noor', aliases: [] }]);
         assert.equal(sentPrompts.length, 1);
-        assert.ok(!sentPrompts[0].includes('8. DETAILS.'));
+        assert.ok(!sentPrompts[0].includes('9. DETAILS.'));
     });
 
     /** An answer that adds Noor's unnamed mother and names her unnamed brother Kwame. */
@@ -386,7 +386,7 @@ describe('character details switch — the extraction answer', () => {
         await updateKnowledgeAfterReply(2);
 
         assert.deepEqual(chat_metadata.story_arc.knowledge.characters[0].details, { age: [{ value: '30', at: 2, messageId: 'm2' }] });
-        assert.ok(sentPrompts[0].includes('8. DETAILS.'));
+        assert.ok(sentPrompts[0].includes('9. DETAILS.'));
     });
 });
 

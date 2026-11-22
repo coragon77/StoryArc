@@ -287,7 +287,7 @@ describe('extract-knowledge.txt — details', () => {
         buildKnowledgeExtractionVariables(emptyLedger, [], 0, 'Ellie', [], [], [], true));
 
     it('has a DETAILS task that records only what the text states, never a guess', () => {
-        assert.ok(template.includes('8. DETAILS.'), 'missing the DETAILS task');
+        assert.ok(template.includes('9. DETAILS.'), 'missing the DETAILS task');
         assert.ok(template.includes('Record only what the text states. Never guess'), 'missing the stated-only rule');
         assert.ok(template.includes('Out-of-character lines set no detail.'), 'missing the out-of-character rule');
         assert.ok(template.includes('only when the ledger does not know that kind of detail for the character yet'), 'missing the unknown-only rule');

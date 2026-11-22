@@ -291,7 +291,7 @@ describe('updateKnowledgeAfterReply: rulings', () => {
         const updateLog = chat_metadata.story_arc.knowledge.updateLog;
         assert.deepEqual(updateLog, [{
             kind: 'update', recordId: 'u1', from: 3, to: 4, messageId: chat[4].extra.story_arc_message_id,
-            answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 1 },
+            answer: { present: 1, newCharacters: 0, learned: 0, retracted: 0, revealedSecrets: 0, fulfilled: 0, rulings: 1, rewrites: 0 },
             factsCreated: [], holdersAdded: 0, factsRetracted: [], beatsCompleted: 0, rulingsStored: 2,
             detailsSet: 0, detailsChanged: 0, detailsRefined: 0, restatementsIgnored: 0, detailsLocked: 0, stateUnquoted: 0,
             newNamesAdded: 0, newNamesRefused: 0, newNamesUnknown: 0,

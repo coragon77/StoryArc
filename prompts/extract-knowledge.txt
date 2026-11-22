@@ -48,6 +48,11 @@ Only what happens on screen in the new messages counts, not what is planned, hin
 - "at": the index in square brackets of the player's message, one of the new messages.
 Only the player's own out-of-character lines count, never the narrator's. A ruling contradicts something the plans list says. A request about the current scene (rewrite that, change an outfit, stop and report back) contradicts no plan and is not a ruling. New direction that contradicts nothing in the plans list is not a ruling either. When in doubt, leave it out.
 
+8. REWRITE. When an out-of-character line of the player in the new messages rejects a story reply of the narrator and asks for it to be written again, and a story reply of the narrator follows that line in the new messages as the new version, write one item:
+- "quote": the player's words that ask for the new version, copied exactly from the message, the shortest span that states it whole.
+- "at": the index in square brackets of the player's message, one of the new messages.
+The player may ask with "rewrite", "redo" or "try again", may agree to a new version the narrator offered ("Yes, do that"), or may reject the reply and say what should happen instead ("No. That is not what I asked for - …"). Not a request: a line that only stops the story or asks the narrator to report back, a question about the reply, a line that tells the narrator to continue or to go on from the reply, a ruling about the plans. Write nothing when no story reply of the narrator follows the line in the new messages: an out-of-character report of the narrator is not a new version. Write at most one item. When in doubt, leave it out.
+
 {{DETAILS_TASK}}Answer with ONLY this JSON object, no prose before or after it:
 {
   "present": ["name"],
@@ -70,6 +75,9 @@ Only the player's own out-of-character lines count, never the narrator's. A ruli
   ],
   "rulings": [
     { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "chose": "only for a bare pick: the option it picks, copied exactly", "at": <index of the player's message> }
+  ],
+  "rewrites": [
+    { "quote": "the player's words that ask for the new version, copied exactly", "at": <index of the player's message> }
   ]{{DETAILS_SCHEMA}}
 }
 Write either "factId" or "text" in an item, not both. Empty lists are fine.

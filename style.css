@@ -19,3 +19,6 @@
 
 /* What the narrator gets (strip and reader) */
 @import url('./lib/css/sent-view.css');
+
+/* Take out rejected messages (dialog) */
+@import url('./lib/css/rejection.css');

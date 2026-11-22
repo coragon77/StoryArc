@@ -18,6 +18,7 @@
  */
 import fs from 'node:fs';
 import { buildKnowledgeBlock } from '../lib/knowledge/ledger.js';
+import { ledgerAtMessage } from './ledger-at-message.mjs';
 
 const args = process.argv.slice(2);
 const withDetails = !args.includes('--no-details');
@@ -42,27 +43,7 @@ if (!storedLedger) {
     process.exit(1);
 }
 
-// An entry from the user (at: null) survives every cut, as it survives every rollback.
-const isKept = entry => entry.at === null || entry.at === undefined || entry.at <= ledgerIndex;
-const facts = storedLedger.facts
-    .map(fact => ({ ...fact, holders: fact.holders.filter(isKept) }))
-    .filter(fact => fact.holders.length > 0 || fact.public);
-const characters = storedLedger.characters.map(character => {
-    if (!character.details) return character;
-    const details = {};
-    for (const [kind, history] of Object.entries(character.details)) {
-        const keptHistory = history.filter(isKept);
-        if (keptHistory.length > 0) details[kind] = keptHistory;
-    }
-    return { ...character, details };
-});
-const scenes = [...(storedLedger.sceneHistory || []), storedLedger.scene].filter(scene => scene.at !== null && isKept(scene));
-const scene = scenes.at(-1) || { at: null, present: [] };
-const meetings = storedLedger.meetings
-    ? storedLedger.meetings.filter(isKept)
-    : scenes.filter(keptScene => keptScene.present.length >= 2);
-
-const ledger = { ...storedLedger, characters, facts, scene, meetings };
-console.error(`Block at message ${messageIndex}, ledger up to ${ledgerIndex}; scene from message ${scene.at}; ${meetings.length} meetings`
-    + `${storedLedger.meetings ? '' : ' (from the scenes: the ledger has none yet)'}.`);
+const { ledger, scene, meetingsFromScenes } = ledgerAtMessage(storedLedger, ledgerIndex);
+console.error(`Block at message ${messageIndex}, ledger up to ${ledgerIndex}; scene from message ${scene.at}; ${ledger.meetings.length} meetings`
+    + `${meetingsFromScenes ? ' (from the scenes: the ledger has none yet)' : ''}.`);
 console.log(buildKnowledgeBlock(ledger, messages.slice(0, messageIndex + 1), withDetails, withAppearance, withState));

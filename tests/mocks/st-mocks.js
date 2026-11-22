@@ -152,3 +152,15 @@ export const power_user = { personas: {}, persona_descriptions: {} };
 export const ConnectionManagerRequestService = {
     sendRequest: async () => ({ text: '' }),
 };
+
+// --- /scripts/chats.js mocks ---
+
+/** Every hideChatMessageRange call, as [start, end, unhide]. */
+export const hideCalls = [];
+/** Hide or show a range of the mock chat, as ST's hideChatMessageRange does. */
+export async function hideChatMessageRange(start, end, unhide) {
+    hideCalls.push([start, end, unhide]);
+    for (let index = start; index <= end; index++) {
+        if (chat[index]) chat[index].is_system = !unhide;
+    }
+}
