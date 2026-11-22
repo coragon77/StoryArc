@@ -589,4 +589,15 @@ describe('the story-only default (owner ruling 2026-11-22)', () => {
         assert.equal(result.newVersionIndex, null);
         assert.equal(sentPrompts.length, 0);
     });
+
+    it('keeps a character the kept exchange names, though only the rejected reply introduced them', async () => {
+        storeAegis();
+        chat[412].mes = '[OOC: Why is Capt. Malkin even in this scene? Report back and stop the RP]';
+        installExtraction([rereadAnswer]);
+        const result = await takeOutRejectedSpan(proposeTickedIndices(chat, { start: 411, end: 414 }));
+        await result.reread;
+
+        assert.deepEqual(chat.slice(411, 415).map(message => (message.is_system ? 'H' : '-')), ['H', '-', '-', '-']);
+        assert.ok(ledger().characters.some(character => character.id === 'c99'));
+    });
 });
