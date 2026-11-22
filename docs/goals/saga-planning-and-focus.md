@@ -1,6 +1,6 @@
 # StoryArc: sagas planned as sagas, focus defined by what the player wants
 
-**Status:** open · **Opened / last verified:** 2026-11-22 · **Scale:** three chapters, several sessions
+**Status:** open · **Opened / last verified:** 2026-11-22 · **Scale:** five chapters, several sessions
 
 This is a goals document, not a spec; chapters go through the normal spec/plan workflow.
 
@@ -22,6 +22,10 @@ His diagnosis, 2026-11-21: "What an arc does works very well for an episode or m
 A saga lasts 400 to 1,500 messages. A pressure written for the next few scenes is sent for a hundred messages or more, and when the story has moved on, the narrator bends the story to the plan. The cost is the one Stefan named on 2026-11-09 in `keeping-the-story-on-track.md`: every correction pulls him out of the story.
 
 Stefan named his three biggest problems on 2026-11-22: "pacing and omniscience problems btw. are the two biggest problems I'm noticing in my roleplays. Well and tonal clashes." C1 scores every reply on all three.
+
+After C1 he named the goal behind all of it, 2026-11-22: "the biggest problem is that the LLM does something I either miss or try to fix by rewrites and OOC and the error keeps popping up like a whack-a-mole. Furthermore the model goes out of its way to adhere to the rules but breaks story quality in order to do it - like killing a scene early or shoving in a beat that just does not fit. My main goal for this whole extension was Story quality and I want it to improve it, not degrade it."
+
+The checks after C1 found Story Arc behind both halves of that (Facts): the tracker keeps what a rewrite rejected, and plan items get shoved into scenes.
 
 The focus levels have the same defect at a different place. Today they are defined by how much of the narrator's attention an arc gets, and the tier only changes the label. Stefan redefined them on 2026-11-22 by what he wants from the arc right now (see Decided). The code disagrees with those meanings in three places (see Facts).
 
@@ -68,6 +72,13 @@ Out:
 | Test text for C1 | Approved by Stefan with "go", 2026-11-22. Premise: "Ellie Masters joined Aegis Central to become a hero, but her protective gift scrambles every measurement, so she works Class Zero medical support while she waits for a re-evaluation. Her power turns male desire and intimate contact into euphoria for her and rapid healing for her patients. Can she earn a real hero role on her own terms, with a power nobody can measure and a body that reacts on autopilot to every appreciative look?" Current pressure: "Aegis trusts only what it can measure, and Ellie's gift refuses measurement, so every healing she performs proves little on paper." World facts, as rules only: (1) Leaving the Class Zero-Provisional pool forfeits an applicant's eligibility for a hero license. (2) Ellie's power reacts strongly to male desire when she wears hyperfeminine or sexualized clothes; in civilian clothes she moves through daily life normally. (3) Intimate skin-to-skin contact and sexual release with Ellie speed cellular and nerve regeneration in injured patients, and after she climaxes a temporary luck aura surrounds her. (4) Ellie keeps final say over whom she treats and how far any intimate care goes; nobody at Aegis can order her to. (5) Senior licensed heroes treat Class Zero support staff as interchangeable background personnel |
 | Chats | Aegis: `.../data/default-user/chats/Aegis Central Internship System (Open)/Aegis Central Internship System (Superhero Sim) - 2026-11-17@22h12m23s996ms.jsonl`, 428 messages on 2026-11-22. It is Stefan's story: the test runs in a branch only. The Amy chat is the disposable test chat. Paragon is never a test chat |
 | Verification environment | GitHub Actions runs `./tests/run.sh` on every push to main. Local runs cover what a change touches. Live checks run in the SillyTavern instance at 127.0.0.1:8008. One `/code-review` pass. Commits go to main directly (no PR) |
+| The tracker keeps what a rewrite rejected | Stefan corrects with an out-of-character "rewrite"; the narrator writes the corrected reply as a new message and the rejected one stays. Facts recorded from rejected replies are still live in the original chat's ledger: 411 (f379–f382, Koster's audit demands), 419 (f384–f386, a captain sending a patient "for the 302-M protocol under Apprentice Masters"), 423 (f387–f389, Ilyas against Sledge), 425 (f390–f392, DeLuca asking Ellie to wake his hand). None is in `retractedFacts`. The meetings at 423 and 425 are recorded too, so Ellie "has met" Ilyas and DeLuca. Read with `checks.py` in the session's scratch directory, 2026-11-22 |
+| Rejected replies stay visible | Of the rejected replies, only 419–424 are hidden (`is_system`); 387–391 and 407–418 are visible to the narrator. Not verified: who hid 419–424 (Stefan or another extension) |
+| A rollback exists, but not for a rewrite | `rollBackKnowledgeFrom` runs after a delete, a swipe, an edit or a branch load (`architecture.md`, Knowledge Tracker, step 4): entries with a message id go with their message. A new message after an out-of-character rewrite triggers none of these. Not verified: what deleting a rejected reply in the middle of the chat does to the replies after it (the rollback also sets `lastUpdatedAt` back) |
+| Rulings after 370 were not stored | The saga holds four rulings, the last from 370 and unanswered. Stefan's corrections at 388, 390, 412, 420, 422, 424 and 426 are not stored: the OVERRULED step catches only a line that contradicts a premise or a pressure, and "we can't speedrun this" contradicts neither |
+| Plan items shoved into scenes | Stefan's stop at 242 ("Why did you shove that in?") follows reply 241, where Corbin appears with "a half-inch copper-wire scrape" and "canary-yellow Code 409 fault forms", "crowding within eight inches of her open lapel". The fired trigger `corbin_maintenance_visit` reads "holds out a minor maintenance scrape or a stack of Bay Three fault forms and crowds into Ellie Masters's personal space". Triggers are sent only in spotlight; the saga's `spotlitAt` is 226. Not verified: the focus at 241. Likely, not verified: Stefan's stop at 370 ("Why would Hale try to HIDE something?") follows from the secret `hale_covert_dossier` |
+| The knowledge block keeps the secret in view | The block rebuilt for 420 on the branch has 27 lines naming Damon, Hardpoint or Alverez; for 430, 18. Accurate lines, but the topic nobody may know is in front of the narrator every turn. Issue \#21 recorded the same effect for the "Does not know" lines |
+| Story Arc on against off | Never compared. Nobody has measured whether Story Arc improves the story |
 | Session records | Discussion of 2026-11-21 and 2026-11-22. Its decisions file, `/tmp/claude-1000/-opt-sillytavern-StoryArc/d8a31b14-7ced-49ed-8c79-28e892977c36/scratchpad/decisions.md`, is volatile; the Decided section below is the durable copy |
 
 ## Decided
@@ -79,6 +90,7 @@ Out:
 | Normal means "it's part of the story, let it develop" | "1 yes", to that sentence (2026-11-22) |
 | A reply that breaks a world fact is not reported on the card | "no to your question - you don't have to report it seperately." (2026-11-22) |
 | The recommendation package of 2026-11-22, items 1–5 below | "go" (2026-11-22). He had asked for it: "give me recommendations instead of asking me for every small decision" |
+| The second package of 2026-11-22, items 6–9 below | "ok then go" (2026-11-22) |
 
 The package Stefan approved:
 
@@ -99,6 +111,13 @@ The package Stefan approved:
 4.  **Not now:** a detector for world facts the story has outgrown. Stored sagas stay untouched until re-planned.
 5.  **Record it as a goals document** with three chapters: test, saga planning, focus semantics.
 
+The second package, after C1 and Stefan's goal statement:
+
+6.  **C2, C3 and every comparison run wait.**
+7.  **Corrections first:** when Stefan rejects a reply, Story Arc removes what the tracker recorded from it, and the rejected reply leaves what the narrator sees (C4).
+8.  **Then one Story Arc on/off comparison** on the same turn (C5). It changes global switches, so it needs a time window agreed with Stefan and a restore afterwards.
+9.  **Nothing new is added to what Story Arc sends** until C5 exists.
+
 ## Open questions
 
 | Question | Owner | Unblocked by |
@@ -110,6 +129,9 @@ The package Stefan approved:
 | Do a pressure's words set the register? At 420 the test pressure's words ("measure", "on paper") were followed by a records clerk and two replies in the procedural register, against the Author's Note's "Keep bureaucracy … as brief background texture" | The C2 spec | C2's spec work |
 | Does paperwork carry knowledge? The ledger holds Hale's line that routing Damon's clearance "puts Ellie's provisional number on paper outside Ward Two", while the block's header says nothing reaches anyone through "logs, records". Most of the paperwork spread in both arms rides on that contradiction, a scope gap like the one the `public` flag had | Stefan | — |
 | Does spotlight on a saga need a tempo phrase (ADR-0002)? | Stefan | Live play after C3 |
+| How does Story Arc tell a rejection from an ordinary out-of-character line? A rewrite request, a stop-and-report, and the narrator's corrected reply each look different | The C4 spec | C4's spec work |
+| Should Stefan's scene-level corrections ("we can't speedrun this") be kept, when they contradict no plan item? | Stefan | C4 shipping; `keeping-the-story-on-track.md` C5 (standing rulings) covers world rulings only |
+| Should the knowledge block name a secret topic fewer times? | Stefan | C5's result |
 
 ## Living rules
 
@@ -139,17 +161,31 @@ Status log:
   - Stefan answered 407 in character. His first out-of-character stop after 406 was 412 (Koster's threat made no sense), and his first stop about omniscience was 426. "The baseline went wrong at its first reply" is the session's scoring, not his.
   - Correction, 2026-11-22: an earlier entry and the first report to Stefan gave the strict count as 3 of 15 against 8 of 8. The records clerk was missed in the test arm, and 417 holds no leak.
   - Not answered by C1: how much comes from the preset. One run per arm, with a different player in each, and one test turn (410, "Nobody knows anything") touched the topic. The only like-for-like pair is the first reply after 406.
+- 2026-11-22: Stefan stated the goal (Why). Read-only checks on the original chat found the tracker keeping rejected replies, unstored corrections, a trigger shoved into a scene and the knowledge block keeping the secret in view (Facts). Stefan approved the second package ("ok then go"): C2 and C3 wait, C4 (corrections) and C5 (on/off) come first. The comparison runs of the C1 open question wait as well.
 
 ## Chapters
 
-Order: C1 first, because its result decides whether C2 and C3 are worth building. C2 before C3, because background's world facts are safe only once saga world facts are rules only.
+Order: C1 first, because its result decides whether C2 and C3 are worth building. Since 2026-11-22 C4 and C5 come next (Decided, items 6–9): a rejected reply that stays in the tracker brings the error back after every fix, and C5 measures whether Story Arc helps at all. C2 and C3 wait for C5. C2 before C3, because background's world facts are safe only once saga world facts are rules only.
 
 - [x] **C1. The test** — branch the Aegis chat at 406, apply the test text from Facts, play 15–20 turns.
+
   - done = the status log records the branch name, the number of narrator replies played under the test text, and the message numbers of every reply in which a character uses knowledge the knowledge block does not give them. Only replies whose `lastSent` carries the test pressure count. The result is compared with the baseline row in Facts.
   - Completed 2026-11-22: 15 replies (408–436), all under the test pressure. Strict count 5 of 15 (420, 422, 430, 432, 434) against 7 of 8 in the baseline (4 of 5 turns); lenient count 0 to 3 of 15 against 3 of 8. Details in the status log.
+
 - [ ] **C2. Saga planning rules** — the planner and the plan check apply the saga rules from Decided, item 2.
+
   - done = two sagas freshly planned in the Amy chat each have milestones that name no single event. No pressure names a non-protagonist character or a single event. Every world fact states a rule, not a situation. The unit tests pin the saga rule fragments literally.
+
 - [ ] **C3. Focus semantics** — the injection follows Decided, item 3; ADR-0001 and the glossary entries Focus, Paused, Background and Spotlight are amended.
+
   - done = unit tests with literal expected sections show: a paused arc sends nothing, a saga in background sends its world facts and no premise or pressure, an act in background sends its title line only, and a spotlit act or saga is back in normal focus after its current milestone is fulfilled. A live check in the Amy chat shows the same for one spotlit act.
 
-Later chapters TBD after Stefan's ruling on the C1 counts and the regeneration comparison (Open questions).
+- [ ] **C4. A correction cleans up after itself** — when Stefan rejects a reply, what the tracker recorded from it is removed, and the rejected reply no longer reaches the narrator. Takes over "cleaning up a correction" from the tail of `keeping-the-story-on-track.md`.
+
+  - done = in the Amy chat, after an out-of-character rewrite request and the narrator's corrected reply, the ledger holds no fact, holder entry or meeting recorded from the rejected reply, the rejected reply is not in the next prompt, and the next knowledge block carries none of its content.
+
+- [ ] **C5. Story Arc on against off** — the same turn of a story generated with Story Arc on and with it off, under a rubric fixed in the chapter brief.
+
+  - done = the status log records the turn, the number of generations per arm, the rubric and each generation's score, and Story Arc's switches are back as they were.
+
+Later chapters TBD after C5.

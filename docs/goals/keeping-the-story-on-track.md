@@ -102,6 +102,7 @@ For a chapter brief (the kickoff-brief contract):
 - 2026-11-09: C7 complete (951141d). The Gilded Pedestal in Paragon was fixed by hand once more before it, as the manual version of what the question step now produces.
 - 2026-11-09: C8 opened. The first re-plan with the question step integrated the answers (celebrity capes, opportunities closing, benefits first), but the act section printed all milestone pressures at once, the three-fact cut dropped the anti-chaperone fact, and an old blackmail secret survived. Stefan: "Manual fixes are exactly what I don't really want - the extension is supposed to not make the error in the first place and regenerating should fix the issues."
 - 2026-11-09: C8 built and merged on main (ed48efb), CI to confirm. Amy chat, merged code: the stored all-active act "Velvet Queue Priority" prints one pressure (its first milestone's); completing milestone 2 marked milestone 1 skipped and moved the pressure to milestone 3; deleting the message reopened both and restored the first pressure. The code review's ten findings were fixed before merge (revealed = disclosed or a ledger fact; a failed check keeps earlier secrets; history frozen on a re-plan; current = first open after the last completed). Waiting on the done criterion: Stefan's re-plan of The Gilded Pedestal.
+- 2026-11-22: "Cleaning up a correction", from the later-chapters line, moved to `docs/goals/saga-planning-and-focus.md` as its C4, after the Aegis chat showed the tracker keeping facts and meetings from replies Stefan had rejected.
 
 ## Chapters
 
