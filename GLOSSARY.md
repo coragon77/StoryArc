@@ -134,6 +134,10 @@ _Avoid_: derail, drift
 An out-of-character line of the player that contradicts an arc's premise or one of its open pressures. Noticed by the knowledge extraction, stored on the arc in the player's words, and shown on its progress card until the arc is re-planned. Every re-plan of the arc, the first and every later one, follows its rulings as binding; only the player removes one. A request about the current scene, or new direction that contradicts nothing in the plan, is not a ruling. Only noticed while the knowledge tracker is on.
 _Avoid_: correction (the ledger's word for a retracted fact), OOC note, instruction
 
+**Rewrite request**:
+An out-of-character line of the player that rejects a story reply of the narrator and asks for it to be written again ("Yes, rewrite", "No. I didn't tell you to …"), answered by the narrator's new version as a new message. Noticed by the knowledge extraction once the new version is there; it offers to take out the rejected span. A line that only stops the story or asks for a report is not one. Only noticed while the knowledge tracker is on.
+_Avoid_: redo, retry, regenerate (a swipe is ST's own regeneration)
+
 **Stall**:
 The measurable sign of divergence: an arc going roughly three times its expected per-beat length without a fulfillment, counted from its last fulfillment, its last re-plan, its reactivation (a past arc made active again, which also restarts its phase) or the last time it went into the spotlight, whichever is later. A beat the player marks done by hand is a fulfillment too. Paused arcs and background arcs never stall; time spent paused does not count. Shown to the player as a nudge to re-plan, never to the narrator. The player can ignore a stall: its nudge stays hidden until the arc's next beat lands or it is re-planned, reactivated or spotlit.
 _Avoid_: timeout, stuck
@@ -163,6 +167,10 @@ _Avoid_: mentioned, referenced, offscreen
 **Meeting**:
 A scene the knowledge tracker saw with two or more characters present: everyone in it has met everyone else. The narrator sees, for each character present or talked about, whom they have met ("Has met"), so a character does not know the face or looks of someone they never saw. Recorded from the scene the extraction reports, with no call of its own, and only from when the tracker started: a meeting earlier in the story is not on the list.
 _Avoid_: encounter, acquaintance, contact
+
+**Rejected span**:
+Messages the player took out after rejecting a reply: usually the rejected story reply and the out-of-character exchange about it, up to the new version. They are hidden from the narrator and from summaries, the knowledge ledger forgets what it learned from them, and characters known only from them leave the cast; the player's rulings and corrections stated in them stay. Unhiding a message makes it story again, but its knowledge does not come back.
+_Avoid_: deleted messages, discarded reply
 
 **Cast**:
 The knowledge ledger's characters with their names and aliases, as the planner and the plan check see them. A plan names a cast member exactly as the cast does; a new character in a plan is anyone not in the cast. Each cast member may also carry character details, which the narrator sees for the characters present or talked about; the planner and the plan check see only the names. An unnamed relative is a cast member too, but the planner and the plan check do not see it, since it has no name. Empty while the knowledge tracker is off.

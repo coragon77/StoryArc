@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-17
+- **Last Updated:** 2026-11-22
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -370,7 +370,13 @@ StoryArc/
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
 │   │                           #   scrubArcInternals() — deletes leaked beat/arc ids from message
 │   ├── knowledge/
-│   │   ├── message-ids.js      # Story Arc's message id in a message's extra
+│   │   ├── rejection.js        # The take-out of a rejected span (C4): proposeRejectedSpan(),
+│   │   │                       #   proposeSpanFromMessage(), findNewVersionAfter(),
+│   │   │                       #   takeOutRejectedSpan() (mark, drop, characters, beats,
+│   │   │                       #   hide, re-read the new version), dropCharactersOnlyInRejected()
+│   │   ├── message-ids.js      # Story Arc's message id in a message's extra; also the
+│   │   │                       #   rejected mark (REJECTED_KEY, isRejectedMessage), the
+│   │   │                       #   rewrite offer mark and isMarkedOutOfCharacter()
 │   │   │                       #   (MESSAGE_ID_KEY): assignCoveredMessageIds(chat,
 │   │   │                       #   from, last) gives one to every read message,
 │   │   │                       #   messageIdOf(message) reads it, giveMessageId(message)
@@ -481,6 +487,8 @@ StoryArc/
 │   │   │                       #   setupSettingsPanelEvents() also wires the drawer's
 │   │   │                       #   stall nudge (#story-arc-settings .story-arc-stall-btn
 │   │   │                       #   → showWizard(arcId))
+│   │   ├── rejection-popup.js  # The rewrite notice (showRewriteOffer, closeRewriteOffer),
+│   │   │                       #   the take-out dialog, "Reject from here…" in the message menu
 │   │   ├── sent-view.js        # showSentView() — What the narrator gets (#83): the
 │   │   │                       #   request as a strip, the chosen part beside it, Last
 │   │   │                       #   sent / Next request; maskSpoilerLines + listSpoilers
@@ -603,9 +611,12 @@ StoryArc/
 │       │                       #   picker, status bar; ST theme variables only
 │       ├── progress.css        # Layout of the progress rows; tokens, beat squares
 │       │                       #   and the warning come from arc-manager.css (#72)
+│       ├── rejection.css       # The take-out dialog's rows
 │       └── sent-view.css       # What the narrator gets: strip, blocks, reader,
 │                               #   placeholders; on the .am tokens (#83)
 ├── scripts/
+│   ├── ledger-at-message.mjs   # The ledger of a chat file cut back to one message (shared)
+│   ├── replay-extraction.mjs   # Replay the extraction over one window through the ST server
 │   ├── rebuild-knowledge-block.mjs # Diagnosis: the knowledge block the narrator got at
 │   │                           #   one message of a chat file, ledger cut back to then;
 │   │                           #   run with node --import ./tests/setup.js
@@ -1049,4 +1060,5 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
 | What the narrator gets (#83) | `lib/ui/sent-view.js` | `lib/injection/narrator-prompts.js` (`listStoryArcPrompts`, `saveLastSent`), `index.js` (`injectStoryArcPrompts`, `onChatCompletionPromptReady`, `onChatChanged`), `lib/injection/builder.js` (header and check-line constants), `lib/css/sent-view.css`, `lib/ui/settings-panel.js` and `lib/ui/wand-menu.js` (entry buttons) |
 | Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/state-seed.js` (standing state seed), `prompts/seed-state.txt`, `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
+| Rejected spans (C4) | `lib/knowledge/rejection.js` | `lib/ui/rejection-popup.js` (notice, dialog, menu entry), `lib/knowledge/ledger.js` (`resolveRewrites`, `dropKnowledgeOfRejectedMessages`, the rejected-message guards), `lib/knowledge/message-ids.js` (`isRejectedMessage`, `isMarkedOutOfCharacter`), `prompts/extract-knowledge.txt` (task 8), `lib/context/chat-history.js`, `lib/knowledge/appearance-search.js`, `lib/injection/signals.js` (`dropPendingMarksAt`), `index.js`, `lib/css/rejection.css`, `scripts/replay-extraction.mjs` |
 | Styles | `style.css` | `lib/css/*.css` |

@@ -79,6 +79,19 @@ describe('proposeSpanFromMessage and findNewVersionAfter', () => {
         assert.equal(findNewVersionAfter(chatMessages, 3, new Set([0, 1, 2, 3])), 4);
         assert.equal(findNewVersionAfter(chatMessages, 6, new Set()), null);
     });
+
+    it('finds the next story reply when a summary hid every message after the span (Paragon 3023)', () => {
+        const hidden = message => ({ ...message, is_system: true });
+        const chatMessages = [
+            hidden(narrator('3023: "I won\'t log tonight\'s meeting," Vasquez said.')),
+            hidden(player('"I don\'t want you to go to prison, Elena."')),
+            hidden(narrator('3025: Vasquez shrugs.')),
+            hidden(player('[OOC: Stop the RP. Report back]')),
+            { ...hidden(narrator('Taken out earlier.')), extra: { story_arc_rejected: true } },
+        ];
+        assert.deepEqual(proposeSpanFromMessage(chatMessages, 0), { start: 0, end: 1 });
+        assert.equal(findNewVersionAfter(chatMessages, 3, new Set([0, 1, 2, 3])), null);
+    });
 });
 
 // ─── The take-out ───
@@ -358,6 +371,28 @@ describe('takeOutRejectedSpan: Aegis 411–414', () => {
         assert.equal(sentPrompts.length, promptsBefore);
         assert.deepEqual(edited, { ledgerChanged: false, beatsChanged: false });
         assert.equal(swiped.beatsChanged, false);
+    });
+
+    it('refuses a second take-out until the first one\'s re-read is back', async () => {
+        let answerReread;
+        clearTemplateCache();
+        globalThis.fetch = async () => new Response('{{MESSAGES}}');
+        ConnectionManagerRequestService.sendRequest = async () => () => (async function* () {
+            yield { text: await new Promise(resolve => { answerReread = resolve; }) };
+        })();
+        const first = await takeOutRejectedSpan([411, 412, 413, 414]);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const second = await takeOutRejectedSpan([409]);
+        assert.deepEqual(second, { error: 'Story Arc is still reading the latest reply; try again in a moment.' });
+        assert.equal(chat[409].is_system, false);
+
+        answerReread(rereadAnswer);
+        await first.reread;
+        installExtraction([rereadAnswer]);
+        const third = await takeOutRejectedSpan([409]);
+        await third.reread;
+        assert.equal(chat[409].is_system, true);
     });
 
     it('is refused while a reply update is out, and changes nothing', async () => {

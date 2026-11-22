@@ -71,7 +71,8 @@ StoryArc/
 │   │   ├── pacing.js           # Phase calculation + directives
 │   │   └── signals.js          # ARC_SIGNAL parsing + processing
 │   ├── knowledge/
-│   │   ├── message-ids.js      # Story Arc message id on a chat message (ledger, beat completions, search)
+│   │   ├── message-ids.js      # Story Arc message id on a chat message (ledger, beat completions, search), rejected mark
+│   │   ├── rejection.js        # The take-out of a rejected span: proposal, mark, drop, hide, re-read
 │   │   ├── appearance-search.js # The appearance search: passages of the whole chat, the call, the offers
 │   │   ├── names.js            # Taken names: derivation from the ledger + the names block
 │   │   ├── state-seed.js       # The standing state seed: who, the call, the seed entries
@@ -84,6 +85,7 @@ StoryArc/
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
 │   │   ├── knowledge-status.js # The tracker's status line in the drawer (popup, panel, index.js)
 │   │   ├── sent-view.js        # What the narrator gets: the request as a strip, each part as sent
+│   │   ├── rejection-popup.js  # The rewrite notice, the take-out dialog, "Reject from here…"
 │   │   ├── beat-strip.js       # The beat squares and tier words (Arc Manager, progress rows)
 │   │   ├── undo-stack.js       # A popup session's undo (Knowledge popup, Arc Manager)
 │   │   └── progress.js         # The active arcs' rows (drawer, wand popup)
@@ -93,9 +95,12 @@ StoryArc/
 │       ├── arc-manager.css     # Arc manager styles
 │       ├── knowledge.css       # Knowledge popup styles
 │       ├── progress.css        # Progress row layout
-│       └── sent-view.css       # What the narrator gets: strip and reader
+│       ├── sent-view.css       # What the narrator gets: strip and reader
+│       └── rejection.css       # The take-out dialog
 ├── scripts/
 │   ├── rebuild-knowledge-block.mjs # The knowledge block the narrator got at one message
+│   ├── replay-extraction.mjs   # Replay the knowledge extraction over one window, through the ST server
+│   ├── ledger-at-message.mjs   # The ledger of a chat file cut back to one message (both scripts)
 │   └── rename-characters.mjs   # Rename characters across a chat file and its lorebooks
 ├── tests/
 │   ├── run.sh                  # Node.js test runner

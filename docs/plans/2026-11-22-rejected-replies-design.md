@@ -1,7 +1,7 @@
 # A Rejected Reply Leaves the Story — Design Note
 
 - **Date:** 2026-11-22
-- **Status:** Design approved; Stefan said "go" to the recommendation package of 2026-11-22, items 1–7 below. No implementation plan yet. The replay gate (Gate) runs before any code.
+- **Status:** Design approved; Stefan said "go" to the recommendation package of 2026-11-22, items 1–7 below. Built from `docs/plans/2026-11-22-rejected-replies.md`, whose "Amendments to the spec" take precedence where they differ (a broken `rewrites` item is dropped alone; the new version comes from the final ticks, and a hidden message counts as a story reply; the new version's row in the dialog can be ticked). Replay of 2026-11-22: 5 of 5 rewrite requests, 0 of 7 ordinary lines; Paragon 3054 was mislabelled as a request (it ends "Report back, stop the RP and lets discuss further").
 - **Chapter:** C4 of `docs/goals/saga-planning-and-focus.md`
 - **Builds on:** ADR-0007 (the tracker) and its rollback, ADR-0008 (recognition in the extraction), the single-message re-extraction of an edit (`architecture.md`, Knowledge Tracker, Rollback)
 - **ADRs touched:** `0007`, as an amendment: a span the player rejects is taken out of the ledger and out of every reader of the chat
