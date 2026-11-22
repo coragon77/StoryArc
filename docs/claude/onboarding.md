@@ -60,6 +60,7 @@ Before exploring code, you **MUST** read the relevant documentation (blocking):
 | SillyTavern API integration — `setExtensionPrompt`, `generateRaw`, events, popups, world info, `chat_metadata`, connection profiles, extension loading | `docs/architecture/st-extension-patterns.md` |
 | Writing or strengthening unit tests, hollow tests, mutation testing (Stryker), the test-suite audit | `docs/goals/2026-10-26-test-suite-worklist.md` |
 | Act drift, the player's out-of-character rulings, the re-plan nudge for acts and sagas, a re-plan proposing the premise, the title and premise edit in the Arc Manager | `docs/goals/act-drift-and-rulings.md` (goals document; its chapters go through the spec/plan workflow) |
+| Saga planning (what a saga's milestones, pressures, premise and world facts may be), what the focus levels mean and send per tier (paused, background, normal, spotlight), spotlight ending | `docs/goals/saga-planning-and-focus.md` (goals document; its chapters go through the spec/plan workflow) |
 | NPC names: reuse of a first name or surname already in the story, the taken-names block for the narrator, flagging a reused name, the planner and plan check seeing the cast | `docs/goals/npc-names.md` (goals document; its chapters go through the spec/plan workflow) |
 
 **This is not optional.** Only explore code if the documentation is insufficient
