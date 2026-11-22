@@ -23,7 +23,15 @@ The checkout `/opt/sillytavern/StoryArc` is symlinked into Stefan's running ST, 
 5. **The new version comes from the final ticks.** It is the first narrator message after the last ticked message that is not ticked, not hidden and not marked out of character. It is never a rejected message: on Aegis 419–424 by the menu, 423 is ticked, so the new version is 425.
 6. **The new version's beats reopen only while the extraction recognises beats** (`beatRecognitionPath() === 'extraction'`), as on the edit path. Otherwise nothing would complete them again. The ticked messages' beats reopen in every case.
 7. **Character removal reuses the Knowledge popup's delete-character edit** (issue #66), so every reference goes with the record, including relation and stance `of`.
-8. **The `rejected` update log record is not shown** in "What changed". It is enough that the popup ignores an unknown record kind, and the plan checks that.
+8. **The `rejected` update log record is shown** in "What changed" with the earlier records, with what it dropped. The popup would have shown an unknown kind as "Nothing changed".
+9. **From the review (2026-11-22).**
+   - The new version is re-read only when an update had read it.
+   - A take-out also waits for edit and swipe re-extractions and for a standing state seed.
+   - The span is hidden at once, in step 1.
+   - An update's messages are found by message id.
+   - The scene goes back to the latest kept scene before it.
+   - A rejected message the player shows again loses its mark (`clearMarksOfShownMessages`).
+   - The rewrite offer is taken before the update's later awaits.
 
 ## Tasks
 
@@ -116,6 +124,6 @@ The checkout `/opt/sillytavern/StoryArc` is symlinked into Stefan's running ST, 
 
 1. The suites touched pass (`tests/run.sh` covers them; CI runs it all).
 2. `/code-review`, one pass, and its findings fixed.
-3. Push.
+3. Fast-forward local main, so Stefan's ST picks it up on reload. Do not push yet.
 4. The live check in the Amy chat, in a window agreed with Stefan. These are the five steps of the chapter's `done =`, seen in the Knowledge popup and in "What the narrator gets".
-5. C4 is checked off with a dated line, after the live check.
+5. Push. C4 is checked off with a dated line. Run `graphify update .` and remove the worktree.

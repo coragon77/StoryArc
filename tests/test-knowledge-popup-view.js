@@ -140,6 +140,14 @@ describe('buildKnowledgeContent: What changed', () => {
         assert.ok(text.includes('Messages 3–4 not read (no answer)'));
     });
 
+    it('lists a take-out as rejected, with what it dropped', () => {
+        const ledger = makeLedger();
+        ledger.updateLog.push({ kind: 'rejected', from: 411, to: 414, messageIds: ['m411', 'm412', 'm413', 'm414'], factsDropped: ['f380', 'f391'], holdersDropped: 5, detailsDropped: 1, charactersDropped: ['c99'], beatsReopened: 1 });
+        const text = textOf(buildKnowledgeContent(ledger, []));
+
+        assert.ok(text.includes('Messages 411–414, taken out as rejected 2 facts dropped, 5 holders dropped, 1 detail dropped, 1 character dropped, 1 beat reopened'), text);
+    });
+
     it('hides a holder an arc plan gave until it is revealed', () => {
         const ledger = makeLedger();
         ledger.facts[1].holders[1].how = 'plan';
