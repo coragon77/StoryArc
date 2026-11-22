@@ -122,7 +122,7 @@ On "Take out", steps 1–4 run without an await, so no update can start between 
    - entries the player entered (`at: null`);
    - retractions, because the player's correction stands;
    - rulings (`rulings` on the arcs), because the player's word stands.
-3. **Drop characters who exist only there.** A character goes when both of these are true:
+3. **Drop characters who exist only there.** A character goes when all of these are true:
    - the update log's change items list them as new in an update that read a ticked message;
    - after the drop, no holder entry, detail, meeting or scene presence names them, and they have no alias or detail the player entered;
    - their name and aliases appear (`findQuoteInText`) in no message of that update's range outside the ticked span. An update reads a window: one that read 424–425 for a span 425–427 may have met a character in 424, and that character stays.
