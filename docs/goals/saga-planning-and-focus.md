@@ -106,7 +106,8 @@ The package Stefan approved:
 | Is a detector needed for world facts the story has outgrown? Any design must keep a broken rule in the prompt: at 425 the narrator broke world fact 4, and dropping that fact would have removed the rule before the rewrite | Stefan | The first saga world fact that goes stale after C2 is live |
 | Should a saga plan or re-plan read more of the chat than the last 50 messages? | The C2 spec | C2's spec work |
 | What happens to the stored sagas that are shaped like acts (Sovereign's Gilded Orbit, The Kept Girl Theory)? | Stefan | C2 shipping |
-| How much of the leaking comes from the preset? | Stefan | C1's result |
+| How much of the leaking comes from the preset? C1 did not answer it (status log, 2026-11-22) | Stefan | Repeated regenerations of the first reply after 406, under the old and the new saga text, in throwaway branches |
+| Do a pressure's words set the register? At 420 the test pressure's words ("measure", "on paper") were followed by a records clerk and two replies in the procedural register, against the Author's Note's "Keep bureaucracy … as brief background texture" | The C2 spec | C2's spec work |
 | Does spotlight on a saga need a tempo phrase (ADR-0002)? | Stefan | Live play after C3 |
 
 ## Living rules
@@ -131,7 +132,9 @@ Status log:
   - Pressure as an event: 420 (a records clerk arrives uninvited because the mainframe flags Damon's gain against Ellie's zero reading), continued in 422, and 436 (a Third Floor summons card for Ellie, following from the audit warning in 422). The header says a pressure becomes an arrival only when the user's character goes toward it; this narrator ignores that.
   - Pacing: 418 (the twelve-day Sledge manhunt ends by radio within the hour) and 428 (a third emergency arrives unprompted). New casualties arrive in most replies, as the card and Author's Note invite.
   - Tone: 420 and 422 are in the procedural register Stefan objected to at the original 420 (mainframe parsers, Section Four, File 302-M). 428 hands the untrained apprentice a splint and a nerve check, the over-competence Stefan objected to at 44.
-  - Reading, the session's and not Stefan's: the rewritten saga text delayed omniscience from the first reply to the twelfth but did not prevent it; the narrator spread the biggest recent event without the pressure pointing at it. A rewritten pressure still turns into arrivals. Both point at the narrator and preset as the base driver, with the old saga text as an amplifier.
+  - The knowledge block rebuilt for 430 (`scripts/rebuild-knowledge-block.mjs` on the branch, ledger up to 428) lists Damon's recovery as "known only to" seven characters, not Halstead. No public fact names the recovery; the public facts name Sledge's capture and Hardpoint on scene.
+  - Two counts, because the two arms were first scored by different rubrics. Strict (a character uses knowledge the block does not give them, whatever the channel): test 3 of 15 (430, 432, 434), baseline 8 of 8 (407–425). Lenient (replies that use a channel the story had set up, such as the clearance paperwork, do not count): test 0 to 3 of 15, depending on whether 430's locker-room channel counts, baseline 3 of 8 (407, 423, 425). Stefan rules which count applies.
+  - Not answered by C1: how much comes from the preset. One run per arm, with a different player in each, and one test turn (410, "Nobody knows anything") touched the topic. The only like-for-like pair is the first reply after 406.
 
 ## Chapters
 
@@ -139,10 +142,10 @@ Order: C1 first, because its result decides whether C2 and C3 are worth building
 
 - [x] **C1. The test** — branch the Aegis chat at 406, apply the test text from Facts, play 15–20 turns.
   - done = the status log records the branch name, the number of narrator replies played under the test text, and the message numbers of every reply in which a character uses knowledge the knowledge block does not give them. Only replies whose `lastSent` carries the test pressure count. The result is compared with the baseline row in Facts.
-  - Completed 2026-11-22: 15 replies (408–436), all under the test pressure; leaks at 430, 432 and 434, against 3 in 8 replies from 407 in the baseline. Details in the status log.
+  - Completed 2026-11-22: 15 replies (408–436), all under the test pressure. Strict count 3 of 15 (430, 432, 434) against 8 of 8 in the baseline; lenient count 0 to 3 of 15 against 3 of 8. Details in the status log.
 - [ ] **C2. Saga planning rules** — the planner and the plan check apply the saga rules from Decided, item 2.
   - done = two sagas freshly planned in the Amy chat each have milestones that name no single event. No pressure names a non-protagonist character or a single event. Every world fact states a rule, not a situation. The unit tests pin the saga rule fragments literally.
 - [ ] **C3. Focus semantics** — the injection follows Decided, item 3; ADR-0001 and the glossary entries Focus, Paused, Background and Spotlight are amended.
   - done = unit tests with literal expected sections show: a paused arc sends nothing, a saga in background sends its world facts and no premise or pressure, an act in background sends its title line only, and a spotlit act or saga is back in normal focus after its current milestone is fulfilled. A live check in the Amy chat shows the same for one spotlit act.
 
-Later chapters TBD after C1.
+Later chapters TBD after Stefan's ruling on the C1 counts and the regeneration comparison (Open questions).
