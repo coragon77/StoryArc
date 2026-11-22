@@ -26,6 +26,7 @@ import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
 import { closeWizard } from './lib/ui/wizard.js';
 import { addRejectMenuEntry, closeRewriteOffer, showRewriteOffer } from './lib/ui/rejection-popup.js';
+import { clearMarksOfShownMessages } from './lib/knowledge/rejection.js';
 
 // ─── Event Handlers ─────────────────────────────────────────────────────────
 
@@ -84,6 +85,8 @@ async function onMessageReceived(messageIndex) {
 
     const message = chat[messageIndex];
     if (!message?.mes) return;
+    // A rejected message the player showed again is story again (ST fires no event for an unhide).
+    await clearMarksOfShownMessages();
 
     const activeArcs = getActiveArcs();
     const signals = parseSignals(message.mes);
@@ -270,6 +273,7 @@ async function onChatChanged() {
     closeWizard();
     closeRewriteOffer();
     ensureChatState();
+    await clearMarksOfShownMessages();
     const completionsReopened = reopenCompletionsFrom(chat.length);
     const rulingsRemoved = removeRulingsFrom(chat.length);
     const lastSentDropped = dropLastSentPastEnd(chat.length);

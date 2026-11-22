@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, chat_metadata, chat, ConnectionManagerRequestService, hideCalls } from '../tests/mocks/st-mocks.js';
-import { findNewVersionAfter, proposeRejectedSpan, proposeSpanFromMessage, takeOutRejectedSpan } from '../lib/knowledge/rejection.js';
+import { clearMarksOfShownMessages, findNewVersionAfter, proposeRejectedSpan, proposeSpanFromMessage, takeOutRejectedSpan } from '../lib/knowledge/rejection.js';
 import { updateKnowledgeAfterEdit, updateKnowledgeAfterReply, updateKnowledgeAfterSwipe } from '../lib/knowledge/ledger.js';
 import { getRecentChat } from '../lib/context/chat-history.js';
 import { clearTemplateCache } from '../lib/planning/generator.js';
@@ -395,6 +395,65 @@ describe('takeOutRejectedSpan: Aegis 411–414', () => {
         assert.equal(chat[409].is_system, true);
     });
 
+    it('does not read the new version when no update had read it, and leaves lastUpdatedAt', async () => {
+        ledger().lastUpdatedAt = 413;
+        ledger().lastUpdatedMessageId = 'm413';
+        const sentPrompts = installExtraction([rereadAnswer]);
+        const result = await takeOutRejectedSpan([411, 412]);
+        await result.reread;
+
+        assert.equal(sentPrompts.length, 0);
+        assert.equal(ledger().lastUpdatedAt, 413);
+        assert.equal(result.newVersionIndex, 415);
+    });
+
+    it('is refused while an edit\'s re-extraction is out', async () => {
+        let answerEdit;
+        clearTemplateCache();
+        globalThis.fetch = async () => new Response('{{MESSAGES}}');
+        ConnectionManagerRequestService.sendRequest = async () => () => (async function* () {
+            yield { text: await new Promise(resolve => { answerEdit = resolve; }) };
+        })();
+        chat[409].mes = 'Reply 409, edited.';
+        const editing = updateKnowledgeAfterEdit(409);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const result = await takeOutRejectedSpan([411, 412, 413, 414]);
+        assert.deepEqual(result, { error: 'Story Arc is still reading the latest reply; try again in a moment.' });
+        assert.equal(chat[411].is_system, false);
+
+        answerEdit(JSON.stringify({ present: [], newCharacters: [], learned: [] }));
+        await editing;
+    });
+
+    it('puts the scene back to the latest kept one before it, when the ticks leave a gap', async () => {
+        ledger().scene = { at: 414, present: ['c1', 'c97'], messageId: 'm414' };
+        ledger().sceneHistory = [
+            { at: 409, present: ['c1', 'c2'], messageId: 'm409' },
+            { at: 411, present: ['c1', 'c97', 'c99'], messageId: 'm411' },
+            { at: 412, present: ['c1'], messageId: 'm412' },
+            { at: 413, present: ['c2'], messageId: 'm413' },
+        ];
+        installExtraction([JSON.stringify({ present: [], newCharacters: [], learned: [] })]);
+        const result = await takeOutRejectedSpan([411, 414]);
+
+        assert.deepEqual(ledger().scene, { at: 413, present: ['c2'], messageId: 'm413' });
+        assert.deepEqual(ledger().sceneHistory.map(scene => scene.at), [409, 412]);
+        await result.reread;
+    });
+
+    it('finds an update\'s messages by its message id after a deletion moved them', async () => {
+        // The update that created c98 and c99 read 410–411, recorded before
+        // a deletion moved both one place down (the record still says 411–412).
+        ledger().updateLog = [{ kind: 'update', recordId: 'u1', from: 411, to: 412, messageId: 'm411', items: { characters: ['c98', 'c99'] } }];
+        installExtraction([rereadAnswer]);
+        const result = await takeOutRejectedSpan([411, 412, 413, 414]);
+        await result.reread;
+
+        // 410 names Jude Callahan; by the stale indices it would have been missed.
+        assert.deepEqual(ledger().characters.map(character => character.id), ['c1', 'c2', 'c97', 'c98']);
+    });
+
     it('is refused while a reply update is out, and changes nothing', async () => {
         let answerUpdate;
         clearTemplateCache();
@@ -431,6 +490,22 @@ describe('takeOutRejectedSpan with the tracker off', () => {
         assert.deepEqual(ledger(), aegisLedger());
         assert.equal(chat_metadata.story_arc.arcs[0].beats[0].status, 'active');
         assert.equal(sentPrompts.length, 0);
+    });
+});
+
+describe('clearMarksOfShownMessages', () => {
+    afterEach(resetAll);
+
+    it('drops the mark of a rejected message the player showed again, and keeps a hidden one\'s', async () => {
+        chat.length = 0;
+        chat.push(
+            { ...narrator('Shown again.'), is_system: false, extra: { story_arc_rejected: true } },
+            { ...narrator('Still out.'), is_system: true, extra: { story_arc_rejected: true } },
+        );
+        assert.equal(await clearMarksOfShownMessages(), true);
+        assert.equal(chat[0].extra.story_arc_rejected, undefined);
+        assert.equal(chat[1].extra.story_arc_rejected, true);
+        assert.equal(await clearMarksOfShownMessages(), false);
     });
 });
 
