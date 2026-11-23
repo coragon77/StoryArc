@@ -57,6 +57,20 @@ describe('createDefaultArc', () => {
         assert.equal('subArcs' in arc, false);
     });
 
+    it('gets an id without crypto.randomUUID, as over plain HTTP off localhost', () => {
+        Object.defineProperty(globalThis.crypto, 'randomUUID', { value: undefined, configurable: true });
+        try {
+            const a = createDefaultArc();
+            const b = createDefaultArc();
+            assert.equal(typeof a.id, 'string');
+            assert.ok(a.id.length > 0);
+            assert.notEqual(a.id, b.id);
+        } finally {
+            delete globalThis.crypto.randomUUID;
+        }
+        assert.equal(typeof globalThis.crypto.randomUUID, 'function');
+    });
+
     it('starts active with empty texts and empty lists', () => {
         const { id, createdAt, ...rest } = createDefaultArc();
         assert.equal(typeof id, 'string');
