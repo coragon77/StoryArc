@@ -102,6 +102,13 @@ With **Track who knows what** on, Story Arc reads each new reply and records whi
 - New characters don't get names the story already uses, unless they are related.
 - Out-of-character objections to an arc are stored as rulings, and a re-plan follows them.
 
+**A reply you rejected can leave the story.** When you ask out of character for a rewrite ("[OOC: Rewrite that, it resolved too quickly]") and the narrator writes the new version, a notice offers to take out what it replaces. Click it to review the ticked messages, then **Take out**.
+
+- The rejected messages are hidden from the narrator and from summaries, and what Story Arc learned from them is taken back: facts, meetings, characters only they introduced, beats they completed.
+- Your out-of-character request and the narrator's answer stay, so the narrator still knows what you corrected.
+- **Reject from here…** in any message's menu opens the same dialog by hand.
+- Unhiding a message later shows it to the narrator again, but what Story Arc learned from it does not come back.
+
 With **Character details** on, it also records what the story states about each character, and nothing it doesn't:
 
 | Detail | Example |
