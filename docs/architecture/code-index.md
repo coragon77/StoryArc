@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-22
+- **Last Updated:** 2026-11-25
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -92,6 +92,9 @@ StoryArc/
 │   │   │                       #   classify into constants / arcSummaries / recent;
 │   │   │                       #   getCharacterData(), getPersonaData() (private) —
 │   │   │                       #   character card fields + user persona;
+│   │   │                       #   resolveMacros() (#89) — ST macros in card, persona
+│   │   │                       #   and entries, variables restored afterwards;
+│   │   │                       #   fetchRawLorebookEntries() (private) — unresolved;
 │   │   │                       #   harvestCast() (private, #44) — the ledger's
 │   │   │                       #   named characters { name, aliases, details } (#55: no unnamed relative; details: current
 │   │   │                       #   value per kind via characterDetailTexts, {} while details are off) while Story Arc and
@@ -830,6 +833,10 @@ StoryArc/
 │   │                           #   the injection header or markers, keeps OOC direction;
 │   │                           #   the cast while the tracker is on, [] while off;
 │   │                           #   the cast's current details, {} while details are off
+│   ├── test-harvester-macros.js # Tests (#89): macros resolved in card, persona, entries;
+│   │                           #   setvar reaches a later getvar; variables restored,
+│   │                           #   absent stores stay absent; a failing text kept as
+│   │                           #   written; chat and excluded entries never evaluated
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;

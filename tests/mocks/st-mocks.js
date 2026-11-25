@@ -7,7 +7,17 @@
 export const chat = [];
 export const chat_metadata = {};
 export const characters = [];
-export const this_chid = null;
+export let this_chid = null;
+/** Select a character the way ST's this_chid does — reset it to null in the test that sets it. */
+export function setMockThisChid(chid) { this_chid = chid; }
+/**
+ * ST's macro substitution. Returns the text unchanged unless a test sets
+ * mockMacros.substitute (and clears it in its own cleanup).
+ */
+export const mockMacros = { substitute: null };
+export function substituteParams(content, options) {
+    return mockMacros.substitute ? mockMacros.substitute(content, options) : content;
+}
 export const eventSource = { on: () => {}, emit: () => {} };
 export const event_types = {};
 /** Call counts tests can assert on — reset them in the test that reads them. */
