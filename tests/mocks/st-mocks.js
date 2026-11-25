@@ -18,6 +18,20 @@ export const mockMacros = { substitute: null };
 export function substituteParams(content, options) {
     return mockMacros.substitute ? mockMacros.substitute(content, options) : content;
 }
+/**
+ * ST's lazy card fields: each getter resolves its field when read, trimmed,
+ * through substituteParams, the persona from the power-user settings.
+ */
+export function getCharacterCardFieldsLazy() {
+    const character = characters[this_chid];
+    const resolveField = text => substituteParams(String(text ?? '').trim(), { replaceCharacterCard: false });
+    return {
+        get description() { return character ? resolveField(character.description) : ''; },
+        get personality() { return character ? resolveField(character.personality) : ''; },
+        get scenario() { return character ? resolveField(character.scenario) : ''; },
+        get persona() { return resolveField(getContext().powerUserSettings?.persona_description); },
+    };
+}
 export const eventSource = { on: () => {}, emit: () => {} };
 export const event_types = {};
 /** Call counts tests can assert on — reset them in the test that reads them. */

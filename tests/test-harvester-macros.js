@@ -9,8 +9,9 @@ import {
 /**
  * A small stand-in for ST's macro engine, enough to show what the harvest
  * does with macros: {{user}}, local and global setvar/getvar (which write
- * where ST's variables.js writes), and {{boom}}, which throws like a macro
- * that fails. Every text it is called with is recorded.
+ * where ST's variables.js writes; a global one throws without the store, as
+ * in ST), and {{boom}}, which throws like a macro that fails. Every text it
+ * is called with is recorded.
  */
 const seenTexts = [];
 function fakeSubstitute(content) {
@@ -25,21 +26,24 @@ function fakeSubstitute(content) {
         })
         .replace(/\{\{getvar::([^}]+)\}\}/g, (_, name) => chat_metadata.variables?.[name] ?? '')
         .replace(/\{\{setglobalvar::([^:}]+)::([^}]*)\}\}/g, (_, name, value) => {
-            extension_settings.variables ??= {};
-            extension_settings.variables.global ??= {};
             extension_settings.variables.global[name] = value;
             return '';
         });
 }
 
-function entry(uid, content, extra = {}) {
-    return { uid, comment: `Entry ${uid}`, content, key: [], constant: true, disable: false, order: uid, world: 'Book', ...extra };
+function constantEntry(uid, content) {
+    return { uid, comment: `Entry ${uid}`, content, key: [], constant: true, disable: false, order: uid, world: 'Book' };
+}
+
+function keywordEntry(uid, content) {
+    return { ...constantEntry(uid, content), key: ['keyword'], constant: false };
 }
 
 describe('harvestContext — macros (issue #89)', () => {
     beforeEach(() => {
         seenTexts.length = 0;
         mockMacros.substitute = fakeSubstitute;
+        extension_settings.variables = { global: {} };
     });
 
     afterEach(() => {
@@ -54,66 +58,102 @@ describe('harvestContext — macros (issue #89)', () => {
     });
 
     function setCard(card) {
-        characters.push({ name: 'Paragon', ...card });
+        characters.push({ name: 'Paragon', description: '', personality: '', scenario: '', ...card });
         setMockThisChid(0);
     }
 
     it('resolves the card, the persona and the lorebook entries', async () => {
         setCard({ description: '{{user}} is the narrator\'s focus.', personality: 'Protective of {{user}}.', scenario: 'A city that knows {{user}}.' });
         mockContextFields.powerUserSettings = { persona_description: '{{user}} wears a black bob.' };
-        mockSortedEntries.push(entry(1, '{{user}} lives in Bay City.'));
+        mockSortedEntries.push(constantEntry(1, '{{user}} lives in Bay City.'), keywordEntry(2, '{{user}} owes Vance money.'));
 
         const context = await harvestContext();
 
+        assert.equal(context.character.name, 'Paragon');
         assert.equal(context.character.description, 'Ellie is the narrator\'s focus.');
         assert.equal(context.character.personality, 'Protective of Ellie.');
         assert.equal(context.character.scenario, 'A city that knows Ellie.');
         assert.equal(context.persona.description, 'Ellie wears a black bob.');
         assert.equal(context.lorebook.constants[0].content, 'Ellie lives in Bay City.');
+        assert.equal(context.lorebook.recent[0].content, 'Ellie owes Vance money.');
     });
 
-    it('lets a setvar earlier in the harvest reach a getvar later in it', async () => {
-        setCard({ description: '{{setvar::stage::teen}}A hero.', personality: '', scenario: '' });
-        mockSortedEntries.push(entry(1, 'Life stage: {{getvar::stage}}.'));
+    it('lets a setvar in the card, the persona or a constant entry reach the texts after it', async () => {
+        setCard({ description: '{{setvar::stage::teen}}A hero.' });
+        mockContextFields.powerUserSettings = { persona_description: '{{setvar::home::Bay City}}Ellie, stage {{getvar::stage}}.' };
+        mockSortedEntries.push(
+            constantEntry(1, '{{setvar::rival::Vance}}Lives in {{getvar::home}}.'),
+            keywordEntry(2, 'Stage {{getvar::stage}}, rival {{getvar::rival}}.'),
+        );
 
         const context = await harvestContext();
 
         assert.equal(context.character.description, 'A hero.');
-        assert.equal(context.lorebook.constants[0].content, 'Life stage: teen.');
+        assert.equal(context.persona.description, 'Ellie, stage teen.');
+        assert.equal(context.lorebook.constants[0].content, 'Lives in Bay City.');
+        assert.equal(context.lorebook.recent[0].content, 'Stage teen, rival Vance.');
     });
 
-    it('leaves the chat\'s and the global variables as they were before the harvest', async () => {
-        chat_metadata.variables = { mood: 'calm' };
-        extension_settings.variables = { global: { season: 'winter' } };
-        mockSortedEntries.push(entry(1, '{{setvar::mood::angry}}{{setvar::stage::teen}}{{setglobalvar::season::summer}}Text.'));
+    it('takes a keyword entry\'s setvar back after it, so it decides nothing in a later entry', async () => {
+        chat_metadata.variables = { stage: 'adult' };
+        mockSortedEntries.push(
+            keywordEntry(1, '{{setvar::stage::teen}}Here the stage is {{getvar::stage}}.'),
+            keywordEntry(2, 'Stage {{getvar::stage}}.'),
+            constantEntry(3, 'Constant stage {{getvar::stage}}.'),
+        );
+
+        const context = await harvestContext();
+
+        assert.deepEqual(context.lorebook.recent.map(entry => entry.content), ['Here the stage is teen.', 'Stage adult.']);
+        assert.equal(context.lorebook.constants[0].content, 'Constant stage adult.');
+    });
+
+    it('leaves the chat\'s and the global variables as they were, on the same objects', async () => {
+        const chatVariables = { mood: 'calm' };
+        const globalVariables = { season: 'winter' };
+        chat_metadata.variables = chatVariables;
+        extension_settings.variables = { global: globalVariables };
+        mockSortedEntries.push(constantEntry(1, '{{setvar::mood::angry}}{{setvar::stage::teen}}{{setglobalvar::season::summer}}{{setglobalvar::year::1999}}Text.'));
 
         await harvestContext();
 
-        assert.deepEqual(chat_metadata.variables, { mood: 'calm' });
-        assert.deepEqual(extension_settings.variables, { global: { season: 'winter' } });
+        assert.equal(chat_metadata.variables, chatVariables);
+        assert.deepEqual(chatVariables, { mood: 'calm' });
+        assert.equal(extension_settings.variables.global, globalVariables);
+        assert.deepEqual(globalVariables, { season: 'winter' });
     });
 
-    it('adds no variable stores a chat did not have', async () => {
-        mockSortedEntries.push(entry(1, '{{setvar::stage::teen}}{{setglobalvar::season::summer}}Text.'));
+    it('adds no variable store the chat did not have', async () => {
+        extension_settings.variables = {};
+        mockSortedEntries.push(constantEntry(1, '{{setvar::stage::teen}}Text.'));
 
         await harvestContext();
 
         assert.equal('variables' in chat_metadata, false);
-        assert.equal('variables' in extension_settings, false);
+        assert.deepEqual(extension_settings.variables, {});
     });
 
     it('keeps a text whose macros fail as written, and still resolves the others and restores the variables', async () => {
         chat_metadata.variables = { mood: 'calm' };
         mockSortedEntries.push(
-            entry(1, '{{setvar::mood::angry}}First.'),
-            entry(2, 'Broken {{boom}} for {{user}}.'),
-            entry(3, 'Third for {{user}}.'),
+            constantEntry(1, '{{setvar::mood::angry}}First.'),
+            constantEntry(2, 'Broken {{boom}} for {{user}}.'),
+            constantEntry(3, 'Third for {{user}}.'),
         );
 
         const context = await harvestContext();
 
-        assert.deepEqual(context.lorebook.constants.map(e => e.content), ['First.', 'Broken {{boom}} for {{user}}.', 'Third for Ellie.']);
+        assert.deepEqual(context.lorebook.constants.map(entry => entry.content), ['First.', 'Broken {{boom}} for {{user}}.', 'Third for Ellie.']);
         assert.deepEqual(chat_metadata.variables, { mood: 'calm' });
+    });
+
+    it('keeps a card field whose macros fail as written', async () => {
+        setCard({ description: 'Broken {{boom}}.', personality: 'Kind to {{user}}.' });
+
+        const context = await harvestContext();
+
+        assert.equal(context.character.description, 'Broken {{boom}}.');
+        assert.equal(context.character.personality, 'Kind to Ellie.');
     });
 
     it('never resolves the chat messages', async () => {
@@ -126,16 +166,16 @@ describe('harvestContext — macros (issue #89)', () => {
     });
 
     it('never evaluates an entry the player excluded', async () => {
-        mockSortedEntries.push(entry(1, 'Kept for {{user}}.'), entry(2, 'Excluded {{setvar::x::1}}.'));
+        mockSortedEntries.push(constantEntry(1, 'Kept for {{user}}.'), constantEntry(2, 'Excluded {{setvar::x::1}}.'));
 
         const context = await harvestContext(50, new Set(['2']));
 
-        assert.deepEqual(context.lorebook.constants.map(e => e.content), ['Kept for Ellie.']);
+        assert.deepEqual(context.lorebook.constants.map(entry => entry.content), ['Kept for Ellie.']);
         assert.equal(seenTexts.includes('Excluded {{setvar::x::1}}.'), false);
     });
 
     it('does not change the entries ST hands out', async () => {
-        const stEntry = entry(1, '{{user}} lives in Bay City.');
+        const stEntry = constantEntry(1, '{{user}} lives in Bay City.');
         mockSortedEntries.push(stEntry);
 
         await harvestContext();
@@ -148,17 +188,16 @@ describe('fetchLorebookEntries — macros (issue #89)', () => {
     afterEach(() => {
         mockMacros.substitute = null;
         mockSortedEntries.length = 0;
-        delete chat_metadata.variables;
     });
 
-    it('gives the other readers (the state seed) resolved entries and restores the variables', async () => {
+    it('gives the other readers (state seed, appearance search) the entries as written, evaluating nothing', async () => {
+        seenTexts.length = 0;
         mockMacros.substitute = fakeSubstitute;
-        chat_metadata.variables = { stage: 'adult' };
-        mockSortedEntries.push(entry(1, '{{setvar::stage::teen}}Stage {{getvar::stage}} for {{user}}.'));
+        mockSortedEntries.push(constantEntry(1, '{{setvar::stage::teen}}For {{user}}.'));
 
         const entries = await fetchLorebookEntries();
 
-        assert.equal(entries[0].content, 'Stage teen for Ellie.');
-        assert.deepEqual(chat_metadata.variables, { stage: 'adult' });
+        assert.equal(entries[0].content, '{{setvar::stage::teen}}For {{user}}.');
+        assert.deepEqual(seenTexts, []);
     });
 });
