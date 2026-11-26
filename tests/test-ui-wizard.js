@@ -1224,7 +1224,7 @@ describe('wizard: "Keep this arc to itself" on the Direction step', () => {
         await settle();
 
         assert.ok(sentPrompts[2].includes('- No link: no secret ties this arc\'s people or things to another plot thread.'), sentPrompts[2]);
-        assert.equal('allowLinks' in chat_metadata.story_arc.arcs[0], false);
+        assert.equal(chat_metadata.story_arc.arcs[0].allowLinks, undefined);
     });
 
     it('the box switched off: the outline says a link may be planned, and the stored arc has allowLinks: true', async () => {

@@ -199,7 +199,7 @@ describe('generateArc: the link setting', () => {
         assert.equal(result.error, null);
         assert.ok(sentPrompts[1].includes('- No link: no secret ties this arc\'s people or things to another plot thread.'));
         assert.equal(sentPrompts[1].includes('- A link may be planned'), false);
-        assert.equal('allowLinks' in result.arc, false);
+        assert.equal(result.arc.allowLinks, undefined);
     });
 
     it('links allowed: the outline says a link may be planned and no beat depends on it, and the arc stores allowLinks: true', async () => {
@@ -237,6 +237,6 @@ describe('generateArc: the link setting', () => {
 
         assert.equal(result.error, null);
         assert.ok(sentPrompts[1].includes('- No link:'));
-        assert.equal('allowLinks' in result.arc, false);
+        assert.equal(result.arc.allowLinks, undefined);
     });
 });
