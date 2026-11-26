@@ -231,3 +231,48 @@ describe('generateArc: a re-plan follows the stored rulings', () => {
         assert.ok(!sentPrompts[1].includes('== ARC SO FAR =='));
     });
 });
+
+describe('generateArc: a re-plan counts what already happened toward the tier\'s beat count (#103)', () => {
+    const sceneSentence = 'On a re-plan the TIER block\'s count covers the whole arc: your scene beats and the scene beats below under Already happened count together toward its range. Write only the scenes that remain, and always at least one, even when that leaves fewer new scene beats than the range asks for.';
+    const milestoneSentence = 'On a re-plan the TIER block\'s count covers the whole arc: your milestones and the milestones below under Already happened and Passed over count together toward its minimum and its usual ceiling. Write only the steps that remain, and always at least one, even when that leaves fewer new milestones than the minimum.';
+
+    beforeEach(() => {
+        clearTemplateCache();
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        clearTemplateCache();
+    });
+
+    it('tells an episode re-planned as an episode to write only the scenes that remain', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        const result = await generateArc(harvestedContext, 'She pays what she owes.', {}, { tier: 'episode', reviseArc: storedEpisode() });
+
+        assert.equal(result.error, null);
+        const phase2Prompt = sentPrompts[1];
+        assert.ok(phase2Prompt.includes(`your beats are what comes NEXT. ${sceneSentence} The current premise`));
+        assert.ok(phase2Prompt.includes('Already happened (fulfilled beats — do not plan these again):\n- She has received the summons.\n'));
+        assert.ok(!phase2Prompt.includes('count together toward its minimum'));
+    });
+
+    it('gives an episode growing into an act the milestone rule, its played scenes outside the count', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        const result = await generateArc(harvestedContext, 'She pays what she owes.', {}, { tier: 'act', reviseArc: storedEpisode() });
+
+        assert.equal(result.error, null);
+        const phase2Prompt = sentPrompts[1];
+        assert.ok(phase2Prompt.includes(`your beats are what comes NEXT. ${milestoneSentence} The current premise`));
+        assert.ok(!phase2Prompt.includes('Write only the scenes that remain'));
+        assert.ok(phase2Prompt.includes(
+            'Scenes played while it was an episode (they happened, but they are not milestones: they do not count toward the TIER block\'s count; do not plan them again):\n'
+            + '- She has received the summons.\n\n'
+            + 'Already happened (fulfilled beats — do not plan these again):\n(no milestone yet)\n\n',
+        ));
+    });
+});

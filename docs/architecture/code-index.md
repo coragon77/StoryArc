@@ -162,7 +162,7 @@ StoryArc/
 │   │   │                       #   with beat kind, beat count, length band and the
 │   │   │                       #   milestone rules (a fulfillment is one on-screen
 │   │   │                       #   moment), all from TIER_TABLE;
-│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
+│   │   │                       #   buildArcSoFar(arc, tier) → {{ARC_SO_FAR}} on re-plan: current
 │   │   │                       #   premise + "write a premise for the arc as it stands
 │   │   │                       #   now" (following every ruling, listed as binding,
 │   │   │                       #   when the arc has rulings), revealed secrets as
@@ -171,7 +171,9 @@ StoryArc/
 │   │   │                       #   fired triggers (formatUnrevealedSecret),
 │   │   │                       #   escalation, world facts,
 │   │   │                       #   fulfilled beats as "already happened", skipped
-│   │   │                       #   milestones as "passed over"; '' for null (plan-new);
+│   │   │                       #   milestones as "passed over", the count rule worded
+│   │   │                       #   per beat kind of the tier re-planned to (#103);
+│   │   │                       #   '' for null (plan-new);
 │   │   │                       #   loadTemplate(name) → { text, fromEdit } (the player's
 │   │   │                       #   edit through readPromptEdit, else the built-in text),
 │   │   │                       #   loadBuiltInTemplate(name), fillTemplate(template,
