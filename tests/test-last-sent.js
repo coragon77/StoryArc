@@ -224,8 +224,8 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         const result = await generateArc({ ...context, existingArcs: [reviseArc] }, 'Tighten the screws.', {}, { reviseArc });
 
         assert.equal(result.error, null);
-        assert.match(readLastSentPrompt('generate-arc.txt').purpose, /^re-planning/);
-        assert.match(readLastSentPrompt('check-plan.txt').purpose, /^re-planning/);
+        assert.equal(readLastSentPrompt('generate-arc.txt').purpose, 're-planning an arc');
+        assert.equal(readLastSentPrompt('check-plan.txt').purpose, 're-planning an arc');
     });
 });
 
