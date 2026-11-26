@@ -192,6 +192,7 @@ describe('generateArc: a re-plan follows the stored rulings', () => {
         assert.ok(planCheckPrompt.includes(
             'Never rewrite something because it carries them out.\n'
             + 'Premise: Mira no longer pays alone: her sister stands with her against the debt.\n'
+            + 'Author\'s premise: A debt comes due, and Mira must pay it alone.\n'
             + 'Direction: She pays what she owes.\n'
             + 'Rulings:\n'
             + '- "Mira never pays alone."\n'

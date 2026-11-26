@@ -39,7 +39,8 @@ StoryArc/
 │   │                           #   off-register items (ADR-0009 amendment); step 5 judges
 │   │                           #   the plot thread ({{THREAD_BLOCK}}, {{EXISTING_ARCS}},
 │   │                           #   {{ANALYSIS_BLOCK}} on a new plan; foreign pressures,
-│   │                           #   kind "premise", #105); answers JSON (ADR-0006)
+│   │                           #   kind "premise", #105; foreign beats, secrets and
+│   │                           #   triggers in "foreign", #106); answers JSON (ADR-0006)
 │   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
 │   │                           #   new characters, who learned which fact and how,
 │   │                           #   revealed secrets with what was heard, and (task 6)
@@ -140,7 +141,9 @@ StoryArc/
 │   │   │                       #   applyPlanRenames to every text field under
 │   │   │                       #   its guards, #49; kind "secret" judged after the
 │   │   │                       #   revealed list, content replaced directly, on a
-│   │   │                       #   re-plan too);
+│   │   │                       #   re-plan too; removeForeignParts removes the
+│   │   │                       #   answer's "foreign" parts under guards, #106;
+│   │   │                       #   generateArc returns their count as removedParts);
 │   │   │                       #   plantedCluesOfSecret(arc, secretId) — planted clues
 │   │   │                       #   whose target's leading id (after an optional
 │   │   │                       #   "secret:") is the secret's (clueTargetsSecret,
@@ -557,7 +560,9 @@ StoryArc/
 │   │   │                       #   via applyReplan and updateArc).
 │   │   │                       #   Back from a generated plan asks inline first.
 │   │   │                       #   Failures say problem and recovery (raw error to the
-│   │   │                       #   console); finished log steps show their outcome;
+│   │   │                       #   console); finished log steps show their outcome,
+│   │   │                       #   the plan check's with the count of removed
+│   │   │                       #   parts of other plot threads (#106);
 │   │   │                       #   the re-plan premise shows once. The
 │   │   │                       #   build* view functions are exported (tests, shots);
 │   │   │                       #   unbinds its click namespace when the popup resolves
@@ -904,6 +909,10 @@ StoryArc/
 │   │                           #   arcs in the check prompt, foreign pressure and
 │   │                           #   premise rewrites with their guards, a failed or
 │   │                           #   unreadable check, the {{THREAD_BLOCK}} warning
+│   ├── test-plan-check-foreign.js # Tests: the check removes foreign parts (#106): the
+│   │                           #   guard matrix of removeForeignParts, the re-plan's
+│   │                           #   Author's premise, the prompt's "foreign" list, a
+│   │                           #   planning run storing the arc without them
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;

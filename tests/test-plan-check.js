@@ -328,10 +328,11 @@ describe('buildPlanCheckVariables', () => {
         assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
     });
 
-    it('reads a re-plan\'s proposed premise as the premise, the stored one otherwise', () => {
+    it('reads a re-plan\'s proposed premise as the premise, with the author\'s under it, the stored one otherwise', () => {
         const arc = { ...makeReplannedAct(), proposedPremise: 'Vanguard wants the rookie broken before the final.' };
 
-        assert.equal(buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }).PREMISE, 'Vanguard wants the rookie broken before the final.');
+        assert.equal(buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }).PREMISE,
+            'Vanguard wants the rookie broken before the final.\nAuthor\'s premise: Vanguard wants the rookie humiliated.');
         assert.equal(buildPlanCheckVariables(makeReplannedAct(), null).PREMISE, 'Vanguard wants the rookie humiliated.');
     });
 
