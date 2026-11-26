@@ -41,7 +41,7 @@ Ask only where the answer would change the plan materially AND the direction lea
 4. Give each question 2 to 4 short suggested answers. They are distinct positions the author could take, not one right answer plus filler.
 5. Ask at most 5 questions. Fewer is better: ask only what matters.
 6. Zero questions is right when the direction is already specific. Then answer with an empty list.
-7. Never ask whether or how the events of another plot thread should be part of this arc, and never offer them as a suggested answer. A plot thread is one storyline of the story: the other active arcs, and anything else going on in the story that the direction does not name, are other plot threads. Whether this arc touches them is settled by a setting, not by a question. Where or when the arc plays may still be asked when the direction leaves it open.
+7. Never ask whether or how the events of another plot thread should be part of this arc, and never offer them as a suggested answer. A plot thread is one line of the story with its own question, its own people and its own ending: the other active arcs, and anything else going on in the story that the direction does not name, are other plot threads. Whether this arc touches them is settled by a setting, not by a question. Where or when the arc plays may still be asked when the direction leaves it open.
 
 == OUTPUT ==
 Answer with ONLY this JSON object. No preamble, no explanation, no markdown formatting outside the JSON itself. Start with { and end with }.
