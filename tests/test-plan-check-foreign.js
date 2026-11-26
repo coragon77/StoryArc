@@ -234,7 +234,7 @@ describe('applyPlanCheck: foreign secrets', () => {
         assert.deepEqual(ids(checked.triggers), ['coin_counted', 'label_call', 'press_flash']);
     });
 
-    // A played clue or a fired trigger no longer shields a secret of another
+    // A planted clue or a fired trigger no longer shields a secret of another
     // plot thread (2026-11-26): the clue and the trigger stay as history.
     it('removes a secret a planted clue points at, with its unfired trigger; the planted clue stays', () => {
         const arc = plannedAct();
@@ -348,6 +348,24 @@ describe('applyPlanCheck: the removal is logged by kind and id', () => {
         ]);
     });
 
+    it('logs each named open beat kept because removing them would leave no open non-optional beat', () => {
+        const originalWarn = console.warn;
+        console.warn = () => {};
+        try {
+            const arc = plannedAct();
+            arc.beats[0].status = 'completed';
+
+            applyPlanCheck(arc, { foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'beat', id: 'payment' }] }, [], false);
+        } finally {
+            console.warn = originalWarn;
+        }
+
+        assert.deepEqual(logs, [
+            '[Story Arc] Plan check kept beat premiere, named foreign: removing it would leave no open non-optional beat',
+            '[Story Arc] Plan check kept beat payment, named foreign: removing it would leave no open non-optional beat',
+        ]);
+    });
+
     it('a re-plan logs a secret kept because it came out or may have', () => {
         const arc = plannedAct();
         const earlierSecrets = [{ ...arc.secrets[1] }];
@@ -376,7 +394,7 @@ describe('check-plan.txt: foreign parts', () => {
     const checkPlan = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
 
     it('lists foreign beats, secrets and triggers for removal, never as a fulfillment rewrite', () => {
-        assert.ok(checkPlan.includes('- A beat, a secret or a trigger that is foreign: list it in "foreign" with its kind and id, a foreign secret even when clues of it are planted or a trigger of it has fired. Never rewrite it instead, not even its fulfillment.'));
+        assert.ok(checkPlan.includes('- A beat, a secret or a trigger that is foreign: list it in "foreign" with its kind and id, a foreign secret even when clues of it are planted. Never rewrite it instead, not even its fulfillment.'));
         assert.ok(checkPlan.includes('"foreign": [{ "kind": "beat | secret | trigger", "id": "the item\'s id" }]'));
     });
 

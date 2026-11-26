@@ -103,10 +103,16 @@ The check's earlier step 4 tied a trigger to one of the arc's own secrets and wa
   - it is not an earlier secret stored as disclosed (marked revealed by hand), whatever the revealed list says;
   - it is not an earlier secret of a re-plan whose answer has no revealed list.
 
-  A planted clue or a fired trigger pointing at it does not keep it (decided 2026-11-26 under the owner's delegation, open to the owner's veto, after the live check's run 4). The owner's ruling it rests on, 2026-11-26, verbatim: "I do not want to have to manually \"fix\" problems - the extension should assist in the RP and not have me debug and fix its mistakes manually" — so a foreign secret is not left for the player to delete by hand in the plan editor. The planted clue and the fired trigger stay stored. It takes its unfired triggers and unplanted clues with it. On a re-plan the planner may drop such a secret too: the ARC SO FAR block's rule that a secret with planted clues or fired triggers must be kept or rewritten excepts a secret about another plot thread's people.
+  A planted clue or a fired trigger pointing at it does not keep it (decided 2026-11-26 under the owner's delegation, open to the owner's veto, after the live check's run 4). The owner's ruling it rests on, 2026-11-26, verbatim: "I do not want to have to manually \"fix\" problems - the extension should assist in the RP and not have me debug and fix its mistakes manually" — so a foreign secret is not left for the player to delete by hand in the plan editor. The planted clue and the fired trigger stay stored. It takes its unfired triggers and unplanted clues with it. The planner may not drop such a secret: the ARC SO FAR block still tells it to keep or rewrite a secret with planted clues or fired triggers, and `mergeReplan` brings back one the plan left out, so the foreign judgement is the check's alone, behind these guards and logged. A first version let the planner drop it; the review reverted that, since nothing guarded the planner's drop. A later re-plan never gives a new secret the id an orphaned planted clue or fired trigger points at.
 - **A trigger** is removed only while unfired.
 - **Ignored:** unknown ids, kinds and wrong shapes. A plan may end below its tier's minimum beat count.
 - **On failure:** a failed or unreadable check keeps the plan as generated.
+
+Declined in the review of the planted-clue change (2026-11-26):
+
+- **A fired trigger no longer protects a foreign secret.** A trigger's action never discloses its secret by design, and the narrator is told so. Whether a secret came out stays the revealed list's and the ledger's job, as for any secret without triggers. No new risk class.
+- **The arc's own secret with planted clues is protected only by the check's judgement.** That is the decision itself, open to the owner's veto; the removal log names every removed id.
+- **An unfired generated trigger pointing at a secret the planner dropped** is shown ungated. That is older than this change; it is filed as a follow-up, not fixed here.
 
 **What the player sees.** The wizard's step log closes the plan check's line with a count: "Plan checked, N parts of other plot threads removed". The parts are never shown. The count covers beats, secrets and triggers, so a removed secret's triggers count and clues do not. The console logs each removed part by kind and id, never with the plan's text, and each part named foreign that a guard kept, with the guard's reason.
 
@@ -148,4 +154,4 @@ The spec made these decisions itself:
 - there is no Arc Manager control;
 - the check gets the analysis on a new plan;
 - the guards on removal, in part. The owner ruled on two of them on 2026-11-26 (recorded in the ADR-0006 amendment): no beat is removed when the removal would leave no open non-optional beat, and a secret stored as disclosed is never removed, whatever the revealed list says. He ruled the gate rename the same day (TRIGGER GATES, `gates`, a legacy `links` still read). The rest stays open: open beats only, and a fired trigger is never removed.
-- that a planted clue or a fired trigger no longer protects a secret of another plot thread, at the check and in the planner's re-plan block (2026-11-26, after the live check's run 4; ADR-0003 and ADR-0006 amendments).
+- that a planted clue or a fired trigger no longer protects a secret of another plot thread, at the check only; the planner's re-plan block still keeps it (2026-11-26, after the live check's run 4; ADR-0003 and ADR-0006 amendments).

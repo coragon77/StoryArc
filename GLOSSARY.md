@@ -58,7 +58,7 @@ A secret that ties an arc's own people or things to another plot thread ("the ro
 _Avoid_: crossover, tie-in, connection, intersection
 
 **Foreign part**:
-A beat, secret or trigger of a new or re-planned arc that the plan check finds belongs to another plot thread: an event of that thread, or a secret about its people, with nothing of this arc's subject in it. A part is foreign by what happens in it, never by who is in it, since people are shared between threads. The check lists it as `foreign` and code removes it under guards; what the story has closed, revealed or planted stays. See Backdrop, Link.
+A beat, secret or trigger of a new or re-planned arc that the plan check finds belongs to another plot thread: an event of that thread, or a secret about its people, with nothing of this arc's subject in it. A part is foreign by what happens in it, never by who is in it, since people are shared between threads. The check lists it as `foreign` and code removes it under guards; what the story has closed or revealed stays. A planted clue or a fired trigger stays too, but no longer keeps its secret: a foreign secret goes even when clues of it are planted. See Backdrop, Link.
 _Avoid_: off-thread part, stray beat, intruder
 
 **Genre**:
@@ -124,7 +124,7 @@ _Avoid_: signal, tracking, advancement
 ### Story state
 
 **Secret**:
-A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Once revealed it never changes. One not yet revealed is planned again on a re-plan: kept, rewritten or dropped, keeping its id when kept or rewritten, and always still explaining the planted clues and fired triggers that point at it.
+A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Once revealed it never changes. One not yet revealed is planned again on a re-plan: kept, rewritten or dropped, keeping its id when kept or rewritten, and always still explaining the planted clues and fired triggers that point at it; one the planner drops anyway comes back. Only the plan check may remove such a secret, when it is a foreign part; its planted clues and fired triggers stay.
 
 **Trigger**:
 A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied. That tie is the trigger's gate.

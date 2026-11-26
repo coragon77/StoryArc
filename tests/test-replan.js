@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyReplan, mergeReplan, replanTiers } from '../lib/planning/replan.js';
-import { buildArcSoFar, buildSeenArcSoFar, plantedCluesOfSecret } from '../lib/planning/generator.js';
+import { applyPlanCheck, buildArcSoFar, buildSeenArcSoFar, plantedCluesOfSecret } from '../lib/planning/generator.js';
 import { calculatePhase } from '../lib/injection/pacing.js';
 import { listRecognisableBeats } from '../lib/knowledge/ledger.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
@@ -230,6 +230,111 @@ describe('mergeReplan', () => {
         assert.equal(merged.secrets.find(secret => secret.id === 'secret_2').content, 'The ledger was forged with almond ink by the brother.');
     });
 
+    // The planner is told to keep such a secret; only the plan check may
+    // remove it as foreign, behind its guards (review of 2026-11-26).
+    it('restores an unrevealed secret the plan dropped when a planted clue points at it', () => {
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ id: 'brother_dying', content: 'The brother is dying.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['brother_dying', 'The brother is dying.'],
+            ['secret_2', 'The ledger is forged.'],
+        ]);
+        assert.deepEqual(merged.foreshadowing[0], { id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true });
+    });
+
+    it('restores an unrevealed secret the plan dropped when a fired trigger points at it', () => {
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [],
+            triggers: [{ id: 'ledger_touched', condition: 'if she opens the ledger', action: 'the clerk snatches it back', secret: 'secret_2', fired: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ id: 'brother_dying', content: 'The brother is dying.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['brother_dying', 'The brother is dying.'],
+            ['secret_2', 'The ledger is forged.'],
+        ]);
+    });
+
+    it('restores by id only: a plan that rewrites the secret under a new id has both', () => {
+        // The planner is told to keep the id; a rewrite under another id
+        // cannot be told from a drop, so the stored secret comes back too.
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ content: 'The brother forged the ledger.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['secret_1_2', 'The brother forged the ledger.'],
+            ['secret_2', 'The ledger is forged.'],
+        ]);
+    });
+
+    it('a restored secret reaches the plan check, which can remove it as foreign; the planted clue stays', () => {
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ id: 'brother_dying', content: 'The brother is dying.' }] });
+        const merged = mergeReplan(existing, generated);
+
+        const checked = applyPlanCheck(merged, { revealed: [], foreign: [{ kind: 'secret', id: 'secret_2' }] }, existing.secrets, true);
+
+        assert.deepEqual(checked.secrets.map(secret => secret.id), ['secret_1', 'brother_dying']);
+        // The plan's unplanted clue of it goes with it.
+        assert.deepEqual(checked.foreshadowing.map(clue => clue.id), ['almond_ink']);
+    });
+
+    it('suffixes a new secret whose id an orphaned planted clue or fired trigger points at', () => {
+        // The plan check removed lena_label on an earlier re-plan; its
+        // planted clue and fired trigger stayed and point at no known secret.
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'torn_contract', clue: 'A torn contract in Lena\'s bin', target: 'secret:lena_label', planted: true }],
+            triggers: [{ id: 'press_call', condition: 'if the press calls', action: 'Mara hangs up pale', secret: 'mara_deal', fired: true }],
+        };
+        const generated = generatedPlan({
+            secrets: [{ id: 'lena_label', content: 'Lena signed with the label.' }, { id: 'mara_deal', content: 'Mara sold the story.' }],
+            triggers: [{ id: 'label_call', condition: 'if the label calls', action: 'Lena takes it outside', secret: 'lena_label' }],
+        });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['lena_label_2', 'Lena signed with the label.'],
+            ['mara_deal_2', 'Mara sold the story.'],
+        ]);
+        assert.equal(merged.triggers.find(trigger => trigger.id === 'label_call').secret, 'lena_label_2');
+        assert.deepEqual(plantedCluesOfSecret(merged, 'lena_label_2'), []);
+    });
+
+    it('suffixes an invented secret id an orphaned planted clue points at', () => {
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'torn_contract', clue: 'A torn contract in Lena\'s bin', target: 'secret:secret_3', planted: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ content: 'The brother is dying.' }, { content: 'The clerk is paid.' }, { content: 'The creditor fled.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => secret.id), ['secret_1', 'secret_1_2', 'secret_2_2', 'secret_3_2']);
+    });
+
     it('suffixes a new secret whose id collides with a revealed one, and its trigger link follows', () => {
         const generated = generatedPlan({
             secrets: [{ id: 'secret_1', content: 'The brother is dying.' }],
@@ -280,6 +385,8 @@ describe('mergeReplan', () => {
                 { id: 'secret_1', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false, holders: [] },
                 { id: 'secret_2', content: 'The clerk is paid by the brother.', revealPhase: 'climax', disclosed: false, holders: [] },
             ],
+            // No planted clue points at them, so the plan drops both.
+            foreshadowing: [],
         };
         const generated = generatedPlan({
             secrets: [{ content: 'The brother is dying.' }, { content: 'The creditor fled the capital.' }],
@@ -657,7 +764,7 @@ describe('buildArcSoFar', () => {
             'Secrets already revealed (established, do not restate):\n'
             + '- The creditor is her brother.\n'
             + '\n'
-            + 'Secrets not yet revealed (re-plan them freely: keep, rewrite or drop each, keeping its id when you keep or rewrite it; a secret with planted clues or fired triggers listed under it must be kept or rewritten so it still explains them, except a secret about another plot thread\'s people, which you may drop even then):\n'
+            + 'Secrets not yet revealed (re-plan them freely: keep, rewrite or drop each, keeping its id when you keep or rewrite it; a secret with planted clues or fired triggers listed under it must be kept or rewritten so it still explains them):\n'
             + '- [secret_2] The ledger is forged.\n'
             + '\n'
             + 'Escalation so far: old escalation\n',
@@ -688,7 +795,7 @@ describe('buildArcSoFar', () => {
         const text = buildArcSoFar(arc);
 
         assert.ok(text.includes(
-            'which you may drop even then):\n'
+            'so it still explains them):\n'
             + '- [forged_ledger] The ledger is forged.\n'
             + '  Known to: Tomas, the clerk\n'
             + '  Planted clue: Ink that smells of almonds\n'
@@ -699,7 +806,7 @@ describe('buildArcSoFar', () => {
     });
 
     it('builds for an arc whose planted clue and fired trigger point at a secret the plan check removed', () => {
-        // The check removed the other plot thread's secret; its played clue
+        // The check removed the other plot thread's secret; its planted clue
         // and fired trigger stay stored as history (2026-11-26).
         const arc = {
             ...storedEpisode(),
@@ -710,7 +817,7 @@ describe('buildArcSoFar', () => {
 
         const text = buildArcSoFar(arc);
 
-        assert.ok(text.includes('which you may drop even then):\n- [forged_ledger] The ledger is forged.\n\nEscalation so far:'), text);
+        assert.ok(text.includes('so it still explains them):\n- [forged_ledger] The ledger is forged.\n\nEscalation so far:'), text);
         assert.doesNotMatch(text, /torn contract|hangs up pale/);
     });
 
@@ -766,7 +873,7 @@ describe('buildArcSoFar', () => {
         const text = buildArcSoFar({ ...storedEpisode(), secrets: [], escalation: '' });
 
         assert.ok(text.includes('do not restate):\n(none)\n\nSecrets not yet revealed'), text);
-        assert.ok(text.includes('which you may drop even then):\n(none)\n\nEscalation so far: (none recorded)\n'), text);
+        assert.ok(text.includes('so it still explains them):\n(none)\n\nEscalation so far: (none recorded)\n'), text);
     });
 
     it('opens with the header, the re-planning instruction and the premise', () => {

@@ -128,7 +128,7 @@ describe('generateArc: a re-plan\'s revealed secrets', () => {
 
         assert.equal(result.error, null);
         assert.ok(sentPrompts[1].includes('Secrets already revealed (established, do not restate):\n- The ledger is forged.\n\n'), sentPrompts[1]);
-        assert.ok(sentPrompts[1].includes('which you may drop even then):\n- [brother_ill] The brother is ill.\n\n'), sentPrompts[1]);
+        assert.ok(sentPrompts[1].includes('so it still explains them):\n- [brother_ill] The brother is ill.\n\n'), sentPrompts[1]);
         assert.deepEqual(result.arc.secrets, [
             { id: 'forged_ledger', content: 'The ledger is forged.', revealPhase: 'any', disclosed: true, holders: ['Tomas'] },
             { id: 'brother_ill', content: 'The brother is dying.', revealPhase: 'any', disclosed: false, holders: [] },
