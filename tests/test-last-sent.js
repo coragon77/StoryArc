@@ -10,6 +10,7 @@ import { callLlm, readLastSentPrompt, prepareArc, generateArc, clearTemplateCach
 import { updateKnowledgeAfterReply, updateKnowledgeAfterEdit } from '../lib/knowledge/ledger.js';
 import { searchAppearance } from '../lib/knowledge/appearance-search.js';
 import { seedStandingStateAfterUpdate } from '../lib/knowledge/state-seed.js';
+import { savePromptEdit, resetPromptEdit } from '../lib/planning/prompt-edits.js';
 
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
 
@@ -163,6 +164,27 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         for (const template of ['analyze-context.txt', 'ask-questions.txt', 'generate-arc.txt', 'check-plan.txt']) {
             assert.equal(readLastSentPrompt(template).purpose, 'planning an arc', template);
         }
+    });
+
+    it('marks a prompt filled from the player\'s edit as from the edit, a built-in one as not', async () => {
+        installBackend(['She owes more than money.', '{ "questions": [] }']);
+        savePromptEdit('analyze-context.txt', 'MY ANALYSIS {{GENRE_BLOCK}}', 'ANALYSE {{GENRE_BLOCK}}');
+
+        await prepareArc(context, 'A debt.');
+
+        assert.equal(readLastSentPrompt('analyze-context.txt').text, 'MY ANALYSIS ');
+        assert.equal(readLastSentPrompt('analyze-context.txt').usedEdit, true);
+        assert.equal(readLastSentPrompt('ask-questions.txt').usedEdit, false);
+    });
+
+    it('keeps the from-the-edit mark as it was at the send when the edit is reset later', async () => {
+        installBackend(['She owes more than money.', '{ "questions": [] }']);
+        savePromptEdit('analyze-context.txt', 'MY ANALYSIS {{GENRE_BLOCK}}', 'ANALYSE {{GENRE_BLOCK}}');
+        await prepareArc(context, 'A debt.');
+
+        resetPromptEdit('analyze-context.txt');
+
+        assert.equal(readLastSentPrompt('analyze-context.txt').usedEdit, true);
     });
 
     it('a re-plan: every planning call is re-planning the arc by its title', async () => {

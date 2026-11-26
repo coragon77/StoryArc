@@ -169,8 +169,15 @@ StoryArc/
 │   │   │                       #   escalation, world facts,
 │   │   │                       #   fulfilled beats as "already happened", skipped
 │   │   │                       #   milestones as "passed over"; '' for null (plan-new);
-│   │   │                       #   loadTemplate(name), fillTemplate(template, vars);
-│   │   │                       #   callLlm() exported for the knowledge extraction
+│   │   │                       #   loadTemplate(name) (the player's edit, else the
+│   │   │                       #   built-in text), loadBuiltInTemplate(name),
+│   │   │                       #   fillTemplate(template, vars); callLlm() exported for
+│   │   │                       #   the knowledge extraction; it records the last prompt
+│   │   │                       #   sent per template (readLastSentPrompt, with usedEdit)
+│   │   ├── prompt-edits.js     # The player's prompt edits (#92): PROMPT_CATALOG,
+│   │   │                       #   describePrompts(builtInTexts, storedEdits),
+│   │   │                       #   checkPromptPlaceholders(builtInText, text),
+│   │   │                       #   save/keep/reset/restorePromptEdit (promptOverrides)
 │   │   ├── arc-preset.js       # ARC_PRESET_NAME, ARC_PRESET_SETTINGS (fixed ~18-key
 │   │   │                       #   barebones preset — no derivation from a base
 │   │   │                       #   preset), ARC_PROMPT_ENTRIES (adult-content off,
@@ -499,6 +506,13 @@ StoryArc/
 │   │   │                       #   → showWizard(arcId))
 │   │   ├── rejection-popup.js  # The rewrite notice (showRewriteOffer, closeRewriteOffer),
 │   │   │                       #   the take-out dialog, "Reject from here…" in the message menu
+│   │   ├── prompts.js          # showPromptsPopup() — the Prompts popup (#92): the seven
+│   │   │                       #   prompts, Template / Last sent, Save, Reset, Undo, Keep
+│   │   │                       #   mine; its session (startPromptsSession, promptsViewOf,
+│   │   │                       #   runPromptAction, typePromptDraft …); pure builders
+│   │   │                       #   (buildPromptsContent, buildPromptChecks,
+│   │   │                       #   buildPromptActions, buildPromptsButton,
+│   │   │                       #   buildPromptsDrawerNote); refreshPromptsDrawer
 │   │   ├── sent-view.js        # showSentView() — What the narrator gets (#83): the
 │   │   │                       #   request as a strip, the chosen part beside it, Last
 │   │   │                       #   sent / Next request; maskSpoilerLines + listSpoilers
@@ -621,6 +635,8 @@ StoryArc/
 │       │                       #   picker, status bar; ST theme variables only
 │       ├── progress.css        # Layout of the progress rows; tokens, beat squares
 │       │                       #   and the warning come from arc-manager.css (#72)
+│       ├── prompts.css         # The Prompts popup: list, pane, read bar, expand icons;
+│       │                       #   on the .am and .sv grammar, theme variables only (#92)
 │       ├── rejection.css       # The take-out dialog's rows
 │       └── sent-view.css       # What the narrator gets: strip, blocks, reader,
 │                               #   placeholders; on the .am tokens (#83)
@@ -710,6 +726,15 @@ StoryArc/
 │   ├── test-narrator-prompts.js # Tests: injectStoryArcPrompts keys, positions and
 │   │                           #   depths; the record of the last send (dry run,
 │   │                           #   quiet, foreign request, swipe, continue, branch)
+│   ├── test-prompt-edits.js    # Tests: loadTemplate serves a saved edit, the built-in
+│   │                           #   text after a reset; describePrompts states, missing
+│   │                           #   and unknown placeholders; checkPromptPlaceholders
+│   ├── test-last-sent.js       # Tests: callLlm's last prompt per template, through every
+│   │                           #   planning and tracker caller; usedEdit at the send
+│   ├── test-ui-prompts.js      # Tests: the Prompts popup's HTML (Reveal, empty state,
+│   │                           #   warnings, one primary, expand icon, drawer note)
+│   ├── test-prompts-popup.js   # Tests: the Prompts popup session — Save, Reset, Undo,
+│   │                           #   Discard, Keep mine, Show built-in, Reveal off on open
 │   ├── test-ui-sent-view.js    # Tests: maskSpoilerLines outcome on real builder text
 │   │                           #   (items with a line break, a blank line), planned
 │   │                           #   holders, the strip and reader, Next request marks
@@ -956,6 +981,8 @@ lib/planning/
 │                   core/settings.js, injection/pacing.js selectNonOptionalBeats,
 │                   knowledge/message-ids.js messageIdOf, /script.js)
 ├── replan.js      (imports: core/constants.js)
+├── prompt-edits.js (imports: core/constants.js, /script.js saveSettingsDebounced,
+│                   /scripts/utils.js getStringHash, /scripts/extensions.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
 └── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
@@ -1003,7 +1030,13 @@ lib/ui/
 ├── settings-panel.js (imports: core/constants.js, core/settings.js,
 │                              planning/arc-preset.js, wizard.js, arc-manager.js,
 │                              knowledge-popup.js, knowledge-status.js, progress.js,
+│                              prompts.js, sent-view.js,
 │                              /script.js, /scripts/extensions.js, /scripts/popup.js)
+├── prompts.js       (imports: planning/generator.js loadBuiltInTemplate +
+│                              readLastSentPrompt, planning/prompt-edits.js,
+│                              core/settings.js, context/chat-history.js estimateTokens,
+│                              beat-strip.js formatNumber, /scripts/popup.js,
+│                              /scripts/utils.js)
 ├── knowledge-status.js (imports: core/settings.js)
 ├── wizard.js        (imports: context/harvester.js, planning/generator.js,
 │                              planning/storage.js, planning/replan.js,
@@ -1081,6 +1114,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Progress display | `lib/ui/progress.js` | `lib/injection/pacing.js` |
 | Wand-menu entry | `lib/ui/wand-menu.js` | `lib/ui/progress.js`, `wizard.js`, `arc-manager.js`, `index.js` |
 | Settings panel | `lib/ui/settings-panel.js` | `lib/core/settings.js`, `lib/planning/arc-preset.js` |
+| Prompts popup, prompt edits (#92) | `lib/ui/prompts.js` | `lib/planning/prompt-edits.js` (`describePrompts`, the stored edits), `lib/planning/generator.js` (`loadTemplate`, `loadBuiltInTemplate`, `readLastSentPrompt`), `lib/css/prompts.css`, `lib/ui/settings-panel.js` (the button), `index.js` (the drawer's count at startup) |
 | What the narrator gets (#83) | `lib/ui/sent-view.js` | `lib/injection/narrator-prompts.js` (`listStoryArcPrompts`, `saveLastSent`), `index.js` (`injectStoryArcPrompts`, `onChatCompletionPromptReady`, `onChatChanged`), `lib/injection/builder.js` (header and check-line constants), `lib/css/sent-view.css`, `lib/ui/settings-panel.js` and `lib/ui/wand-menu.js` (entry buttons) |
 | Knowledge tracker | `lib/knowledge/ledger.js` | `lib/knowledge/state-seed.js` (standing state seed), `prompts/seed-state.txt`, `lib/knowledge/message-ids.js`, `lib/knowledge/names.js` (taken names), `index.js` (event wiring), `prompts/extract-knowledge.txt`, `lib/ui/knowledge-popup.js`, `lib/ui/settings-panel.js` (switch, interval), `lib/ui/knowledge-status.js` (status line), `lib/injection/builder.js` (`holderSuffix`), `lib/planning/validation.js` (`normalizeSecretHolders`), `prompts/generate-arc.txt` (holders), `lib/core/constants.js` (`createEmptyKnowledgeLedger`) |
 | Rejected spans (C4) | `lib/knowledge/rejection.js` | `lib/ui/rejection-popup.js` (notice, dialog, menu entry), `lib/knowledge/ledger.js` (`resolveRewrites`, `dropKnowledgeOfRejectedMessages`, the rejected-message guards), `lib/knowledge/message-ids.js` (`isRejectedMessage`, `isMarkedOutOfCharacter`), `prompts/extract-knowledge.txt` (task 8), `lib/context/chat-history.js`, `lib/knowledge/appearance-search.js`, `lib/injection/signals.js` (`dropPendingMarksAt`), `index.js`, `lib/css/rejection.css`, `scripts/replay-extraction.mjs` |

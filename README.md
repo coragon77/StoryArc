@@ -137,8 +137,9 @@ Every edit can be undone while the popup is open.
 
 - **Beats never complete?** Your model isn't reporting them. Mark them done by hand in the Arc Manager, or turn on the knowledge tracker, which recognises them itself.
 - **A reply went somewhere odd?** Open **What the narrator gets**. It shows everything Story Arc added to the last request and what it will add to the next one, part by part, with spoilers hidden until you reveal the plan.
+- **Your model ignores Story Arc's instructions?** Open **Prompts**, next to **Create arc preset**. It shows the seven prompts Story Arc sends when it plans an arc and when the knowledge tracker runs, and lets you change their wording. Your changes apply in every chat, from the next call on. A warning tells you when your text leaves out a part Story Arc fills in. **Last sent** shows the prompt exactly as it went out, hidden until you reveal it, since it carries the plan's secrets. **Reset to built-in** brings back Story Arc's own wording.
 - **Summaries of earlier arcs**: give a lorebook entry a title starting with `[ARC ` (for example `[ARC 3] The Harbour Heist`) and the planner treats it as one.
-- **Your data**: everything is stored in the chat file. Story Arc only reads your lorebook, card and persona; removing the extension leaves your chats intact.
+- **Your data**: everything is stored in the chat file, except your Story Arc settings and prompt edits, which SillyTavern keeps with its own settings. Story Arc only reads your lorebook, card and persona; removing the extension leaves your chats intact.
 
 ## Development
 

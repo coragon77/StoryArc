@@ -22,6 +22,7 @@ import { parseSignals, stripSignalsFromMessage, processSignalResults, flushPendi
 import { reopenCompletionsFrom, removeRulingsFrom } from './lib/planning/beat-completion.js';
 import { renderSettingsPanel, setupSettingsPanelEvents } from './lib/ui/settings-panel.js';
 import { updateKnowledgeStatus } from './lib/ui/knowledge-status.js';
+import { describeStoredPrompts, refreshPromptsDrawer } from './lib/ui/prompts.js';
 import { registerWandMenuEntry } from './lib/ui/wand-menu.js';
 import { updateProgress } from './lib/ui/progress.js';
 import { closeWizard } from './lib/ui/wizard.js';
@@ -292,6 +293,10 @@ jQuery(async () => {
     const settingsPanelHtml = renderSettingsPanel();
     $('#extensions_settings2').append(settingsPanelHtml);
     setupSettingsPanelEvents();
+    // The drawer is rendered before the built-in prompts are loaded: their count and note follow.
+    describeStoredPrompts()
+        .then(refreshPromptsDrawer)
+        .catch(err => console.error('[Story Arc] Could not describe the prompts for the drawer:', err));
 
     // Add the Story Arc entry to the wand menu next to the chat bar
     registerWandMenuEntry();

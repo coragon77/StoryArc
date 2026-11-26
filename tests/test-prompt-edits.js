@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings } from '/scripts/extensions.js';
 import { clearTemplateCache, loadBuiltInTemplate, loadTemplate } from '../lib/planning/generator.js';
-import { describePrompts, keepPromptEdit, savePromptEdit, resetPromptEdit } from '../lib/planning/prompt-edits.js';
+import { checkPromptPlaceholders, describePrompts, keepPromptEdit, savePromptEdit, resetPromptEdit } from '../lib/planning/prompt-edits.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -158,5 +158,19 @@ describe('describePrompts with saved edits', () => {
 
         assert.deepEqual(description.prompts.map(prompt => prompt.state), ['built-in', 'edited', 'changed', 'built-in', 'built-in', 'edited', 'built-in']);
         assert.equal(description.editedCount, 3);
+    });
+});
+
+describe('checkPromptPlaceholders, the check of a draft while the player types', () => {
+    it('names the placeholders the draft drops and the ones it adds, against the built-in text', () => {
+        const check = checkPromptPlaceholders('Read {{MESSAGES}}; claims {{CLAIMED_CLUES}}; again {{MESSAGES}}', 'Read {{MESSAGES}} in {{SCENE}}');
+
+        assert.deepEqual(check, { placeholders: ['MESSAGES', 'CLAIMED_CLUES'], missing: ['CLAIMED_CLUES'], unknown: ['SCENE'] });
+    });
+
+    it('finds nothing wrong with the built-in text itself', () => {
+        const check = checkPromptPlaceholders('Find {{CHARACTER}} in {{PASSAGES}}', 'Find {{CHARACTER}} in {{PASSAGES}}');
+
+        assert.deepEqual(check, { placeholders: ['CHARACTER', 'PASSAGES'], missing: [], unknown: [] });
     });
 });
