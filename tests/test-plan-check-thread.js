@@ -204,7 +204,7 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
     });
 
     it('a blank direction: the premise defines the plot thread and is not rewritten, the pressure still is', () => {
-        for (const direction of ['', '   ', undefined]) {
+        for (const direction of ['', undefined]) {
             const checked = applyPlanCheck(plannedEpisode({ direction }), threadAnswer, [], false);
 
             assert.equal(checked.premise, 'Will Mira pay her debt, and will Lena\'s fame survive the press?');

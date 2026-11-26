@@ -1281,3 +1281,38 @@ describe('wizard: "Keep this arc to itself" on the Direction step', () => {
         assert.equal('allowLinks' in chat_metadata.story_arc.arcs[0], false);
     });
 });
+
+describe('wizard: a direction of only whitespace is blank', () => {
+    // The check template below has a Direction line; the built-in cache must not keep it.
+    afterEach(() => clearTemplateCache());
+
+    it('reaches the plan check as "(none)", blocks a premise rewrite, and is stored empty', async () => {
+        clearTemplateCache();
+        globalThis.fetch = async (url) => {
+            if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE');
+            if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
+            if (String(url).endsWith('ask-questions.txt')) return new Response('ASK');
+            if (String(url).endsWith('check-plan.txt')) return new Response('CHECK\nDirection: {{DIRECTION}}\nPremise: {{PREMISE}}');
+            throw new Error(`unexpected fetch ${url}`);
+        };
+        const premiseRewrite = '{ "revealed": [], "rewrites": [{ "kind": "premise", "id": "premise", "text": "The guild hides a theft." }] }';
+        const sentPrompts = [];
+        const answers = ['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, premiseRewrite];
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            sentPrompts.push(messages[0].content);
+            const text = answers.shift();
+            return () => (async function* () { yield { text }; })();
+        };
+        await openWizard();
+
+        typeDirectionAndGenerate('   \n  ');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.ok(sentPrompts[3].includes('Direction: (none)\n'), sentPrompts[3]);
+        const storedArc = chat_metadata.story_arc.arcs[0];
+        assert.equal(storedArc.premise, 'The valley is starving.');
+        assert.equal(storedArc.direction, '');
+    });
+});
