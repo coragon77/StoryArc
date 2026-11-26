@@ -737,7 +737,9 @@ StoryArc/
 │   ├── test-migration.js       # Tests: migrateArc on arcs stored before tiers +
 │   │                           #   ensureChatState running it once
 │   ├── test-replan.js          # Tests: mergeReplan (kept vs. replaced fields, revealed
-│   │                           #   secrets kept, unrevealed replaced by id or dropped,
+│   │                           #   secrets kept, unrevealed replaced by id or dropped
+│   │                           #   (restored by id when a kept planted clue or fired
+│   │                           #   trigger points at it; orphaned target ids stay taken),
 │   │                           #   clue and trigger links kept, id de-collision, skipped
 │   │                           #   milestones kept, tier change, kept closed beats
 │   │                           #   lose their completion records, a swipe after a re-plan
