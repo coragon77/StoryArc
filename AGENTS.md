@@ -45,7 +45,7 @@ StoryArc/
 │   ├── analyze-context.txt     # Phase 1: story state analysis
 │   ├── ask-questions.txt       # The wizard's questions to the author, after Phase 1
 │   ├── generate-arc.txt        # Phase 2: arc outline generation
-│   ├── check-plan.txt          # Phase 3: plan check (give-aways, fulfillments, renames)
+│   ├── check-plan.txt          # Phase 3: plan check (give-aways, fulfillments, renames, other plot threads)
 │   ├── extract-knowledge.txt   # Knowledge tracker: who learned what in the new messages
 │   ├── find-appearance.txt     # Appearance search: how one character looks, from passages
 │   └── seed-state.txt          # Standing state seed: one character's first style, manner, stances

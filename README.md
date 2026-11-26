@@ -46,7 +46,7 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 
 **Plan a new arc** opens the wizard.
 
-1. **Direction.** Pick the arc's **tier** (see below) and a short **genre**, add **themes** if you like, and say what the arc should explore. Press **Generate**.
+1. **Direction.** Pick the arc's **tier** (see below) and a short **genre**, add **themes** if you like, and say what the arc should explore. The arc stays on that one thread of the story; everything else going on can be its setting but never its steps. Leave **Keep this arc to itself** on, or switch it off to let the planner secretly tie the arc's people to another thread. Press **Generate**.
 2. **Questions**, only when your direction leaves something important open: a few short questions about what you want, never about the plan. Click a suggestion, write your own or leave one blank, then press **Plan the arc**.
 3. **Review.** Story Arc shows the arc's title, tone and "What's it about?". The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
