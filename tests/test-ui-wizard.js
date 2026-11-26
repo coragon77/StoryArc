@@ -10,7 +10,8 @@ import {
 /**
  * A stand-in for jQuery with what the wizard touches: delegated handlers on
  * `document`; `$('#id')` writing and reading an element's html, text, value
- * and properties; `$(element)` for the element a handler runs on. An id
+ * and properties (a checkbox's `checked` from its tag until set, also
+ * through `.is(':checked')`); `$(element)` for the element a handler runs on. An id
  * "exists" once some written html carries it. Everything else is inert.
  */
 function createFakeJquery() {
@@ -42,6 +43,19 @@ function createFakeJquery() {
         return Object.values(htmlById).some(html => String(html).includes(`id="${id}"`));
     }
 
+    /**
+     * A property as set on the element; for `checked` not set yet, whether
+     * the element's tag in the written html carries the attribute, as a
+     * browser reads a checkbox nobody has clicked.
+     */
+    function readProp(id, name) {
+        if (propsById[id] && name in propsById[id]) return propsById[id][name];
+        if (name !== 'checked') return undefined;
+        const tagPattern = new RegExp(`<input\\b[^>]*\\bid="${id}"[^>]*>`);
+        const tag = Object.values(htmlById).map(html => String(html).match(tagPattern)?.[0]).find(Boolean);
+        return Boolean(tag && /\schecked(?=[\s>=/])/.test(tag));
+    }
+
     function idChain(id) {
         return {
             get length() { return idIsOnScreen(id) || id in htmlById ? 1 : 0; },
@@ -62,8 +76,13 @@ function createFakeJquery() {
                 return this;
             },
             prop(name, value) {
+                if (value === undefined) return readProp(id, name);
                 propsById[id] = { ...propsById[id], [name]: value };
                 return this;
+            },
+            is(selector) {
+                assert.equal(selector, ':checked', `the fake reads no ${selector}`);
+                return readProp(id, 'checked') === true;
             },
             attr(name, value) {
                 attrsById[id] = { ...attrsById[id], [name]: value };
@@ -216,6 +235,27 @@ afterEach(async () => {
     delete chat_metadata.story_arc;
     chat.length = 0;
     mockSortedEntries.length = 0;
+});
+
+describe('the fake jQuery reads a checkbox', () => {
+    it('reads the checked state the html renders, before anything sets it', () => {
+        fake.fakeJquery('#panel').html('<input type="checkbox" id="box-on" checked> <input type="checkbox" id="box-off">');
+
+        assert.equal(fake.fakeJquery('#box-on').prop('checked'), true);
+        assert.equal(fake.fakeJquery('#box-on').is(':checked'), true);
+        assert.equal(fake.fakeJquery('#box-off').prop('checked'), false);
+        assert.equal(fake.fakeJquery('#box-off').is(':checked'), false);
+    });
+
+    it('reads back the checked state set on it, over what the html renders', () => {
+        fake.fakeJquery('#panel').html('<input type="checkbox" id="box-on" checked>');
+
+        fake.fakeJquery('#box-on').prop('checked', false);
+
+        assert.equal(fake.fakeJquery('#box-on').prop('checked'), false);
+        assert.equal(fake.fakeJquery('#box-on').is(':checked'), false);
+        assert.deepEqual(fake.propsById['box-on'], { checked: false });
+    });
 });
 
 describe('wizard: Direction is the first step and carries the context summary', () => {
