@@ -57,6 +57,10 @@ _Avoid_: context, background (a focus value), subplot
 A secret that ties an arc's own people or things to another plot thread ("the robbers secretly work for the big bad"). Planned only when the player switched off "Keep this arc to itself" in the wizard, and never announced. Lives in a secret and its clues and triggers, never in a beat. A secret about another thread's people with nothing of this arc in it is not a link and is never planned (ADR-0011). Not a trigger's tie to a secret, and not joining two character records (merge).
 _Avoid_: crossover, tie-in, connection, intersection
 
+**Foreign part**:
+A beat, secret or trigger of a new or re-planned arc that the plan check finds belongs to another plot thread: an event of that thread, or a secret about its people, with nothing of this arc's subject in it. A part is foreign by what happens in it, never by who is in it, since people are shared between threads. The check lists it as `foreign` and code removes it under guards; what the story has closed, revealed or planted stays. See Backdrop, Link.
+_Avoid_: off-thread part, stray beat, intruder
+
 **Genre**:
 The register an arc must stay in, written by the player per arc and kept short ("Superhero drama"). Binding for both generation phases, for the register only: the arc reads as this genre. What the arc must deliver comes from the direction and the premise, never from the genre. Never sent to the narrator (ADR-0004, amended 2026-11-09).
 _Avoid_: style, tone

@@ -22,7 +22,7 @@ register('data:text/javascript,' + encodeURIComponent(
          return nextResolve(specifier, context);
      }`,
 ));
-const { getArcs, saveArc, deleteArc, replaceArc } = await import('../lib/planning/storage.js');
+const { getArcs, saveArc, deleteArc, replaceArc, updateArc } = await import('../lib/planning/storage.js');
 
 function tieredArc(id) {
     return { id, title: `Arc ${id}`, tier: 'episode', focus: 'normal', status: 'active', beats: [] };
@@ -112,6 +112,28 @@ describe('planning/storage — replaceArc', () => {
         assert.equal(getArcs()[0], storedArc);
         assert.equal(storedArc.title, 'Edited');
         assert.equal('escalation' in storedArc, false);
+        assert.equal(globalThis.saveMetadataCalls, 1);
+    });
+});
+
+describe('planning/storage — updateArc', () => {
+    beforeEach(() => {
+        delete chat_metadata.story_arc;
+        chat.length = 0;
+        globalThis.saveMetadataCalls = 0;
+    });
+
+    it('merges the given fields, deletes a field given as undefined, keeps the rest and saves once', async () => {
+        await saveArc({ ...tieredArc('a'), allowLinks: true, escalation: 'Storm' });
+        globalThis.saveMetadataCalls = 0;
+        const storedArc = getArcs()[0];
+
+        await updateArc('a', { title: 'Re-planned', allowLinks: undefined });
+
+        assert.equal(getArcs()[0], storedArc);
+        assert.equal(storedArc.title, 'Re-planned');
+        assert.equal('allowLinks' in storedArc, false);
+        assert.equal(storedArc.escalation, 'Storm');
         assert.equal(globalThis.saveMetadataCalls, 1);
     });
 });

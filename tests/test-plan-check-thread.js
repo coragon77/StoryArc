@@ -119,6 +119,7 @@ describe('generateArc: what the plan check is given to judge the plot thread', (
         assert.equal(checkPrompt.includes('== SECRETS BEFORE THIS RE-PLAN =='), false);
         assert.ok(checkPrompt.includes('== PLOT THREAD (binding) =='));
         assert.ok(checkPrompt.includes('Everything else going on in the story is BACKDROP for this arc'));
+        assert.ok(checkPrompt.includes('People are shared: a character who also belongs to another plot thread may appear in this arc\'s beats. A part belongs to a plot thread by what happens in it, never by who is in it.'));
         assert.ok(checkPrompt.includes('- No link: no secret ties this arc\'s people or things to another plot thread.'));
         assert.equal(checkPrompt.includes('- A link may be planned'), false);
         // The outline's own closing line does not reach the check.
@@ -213,13 +214,23 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
 
     it('a re-plan: neither the premise the wizard passed in nor the proposed premise is rewritten', () => {
         const arc = plannedEpisode({ premise: 'A debt comes due, and Mira must pay it alone.', proposedPremise: 'Will Mira pay, and will Lena shine?' });
-        const names = { cast: [], replanPremise: 'A debt comes due, and Mira must pay it alone.', replanTitle: 'The Quiet Debt' };
+        const names = { cast: [], isReplan: true, replanPremise: 'A debt comes due, and Mira must pay it alone.', replanTitle: 'The Quiet Debt' };
 
         const checked = applyPlanCheck(arc, threadAnswer, [], names);
 
         assert.equal(checked.premise, 'A debt comes due, and Mira must pay it alone.');
         assert.equal(checked.proposedPremise, 'Will Mira pay, and will Lena shine?');
         assert.equal(checked.beats[0].pressure, 'The moneylender\'s men watch the door of her room.');
+    });
+
+    it('a re-plan whose premise and title are empty strings: the premise is still not rewritten', () => {
+        const arc = plannedEpisode({ premise: '', proposedPremise: 'Will Mira pay, and will Lena shine?' });
+        const names = { cast: [], replanPremise: '', replanTitle: '', isReplan: true };
+
+        const checked = applyPlanCheck(arc, threadAnswer, [], names);
+
+        assert.equal(checked.premise, '');
+        assert.equal(checked.proposedPremise, 'Will Mira pay, and will Lena shine?');
     });
 
     it('an empty premise text is ignored', () => {
@@ -284,7 +295,8 @@ describe('check-plan.txt: the plot thread task', () => {
 
     it('says what is foreign, what is not, and that a doubtful part stays', () => {
         assert.ok(checkPlan.includes('This arc\'s plot thread is what the Direction, the author\'s answers and the rulings state; when the Direction is (none), the premise states it.'));
-        assert.ok(checkPlan.includes('A part is foreign when it is an event of another plot thread, or about another plot thread\'s people, with nothing of this arc\'s subject in it.'));
+        assert.ok(checkPlan.includes('A part is foreign when it is an event of another plot thread, or a secret about another plot thread\'s people, with nothing of this arc\'s subject in it.'));
+        assert.ok(checkPlan.includes('A part is foreign by what happens in it, never by who is in it: a beat with a character who also belongs to another plot thread is not foreign for that, and a breather with the friend whose rise is another arc stays.'));
         assert.ok(checkPlan.includes('A breather or a scene of colour with this arc\'s own people is not foreign. When in doubt, the part stays.'));
     });
 
@@ -318,5 +330,22 @@ describe('Prompts popup: an edited plan check prompt without the thread block', 
         assert.deepEqual(check.missing, ['THREAD_BLOCK']);
         const html = buildPromptChecks(check, { text: check.text, missing: check.missing, unknown: check.unknown });
         assert.ok(html.includes('<code>{{THREAD_BLOCK}}</code> is missing: the rule that keeps the plan inside the arc\'s thread never reaches the model.'), html);
+    });
+
+    it('an edited check prompt from before #105: says what the analysis and the running arcs carry', () => {
+        extension_settings.story_arc = {};
+        const builtInCheck = readPrompt('check-plan.txt');
+        const oldCheck = builtInCheck.replace('{{ANALYSIS_BLOCK}}', '').replace('{{THREAD_BLOCK}}', '').replace('{{EXISTING_ARCS}}', '');
+        savePromptEdit('check-plan.txt', oldCheck, oldCheck);
+        const builtInTexts = Object.fromEntries(PROMPT_CATALOG.map(entry => [entry.name, readPrompt(entry.name)]));
+
+        const check = describePrompts(builtInTexts, extension_settings.story_arc.promptOverrides).prompts
+            .find(prompt => prompt.name === 'check-plan.txt');
+
+        assert.deepEqual([...check.missing].sort(), ['ANALYSIS_BLOCK', 'EXISTING_ARCS', 'THREAD_BLOCK']);
+        const html = buildPromptChecks(check, { text: check.text, missing: check.missing, unknown: check.unknown });
+        assert.ok(html.includes('<code>{{ANALYSIS_BLOCK}}</code> is missing: on a new plan the story analysis never reaches the check, so it cannot see a plot thread that has no arc yet.'), html);
+        assert.ok(html.includes('<code>{{EXISTING_ARCS}}</code> is missing: the running arcs never reach the model, so it cannot tell this arc\'s plot thread from theirs.'), html);
+        assert.equal(html.includes('what Story Arc fills in there never reaches the model'), false, html);
     });
 });
