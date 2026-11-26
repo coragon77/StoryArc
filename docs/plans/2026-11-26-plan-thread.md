@@ -11,7 +11,7 @@
 
 ## Where the work happened
 
-Each ticket was built in its own git worktree, on a branch cut from the integration branch `feature/97-plan-thread`, and was merged back into it. Behaviour changes were built test-first against the real prompt templates and a fake model. The records ticket (#100) was the only one that wrote the ADR and the glossary. Every other ticket updated the architecture docs it touched.
+Each ticket was built in its own git worktree, on a branch cut from the integration branch `feature/97-plan-thread`, and was merged back into it. Behaviour changes were built test-first against the real prompt templates and a fake model. Among the tickets, only the records ticket (#100) wrote the ADR and the glossary; the review fix passes later added the glossary entries Foreign part and Gate. Every ticket updated the architecture docs it touched.
 
 ## The tickets
 
@@ -52,7 +52,7 @@ The tickets and their blocking edges, as filed:
   - Its step 5 rewrites a pressure that names another thread's force.
   - It rewrites a premise that asks a second thread's question, and `applyPlanCheck` applies that only on a new plan with a direction.
 - **#106: the check removes foreign parts.**
-  - The answer gains `foreign`, which `removeForeignParts` applies under guards: open beats only, never the last open beat, revealed or clued secrets kept, fired triggers kept.
+  - The answer gains `foreign`, which `removeForeignParts` applies under guards: open beats only, no beat at all when the removal would leave no open beat, revealed or clued secrets kept, fired triggers kept.
   - `generateArc` returns `removedParts`, and the wizard's step log shows the count, never the parts.
   - On a re-plan the check sees the wizard's premise as the "Author's premise", which states the thread with a blank direction.
 - **#107: docs and the live check.** The "Plot Thread" section of `architecture.md`, the code index, and these two files. The live check is still open.

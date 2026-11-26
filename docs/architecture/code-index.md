@@ -19,7 +19,8 @@ StoryArc/
 │   │                           #   explains the [BEING RE-PLANNED] mark on existing arcs
 │   ├── ask-questions.txt       # Wizard question call: 0-5 questions about the author's
 │   │                           #   intent the direction leaves open, 2-4 suggested
-│   │                           #   answers each; never plot, twists or secrets
+│   │                           #   answers each; never plot, twists or secrets, never
+│   │                           #   whether or how another plot thread fits (rule 7, #98)
 │   ├── generate-arc.txt        # Phase 2 prompt: produce JSON arc plan from analysis;
 │   │                           #   asks for both faces of each beat (pressure +
 │   │                           #   fulfillment, one on-screen moment: never a tally
@@ -28,12 +29,14 @@ StoryArc/
 │   │                           #   length band ("Scene beats only" tags the episode-only
 │   │                           #   guidelines); {{ARC_SO_FAR}} on re-plan; {{CAST_BLOCK}}
 │   │                           #   and {{CAST_CHECKLIST}} with the tracker on; renders enabled
-│   │                           #   arc directives as a STANDING CONSTRAINTS section
+│   │                           #   arc directives as a STANDING CONSTRAINTS section;
+│   │                           #   {{THREAD_BLOCK}} and principle 8 keep the plan in its
+│   │                           #   own plot thread (#101, ADR-0011)
 │   ├── check-plan.txt          # Phase 3 prompt: plan check — rewrite give-away triggers
 │   │                           #   and pressures, list revealed secrets (re-plan),
 │   │                           #   rewrite tally/chain fulfillments ({{FULFILLMENTS}},
-│   │                           #   kind "fulfillment") into one moment, link triggers
-│   │                           #   to secrets; author's answers ({{AUTHOR_ANSWERS}}) as
+│   │                           #   kind "fulfillment") into one moment, gate triggers
+│   │                           #   on secrets (step 4 TRIGGER GATES, "gates"); author's answers ({{AUTHOR_ANSWERS}}) as
 │   │                           #   public input; step 2 also rewrites contradictions
 │   │                           #   with the cast's details, sweeping world facts and
 │   │                           #   off-register items (ADR-0009 amendment); step 5 judges

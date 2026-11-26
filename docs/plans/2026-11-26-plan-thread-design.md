@@ -1,7 +1,7 @@
 # An Arc's Plan Stays Inside Its Plot Thread — Design Note
 
 - **Date:** 2026-11-26
-- **Status:** Built on the integration branch `feature/97-plan-thread` from `docs/plans/2026-11-26-plan-thread.md`. The live check (#107) is still to run, so no part of this is live-verified yet.
+- **Status:** Built on the integration branch `feature/97-plan-thread` in tickets #98–#106; `docs/plans/2026-11-26-plan-thread.md` records how. The live check (#107) is still to run, so no part of this is live-verified yet.
 - **Spec:** GitHub issue #97, the source of this design. This note records what shipped and where it differs from the spec's text.
 - **Builds on:** ADR-0010 (an arc is one plot thread), ADR-0006 (the plan check), ADR-0003 (a re-plan keeps the situation)
 - **ADRs:** `0011` (new): an arc's plan stays inside its plot thread, and hidden links are the player's choice. `0006` is amended: the check also removes parts of another thread, gets the analysis on a new plan, and may rewrite a planner-written premise, for the thread rule only. `0010` is amended to point at 0011.
@@ -62,7 +62,7 @@ A **link** is a secret that ties this arc's own people or things to another thre
 - **Stored** as `allowLinks: true` only when links are allowed. An arc without the field is kept to itself, so no migration is needed.
 - **Not prefilled** from the newest arc, unlike genre and themes.
 - **On a re-plan** the box shows the stored value. `generateArc` sets or deletes the field on the merged arc from the run's option.
-- **The Activate button of a re-plan** passes `allowLinks: undefined` for an arc kept to itself. `updateArc` now deletes a field given as `undefined`; before, it merged with `Object.assign`.
+- **"Apply re-plan"** passes `allowLinks: undefined` for an arc kept to itself. `updateArc` now deletes a field given as `undefined`; before, it merged with `Object.assign`.
 - **No Arc Manager control.** Changing the box does not re-ask the questions.
 
 ## The check
