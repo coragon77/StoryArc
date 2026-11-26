@@ -29,7 +29,7 @@ Open the **Extensions** drawer and expand **Story Arc**.
 1. **Enable Story Arc.**
 2. **Generation profile**: the Connection Manager profile that plans arcs. "Current API" uses the chat's own. Planning needs a capable model and a long response length.
 3. **Create arc preset** (recommended): creates a `Story Arc Generation` preset and connection profile tuned for planning. Select it as the generation profile afterwards.
-4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). **Update every N replies** sets how often it runs; **Character details** adds character details to it, and **Appearance** adds how each character looks. **Tracker profile** lets it run on a cheaper model than planning; empty, it uses the generation profile.
+4. **Track who knows what** (optional): switches on the [knowledge tracker](#the-knowledge-tracker). Its options below it set how often it runs, what it records and which profile it uses; a cheaper model than planning works.
 
 The arc preset holds two entries you toggle in SillyTavern's prompt manager. Save the preset after changing them.
 
@@ -46,9 +46,9 @@ Click the **wand menu** next to the chat input and choose **Story Arc**. The pop
 
 **Plan a new arc** opens the wizard.
 
-1. **Direction.** Pick the arc's **tier** (see below), its **genre**, kept short ("High fantasy adventure"), its **themes** if you like ("guild politics, the price of fame") and say what the arc should explore. The genre is binding: the arc reads as that genre. The themes only colour the arc where there is room; none of them has to appear. What the arc must deliver comes from your direction. Press **Generate**.
-2. **Questions**, only when your direction leaves something important open. Story Arc asks a few short questions about what you want, never about the plan, for example whether the pressure is open or only hinted at, or whether anyone can step in and help. Click a suggested answer or write your own; leave any blank. Your answers steer the plan as strongly as your direction, and the narrator never sees them. Press **Plan the arc**. When you re-plan an arc, your earlier answers come first, ready to change.
-3. **Review.** Story Arc plans the arc and shows its title, tone and "What's it about?", the arc's themes grown from yours. The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
+1. **Direction.** Pick the arc's **tier** (see below) and a short **genre**, add **themes** if you like, and say what the arc should explore. Press **Generate**.
+2. **Questions**, only when your direction leaves something important open: a few short questions about what you want, never about the plan. Click a suggestion, write your own or leave one blank, then press **Plan the arc**.
+3. **Review.** Story Arc shows the arc's title, tone and "What's it about?". The rest stays hidden behind **Reveal plan**, so you can **Activate** it without spoiling it.
 
 ### Managing arcs
 
@@ -64,7 +64,7 @@ Every change can be undone while the Arc Manager is open. Completed and abandone
 
 ### Re-planning
 
-When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. It keeps what already happened, the secrets that have come out, the world facts that still hold and the premise (which you can edit), and replaces the open beats and the secrets still hidden. The tier can grow but never shrink.
+When the story has left an arc's plan behind, **Re-plan** writes a new road from where the story is now. What already happened stays; the open beats and the secrets still hidden are planned again.
 
 ## Tiers and focus
 
@@ -78,7 +78,7 @@ The **tier** is an arc's size:
 
 Several arcs can run at once, like episodes inside seasons inside a series.
 
-An act or saga is one plot thread. The model feels only its current milestone; the next one starts to press once the story gets there. If the story jumps ahead and reaches a later milestone first, that one counts, and the ones it passed show as **skipped**: the story moved past them. For a second, separate thread, plan a second arc.
+An act or saga is one plot thread: the model feels only its current milestone, and milestones the story jumps past show as **skipped**. For a second thread, plan a second arc.
 
 The **focus** sets how much attention an arc gets right now:
 
@@ -95,21 +95,11 @@ If an act or saga pulls every scene toward itself, set it to background.
 
 ## The knowledge tracker
 
-With **Track who knows what** on, Story Arc reads each new reply and records which character learned which fact, and whether they saw it or were told. The model then gets, for the characters in the scene, only what they actually know.
+With **Track who knows what** on, Story Arc reads each new reply and records which character learned which fact. The model then gets, for the characters in the scene, only what they actually know. An out-of-character correction ("that never happened") takes a fact back, and deleting, swiping or editing a message takes back what it taught.
 
-- An out-of-character correction ("that never happened") takes a fact back.
-- Deleting, swiping or editing a message takes back what it taught.
-- New characters don't get names the story already uses, unless they are related.
-- Out-of-character objections to an arc are stored as rulings, and a re-plan follows them.
+**A reply you rejected can leave the story.** When you ask out of character for a rewrite and the narrator writes the new version, a notice offers to **Take out** the rejected reply, so the narrator and the tracker forget it. **Reject from here…** in a message's menu does the same by hand.
 
-**A reply you rejected can leave the story.** When you ask out of character for a rewrite ("[OOC: Rewrite that, it resolved too quickly]") and the narrator writes the new version, a notice offers to take out what it replaces. Click it to review the ticked messages, then **Take out**.
-
-- The rejected messages are hidden from the narrator and from summaries, and what Story Arc learned from them is taken back: facts, meetings, characters only they introduced, beats they completed.
-- Your out-of-character request and the narrator's answer stay, so the narrator still knows what you corrected.
-- **Reject from here…** in any message's menu opens the same dialog by hand.
-- Unhiding a message later shows it to the narrator again, but what Story Arc learned from it does not come back.
-
-With **Character details** on, it also records what the story states about each character, and nothing it doesn't:
+With **Character details** on, it also records what the story states about each character:
 
 | Detail | Example |
 |---|---|
@@ -119,27 +109,17 @@ With **Character details** on, it also records what the story states about each 
 | Relation | Kendra Osei's mother |
 | Status | dead |
 
-A stated detail changes only when the story shows the change happening.
+With **Appearance** on as well, it records how each character looks, which [Story Image](https://github.com/coragon77/StoryImage) uses to draw them the way the story describes them.
 
-With **Appearance** on as well, it also records how each character looks: ethnicity, skin, hair, eyes, build, and lasting features such as scars, tattoos, freckles or glasses. Never clothes. A fuller description replaces a vaguer one, and a new haircut replaces the old one. [Story Image](https://github.com/coragon77/StoryImage) uses this to draw each character the way the story describes them.
-
-**Knowledge** opens the Knowledge popup, where you fix what the tracker got wrong:
-
-- **What changed** lists the latest updates, each with its fix: **Move to…**, **Not true**, **Same person as…**, **Not their name**. **Fine** marks a line as reviewed.
-- **Cast & facts** lets you find, edit, add, merge or delete characters and facts.
-- **Find details** on a character fills in what the tracker never recorded, for example for someone introduced long before you turned it on. It reads the whole chat, hidden messages included, your persona, the character card and the lorebook, and proposes each detail with where it found it. You accept or skip each one.
-- A detail you type in yourself is saved with **Save**, and the story can still change it later, or with **Save and lock**, and then it stays as you wrote it. **Lock** keeps a recorded detail fixed the same way.
-- **Map** shows the cast in rings around the current scene. Drag one character onto another to merge them.
-
-Every edit can be undone while the popup is open.
+**Knowledge** opens the Knowledge popup, where you fix what the tracker got wrong. **What changed** lists the latest updates, each with its fix. **Cast & facts** lets you find, edit, merge or delete characters and facts, and **Find details** fills in what the tracker missed. **Map** shows the cast around the current scene. Every edit can be undone while the popup is open.
 
 ## Good to know
 
 - **Beats never complete?** Your model isn't reporting them. Mark them done by hand in the Arc Manager, or turn on the knowledge tracker, which recognises them itself.
-- **A reply went somewhere odd?** Open **What the narrator gets**. It shows everything Story Arc added to the last request and what it will add to the next one, part by part, with spoilers hidden until you reveal the plan.
-- **Your model ignores Story Arc's instructions?** Open **Prompts**, next to **Create arc preset**. It shows the seven prompts Story Arc sends when it plans an arc and when the knowledge tracker runs, and lets you change their wording. Your changes apply in every chat, from the next call on. A warning tells you when your text leaves out a part Story Arc fills in. **Last sent** shows the prompt exactly as it went out, hidden until you reveal it, since it carries the plan's secrets. **Reset to built-in** brings back Story Arc's own wording.
+- **A reply went somewhere odd?** **What the narrator gets** shows everything Story Arc added to the request, with spoilers hidden until you reveal the plan.
+- **Your model ignores Story Arc's instructions?** **Prompts**, next to **Create arc preset**, lets you change the wording Story Arc sends when it plans and tracks, in every chat. **Reset to built-in** brings its own wording back.
 - **Summaries of earlier arcs**: give a lorebook entry a title starting with `[ARC ` (for example `[ARC 3] The Harbour Heist`) and the planner treats it as one.
-- **Your data**: everything is stored in the chat file, except your Story Arc settings and prompt edits, which SillyTavern keeps with its own settings. Story Arc only reads your lorebook, card and persona; removing the extension leaves your chats intact.
+- **Your data**: arcs and knowledge live in the chat file; your settings and prompt edits live with SillyTavern's settings. Story Arc only reads your lorebook, card and persona, and removing it leaves your chats intact.
 
 ## Development
 
