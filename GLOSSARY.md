@@ -15,7 +15,7 @@ The size class of an arc: episode, act or saga. Chosen when the arc is generated
 _Avoid_: scope, scale, level
 
 **Episode**:
-The smallest tier, roughly 8 to 20 messages. A playable, resolvable unit such as one guild mission. Its beats are ordered scene beats.
+The smallest tier, roughly 8 to 20 messages. A playable, resolvable unit such as one guild mission. Its beats are ordered scene beats. Like every arc it is one plot thread: the other threads running in the story are its backdrop, never its beats (ADR-0011).
 _Avoid_: mission, quest, foreground arc
 
 **Act**:
@@ -48,6 +48,14 @@ _Avoid_: counter, timer
 **Direction**:
 The free-text creative guidance the player gives before an arc is generated or re-planned. Stored on the arc.
 _Avoid_: prompt, instructions, ingredients
+
+**Backdrop**:
+Everything going on in the story outside one arc's plot thread, seen from that arc: other arcs' threads and threads that have no arc yet. It may supply where and when a beat plays, never what happens in it. An event the direction or an answer names is backdrop unless the text says its outcome is part of this arc (ADR-0011).
+_Avoid_: context, background (a focus value), subplot
+
+**Link**:
+A secret that ties an arc's own people or things to another plot thread ("the robbers secretly work for the big bad"). Planned only when the player switched off "Keep this arc to itself" in the wizard, and never announced. Lives in a secret and its clues and triggers, never in a beat. A secret about another thread's people with nothing of this arc in it is not a link and is never planned (ADR-0011). Not a trigger's tie to a secret, and not joining two character records (merge).
+_Avoid_: crossover, tie-in, connection, intersection
 
 **Genre**:
 The register an arc must stay in, written by the player per arc and kept short ("Superhero drama"). Binding for both generation phases, for the register only: the arc reads as this genre. What the arc must deliver comes from the direction and the premise, never from the genre. Never sent to the narrator (ADR-0004, amended 2026-11-09).
@@ -84,7 +92,7 @@ One planned development inside an arc. Has a pressure and a fulfillment.
 _Avoid_: step, item, checkpoint, task
 
 **Scene beat**:
-An episode's beat. Ordered, one active at a time, the rest hidden from the model until reached.
+An episode's beat. Ordered, one active at a time, the rest hidden from the model until reached. Its fulfillment is a step of the episode's own plot thread, never another thread's event, and it never waits on a beat that is one (ADR-0011).
 
 **Milestone**:
 An act's or saga's beat. An arc is one plot thread, so its milestones run in the planner's order (ADR-0010). The **current** milestone is the first open one: only its pressure reaches the model. Every open milestone stays recognisable, so the story may fulfil a later one first; the earlier open ones are then skipped.
