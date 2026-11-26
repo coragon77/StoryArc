@@ -87,7 +87,7 @@ describe('buildPromptsContent — Last sent, nothing yet', () => {
         const html = buildPromptsContent(popupView({ mode: 'sent', lastSent: null }));
 
         assert.ok(html.includes('Nothing sent yet this session'), html);
-        assert.ok(html.includes('Knowledge update is sent after every reply: who learned what, beats, clue claims.'), html);
+        assert.ok(html.includes('When it is sent: After every reply: who learned what, beats, clue claims.'), html);
         assert.ok(!html.includes('pp-reveal'), html);
     });
 });
