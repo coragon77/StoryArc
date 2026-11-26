@@ -230,8 +230,9 @@ describe('check-plan.txt: foreign parts', () => {
         assert.ok(checkPlan.includes('"foreign": [{ "kind": "beat | secret | trigger", "id": "the item\'s id" }]'));
     });
 
-    it('on a re-plan the author\'s premise states the plot thread', () => {
-        assert.ok(checkPlan.includes('when the Direction is (none), the premise states it, and on a re-plan the Author\'s premise does.'));
+    it('on a re-plan with a blank direction the author\'s premise states the plot thread, and the proposal shields no foreign part', () => {
+        assert.ok(checkPlan.includes('when the Direction is (none), the premise states it. On a re-plan that is the Author\'s premise line, not the Premise line above it, which is the planner\'s proposal.'));
+        assert.ok(checkPlan.includes('And a premise the planner wrote, under a direction or as a re-plan\'s proposal, does not make another plot thread\'s part this arc\'s own.'));
     });
 });
 

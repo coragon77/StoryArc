@@ -560,7 +560,9 @@ StoryArc/
 │   │   │                       #   via applyReplan and updateArc).
 │   │   │                       #   Back from a generated plan asks inline first.
 │   │   │                       #   Failures say problem and recovery (raw error to the
-│   │   │                       #   console); finished log steps show their outcome;
+│   │   │                       #   console); finished log steps show their outcome,
+│   │   │                       #   the plan check's with the count of removed
+│   │   │                       #   parts of other plot threads (#106);
 │   │   │                       #   the re-plan premise shows once. The
 │   │   │                       #   build* view functions are exported (tests, shots);
 │   │   │                       #   unbinds its click namespace when the popup resolves
