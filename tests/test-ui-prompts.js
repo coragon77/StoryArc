@@ -109,7 +109,7 @@ describe('buildPromptsContent — the template view', () => {
 
         assert.ok(html.includes('<code>{{LEDGER}}</code> is missing: what Story Arc fills in there never reaches the model.'), html);
         assert.ok(html.includes('<code>{{CLAIMED_CLUES}}</code> is missing: the narrator\'s clue claims never reach the check, so every PLANTED claim is dropped.'), html);
-        assert.ok(html.includes('<code>{{MOOD}}</code> is not one Story Arc fills in: the model gets it as written.'), html);
+        assert.ok(html.includes('<code>{{MOOD}}</code> is not in this prompt\'s built-in text: Story Arc may not fill it in, and then the model gets it as written.'), html);
         assert.ok(html.includes('Fills 1 of 3 placeholders · 31 characters'), html);
     });
 

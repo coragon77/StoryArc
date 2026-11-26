@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings } from '/scripts/extensions.js';
 import { clearTemplateCache, loadBuiltInTemplate, loadTemplate } from '../lib/planning/generator.js';
-import { checkPromptPlaceholders, describePrompts, keepPromptEdit, savePromptEdit, resetPromptEdit } from '../lib/planning/prompt-edits.js';
+import { checkPromptPlaceholders, describePrompts, keepPromptEdit, readPromptEdit, savePromptEdit, resetPromptEdit } from '../lib/planning/prompt-edits.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -23,20 +23,20 @@ describe('loadTemplate with saved prompt edits', () => {
     });
 
     it('serves a saved edit on the next call, without clearing the cache', async () => {
-        assert.equal(await loadTemplate('seed-state.txt'), 'SEED for {{CHARACTER}}');
+        assert.deepEqual(await loadTemplate('seed-state.txt'), { text: 'SEED for {{CHARACTER}}', fromEdit: false });
 
         savePromptEdit('seed-state.txt', 'My seed for {{CHARACTER}}', 'SEED for {{CHARACTER}}');
 
-        assert.equal(await loadTemplate('seed-state.txt'), 'My seed for {{CHARACTER}}');
+        assert.deepEqual(await loadTemplate('seed-state.txt'), { text: 'My seed for {{CHARACTER}}', fromEdit: true });
     });
 
     it('serves the built-in text again after a reset', async () => {
         savePromptEdit('seed-state.txt', 'My seed for {{CHARACTER}}', 'SEED for {{CHARACTER}}');
-        assert.equal(await loadTemplate('seed-state.txt'), 'My seed for {{CHARACTER}}');
+        assert.deepEqual(await loadTemplate('seed-state.txt'), { text: 'My seed for {{CHARACTER}}', fromEdit: true });
 
         resetPromptEdit('seed-state.txt');
 
-        assert.equal(await loadTemplate('seed-state.txt'), 'SEED for {{CHARACTER}}');
+        assert.deepEqual(await loadTemplate('seed-state.txt'), { text: 'SEED for {{CHARACTER}}', fromEdit: false });
         assert.deepEqual(extension_settings.story_arc.promptOverrides, {});
     });
 
@@ -52,6 +52,21 @@ describe('loadTemplate with saved prompt edits', () => {
         savePromptEdit('seed-state.txt', 'My seed for {{CHARACTER}}', 'SEED for {{CHARACTER}}');
 
         assert.equal(await loadBuiltInTemplate('seed-state.txt'), 'SEED for {{CHARACTER}}');
+    });
+});
+
+describe('readPromptEdit', () => {
+    afterEach(() => {
+        delete extension_settings.story_arc;
+    });
+
+    it('reads a stored edit, and null for a prompt without one or before any settings exist', () => {
+        assert.equal(readPromptEdit('seed-state.txt'), null);
+
+        extension_settings.story_arc = { promptOverrides: { 'seed-state.txt': { text: 'My seed for {{CHARACTER}}', builtInHash: 42 } } };
+
+        assert.deepEqual(readPromptEdit('seed-state.txt'), { text: 'My seed for {{CHARACTER}}', builtInHash: 42 });
+        assert.equal(readPromptEdit('check-plan.txt'), null);
     });
 });
 

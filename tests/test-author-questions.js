@@ -251,7 +251,7 @@ describe('the question prompt and the outline slot', () => {
         globalThis.fetch = async () => new Response('ASK');
         clearTemplateCache();
         try {
-            assert.equal(await loadTemplate('ask-questions.txt'), 'ASK');
+            assert.equal((await loadTemplate('ask-questions.txt')).text, 'ASK');
         } finally {
             globalThis.fetch = originalFetch;
             clearTemplateCache();

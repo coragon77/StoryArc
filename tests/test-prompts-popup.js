@@ -101,7 +101,7 @@ describe('the Prompts popup session', () => {
         runPromptAction(session, 'save');
 
         assert.deepEqual(storedEdits()['ask-questions.txt'], { text: 'ASK BRIEFLY {{USER_DIRECTION}}', builtInHash: getStringHash('ASK {{USER_DIRECTION}}') });
-        assert.equal(await loadTemplate('ask-questions.txt'), 'ASK BRIEFLY {{USER_DIRECTION}}');
+        assert.equal((await loadTemplate('ask-questions.txt')).text, 'ASK BRIEFLY {{USER_DIRECTION}}');
         const view = promptsViewOf(session);
         assert.equal(selectedPrompt(view).state, 'edited');
         assert.equal(view.prompts.editedCount, 1);
@@ -133,7 +133,7 @@ describe('the Prompts popup session', () => {
         assert.equal(selectedPrompt(promptsViewOf(session)).state, 'built-in');
     });
 
-    it('Undo after Save brings the earlier edit back, as it was stored', async () => {
+    it('Undo after Save brings the earlier edit back, as it was stored, and keeps the typed text as the draft', async () => {
         const oldHash = getStringHash('CHECK the old way {{SECRETS}}');
         extension_settings.story_arc.promptOverrides = { 'check-plan.txt': { text: 'MY CHECK {{SECRETS}}', builtInHash: oldHash } };
         const session = await startPromptsSession();
@@ -145,12 +145,12 @@ describe('the Prompts popup session', () => {
 
         assert.deepEqual(storedEdits()['check-plan.txt'], { text: 'MY CHECK {{SECRETS}}', builtInHash: oldHash });
         const view = promptsViewOf(session);
-        assert.equal(view.draft.text, 'MY CHECK {{SECRETS}}');
+        assert.equal(view.draft.text, 'MY SECOND CHECK {{SECRETS}}');
         assert.equal(selectedPrompt(view).state, 'changed');
         assert.deepEqual(view.message, { ok: true, text: 'Undone.', undo: false });
     });
 
-    it('Undo after the first Save of a prompt leaves it built-in again', async () => {
+    it('Undo after the first Save of a prompt leaves it built-in again, the typed text still in the editor', async () => {
         const session = await startPromptsSession();
         selectPrompt(session, 'seed-state.txt');
         typePromptDraft(session, 'MY SEED {{CHARACTER}}');
@@ -159,7 +159,7 @@ describe('the Prompts popup session', () => {
         runPromptAction(session, 'undo');
 
         assert.deepEqual(storedEdits(), {});
-        assert.equal(promptsViewOf(session).draft.text, 'SEED {{CHARACTER}}');
+        assert.equal(promptsViewOf(session).draft.text, 'MY SEED {{CHARACTER}}');
     });
 
     it('Reset deletes the edit and shows the built-in text; Undo restores the edit', async () => {
@@ -171,7 +171,7 @@ describe('the Prompts popup session', () => {
         runPromptAction(session, 'reset');
 
         assert.deepEqual(storedEdits(), {});
-        assert.equal(await loadTemplate('generate-arc.txt'), 'OUTLINE {{PHASE1_ANALYSIS}}');
+        assert.equal((await loadTemplate('generate-arc.txt')).text, 'OUTLINE {{PHASE1_ANALYSIS}}');
         let view = promptsViewOf(session);
         assert.equal(view.draft.text, 'OUTLINE {{PHASE1_ANALYSIS}}');
         assert.deepEqual(view.message, { ok: true, text: 'Reset to the built-in prompt.', undo: true });
@@ -270,8 +270,8 @@ describe('the Prompts popup session', () => {
             'seed-state.txt': { text: 'MY SEED {{CHARACTER}}', builtInHash: getStringHash('SEED {{CHARACTER}}') },
         };
         const before = Date.now();
-        await loadTemplate('seed-state.txt');
-        await callLlm('MY SEED Noor', { template: 'seed-state.txt', purpose: 'the standing state of Noor' });
+        const { fromEdit } = await loadTemplate('seed-state.txt');
+        await callLlm('MY SEED Noor', { template: 'seed-state.txt', fromEdit, purpose: 'the standing state of Noor' });
 
         const session = await startPromptsSession();
         selectPrompt(session, 'seed-state.txt');

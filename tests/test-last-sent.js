@@ -6,7 +6,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { extension_settings, chat_metadata, chat, ConnectionManagerRequestService } from '../tests/mocks/st-mocks.js';
-import { callLlm, readLastSentPrompt, prepareArc, generateArc, clearTemplateCache } from '../lib/planning/generator.js';
+import { callLlm, readLastSentPrompt, prepareArc, generateArc, clearTemplateCache, loadTemplate } from '../lib/planning/generator.js';
 import { updateKnowledgeAfterReply, updateKnowledgeAfterEdit } from '../lib/knowledge/ledger.js';
 import { searchAppearance } from '../lib/knowledge/appearance-search.js';
 import { seedStandingStateAfterUpdate } from '../lib/knowledge/state-seed.js';
@@ -185,6 +185,22 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         resetPromptEdit('analyze-context.txt');
 
         assert.equal(readLastSentPrompt('analyze-context.txt').usedEdit, true);
+    });
+
+    it('two overlapping calls of one template: each send records where its own text came from', async () => {
+        installBackend(['an answer', 'another answer']);
+        savePromptEdit('extract-knowledge.txt', 'MY EXTRACT {{MESSAGES}}', 'EXTRACT {{MESSAGES}}');
+        const replyUpdate = await loadTemplate('extract-knowledge.txt');
+        resetPromptEdit('extract-knowledge.txt');
+        const reextraction = await loadTemplate('extract-knowledge.txt');
+
+        await callLlm('MY EXTRACT reply #83', { template: 'extract-knowledge.txt', fromEdit: replyUpdate.fromEdit, purpose: 'the update after reply #83' });
+
+        assert.equal(readLastSentPrompt('extract-knowledge.txt').usedEdit, true);
+
+        await callLlm('EXTRACT reply #80', { template: 'extract-knowledge.txt', fromEdit: reextraction.fromEdit, purpose: 'the re-extraction of reply #80' });
+
+        assert.equal(readLastSentPrompt('extract-knowledge.txt').usedEdit, false);
     });
 
     it('a re-plan: every planning call is re-planning the arc by its title', async () => {
