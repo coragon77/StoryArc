@@ -401,14 +401,14 @@ describe('buildPlanCheckVariables', () => {
         assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'chapter' }, null).PROCESS_MILESTONE_RULE, '');
     });
 
-    it('leaves a new plan\'s analysis out and keeps its disclosure marks', () => {
+    it('gives a new plan\'s analysis a heading of its own, no story block, and keeps its disclosure marks', () => {
         const arc = makeReplannedAct();
         arc.secrets[1].disclosed = true;
 
         const variables = buildPlanCheckVariables(arc, 'Vera confessed on Floor 3.', null);
 
         assert.equal(variables.STORY_BLOCK, '');
-        assert.equal(Object.values(variables).some(value => value.includes('Vera confessed on Floor 3.')), false);
+        assert.equal(variables.ANALYSIS_BLOCK, '== STORY ANALYSIS ==\nVera confessed on Floor 3.\n\n');
         assert.equal(variables.SECRETS.split('\n')[1], '- [jumbotron_cut] (climax, disclosed) Julian rigged the Jumbotron to broadcast his gauntlet feed.');
     });
 

@@ -36,7 +36,10 @@ StoryArc/
 │   │                           #   to secrets; author's answers ({{AUTHOR_ANSWERS}}) as
 │   │                           #   public input; step 2 also rewrites contradictions
 │   │                           #   with the cast's details, sweeping world facts and
-│   │                           #   off-register items (ADR-0009 amendment); answers JSON (ADR-0006)
+│   │                           #   off-register items (ADR-0009 amendment); step 5 judges
+│   │                           #   the plot thread ({{THREAD_BLOCK}}, {{EXISTING_ARCS}},
+│   │                           #   {{ANALYSIS_BLOCK}} on a new plan; foreign pressures,
+│   │                           #   kind "premise", #105); answers JSON (ADR-0006)
 │   ├── extract-knowledge.txt   # Knowledge extraction prompt (ADR-0007): who is present,
 │   │                           #   new characters, who learned which fact and how,
 │   │                           #   revealed secrets with what was heard, and (task 6)
@@ -896,6 +899,11 @@ StoryArc/
 │   │                           #   "multi-thread" gone, the episode's "one plot thread",
 │   │                           #   the {{THREAD_BLOCK}} missing-placeholder warning (#101),
 │   │                           #   the link setting: wording and stored allowLinks (#104)
+│   ├── test-plan-check-thread.js # Tests: the plan check judges the plot thread (#105):
+│   │                           #   analysis, thread block (both wordings) and running
+│   │                           #   arcs in the check prompt, foreign pressure and
+│   │                           #   premise rewrites with their guards, a failed or
+│   │                           #   unreadable check, the {{THREAD_BLOCK}} warning
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;

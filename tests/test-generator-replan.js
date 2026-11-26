@@ -290,17 +290,17 @@ describe('generateArc: the plan check reads the story only on a re-plan', () => 
         clearTemplateCache();
     });
 
-    it('sends a new plan\'s check no story block and no analysis', async () => {
+    it('sends a new plan\'s check no story block, and the analysis under its own heading', async () => {
         const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
 
         const result = await generateArc(harvestedContext, '');
 
         assert.equal(result.error, null);
         const planCheckPrompt = sentPrompts[2];
-        assert.ok(planCheckPrompt.includes('Author\'s answers:\n(none)\n\n== SECRETS ==\n(none)\n'));
+        assert.ok(planCheckPrompt.includes('Author\'s answers:\n(none)\n\n== STORY ANALYSIS ==\nThe story stands at a crossroads.\n\n== PLOT THREAD (binding) ==\n'));
+        assert.ok(planCheckPrompt.includes('(No existing arcs)\n\n== SECRETS ==\n(none)\n'));
         assert.ok(!planCheckPrompt.includes('== STORY SO FAR =='));
         assert.ok(!planCheckPrompt.includes('== SECRETS BEFORE THIS RE-PLAN =='));
-        assert.ok(!planCheckPrompt.includes('The story stands at a crossroads.'));
     });
 
     it('sends a re-plan\'s check the analysis, the recent messages and the secrets before the re-plan', async () => {
@@ -317,6 +317,9 @@ describe('generateArc: the plan check reads the story only on a re-plan', () => 
             + '== SECRETS BEFORE THIS RE-PLAN ==\n'
             + 'The arc\'s secrets as they were worded while the story above was played. The plan below may have rewritten or dropped some of them; step 1 judges these.\n'
             + '- [brother] The creditor is her brother.\n\n'
+            + '== PLOT THREAD (binding) ==\n'));
+        assert.ok(!planCheckPrompt.includes('== STORY ANALYSIS =='));
+        assert.ok(planCheckPrompt.includes('(No existing arcs)\n\n'
             + '== SECRETS ==\n'
             + '- [brother] (climax) The creditor is her brother.\n'));
     });

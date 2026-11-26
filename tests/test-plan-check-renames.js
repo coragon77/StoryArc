@@ -405,6 +405,6 @@ describe('check-plan.txt carries the names slot', () => {
     it('puts the names block right before the answer key', () => {
         const checkTemplate = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
 
-        assert.ok(checkTemplate.includes('whatever secret explains the reaction.\n\n{{NAMES_BLOCK}}Answer with ONLY this JSON object, no prose before or after it:\n'));
+        assert.ok(checkTemplate.includes('Otherwise never rewrite the premise.\n\n{{NAMES_BLOCK}}Answer with ONLY this JSON object, no prose before or after it:\n'));
     });
 });
