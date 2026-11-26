@@ -120,17 +120,26 @@ StoryArc/
 │   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   formatThemesBlock(themeSeeds) fills {{THEMES_BLOCK}}
 │   │   │                       #   in Phase 2 only: colour, never obligations;
-│   │   │                       #   formatThreadBlock(allowLinks, prompt) fills
-│   │   │                       #   {{THREAD_BLOCK}} in Phase 2 (#97): the arc's plot
-│   │   │                       #   thread, backdrop, the take-it-out test, and "no link"
-│   │   │                       #   or, with allowLinks, "a link may be planned";
+│   │   │                       #   formatThreadBlock(allowLinks, 'outline'|'check') fills
+│   │   │                       #   {{THREAD_BLOCK}} in Phase 2 and the plan check (#97,
+│   │   │                       #   ADR-0011): the arc's plot thread, backdrop, people
+│   │   │                       #   shared, the take-it-out test, and "no link" or, with
+│   │   │                       #   allowLinks, "a link may be planned";
 │   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
 │   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
 │   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
 │   │   │                       #   passes { tier } into validateArcPlan; on re-plan
 │   │   │                       #   merges with mergeReplan(reviseArc, arc), then
-│   │   │                       #   runPlanCheck() (Phase 3) with the exported
-│   │   │                       #   buildPlanCheckVariables() / applyPlanCheck()
+│   │   │                       #   runPlanCheck(arc, analysis, replanStory, thread, names,
+│   │   │                       #   callbacks, onScreenSecretIds) (Phase 3; isReplan =
+│   │   │                       #   replanStory !== null, derived once) with the exported
+│   │   │                       #   buildPlanCheckVariables(arc, analysis, replanStory,
+│   │   │                       #   thread, cast) — {{THREAD_BLOCK}}, {{EXISTING_ARCS}}
+│   │   │                       #   (otherRunningArcsOf), {{ANALYSIS_BLOCK}} on a new plan —
+│   │   │                       #   / applyPlanCheck(arc, answer, earlierSecrets, isReplan,
+│   │   │                       #   names, onScreenSecretIds) (answer key "gates", the
+│   │   │                       #   legacy "links" read when it is missing; settleEarlierSecrets;
+│   │   │                       #   kind "premise" only on a new plan with a direction)
 │   │   │                       #   (also the open beats' fulfillments, rewrites
 │   │   │                       #   of completed or skipped beats ignored; the world facts by
 │   │   │                       #   index in {{WORLD_FACTS}}, kind "worldFact" applied
@@ -142,8 +151,9 @@ StoryArc/
 │   │   │                       #   its guards, #49; kind "secret" judged after the
 │   │   │                       #   revealed list, content replaced directly, on a
 │   │   │                       #   re-plan too; removeForeignParts removes the
-│   │   │                       #   answer's "foreign" parts under guards, #106;
-│   │   │                       #   generateArc returns their count as removedParts);
+│   │   │                       #   answer's "foreign" parts under guards and logs them
+│   │   │                       #   by kind and id, #106; generateArc returns their
+│   │   │                       #   count as removedParts, countRemovedParts);
 │   │   │                       #   plantedCluesOfSecret(arc, secretId) — planted clues
 │   │   │                       #   whose target's leading id (after an optional
 │   │   │                       #   "secret:") is the secret's (clueTargetsSecret,
@@ -215,7 +225,8 @@ StoryArc/
 │   │   │                       #   a secret id it invents is marked idInvented
 │   │   ├── storage.js          # CRUD on chat_metadata.story_arc.arcs:
 │   │   │                       #   getArcs(), getActiveArcs(), getArcById(),
-│   │   │                       #   saveArc(), updateArc(), replaceArc(stored, arc),
+│   │   │                       #   saveArc(), updateArc(id, updates) (merges; a field
+│   │   │                       #   given as undefined is deleted), replaceArc(stored, arc),
 │   │   │                       #   deleteArc();
 │   │   │                       #   latestArcText(arcs, 'genre'|'themeSeeds') — wizard
 │   │   │                       #   defaults for a new arc
@@ -230,7 +241,8 @@ StoryArc/
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
 │   │   │                       #   activateFirstPendingBeat(arc) — an episode with no
 │   │   │                       #   active beat gets its first pending one active
-│   │   │                       #   (milestones untouched; used by promoteNextBeats);
+│   │   │                       #   (milestones untouched; used by promoteNextBeats and
+│   │   │                       #   the plan check's removeForeignParts);
 │   │   │                       #   applyArcEdit takes an absent worldFacts key (older
 │   │   │                       #   arcs) and refuses a non-list or a non-text item;
 │   │   │                       #   completeBeat(beats, id) — completes and unlocks,
@@ -270,7 +282,8 @@ StoryArc/
 │   │                           #   foreshadowing, fired triggers; an episode growing
 │   │                           #   into an act or saga moves its closed scene beats to
 │   │                           #   episodeBeats (#90; growsFromEpisode(arc, targetTier),
-│   │                           #   which buildArcSoFar shares);
+│   │                           #   which buildArcSoFar shares; an unknown target tier
+│   │                           #   is an episode, as validation stores it);
 │   │                           #   replaces the rest, the unrevealed secrets too (one
 │   │                           #   under an old id keeps its clues and triggers);
 │   │                           #   withUniqueIds() suffixes
@@ -702,6 +715,8 @@ StoryArc/
 │   │                           #   checkBeatEdit (empty intention, milestone
 │   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock) +
 │   │                           #   activateFirstPendingBeat (episode, milestones)
+│   ├── test-storage.js         # Tests: saveArc, deleteArc, getArcs, replaceArc,
+│   │                           #   updateArc (merges, a field given as undefined deleted)
 │   ├── test-background.js      # Tests: background focus — section text, no premise or
 │   │                           #   pressures, beat check kept, no plant check, never the
 │   │                           #   clock, resume shift, migration untouched, re-plan
@@ -720,7 +735,8 @@ StoryArc/
 │   │                           #   lose their completion records, a swipe after a re-plan
 │   │                           #   reopens nothing, a grown act's scene beats out of
 │   │                           #   its beats, phase and stall count) + replanTiers +
-│   │                           #   buildArcSoFar (secret blocks, world-fact rank) +
+│   │                           #   buildArcSoFar (secret blocks, world-fact rank, an
+│   │                           #   unknown re-plan tier grows nothing) +
 │   │                           #   formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)
 │   ├── test-replan-revealed.js # Tests: secretIdsRevealedOnScreen, markSecretsRevealedOnScreen;
@@ -735,7 +751,9 @@ StoryArc/
 │   │                           #   the result keeps the stored one with the proposal,
 │   │                           #   the plan check reads the proposal; a new plan's
 │   │                           #   premise contract; the rulings reach Phase 1, Phase 2
-│   │                           #   and the plan check, a removed one none
+│   │                           #   and the plan check, a removed one none; the re-plan
+│   │                           #   count rule per beat kind (#103); the check's story
+│   │                           #   block on a re-plan only, the analysis apart (#102)
 │   ├── test-spotlight.js       # Tests: spotlit act/saga BRING TO A HEAD block (no
 │   │                           #   milestone named, ordered first), spotlit episode
 │   │                           #   byte-identical, brake follows the clock
@@ -872,7 +890,8 @@ StoryArc/
 │   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
 │   │                           #   the wizard opens; Ignore keeps it open; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
-│   │                           #   only, links, echoed IF line, fulfillment rewrites of
+│   │                           #   only, gates and the legacy links, echoed IF line,
+│   │                           #   fulfillment rewrites of
 │   │                           #   open beats only, a skipped milestone left alone)
 │   │                           #   + buildPlanCheckVariables (skipped milestone out)
 │   ├── test-beat-completion.js # Tests: completeBeats rules and completion record
@@ -1022,13 +1041,17 @@ lib/planning/
 ├── beat-completion.js (imports: arc-edit.js completeBeat, storage.js,
 │                   core/settings.js, injection/pacing.js selectNonOptionalBeats,
 │                   knowledge/message-ids.js messageIdOf, /script.js)
-├── replan.js      (imports: core/constants.js)
+├── replan.js      (imports: core/constants.js, core/settings.js arcTier +
+│                   isBeatOpen, arc-edit.js checkTitleAndPremise)
 ├── prompt-edits.js (imports: core/constants.js, /script.js saveSettingsDebounced,
 │                   /scripts/utils.js getStringHash, /scripts/extensions.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
-└── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
-                    core/constants.js, knowledge/names.js printTakenNames,
+└── generator.js   (imports: validation.js, arc-preset.js, replan.js mergeReplan +
+                    growsFromEpisode, prompt-edits.js readPromptEdit,
+                    arc-edit.js removeBeat + activateFirstPendingBeat,
+                    core/settings.js, core/constants.js,
+                    knowledge/names.js printTakenNames,
                     injection/pacing.js selectNonOptionalBeats,
                     /script.js, /scripts/utils.js;
                     dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js,
@@ -1149,6 +1172,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
 | Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutCompletionRecord`) |
+| Plot thread: backdrop, links, foreign parts (ADR-0011, #97) | `lib/planning/generator.js` (`formatThreadBlock`, `buildPlanCheckVariables`, `applyPlanCheck`, `removeForeignParts`, `countRemovedParts`) | `prompts/generate-arc.txt` (`{{THREAD_BLOCK}}`, principle 8), `prompts/check-plan.txt` (steps 4 TRIGGER GATES and 5 PLOT THREAD, `foreign`), `prompts/ask-questions.txt` (rule 7), `lib/ui/wizard.js` ("Keep this arc to itself", `storedLinkSetting`, the step log's count), `lib/planning/arc-edit.js` (`removeBeat`, `activateFirstPendingBeat`), `lib/planning/replan.js` (`growsFromEpisode`), `lib/planning/storage.js` (`updateArc` deletes `undefined`), `lib/ui/prompts.js` (`MISSING_PLACEHOLDER_MEANING`) |
 | One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS) |
 | World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS) |
 | Secret rewrites and re-planned secrets (ADR-0003 amendments) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`, `buildArcSoFar`) | `prompts/check-plan.txt` (step 2, SECRETS), `prompts/generate-arc.txt` (secret guidelines), `lib/planning/replan.js` (`mergeReplan`) |
