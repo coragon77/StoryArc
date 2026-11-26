@@ -10,11 +10,11 @@ The author has provided the following guidance for what they want this arc to ex
 
 {{USER_DIRECTION}}
 
-{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{TIER_BLOCK}}
+{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{THREAD_BLOCK}}{{TIER_BLOCK}}
 {{ARC_DIRECTIVES}}
 {{ARC_SO_FAR}}
 == CURRENTLY ACTIVE ARCS ==
-These arcs are already running. Your new arc must complement them, not duplicate them. It can clash with them, run parallel to them, or intersect with them -- but it should not cover the same ground.
+These arcs are already running. Each one owns its own plot thread, and its events are backdrop for your new arc: it may supply where and when a beat plays, never what happens in it. Your new arc does not duplicate them and does not cover their ground.
 
 {{EXISTING_ARCS}}
 
@@ -62,8 +62,8 @@ Things happen because characters have motivations, not because the plot demands 
 7. PACE CONTROL IS EVERYTHING
 Long-running stories die when the AI resolves tension in 2-3 messages. Your plan must resist this. Scene beats should have natural prerequisites (unlockAfter); milestones follow one another in the order you list them. Urgency labels (soon / when-ready / climactic) tell the AI what to prioritize. The estimatedLength field sets the tempo. Phase labels gate when secrets and beats become available. Every layer pushes against premature resolution.
 
-8. COMPLEMENTARY, NOT REDUNDANT
-If there's already an active arc about political intrigue, don't create another political intrigue arc. Create something that intersects -- a personal arc that gets complicated by the politics, or an external threat that forces political enemies to cooperate. Arcs should create narrative interference patterns, not echo chambers.
+8. ITS OWN PLOT THREAD, NOT ANOTHER ARC'S
+If there's already an active arc about political intrigue, don't create another political intrigue arc, and don't build this one out of the politics either. The running arcs own their plot threads; their events are backdrop here. A personal arc may play out while the council is in session, but what happens in its beats is the personal story's own, and none of them waits for the council. Where the threads meet is for the story in play to find, not for this plan.
 
 == OUTPUT FORMAT ==
 
@@ -168,7 +168,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 
 == ESTIMATED LENGTH ==
 
-- Set estimatedLength inside the band given in the TIER block above -- lower in the band for a simple, single-thread arc, higher for a complex multi-thread one.
+- Set estimatedLength inside the band given in the TIER block above -- lower in the band for a simple arc with few steps and a small cast, higher for one with more steps and a larger cast.
 - This number controls pacing. The injection system uses it to determine when phase transitions should happen. Setting it too low makes the arc rush; too high makes it drag.
 
 == FINAL CHECKLIST (verify before outputting) ==
@@ -192,7 +192,7 @@ Generate a complete arc plan as a single JSON object. Every field matters. Do no
 - [ ] The escalation field describes a PATTERN, not just "things get worse"
 - [ ] Beat IDs are short, readable slugs
 - [ ] Beat count, beat kind and estimatedLength match the TIER block; scene beats use unlockAfter for meaningful gating, milestones have none and are listed in story order, each one setting up the next
-- [ ] The arc complements existing arcs rather than duplicating them
+- [ ] The arc keeps to its own plot thread: no beat, pressure, premise or secret is built from a running arc's events or another plot thread's, and it does not duplicate the running arcs
 - [ ] Characters have motivations that drive events (not just "the plot needs this to happen")
 - [ ] The arc would make a novelist say "I want to write this"
 

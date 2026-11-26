@@ -116,6 +116,9 @@ StoryArc/
 │   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   formatThemesBlock(themeSeeds) fills {{THEMES_BLOCK}}
 │   │   │                       #   in Phase 2 only: colour, never obligations;
+│   │   │                       #   formatThreadBlock(allowLinks, prompt) fills
+│   │   │                       #   {{THREAD_BLOCK}} in Phase 2 (#97): the arc's plot
+│   │   │                       #   thread, backdrop, the take-it-out test, no link;
 │   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
 │   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
 │   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
@@ -160,7 +163,7 @@ StoryArc/
 │   │   │                       #   with beat kind, beat count, length band and the
 │   │   │                       #   milestone rules (a fulfillment is one on-screen
 │   │   │                       #   moment), all from TIER_TABLE;
-│   │   │                       #   buildArcSoFar(arc) → {{ARC_SO_FAR}} on re-plan: current
+│   │   │                       #   buildArcSoFar(arc, tier) → {{ARC_SO_FAR}} on re-plan: current
 │   │   │                       #   premise + "write a premise for the arc as it stands
 │   │   │                       #   now" (following every ruling, listed as binding,
 │   │   │                       #   when the arc has rulings), revealed secrets as
@@ -169,7 +172,9 @@ StoryArc/
 │   │   │                       #   fired triggers (formatUnrevealedSecret),
 │   │   │                       #   escalation, world facts,
 │   │   │                       #   fulfilled beats as "already happened", skipped
-│   │   │                       #   milestones as "passed over"; '' for null (plan-new);
+│   │   │                       #   milestones as "passed over", the count rule worded
+│   │   │                       #   per beat kind of the tier re-planned to (#103);
+│   │   │                       #   '' for null (plan-new);
 │   │   │                       #   loadTemplate(name) → { text, fromEdit } (the player's
 │   │   │                       #   edit through readPromptEdit, else the built-in text),
 │   │   │                       #   loadBuiltInTemplate(name), fillTemplate(template,
@@ -882,6 +887,10 @@ StoryArc/
 │   │                           #   the same objects, absent stores stay absent; a failing
 │   │                           #   text kept as written; chat, excluded entries and
 │   │                           #   fetchLorebookEntries never evaluated
+│   ├── test-plan-thread.js     # Tests: the thread block in the outline over the real
+│   │                           #   templates (new plan, re-plan), "intersect" and
+│   │                           #   "multi-thread" gone, the episode's "one plot thread",
+│   │                           #   the {{THREAD_BLOCK}} missing-placeholder warning (#101)
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;

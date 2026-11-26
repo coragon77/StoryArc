@@ -111,8 +111,8 @@ describe('buildTierBlock', () => {
     });
 
     it('keeps one instruction per line, each "- " bullet after the header and the scale line, ending in a newline', () => {
-        // episode: header, scale line, 4 bullets; act/saga: header, scale line, 11 bullets
-        for (const [tier, bulletCount] of [['episode', 4], ['act', 11], ['saga', 11]]) {
+        // episode: header, scale line, 5 bullets; act/saga: header, scale line, 11 bullets
+        for (const [tier, bulletCount] of [['episode', 5], ['act', 11], ['saga', 11]]) {
             const text = buildTierBlock(tier);
             assert.ok(text.endsWith('.\n'), tier);
             const lines = text.slice(0, -1).split('\n');

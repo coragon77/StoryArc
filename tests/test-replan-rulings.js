@@ -100,9 +100,20 @@ describe('buildArcSoFar: reached milestones count toward the tier\'s milestone c
         }
     });
 
-    it('leaves it out for an episode, whose scene beats are no milestones', () => {
-        assert.equal(buildArcSoFar({ ...storedAct(), tier: 'episode' }).includes('count together'), false);
-    });});
+    it('gives an episode the scene-beat wording instead, whose scene beats are no milestones (#103)', () => {
+        const text = buildArcSoFar({ ...storedAct(), tier: 'episode' });
+
+        assert.ok(text.includes('your beats are what comes NEXT. On a re-plan the TIER block\'s count covers the whole arc: your scene beats and the scene beats below under Already happened count together toward its range. Write only the scenes that remain, and always at least one, even when that leaves fewer new scene beats than the range asks for. The current premise'));
+        assert.equal(text.includes('count together toward its minimum'), false);
+    });
+
+    it('branches on the tier the arc is re-planned to, not the stored one (#103)', () => {
+        const text = buildArcSoFar({ ...storedAct(), tier: 'episode' }, 'act');
+
+        assert.ok(text.includes(`your beats are what comes NEXT. ${countSentence} The current premise`));
+        assert.equal(text.includes('Write only the scenes that remain'), false);
+    });
+});
 
 describe('buildPlanCheckVariables with rulings', () => {
     it('passes the rulings as RULINGS, in message order', () => {
