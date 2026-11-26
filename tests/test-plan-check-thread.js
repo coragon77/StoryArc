@@ -345,7 +345,7 @@ describe('Prompts popup: an edited plan check prompt without the thread block', 
         assert.deepEqual([...check.missing].sort(), ['ANALYSIS_BLOCK', 'EXISTING_ARCS', 'THREAD_BLOCK']);
         const html = buildPromptChecks(check, { text: check.text, missing: check.missing, unknown: check.unknown });
         assert.ok(html.includes('<code>{{ANALYSIS_BLOCK}}</code> is missing: on a new plan the story analysis never reaches the check, so it cannot see a plot thread that has no arc yet.'), html);
-        assert.ok(html.includes('<code>{{EXISTING_ARCS}}</code> is missing: the running arcs never reach the model, so it cannot tell this arc\'s plot thread from theirs.'), html);
+        assert.ok(html.includes('<code>{{EXISTING_ARCS}}</code> is missing: the running arcs never reach the model, so it works as if no other arc were running.'), html);
         assert.equal(html.includes('what Story Arc fills in there never reaches the model'), false, html);
     });
 });

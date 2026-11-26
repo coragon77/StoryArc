@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyPlanCheck, buildPlanCheckVariables } from '../lib/planning/generator.js';
+import { readFileSync } from 'node:fs';
 
 /** A merged re-plan: one kept and one new secret, a fired and an unfired trigger, a done and an open milestone. */
 function makeReplannedAct() {
@@ -32,7 +33,7 @@ const EARLIER_LEASH = [
 ];
 
 describe('applyPlanCheck', () => {
-    it('applies valid rewrites, revealed secrets and links, and nothing else', () => {
+    it('applies valid rewrites, revealed secrets and trigger gates, and nothing else', () => {
         const arc = makeReplannedAct();
 
         const checked = applyPlanCheck(arc, {
@@ -44,7 +45,7 @@ describe('applyPlanCheck', () => {
                 { kind: 'pressure', id: 'old_milestone', text: 'A rewrite of a completed milestone.' },
                 { kind: 'pressure', id: 'no_such_beat', text: 'Nowhere to go.' },
             ],
-            links: [
+            gates: [
                 { trigger: 'usb_accepted', secret: 'brother_leash' },
                 { trigger: 'no_such_trigger', secret: 'brother_leash' },
             ],
@@ -149,12 +150,28 @@ describe('applyPlanCheck', () => {
         assert.equal(checked.secrets[0].disclosed, false);
     });
 
-    it('keeps a link the generator set and ignores a link to an unknown secret', () => {
+    it('reads the legacy "links" key an older edited prompt asks for, as gates', () => {
+        const checked = applyPlanCheck(makeReplannedAct(), {
+            links: [{ trigger: 'usb_accepted', secret: 'jumbotron_cut' }],
+        }, []);
+
+        assert.equal(checked.triggers[0].secret, 'jumbotron_cut');
+    });
+
+    it('the prompt asks for trigger gates under "gates", and never says "links"', () => {
+        const checkPlan = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
+
+        assert.ok(checkPlan.includes('4. TRIGGER GATES.'));
+        assert.ok(checkPlan.includes('"gates": [{ "trigger": "trigger id", "secret": "secret id" }]'));
+        assert.doesNotMatch(checkPlan, /"links"|LINKS/);
+    });
+
+    it('keeps a gate the generator set and ignores a gate to an unknown secret', () => {
         const arc = makeReplannedAct();
         arc.triggers[0].secret = 'jumbotron_cut';
 
         const checked = applyPlanCheck(arc, {
-            links: [
+            gates: [
                 { trigger: 'usb_accepted', secret: 'brother_leash' },
                 { trigger: 'photo_leak', secret: 'no_such_secret' },
             ],
@@ -302,7 +319,7 @@ describe('applyPlanCheck', () => {
                 { kind: 'trigger', id: 'usb_accepted', text: 'Her composure cracks.' },
                 { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
             ],
-            links: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
+            gates: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
         }, EARLIER_LEASH);
 
         assert.deepEqual(arc, makeReplannedAct());

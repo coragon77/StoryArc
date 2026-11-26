@@ -72,6 +72,37 @@ describe('applyPlanCheck: foreign beats', () => {
         assert.deepEqual(ids(checked.beats), ['ledger', 'premiere', 'payment']);
     });
 
+    it('removes no beat when the removal would leave only optional beats open', () => {
+        const episode = plannedAct({
+            tier: 'episode',
+            beats: [
+                { id: 'ledger', pressure: 'The moneylender wants his coin.', intention: 'She has read the ledger.', status: 'active', unlockAfter: [] },
+                { id: 'premiere', pressure: 'The press crowds the theatre.', intention: 'Lena has played her premiere.', status: 'pending', unlockAfter: [] },
+                { id: 'stroll', pressure: 'The night is warm.', intention: 'Mira has walked the river.', status: 'pending', unlockAfter: [], optional: true },
+            ],
+        });
+        const foreign = [{ kind: 'beat', id: 'ledger' }, { kind: 'beat', id: 'premiere' }];
+
+        const checked = applyPlanCheck(episode, { foreign }, []);
+
+        assert.deepEqual(ids(checked.beats), ['ledger', 'premiere', 'stroll']);
+    });
+
+    it('removes a beat when an open non-optional beat stays', () => {
+        const episode = plannedAct({
+            tier: 'episode',
+            beats: [
+                { id: 'ledger', pressure: 'The moneylender wants his coin.', intention: 'She has read the ledger.', status: 'active', unlockAfter: [] },
+                { id: 'premiere', pressure: 'The press crowds the theatre.', intention: 'Lena has played her premiere.', status: 'pending', unlockAfter: [] },
+                { id: 'stroll', pressure: 'The night is warm.', intention: 'Mira has walked the river.', status: 'pending', unlockAfter: [], optional: true },
+            ],
+        });
+
+        const checked = applyPlanCheck(episode, { foreign: [{ kind: 'beat', id: 'premiere' }] }, []);
+
+        assert.deepEqual(ids(checked.beats), ['ledger', 'stroll']);
+    });
+
     it('removing the active beat of an episode makes the next pending beat active', () => {
         const episode = plannedAct({
             tier: 'episode',
@@ -177,6 +208,18 @@ describe('applyPlanCheck: foreign secrets', () => {
         const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, REPLAN);
 
         assert.deepEqual(ids(checked.secrets), ['lender_brother']);
+    });
+
+    it('a re-plan keeps an earlier secret stored as disclosed, with its trigger, though the revealed list leaves it out', () => {
+        // Marked revealed by hand in the Arc Manager: no ledger fact for it.
+        const arc = plannedAct();
+        arc.secrets[1].disclosed = true;
+        const earlierSecrets = [{ ...arc.secrets[1] }];
+
+        const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, REPLAN);
+
+        assert.deepEqual(ids(checked.secrets), ['lender_brother', 'lena_label']);
+        assert.deepEqual(ids(checked.triggers), ['coin_counted', 'label_call', 'press_flash']);
     });
 
     it('keeps a secret a planted clue points at, and its unfired trigger', () => {
