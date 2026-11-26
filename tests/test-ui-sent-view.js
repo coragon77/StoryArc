@@ -77,6 +77,16 @@ describe('maskSpoilerLines — what the view hides until the plan is revealed', 
         assert.ok(masked.endsWith('[END STORY ARC]'), masked);
     });
 
+    it('lists a grown act\'s scene beats among the spoilers (#90)', () => {
+        const arc = {
+            ...spoilerArc(),
+            episodeBeats: [{ id: 'beat_1', intention: 'The crew has voted to strike at the harbour gate.', status: 'completed', unlockAfter: [] }],
+        };
+        const { spoilerLines } = listSpoilers([arc], null);
+
+        assert.ok(spoilerLines.includes('The crew has voted to strike at the harbour gate.'), spoilerLines.join('\n'));
+    });
+
     it('shows no beat check, clue or trigger line of the signals with the marker path on', () => {
         extension_settings.story_arc = { enabled: true, knowledgeTracker: { enabled: false } };
         const arc = spoilerArc();

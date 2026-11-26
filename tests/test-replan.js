@@ -1,7 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyReplan, mergeReplan, replanTiers } from '../lib/planning/replan.js';
-import { buildArcSoFar, plantedCluesOfSecret } from '../lib/planning/generator.js';
+import { buildArcSoFar, buildSeenArcSoFar, plantedCluesOfSecret } from '../lib/planning/generator.js';
+import { calculatePhase } from '../lib/injection/pacing.js';
+import { listRecognisableBeats } from '../lib/knowledge/ledger.js';
 import { formatExistingArcs } from '../lib/planning/generator.js';
 import { validateArcPlan } from '../lib/planning/validation.js';
 import { reopenCompletionsFrom } from '../lib/planning/beat-completion.js';
@@ -440,12 +442,78 @@ describe('mergeReplan', () => {
         assert.deepEqual(merged.beats[2].unlockAfter, []);
     });
 
-    it('re-planning as an act yields milestones all active and tier act', () => {
+    it('an episode growing into an act moves its closed scene beats out: the act holds only its milestones, all active', () => {
         const merged = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
 
         assert.equal(merged.tier, 'act');
-        assert.deepEqual(merged.beats.slice(2).map(b => b.status), ['active', 'active']);
-        assert.deepEqual(merged.beats.slice(0, 2).map(b => b.status), ['completed', 'completed']);
+        assert.deepEqual(merged.beats.map(beat => [beat.intention, beat.status]), [
+            ['She has found the brother.', 'active'],
+            ['She has chosen mercy.', 'active'],
+        ]);
+        assert.deepEqual(merged.episodeBeats, [
+            { id: 'beat_1', intention: 'She has received the summons.', status: 'completed', unlockAfter: [] },
+            { id: 'beat_2', intention: 'She has confronted the messenger.', status: 'completed', unlockAfter: [] },
+        ]);
+    });
+
+    it('a grown act starts its phase and stall count like a fresh act, not two scene beats in (#90)', () => {
+        // Two scene beats closed, two milestones new: counted together the act
+        // would be half done (escalation) and allowed 3 × 60 / 4 = 45 messages.
+        const merged = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+        assert.equal(merged.estimatedLength, 60);
+        chat.length = 160;
+        try {
+            assert.equal(calculatePhase(merged).phase, 'setup');
+            // 3 × 60 / 2 milestones = 90 messages after the fulfillment at 130.
+            assert.equal(isStalled(merged, 220), false);
+            assert.equal(isStalled(merged, 221), true);
+        } finally {
+            chat.length = 0;
+        }
+    });
+
+    it('never gives a milestone the id of a grown act\'s scene beat, on the growth or a later re-plan', () => {
+        const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+        assert.deepEqual(grown.beats.map(beat => beat.id), ['beat_1_2', 'beat_2_2']);
+        grown.beats[0].status = 'completed';
+
+        // beat_2_2 is open and goes; the planner's beat_2 is still a scene beat's id.
+        const replanned = mergeReplan(grown, generatedPlan({ tier: 'act' }));
+        assert.deepEqual(replanned.beats.map(beat => beat.id), ['beat_1_2', 'beat_1_3', 'beat_2_2']);
+    });
+
+    it('an episode with no closed beat grows into an act without a scene-beat field', () => {
+        const fresh = storedEpisode();
+        fresh.beats.forEach(beat => { beat.status = 'pending'; });
+
+        const merged = mergeReplan(fresh, generatedPlan({ tier: 'act' }));
+        assert.equal('episodeBeats' in merged, false);
+        assert.deepEqual(merged.beats.map(beat => beat.intention), ['She has found the brother.', 'She has chosen mercy.']);
+    });
+
+    it('a later re-plan of a grown act keeps its scene beats out and its reached milestone in', () => {
+        const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+        grown.beats[0].status = 'completed';
+
+        const replanned = mergeReplan(grown, generatedPlan({ tier: 'act' }));
+
+        assert.deepEqual(replanned.episodeBeats.map(beat => beat.id), ['beat_1', 'beat_2']);
+        assert.deepEqual(replanned.beats.map(beat => [beat.intention, beat.status]), [
+            ['She has found the brother.', 'completed'],
+            ['She has found the brother.', 'active'],
+            ['She has chosen mercy.', 'active'],
+        ]);
+    });
+
+    it('an episode staying an episode and an act growing into a saga keep their closed beats in the list', () => {
+        const episode = mergeReplan(storedEpisode(), generatedPlan());
+        assert.equal('episodeBeats' in episode, false);
+        assert.deepEqual(episode.beats.slice(0, 2).map(beat => beat.id), ['beat_1', 'beat_2']);
+
+        const act = { ...storedEpisode(), tier: 'act' };
+        const saga = mergeReplan(act, generatedPlan({ tier: 'saga' }));
+        assert.equal('episodeBeats' in saga, false);
+        assert.deepEqual(saga.beats.slice(0, 2).map(beat => [beat.id, beat.status]), [['beat_1', 'completed'], ['beat_2', 'completed']]);
     });
 
     it('a re-planned act with a pressure-less milestone is rejected by validation before any merge (#13)', () => {
@@ -481,6 +549,24 @@ describe('mergeReplan', () => {
         assert.equal(merged.premise, 'A debt comes due.');
         assert.equal(merged.proposedPremise, 'The brother is the creditor, and he is dying.');
         assert.equal(merged.title, 'The Quiet Debt');
+    });
+});
+
+describe('a grown act\'s scene beats as what already happened (#90)', () => {
+    it('reach the question call\'s ARC SO FAR first, before the reached milestones', () => {
+        const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+        grown.beats[0].status = 'completed';
+
+        assert.match(buildSeenArcSoFar(grown), /Already happened:\n- She has received the summons\.\n- She has confronted the messenger\.\n- She has found the brother\.\n\n/);
+    });
+
+    it('reach the extraction as done, before the reached milestones, and are never offered as active', () => {
+        const grown = { ...mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' })), focus: 'normal' };
+        grown.beats[0].status = 'completed';
+
+        const [listed] = listRecognisableBeats([grown]);
+        assert.deepEqual(listed.done, ['She has received the summons.', 'She has confronted the messenger.', 'She has found the brother.']);
+        assert.deepEqual(listed.active.map(entry => entry.intention), ['She has chosen mercy.']);
     });
 });
 
@@ -522,6 +608,27 @@ describe('buildArcSoFar', () => {
         assert.match(text, /She has confronted the messenger\./);
         assert.doesNotMatch(text, /She has met the creditor\./);
         assert.doesNotMatch(text, /She has learned the truth\./);
+    });
+
+    it('lists a grown act\'s scene beats in a block of their own, outside the milestone count (#90)', () => {
+        const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+        grown.beats[0].status = 'completed';
+
+        const text = buildArcSoFar(grown);
+
+        assert.ok(text.endsWith('Scenes played while it was an episode (they happened, but they are not milestones: they do not count toward the TIER block\'s count; do not plan them again):\n'
+            + '- She has received the summons.\n'
+            + '- She has confronted the messenger.\n\n'
+            + 'Already happened (fulfilled beats — do not plan these again):\n'
+            + '- She has found the brother.\n\n'), text);
+        assert.match(text, /the milestones below under Already happened and Passed over count together/);
+    });
+
+    it('says "no milestone yet" for a grown act with none reached', () => {
+        const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
+
+        assert.ok(buildArcSoFar(grown).endsWith('- She has confronted the messenger.\n\n'
+            + 'Already happened (fulfilled beats — do not plan these again):\n(no milestone yet)\n\n'));
     });
 
     it('says so when nothing has been fulfilled yet', () => {

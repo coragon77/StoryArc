@@ -1,7 +1,7 @@
 # Code Index
 
 - **Coverage:** `index.js`, `lib/`, `prompts/`, `tests/`, `style.css`, `manifest.json`
-- **Last Updated:** 2026-11-25
+- **Last Updated:** 2026-11-26
 
 File structure and module dependencies. For quick reference, see [CLAUDE.md](../../CLAUDE.md). For system design, see [architecture.md](./architecture.md).
 
@@ -69,6 +69,8 @@ StoryArc/
 │   │                           #   note in architecture.md), getChatSettings(),
 │   │                           #   arcTier(arc), arcMessageStart(arc) — the tier and
 │   │                           #   messageStart fallbacks, named once;
+│   │                           #   beatHistory(arc) — a grown act's scene beats, then
+│   │                           #   its own beats: what happened (#90);
 │   │                           #   arcWorldFacts(arc) — the world facts, [] on arcs
 │   │                           #   stored before them (ADR-0009);
 │   │                           #   getKnowledgeTrackerSettings(), trackerConnectionProfile()
@@ -242,7 +244,9 @@ StoryArc/
 │   │                           #   revealed secrets (a restatement dropped), closed
 │   │                           #   (completed or skipped) beats (without their completion
 │   │                           #   records, history frozen: withoutCompletionRecord), planted
-│   │                           #   foreshadowing, fired triggers;
+│   │                           #   foreshadowing, fired triggers; an episode growing
+│   │                           #   into an act or saga moves its closed scene beats to
+│   │                           #   episodeBeats (#90);
 │   │                           #   replaces the rest, the unrevealed secrets too (one
 │   │                           #   under an old id keeps its clues and triggers);
 │   │                           #   withUniqueIds() suffixes
@@ -672,7 +676,8 @@ StoryArc/
 │   │                           #   clue and trigger links kept, id de-collision, skipped
 │   │                           #   milestones kept, tier change, kept closed beats
 │   │                           #   lose their completion records, a swipe after a re-plan
-│   │                           #   reopens nothing) + replanTiers +
+│   │                           #   reopens nothing, a grown act's scene beats out of
+│   │                           #   its beats, phase and stall count) + replanTiers +
 │   │                           #   buildArcSoFar (secret blocks, world-fact rank) +
 │   │                           #   formatExistingArcs mark + applyReplan
 │   │                           #   (premise choice stored trimmed, blank refused)

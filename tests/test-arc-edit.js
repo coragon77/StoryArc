@@ -94,6 +94,16 @@ describe('applyArcEdit', () => {
         assert.equal('rulings' in applyArcEdit(storedArc(), JSON.stringify(typedRulings)).arc, false);
     });
 
+    it('keeps a grown act\'s scene beats as stored, and adds none to an arc without them (#90)', () => {
+        const sceneBeats = [{ id: 'beat_1', intention: 'She has received the summons.', status: 'completed', unlockAfter: [] }];
+        const grown = { ...storedArc(), episodeBeats: sceneBeats };
+        const kept = applyArcEdit(grown, JSON.stringify({ ...storedArc(), episodeBeats: [] })).arc;
+        assert.deepEqual(kept.episodeBeats, [{ id: 'beat_1', intention: 'She has received the summons.', status: 'completed', unlockAfter: [] }]);
+
+        const typed = { ...storedArc(), episodeBeats: sceneBeats };
+        assert.equal('episodeBeats' in applyArcEdit(storedArc(), JSON.stringify(typed)).arc, false);
+    });
+
     it('stores estimatedLength as a number', () => {
         const edited = { ...storedArc(), estimatedLength: '30' };
         assert.equal(applyArcEdit(storedArc(), JSON.stringify(edited)).arc.estimatedLength, 30);
