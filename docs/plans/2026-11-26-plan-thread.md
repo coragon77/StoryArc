@@ -6,8 +6,8 @@
 - **Verification environment:**
   - Locally, `bash tests/run.sh` (node:test with the ST import mocks) on every branch.
   - GitHub Actions runs the same suite on push to main only.
-  - One review gate on the integration branch at the end, in three fix passes.
-  - The live check in the test chat is #107 and needs the owner's go. It has not run yet.
+  - One review gate on the integration branch at the end, in four fix passes, plus the played-clue change and its review fixes after the live check's run 4.
+  - The live check in the test chat (#107) ran on 2026-11-26; see Still open.
 
 ## Where the work happened
 
@@ -55,7 +55,7 @@ The tickets and their blocking edges, as filed:
   - The answer gains `foreign`, which `removeForeignParts` applies under guards: open beats only, no beat at all when the removal would leave no open beat, revealed or clued secrets kept, fired triggers kept.
   - `generateArc` returns `removedParts`, and the wizard's step log shows the count, never the parts.
   - On a re-plan the check sees the wizard's premise as the "Author's premise", which states the thread with a blank direction.
-- **#107: docs and the live check.** The "Plot Thread" section of `architecture.md`, the code index, and these two files. The live check is still open.
+- **#107: docs and the live check.** The "Plot Thread" section of `architecture.md`, the code index, and these two files. The live check ran on 2026-11-26.
 
 ## Review fix passes
 
@@ -87,11 +87,6 @@ The suite stood at 2222 passing at the end.
 
 ## Still open
 
-The live check of #107 needs the owner's go. It covers four points:
+Live check 2026-11-26 in the test chat (#107): an episode planned beside a busy act, with the box on and off, kept every beat, pressure, premise and secret inside its own plot thread, and the questions asked nothing about the other threads. An episode re-plan with five of seven beats closed wrote three new beats. Re-plans of an old arc with a mixed premise: with a blank direction the stored premise defines the thread and the mix stays (the known gap); with a direction naming the arc's own thread the questions and the proposed premise were clean, and after the played-clue change the plan check removed another thread's secret whose clue had been played, its planted clue kept, while the arc's own secret with a played clue stayed. Not seen live: the step log's removed-parts count (the review step replaces the generation view as soon as the check finishes), and a removed secret taking a gated, unfired trigger with it (unit tests only).
 
-1. An episode planned beside a busy act with the box on: no foreign beat, a premise with only its own question, no secret about the act's people, and no question about how the act fits.
-2. The same with the box off.
-3. An episode re-plan with most beats done: count the new beats.
-4. The step log's removed-parts count where the check removed something.
-
-The results go on #97, which closes once they hold.
+The step log's removed-parts count never shows to the player and is filed as a follow-up; so are the blank-direction gap, the questions prompt asking about another arc on a mixed old arc, and the pre-existing findings named in the design file.
