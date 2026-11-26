@@ -1101,3 +1101,137 @@ These are the author's own words about this arc, and they bind like the directio
         assert.ok(fake.htmlById['story-arc-wizard-content'].includes('<textarea class="text_pole" id="story-arc-answer-0" rows="2">Deniable hints nobody admits</textarea>'));
     });
 });
+
+describe('wizard: "Keep this arc to itself" on the Direction step', () => {
+    function storedArc(overrides = {}) {
+        return {
+            id: 'arc00001-full-id', title: 'The Granary', status: 'active', tier: 'episode', focus: 'normal',
+            messageStart: 0, lastFulfilledAt: 0, estimatedLength: 20, direction: 'Count the sacks.',
+            premise: 'The valley is starving.', tone: '', themes: [], directives: [], antiPatterns: [], worldFacts: [],
+            secrets: [], foreshadowing: [], triggers: [], characters: [], escalation: '',
+            beats: [{ id: 'empty_carts', pressure: 'Carts leave at night.', intention: 'The tally was found short.', status: 'active' }],
+            ...overrides,
+        };
+    }
+
+    /** The outline template reduced to its thread block; the other templates as markers. */
+    function installThreadTemplates() {
+        globalThis.fetch = async (url) => {
+            if (String(url).endsWith('generate-arc.txt')) return new Response('OUTLINE\n{{THREAD_BLOCK}}END');
+            if (String(url).endsWith('analyze-context.txt')) return new Response('ANALYZE');
+            if (String(url).endsWith('ask-questions.txt')) return new Response('ASK');
+            if (String(url).endsWith('check-plan.txt')) return new Response('CHECK');
+            throw new Error(`unexpected fetch ${url}`);
+        };
+    }
+
+    function installRecordedAnswers(answers) {
+        const sentPrompts = [];
+        ConnectionManagerRequestService.sendRequest = async (profileId, messages) => {
+            sentPrompts.push(messages[0].content);
+            const text = answers.shift();
+            return () => (async function* () { yield { text }; })();
+        };
+        return sentPrompts;
+    }
+
+    const checkedBox = '<input type="checkbox" id="story-arc-keep-to-itself" checked aria-describedby="story-arc-keep-to-itself-help">';
+    const uncheckedBox = '<input type="checkbox" id="story-arc-keep-to-itself" aria-describedby="story-arc-keep-to-itself-help">';
+
+    it('a new arc starts with the box on and the help text, even when the newest arc allowed links', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ allowLinks: true })];
+
+        await openWizard();
+
+        const html = fake.htmlById['story-arc-wizard-content'];
+        assert.ok(html.includes(checkedBox), html);
+        assert.ok(html.includes('Keep this arc to itself</label>'));
+        assert.ok(html.includes('On: the planner ties this arc to no other plot thread. Off: it may tie this arc\'s own people or things to another thread by a secret, and you are not told whether it did. Either way, another thread\'s events never become steps of this arc.'));
+    });
+
+    it('a re-plan of an arc that allows links shows the box off', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ allowLinks: true })];
+
+        showWizard('arc00001-full-id');
+        await settle();
+
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes(uncheckedBox));
+    });
+
+    it('a re-plan of an arc planned before the setting existed shows the box on', async () => {
+        chat_metadata.story_arc.arcs = [storedArc()];
+
+        showWizard('arc00001-full-id');
+        await settle();
+
+        assert.ok(fake.htmlById['story-arc-wizard-content'].includes(checkedBox));
+    });
+
+    it('the box left on: the outline says "no link", and the stored arc has no setting', async () => {
+        installThreadTemplates();
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.ok(sentPrompts[2].includes('- No link: no secret ties this arc\'s people or things to another plot thread.'), sentPrompts[2]);
+        assert.equal('allowLinks' in chat_metadata.story_arc.arcs[0], false);
+    });
+
+    it('the box switched off: the outline says a link may be planned, and the stored arc has allowLinks: true', async () => {
+        installThreadTemplates();
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+        await openWizard();
+
+        fake.fakeJquery('#story-arc-keep-to-itself').prop('checked', false);
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.ok(sentPrompts[2].includes('- A link may be planned:'), sentPrompts[2]);
+        assert.equal(chat_metadata.story_arc.arcs[0].allowLinks, true);
+    });
+
+    it('a re-plan of an arc that allows links, left off: the outline says a link may be planned, and the arc keeps allowLinks: true', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ allowLinks: true })];
+        installThreadTemplates();
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+
+        showWizard('arc00001-full-id');
+        await settle();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+        fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.ok(sentPrompts[2].includes('- A link may be planned:'), sentPrompts[2]);
+        assert.equal(chat_metadata.story_arc.arcs[0].allowLinks, true);
+    });
+
+    it('a re-plan of an arc that allows links, switched on: the outline says "no link", and the stored arc loses the setting', async () => {
+        chat_metadata.story_arc.arcs = [storedArc({ allowLinks: true })];
+        installThreadTemplates();
+        const sentPrompts = installRecordedAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, 'no check']);
+
+        showWizard('arc00001-full-id');
+        await settle();
+        fake.fakeJquery('#story-arc-keep-to-itself').prop('checked', true);
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        fake.trigger('click', '#story-arc-wizard-plan-arc');
+        await settle();
+        fake.valueById['story-arc-premise-choice-text'] = 'The valley is starving.';
+        fake.trigger('click', '#story-arc-wizard-activate');
+        await settle();
+
+        assert.ok(sentPrompts[2].includes('- No link:'), sentPrompts[2]);
+        assert.equal('allowLinks' in chat_metadata.story_arc.arcs[0], false);
+    });
+});

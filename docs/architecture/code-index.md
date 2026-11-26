@@ -102,11 +102,11 @@ StoryArc/
 │   │   └── chat-history.js     # harvestChatHistory() — recent messages with token budget,
 │   │                           #   estimateTokens()
 │   ├── planning/
-│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre, themeSeeds, analysis, authorAnswers }) —
+│   │   ├── generator.js        # generateArc(context, userDirection, callbacks, { tier, reviseArc, genre, themeSeeds, allowLinks, analysis, authorAnswers }) —
 │   │   │                       #   two-phase LLM generation with retry logic (a given
 │   │   │                       #   analysis skips Phase 1); stamps
 │   │   │                       #   tier, direction, genre, themeSeeds, authorAnswers,
-│   │   │                       #   messageStart, lastFulfilledAt;
+│   │   │                       #   allowLinks (only when true), messageStart, lastFulfilledAt;
 │   │   │                       #   prepareArc() = Phase 1 + the question call
 │   │   │                       #   (buildAskQuestionsVariables with buildSeenArcSoFar:
 │   │   │                       #   only what play has shown; parseAuthorQuestions,
@@ -118,7 +118,8 @@ StoryArc/
 │   │   │                       #   in Phase 2 only: colour, never obligations;
 │   │   │                       #   formatThreadBlock(allowLinks, prompt) fills
 │   │   │                       #   {{THREAD_BLOCK}} in Phase 2 (#97): the arc's plot
-│   │   │                       #   thread, backdrop, the take-it-out test, no link;
+│   │   │                       #   thread, backdrop, the take-it-out test, and "no link"
+│   │   │                       #   or, with allowLinks, "a link may be planned";
 │   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
 │   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
 │   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
@@ -535,7 +536,8 @@ StoryArc/
 │   │   │                       #   Knowledge action while the tracker is on
 │   │   ├── wizard.js           # showWizard(reviseArcId?) — arc planning popup:
 │   │   │                       #   Direction (context summary strip with Retry on a
-│   │   │                       #   failed harvest, tier, genre, themes, direction; re-plan:
+│   │   │                       #   failed harvest, tier, genre, themes, direction, "Keep this
+│   │   │                       #   arc to itself" (on for a new arc, never prefilled); re-plan:
 │   │   │                       #   title, premise, "Your rulings" with remove buttons)
 │   │   │                       #   → Questions when the model asked any
 │   │   │                       #   (buildQuestionsStep: suggestion chips, answer boxes,
@@ -850,7 +852,9 @@ StoryArc/
 │   │                           #   discarding a plan; the Questions step (chips, help
 │   │                           #   line, three steps, re-plan prefill, answers stored),
 │   │                           #   the flow without questions as before, no secret
-│   │                           #   choice on a re-plan's Review
+│   │                           #   choice on a re-plan's Review; "Keep this arc to itself":
+│   │                           #   on for a new arc, a re-plan's stored value, the
+│   │                           #   outline's link wording and the stored allowLinks (#104)
 │   ├── test-ui-wand-menu.js    # Tests: the stall nudge closes the wand popup before
 │   │                           #   the wizard opens; Ignore keeps it open; wand content buttons
 │   ├── test-plan-check.js      # Tests: applyPlanCheck (scope, revealed on re-plan
@@ -885,7 +889,8 @@ StoryArc/
 │   ├── test-plan-thread.js     # Tests: the thread block in the outline over the real
 │   │                           #   templates (new plan, re-plan), "intersect" and
 │   │                           #   "multi-thread" gone, the episode's "one plot thread",
-│   │                           #   the {{THREAD_BLOCK}} missing-placeholder warning (#101)
+│   │                           #   the {{THREAD_BLOCK}} missing-placeholder warning (#101),
+│   │                           #   the link setting: wording and stored allowLinks (#104)
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;
