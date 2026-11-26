@@ -75,7 +75,7 @@ describe('every fulfillment is one on-screen moment', () => {
         const text = read('check-plan.txt');
         assert.ok(text.includes('== FULFILLMENTS ==\n{{FULFILLMENTS}}\n'));
         assert.ok(text.includes('3. FULFILLMENTS. Find every fulfillment that is a tally of many scenes or a chain of separate events, and rewrite it as the ONE on-screen moment at which the development shows'));
-        assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact | secret"'));
+        assert.ok(text.includes('"kind": "trigger | pressure | fulfillment | worldFact | secret | premise"'));
     });
 
     it('the plan check states the process-milestone rule for an act, before the leave-alone clause, and not for an episode', () => {

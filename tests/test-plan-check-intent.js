@@ -57,7 +57,7 @@ describe('buildPlanCheckVariables: the author\'s answers', () => {
             + 'Direction: {{DIRECTION}}\n'
             + 'Rulings:\n{{RULINGS}}\n'
             + 'Author\'s answers:\n{{AUTHOR_ANSWERS}}\n\n'
-            + '{{STORY_BLOCK}}== SECRETS ==',
+            + '{{ANALYSIS_BLOCK}}{{STORY_BLOCK}}{{THREAD_BLOCK}}',
         ));
     });
 });
