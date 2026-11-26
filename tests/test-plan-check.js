@@ -331,7 +331,7 @@ describe('buildPlanCheckVariables', () => {
     it('reads a re-plan\'s proposed premise as the premise, the stored one otherwise', () => {
         const arc = { ...makeReplannedAct(), proposedPremise: 'Vanguard wants the rookie broken before the final.' };
 
-        assert.equal(buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] }).PREMISE, 'Vanguard wants the rookie broken before the final.');
+        assert.equal(buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }).PREMISE, 'Vanguard wants the rookie broken before the final.');
         assert.equal(buildPlanCheckVariables(makeReplannedAct(), null).PREMISE, 'Vanguard wants the rookie humiliated.');
     });
 
@@ -339,7 +339,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.beats.push({ id: 'rookie_drills', pressure: 'Shifts pile up.', intention: 'Ellie has completed her first patrols and training shifts.', status: 'pending' });
 
-        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
 
         assert.equal(variables.FULFILLMENTS, [
             '- [pier_stage] The scrimmage was played.',
@@ -352,7 +352,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.beats.push({ id: 'gala_night', pressure: 'The gala looms.', intention: 'Ellie has attended the gala.', status: 'skipped' });
 
-        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
 
         assert.equal(variables.PRESSURES, '- [pier_stage] The stage is rigged with Julian\'s gauntlet tether.');
         assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
@@ -362,7 +362,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.secrets[0].disclosed = true;
 
-        const variables = buildPlanCheckVariables(arc, { analysis: 'A.', chatHistory: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
 
         assert.equal(variables.SECRETS.split('\n')[0], '- [brother_leash] (escalation) Her brother\'s clinic place is the leash.');
     });
@@ -370,7 +370,7 @@ describe('buildPlanCheckVariables', () => {
     it('gives a re-plan the analysis and the last ten story messages', () => {
         const messages = Array.from({ length: 12 }, (_, index) => ({ name: 'Narrator', content: `message ${index}` }));
 
-        const variables = buildPlanCheckVariables(makeReplannedAct(), { analysis: 'Vera confessed on Floor 3.', chatHistory: messages }, [], EARLIER_LEASH);
+        const variables = buildPlanCheckVariables(makeReplannedAct(), 'Vera confessed on Floor 3.', { chatHistory: messages, earlierSecrets: EARLIER_LEASH });
 
         const lastTen = ['message 2', 'message 3', 'message 4', 'message 5', 'message 6', 'message 7', 'message 8', 'message 9', 'message 10', 'message 11']
             .map(text => `Narrator: ${text}`)
@@ -382,7 +382,7 @@ describe('buildPlanCheckVariables', () => {
     });
 
     it('writes (none) under the secrets before the re-plan when the arc had none', () => {
-        const variables = buildPlanCheckVariables(makeReplannedAct(), { analysis: 'A.', chatHistory: [] }, [], []);
+        const variables = buildPlanCheckVariables(makeReplannedAct(), 'A.', { chatHistory: [], earlierSecrets: [] });
 
         assert.ok(variables.STORY_BLOCK.endsWith('step 1 judges these.\n(none)\n\n'), variables.STORY_BLOCK);
     });
@@ -399,6 +399,17 @@ describe('buildPlanCheckVariables', () => {
         }
         assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'episode' }, null).PROCESS_MILESTONE_RULE, '');
         assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'chapter' }, null).PROCESS_MILESTONE_RULE, '');
+    });
+
+    it('leaves a new plan\'s analysis out and keeps its disclosure marks', () => {
+        const arc = makeReplannedAct();
+        arc.secrets[1].disclosed = true;
+
+        const variables = buildPlanCheckVariables(arc, 'Vera confessed on Floor 3.', null);
+
+        assert.equal(variables.STORY_BLOCK, '');
+        assert.equal(Object.values(variables).some(value => value.includes('Vera confessed on Floor 3.')), false);
+        assert.equal(variables.SECRETS.split('\n')[1], '- [jumbotron_cut] (climax, disclosed) Julian rigged the Jumbotron to broadcast his gauntlet feed.');
     });
 
     it('writes (none) for an empty list', () => {
