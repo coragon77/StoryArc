@@ -176,3 +176,55 @@ describe('Prompts popup: an edited outline without the thread block', () => {
         assert.ok(html.includes('<code>{{THREAD_BLOCK}}</code> is missing: the rule that keeps the plan inside the arc\'s thread never reaches the model.'), html);
     });
 });
+
+describe('generateArc: the link setting', () => {
+    beforeEach(() => {
+        clearTemplateCache();
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        clearTemplateCache();
+    });
+
+    it('kept to itself: the outline says "no link", and the planned arc stores no setting', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        const result = await generateArc(harvestedContext, 'Mira pays her debt.', {}, { allowLinks: false });
+
+        assert.equal(result.error, null);
+        assert.ok(sentPrompts[1].includes('- No link: no secret ties this arc\'s people or things to another plot thread.'));
+        assert.equal(sentPrompts[1].includes('- A link may be planned'), false);
+        assert.equal('allowLinks' in result.arc, false);
+    });
+
+    it('links allowed: the outline says a link may be planned and no beat depends on it, and the arc stores allowLinks: true', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        const result = await generateArc(harvestedContext, 'Mira pays her debt.', {}, { allowLinks: true });
+
+        assert.equal(result.error, null);
+        const outlinePrompt = sentPrompts[1];
+        assert.ok(outlinePrompt.includes('- A link may be planned: a secret that ties this arc\'s own people or things to another plot thread, such as "the robbers secretly work for the guild master".'), outlinePrompt);
+        assert.ok(outlinePrompt.includes('You may plan one where the story supports it, or none.'));
+        assert.ok(outlinePrompt.includes('no beat depends on it'));
+        assert.equal(outlinePrompt.includes('- No link:'), false);
+        // The rest of the rule stands: every secret stays about this arc's own people.
+        assert.ok(outlinePrompt.includes('- Every secret, trigger and clue is about this arc\'s own people and things.'));
+        assert.equal(result.arc.allowLinks, true);
+    });
+
+    it('a re-plan of an arc that allows links: the outline says a link may be planned, and the arc keeps allowLinks: true', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+        const reviseArc = { ...storedEpisode(), allowLinks: true };
+
+        const result = await generateArc(harvestedContext, 'She pays what she owes.', {}, { reviseArc, allowLinks: true });
+
+        assert.equal(result.error, null);
+        assert.ok(sentPrompts[1].includes('- A link may be planned:'));
+        assert.equal(result.arc.allowLinks, true);
+    });
+});
