@@ -71,7 +71,7 @@ const generatedPlan = JSON.stringify({
     secrets: [],
     triggers: [],
 });
-const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
 /** The thread block's anchor phrases, as the outline prompt must carry them. */
 function assertThreadBlock(outlinePrompt) {

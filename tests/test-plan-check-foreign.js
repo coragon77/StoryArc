@@ -399,7 +399,7 @@ describe('generateArc: the check removes foreign parts from the stored arc', () 
     });
 
     it('a check answer naming a foreign beat and a foreign secret: the arc comes without them, and the count', async () => {
-        const checkAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'secret', id: 'lena_label' }] });
+        const checkAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [], foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'secret', id: 'lena_label' }] });
         installBackend(['Mira owes the moneylender.', generatedPlan, checkAnswer]);
 
         const result = await generateArc(harvestedContext, 'Mira pays her debt.', {}, { tier: 'act' });
@@ -413,7 +413,7 @@ describe('generateArc: the check removes foreign parts from the stored arc', () 
     });
 
     it('a check answer naming nothing foreign: no removed parts', async () => {
-        installBackend(['Mira owes the moneylender.', generatedPlan, JSON.stringify({ revealed: [], rewrites: [], links: [] })]);
+        installBackend(['Mira owes the moneylender.', generatedPlan, JSON.stringify({ revealed: [], rewrites: [], gates: [] })]);
 
         const result = await generateArc(harvestedContext, 'Mira pays her debt.', {}, { tier: 'act' });
 

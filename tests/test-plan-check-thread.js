@@ -91,7 +91,7 @@ const generatedPlan = JSON.stringify({
     secrets: [],
     triggers: [],
 });
-const emptyCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+const emptyCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
 describe('generateArc: what the plan check is given to judge the plot thread', () => {
     beforeEach(() => {
@@ -254,7 +254,7 @@ describe('generateArc: the check\'s answer on the stored plan, and a check that 
     });
 
     it('a readable answer: the premise and the foreign pressure are rewritten in the planned arc', async () => {
-        installBackend([ANALYSIS, generatedPlan, JSON.stringify({ revealed: [], ...threadAnswer, links: [] })]);
+        installBackend([ANALYSIS, generatedPlan, JSON.stringify({ revealed: [], ...threadAnswer, gates: [] })]);
 
         const result = await generateArc(harvestedContext(), 'Mira pays her debt.');
 

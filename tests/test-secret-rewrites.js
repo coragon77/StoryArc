@@ -83,7 +83,7 @@ describe('secret rewrites: the plan check', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'contract_leash', text: '  Vanguard pays for her brother\'s clinic place, and a missed gala could end it.  ' }],
-        }, EARLIER_SECRETS, false);
+        }, EARLIER_SECRETS, true);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
@@ -98,7 +98,7 @@ describe('secret rewrites: the plan check', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns, and he lets her know it.' }],
-        }, EARLIER_SECRETS, false);
+        }, EARLIER_SECRETS, true);
 
         assert.deepEqual(checked.secrets[2], {
             id: 'new_debt',
@@ -127,7 +127,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, EARLIER_SECRETS, false);
+        }, EARLIER_SECRETS, true);
 
         assert.deepEqual(checked.secrets[0], {
             id: 'contract_leash',
@@ -155,7 +155,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'jumbotron_cut', text: '   ' },
                 { kind: 'secret', id: 'no_such_secret', text: 'Nowhere to go.' },
             ],
-        }, EARLIER_SECRETS, false);
+        }, EARLIER_SECRETS, true);
 
         assert.deepEqual(checked.secrets, makeReplannedAct().secrets);
     });
@@ -169,7 +169,7 @@ describe('secret rewrites: the plan check', () => {
                 { kind: 'secret', id: 'contract_leash', text: 'Vanguard pays for her brother\'s clinic place.' },
                 { kind: 'secret', id: 'new_debt', text: 'Vera owes Julian more than she earns.' },
             ],
-        }, EARLIER_SECRETS, false);
+        }, EARLIER_SECRETS, true);
 
         assert.deepEqual(arc, makeReplannedAct());
     });
@@ -185,7 +185,7 @@ describe('secret rewrites: the plan check', () => {
                 revealed: [],
                 rewrites: [{ kind: 'secret', id: 'contract_leash', text: 'Julian Hale pays for her brother\'s clinic place.' }],
                 renames: [{ from: 'Julian Hale', to: 'Tobias Reed' }],
-            }, EARLIER_SECRETS, false, { cast: [{ name: 'Priya', aliases: [] }] });
+            }, EARLIER_SECRETS, true, { cast: [{ name: 'Priya', aliases: [] }] });
         } finally {
             console.log = originalLog;
         }

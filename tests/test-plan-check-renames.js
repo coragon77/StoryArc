@@ -301,7 +301,7 @@ describe('applyPlanCheck: renames', () => {
     });
 
     it('changes nothing without a renames list', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { revealed: [], rewrites: [], links: [] }, [], false, { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { revealed: [], rewrites: [], gates: [] }, [], false, { cast: CAST });
 
         assert.deepEqual(checked, makePlannedAct());
         assert.deepEqual(recorded.warnings, []);

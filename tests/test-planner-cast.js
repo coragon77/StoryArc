@@ -80,7 +80,7 @@ describe('generateArc: the outline prompt carries the cast', () => {
         secrets: [],
         triggers: [],
     });
-    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
     function harvestedContext(cast) {
         return {
@@ -152,7 +152,7 @@ She pays.
             triggers: [],
             characters: ['Julian Hale', 'Priya'],
         });
-        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
+        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
         const sentPrompts = installBackend(['The story stands still.', planWithCollision, renamingAnswer]);
 
         const result = await generateArc(harvestedContext(CAST_OF_TWO), 'She pays.');
@@ -199,7 +199,7 @@ ANSWER`);
             secrets: [],
             triggers: [],
         });
-        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
+        const renamingAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [], renames: [{ from: 'Julian Hale', to: 'Owen Hale' }] });
         installBackend(['The story stands still.', planWithCollision, renamingAnswer]);
         const reviseArc = {
             id: 'arc-debt', title: 'The Julian Hale Affair', premise: 'A debt comes due.', direction: '',

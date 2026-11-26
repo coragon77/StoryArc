@@ -158,7 +158,7 @@ describe('generateArc: a re-plan\'s kept world facts reach the plan check', () =
             triggers: [],
             worldFacts: [],
         });
-        const planCheckAnswer = JSON.stringify({ revealed: ['forged_ledger'], rewrites: [], links: [] });
+        const planCheckAnswer = JSON.stringify({ revealed: ['forged_ledger'], rewrites: [], gates: [] });
         const sentPrompts = installBackend(['The ledger came out in the square.', generatedPlan, planCheckAnswer]);
         const context = {
             character: null,
@@ -198,7 +198,7 @@ describe('generateArc: a re-plan\'s kept world facts reach the plan check', () =
             triggers: [],
             worldFacts: ['The creditor cannot touch her savings.', 'Everyone in town owes the creditor.'],
         });
-        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'worldFact', id: 1, text: 'The baker and the mayor owe the creditor.' }], links: [] });
+        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'worldFact', id: 1, text: 'The baker and the mayor owe the creditor.' }], gates: [] });
         const sentPrompts = installBackend(['The story stands still.', generatedPlan, planCheckAnswer]);
         const context = {
             character: null,

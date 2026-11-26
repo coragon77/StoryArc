@@ -116,7 +116,7 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         secrets: [],
         triggers: [],
     });
-    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
     /** A stored episode being re-planned. */
     function storedEpisode() {

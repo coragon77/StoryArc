@@ -52,7 +52,7 @@ describe('applyPlanCheck', () => {
                 { trigger: 'usb_accepted', secret: 'brother_leash' },
                 { trigger: 'no_such_trigger', secret: 'brother_leash' },
             ],
-        }, EARLIER_LEASH, false);
+        }, EARLIER_LEASH, true);
 
         assert.deepEqual(checked.secrets.map(secret => [secret.id, secret.disclosed]), [
             ['brother_leash', true],
@@ -80,7 +80,7 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[0].disclosed = true;
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, false);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[0].disclosed, false);
     });
@@ -107,7 +107,7 @@ describe('applyPlanCheck', () => {
                     { kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' },
                     { kind: 'secret', id: 'gala_deal', text: 'Julian paid for the gala seats himself.' },
                 ],
-            }, earlierSecrets, false);
+            }, earlierSecrets, true);
         } finally {
             console.warn = originalWarn;
         }
@@ -133,7 +133,7 @@ describe('applyPlanCheck', () => {
         const checked = applyPlanCheck(arc, {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' }],
-        }, EARLIER_LEASH, false, {}, ['brother_leash']);
+        }, EARLIER_LEASH, true, {}, ['brother_leash']);
 
         assert.deepEqual(checked.secrets[0], { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: true });
     });
@@ -142,13 +142,13 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[1].disclosed = true;
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, false);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[1].disclosed, true);
     });
 
     it('marks nothing revealed on a new plan — its secrets were just invented', () => {
-        const checked = applyPlanCheck(makeReplannedAct(), { revealed: ['brother_leash'], rewrites: [], links: [] }, [], false);
+        const checked = applyPlanCheck(makeReplannedAct(), { revealed: ['brother_leash'], rewrites: [], gates: [] }, [], false);
 
         assert.equal(checked.secrets[0].disclosed, false);
     });
@@ -188,7 +188,7 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
 
         const emptyRewrite = applyPlanCheck(arc, { rewrites: [{ kind: 'pressure', id: 'pier_stage', text: '  ' }] }, [], false);
-        const wrongShape = applyPlanCheck(arc, { revealed: 'brother_leash', rewrites: { id: 'pier_stage' }, links: null }, EARLIER_LEASH, false);
+        const wrongShape = applyPlanCheck(arc, { revealed: 'brother_leash', rewrites: { id: 'pier_stage' }, links: null }, EARLIER_LEASH, true);
 
         assert.equal(emptyRewrite.beats[1].pressure, 'The stage is rigged with Julian\'s gauntlet tether.');
         assert.deepEqual(wrongShape, arc);
@@ -259,7 +259,7 @@ describe('applyPlanCheck', () => {
         const checked = applyPlanCheck(arc, {
             revealed: ['brother_leash'],
             rewrites: [{ kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' }],
-        }, earlierSecrets, false);
+        }, earlierSecrets, true);
 
         assert.deepEqual(checked.secrets[0], { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: true, holders: ['Vera'] });
         assert.equal(checked.triggers[0].secret, 'brother_leash');
@@ -271,7 +271,7 @@ describe('applyPlanCheck', () => {
             { id: 'gala_deal', content: 'Julian bought the gala seats with Vanguard money.', revealPhase: 'any', disclosed: false, holders: ['Julian'] },
         ];
 
-        const checked = applyPlanCheck(arc, { revealed: ['gala_deal'] }, earlierSecrets, false);
+        const checked = applyPlanCheck(arc, { revealed: ['gala_deal'] }, earlierSecrets, true);
 
         assert.deepEqual(checked.secrets.map(secret => [secret.id, secret.disclosed]), [
             ['brother_leash', false],
@@ -285,7 +285,7 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[0] = { id: 'brother_leash', content: 'Vanguard holds her brother\'s debts.', revealPhase: 'climax', disclosed: false, holders: [] };
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, false);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[0].content, 'Vanguard holds her brother\'s debts.');
         assert.equal(checked.secrets[0].disclosed, false);
@@ -323,7 +323,7 @@ describe('applyPlanCheck', () => {
                 { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
             ],
             gates: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
-        }, EARLIER_LEASH, false);
+        }, EARLIER_LEASH, true);
 
         assert.deepEqual(arc, makeReplannedAct());
     });

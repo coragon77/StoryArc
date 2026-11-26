@@ -307,7 +307,7 @@ describe('generation with the author\'s answers', () => {
         triggers: [],
         authorAnswers: [{ question: 'Model echo?', answer: 'Echo.' }],
     });
-    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
     const context = {
         character: null,
         persona: { name: '', description: '' },

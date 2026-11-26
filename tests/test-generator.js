@@ -251,7 +251,7 @@ describe('generateArc over the direct backend stream', { skip: !sillyTavernAvail
                     { kind: 'trigger', id: 'sacks_counted', text: 'the clerk goes pale and changes the subject' },
                     { kind: 'fulfillment', id: 'empty_carts', text: 'Someone has caught a cart leaving the granary at night.' },
                 ],
-                links: [{ trigger: 'sacks_counted', secret: 'guild_theft' }],
+                gates: [{ trigger: 'sacks_counted', secret: 'guild_theft' }],
             })),
         ]);
 
