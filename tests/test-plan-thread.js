@@ -71,7 +71,7 @@ const generatedPlan = JSON.stringify({
     secrets: [],
     triggers: [],
 });
-const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
 /** The thread block's anchor phrases, as the outline prompt must carry them. */
 function assertThreadBlock(outlinePrompt) {
@@ -227,5 +227,16 @@ describe('generateArc: the link setting', () => {
         assert.equal(result.error, null);
         assert.ok(sentPrompts[1].includes('- A link may be planned:'));
         assert.equal(result.arc.allowLinks, true);
+    });
+
+    it('a re-plan kept to itself stores no allowLinks, even when the re-planned arc carries allowLinks: true', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+        const reviseArc = { ...storedEpisode(), allowLinks: true };
+
+        const result = await generateArc(harvestedContext, 'She pays what she owes.', {}, { reviseArc, allowLinks: false });
+
+        assert.equal(result.error, null);
+        assert.ok(sentPrompts[1].includes('- No link:'));
+        assert.equal('allowLinks' in result.arc, false);
     });
 });

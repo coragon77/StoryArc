@@ -363,7 +363,7 @@ describe('wizard: generation', () => {
             secrets: [{ id: 'lena_debut', content: 'Lena\'s debut is bought.', revealPhase: 'climax' }],
             triggers: [],
         });
-        const checkAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], foreign: [{ kind: 'beat', id: 'harvest_fair' }, { kind: 'secret', id: 'lena_debut' }] });
+        const checkAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [], foreign: [{ kind: 'beat', id: 'harvest_fair' }, { kind: 'secret', id: 'lena_debut' }] });
         installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, planWithForeignParts, checkAnswer]);
         await openWizard();
 

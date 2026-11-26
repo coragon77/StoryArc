@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyPlanCheck, buildPlanCheckVariables } from '../lib/planning/generator.js';
+import { readFileSync } from 'node:fs';
+
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
 
 /** A merged re-plan: one kept and one new secret, a fired and an unfired trigger, a done and an open milestone. */
 function makeReplannedAct() {
@@ -32,7 +36,7 @@ const EARLIER_LEASH = [
 ];
 
 describe('applyPlanCheck', () => {
-    it('applies valid rewrites, revealed secrets and links, and nothing else', () => {
+    it('applies valid rewrites, revealed secrets and trigger gates, and nothing else', () => {
         const arc = makeReplannedAct();
 
         const checked = applyPlanCheck(arc, {
@@ -44,11 +48,11 @@ describe('applyPlanCheck', () => {
                 { kind: 'pressure', id: 'old_milestone', text: 'A rewrite of a completed milestone.' },
                 { kind: 'pressure', id: 'no_such_beat', text: 'Nowhere to go.' },
             ],
-            links: [
+            gates: [
                 { trigger: 'usb_accepted', secret: 'brother_leash' },
                 { trigger: 'no_such_trigger', secret: 'brother_leash' },
             ],
-        }, EARLIER_LEASH);
+        }, EARLIER_LEASH, true);
 
         assert.deepEqual(checked.secrets.map(secret => [secret.id, secret.disclosed]), [
             ['brother_leash', true],
@@ -67,7 +71,7 @@ describe('applyPlanCheck', () => {
     it('keeps only the action when the check echoes the whole trigger line', () => {
         const checked = applyPlanCheck(makeReplannedAct(), {
             rewrites: [{ kind: 'trigger', id: 'usb_accepted', text: 'IF If Ellie takes the drive → Vera\'s facade shatters into tearful gratitude.' }],
-        }, []);
+        }, [], false);
 
         assert.equal(checked.triggers[0].action, 'Vera\'s facade shatters into tearful gratitude.');
     });
@@ -76,7 +80,7 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[0].disclosed = true;
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[0].disclosed, false);
     });
@@ -103,7 +107,7 @@ describe('applyPlanCheck', () => {
                     { kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' },
                     { kind: 'secret', id: 'gala_deal', text: 'Julian paid for the gala seats himself.' },
                 ],
-            }, earlierSecrets);
+            }, earlierSecrets, true);
         } finally {
             console.warn = originalWarn;
         }
@@ -117,7 +121,7 @@ describe('applyPlanCheck', () => {
     });
 
     it('leaves a new plan\'s secrets alone when the answer has no revealed list', () => {
-        const checked = applyPlanCheck(makeReplannedAct(), { rewrites: [] }, []);
+        const checked = applyPlanCheck(makeReplannedAct(), { rewrites: [] }, [], false);
 
         assert.deepEqual(checked.secrets, makeReplannedAct().secrets);
     });
@@ -129,7 +133,7 @@ describe('applyPlanCheck', () => {
         const checked = applyPlanCheck(arc, {
             revealed: [],
             rewrites: [{ kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' }],
-        }, EARLIER_LEASH, {}, ['brother_leash']);
+        }, EARLIER_LEASH, true, {}, ['brother_leash']);
 
         assert.deepEqual(checked.secrets[0], { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: true });
     });
@@ -138,27 +142,43 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[1].disclosed = true;
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[1].disclosed, true);
     });
 
     it('marks nothing revealed on a new plan — its secrets were just invented', () => {
-        const checked = applyPlanCheck(makeReplannedAct(), { revealed: ['brother_leash'], rewrites: [], links: [] }, []);
+        const checked = applyPlanCheck(makeReplannedAct(), { revealed: ['brother_leash'], rewrites: [], gates: [] }, [], false);
 
         assert.equal(checked.secrets[0].disclosed, false);
     });
 
-    it('keeps a link the generator set and ignores a link to an unknown secret', () => {
+    it('reads the legacy "links" key an older edited prompt asks for, as gates', () => {
+        const checked = applyPlanCheck(makeReplannedAct(), {
+            links: [{ trigger: 'usb_accepted', secret: 'jumbotron_cut' }],
+        }, [], false);
+
+        assert.equal(checked.triggers[0].secret, 'jumbotron_cut');
+    });
+
+    it('the prompt asks for trigger gates under "gates", and never says "links"', () => {
+        const checkPlan = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
+
+        assert.ok(checkPlan.includes('4. TRIGGER GATES.'));
+        assert.ok(checkPlan.includes('"gates": [{ "trigger": "trigger id", "secret": "secret id" }]'));
+        assert.doesNotMatch(checkPlan, /"links"|LINKS/);
+    });
+
+    it('keeps a gate the generator set and ignores a gate to an unknown secret', () => {
         const arc = makeReplannedAct();
         arc.triggers[0].secret = 'jumbotron_cut';
 
         const checked = applyPlanCheck(arc, {
-            links: [
+            gates: [
                 { trigger: 'usb_accepted', secret: 'brother_leash' },
                 { trigger: 'photo_leak', secret: 'no_such_secret' },
             ],
-        }, []);
+        }, [], false);
 
         assert.equal(checked.triggers[0].secret, 'jumbotron_cut');
         assert.equal(checked.triggers[1].secret, '');
@@ -167,8 +187,8 @@ describe('applyPlanCheck', () => {
     it('ignores an empty rewrite and an answer of the wrong shape', () => {
         const arc = makeReplannedAct();
 
-        const emptyRewrite = applyPlanCheck(arc, { rewrites: [{ kind: 'pressure', id: 'pier_stage', text: '  ' }] }, []);
-        const wrongShape = applyPlanCheck(arc, { revealed: 'brother_leash', rewrites: { id: 'pier_stage' }, links: null }, EARLIER_LEASH);
+        const emptyRewrite = applyPlanCheck(arc, { rewrites: [{ kind: 'pressure', id: 'pier_stage', text: '  ' }] }, [], false);
+        const wrongShape = applyPlanCheck(arc, { revealed: 'brother_leash', rewrites: { id: 'pier_stage' }, links: null }, EARLIER_LEASH, true);
 
         assert.equal(emptyRewrite.beats[1].pressure, 'The stage is rigged with Julian\'s gauntlet tether.');
         assert.deepEqual(wrongShape, arc);
@@ -180,7 +200,7 @@ describe('applyPlanCheck', () => {
 
         const checked = applyPlanCheck(arc, {
             rewrites: [{ kind: 'fulfillment', id: 'rookie_drills', text: 'Someone in authority has treated Ellie as a working Ward rather than a viral act.' }],
-        }, []);
+        }, [], false);
 
         assert.deepEqual(checked.beats.map(beat => [beat.id, beat.pressure, beat.intention]), [
             ['old_milestone', 'The card is still out there.', 'The card was destroyed.'],
@@ -195,7 +215,7 @@ describe('applyPlanCheck', () => {
                 { kind: 'pressure', id: 'pier_stage', text: 'The handlers prepare the stage.' },
                 { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
             ],
-        }, []);
+        }, [], false);
 
         assert.deepEqual([checked.beats[1].pressure, checked.beats[1].intention], ['The handlers prepare the stage.', 'The crowd has seen Ellie hold the stage.']);
     });
@@ -213,7 +233,7 @@ describe('applyPlanCheck', () => {
                     { kind: 'fulfillment', id: 'no_such_beat', text: 'Nowhere to go.' },
                     { kind: 'fulfillment', id: 'pier_stage', text: '  ' },
                 ],
-            }, []);
+            }, [], false);
         } finally {
             console.warn = originalWarn;
         }
@@ -239,7 +259,7 @@ describe('applyPlanCheck', () => {
         const checked = applyPlanCheck(arc, {
             revealed: ['brother_leash'],
             rewrites: [{ kind: 'secret', id: 'brother_leash', text: 'The clinic answers to Vanguard.' }],
-        }, earlierSecrets);
+        }, earlierSecrets, true);
 
         assert.deepEqual(checked.secrets[0], { id: 'brother_leash', content: 'Her brother\'s clinic place is the leash.', revealPhase: 'escalation', disclosed: true, holders: ['Vera'] });
         assert.equal(checked.triggers[0].secret, 'brother_leash');
@@ -251,7 +271,7 @@ describe('applyPlanCheck', () => {
             { id: 'gala_deal', content: 'Julian bought the gala seats with Vanguard money.', revealPhase: 'any', disclosed: false, holders: ['Julian'] },
         ];
 
-        const checked = applyPlanCheck(arc, { revealed: ['gala_deal'] }, earlierSecrets);
+        const checked = applyPlanCheck(arc, { revealed: ['gala_deal'] }, earlierSecrets, true);
 
         assert.deepEqual(checked.secrets.map(secret => [secret.id, secret.disclosed]), [
             ['brother_leash', false],
@@ -265,7 +285,7 @@ describe('applyPlanCheck', () => {
         const arc = makeReplannedAct();
         arc.secrets[0] = { id: 'brother_leash', content: 'Vanguard holds her brother\'s debts.', revealPhase: 'climax', disclosed: false, holders: [] };
 
-        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH);
+        const checked = applyPlanCheck(arc, { revealed: [] }, EARLIER_LEASH, true);
 
         assert.equal(checked.secrets[0].content, 'Vanguard holds her brother\'s debts.');
         assert.equal(checked.secrets[0].disclosed, false);
@@ -284,7 +304,7 @@ describe('applyPlanCheck', () => {
                     { kind: 'pressure', id: 'gala_night', text: 'Vanguard counts the guests.' },
                     { kind: 'fulfillment', id: 'gala_night', text: 'Ellie has been seen at the gala.' },
                 ],
-            }, []);
+            }, [], false);
         } finally {
             console.warn = originalWarn;
         }
@@ -302,8 +322,8 @@ describe('applyPlanCheck', () => {
                 { kind: 'trigger', id: 'usb_accepted', text: 'Her composure cracks.' },
                 { kind: 'fulfillment', id: 'pier_stage', text: 'The crowd has seen Ellie hold the stage.' },
             ],
-            links: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
-        }, EARLIER_LEASH);
+            gates: [{ trigger: 'usb_accepted', secret: 'brother_leash' }],
+        }, EARLIER_LEASH, true);
 
         assert.deepEqual(arc, makeReplannedAct());
     });
@@ -314,7 +334,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.secrets[1].disclosed = true;
 
-        const variables = buildPlanCheckVariables(arc, null);
+        const variables = buildPlanCheckVariables(arc, null, null, KEPT_TO_ITSELF);
 
         assert.equal(variables.STORY_BLOCK, '');
         assert.equal(variables.PREMISE, 'Vanguard wants the rookie humiliated.');
@@ -331,16 +351,16 @@ describe('buildPlanCheckVariables', () => {
     it('reads a re-plan\'s proposed premise as the premise, with the author\'s under it, the stored one otherwise', () => {
         const arc = { ...makeReplannedAct(), proposedPremise: 'Vanguard wants the rookie broken before the final.' };
 
-        assert.equal(buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }).PREMISE,
+        assert.equal(buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF).PREMISE,
             'Vanguard wants the rookie broken before the final.\nAuthor\'s premise: Vanguard wants the rookie humiliated.');
-        assert.equal(buildPlanCheckVariables(makeReplannedAct(), null).PREMISE, 'Vanguard wants the rookie humiliated.');
+        assert.equal(buildPlanCheckVariables(makeReplannedAct(), null, null, KEPT_TO_ITSELF).PREMISE, 'Vanguard wants the rookie humiliated.');
     });
 
     it('passes the fulfillments of open beats only — a re-plan\'s kept completed beat stays out', () => {
         const arc = makeReplannedAct();
         arc.beats.push({ id: 'rookie_drills', pressure: 'Shifts pile up.', intention: 'Ellie has completed her first patrols and training shifts.', status: 'pending' });
 
-        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF);
 
         assert.equal(variables.FULFILLMENTS, [
             '- [pier_stage] The scrimmage was played.',
@@ -353,7 +373,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.beats.push({ id: 'gala_night', pressure: 'The gala looms.', intention: 'Ellie has attended the gala.', status: 'skipped' });
 
-        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF);
 
         assert.equal(variables.PRESSURES, '- [pier_stage] The stage is rigged with Julian\'s gauntlet tether.');
         assert.equal(variables.FULFILLMENTS, '- [pier_stage] The scrimmage was played.');
@@ -363,7 +383,7 @@ describe('buildPlanCheckVariables', () => {
         const arc = makeReplannedAct();
         arc.secrets[0].disclosed = true;
 
-        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] });
+        const variables = buildPlanCheckVariables(arc, 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF);
 
         assert.equal(variables.SECRETS.split('\n')[0], '- [brother_leash] (escalation) Her brother\'s clinic place is the leash.');
     });
@@ -371,7 +391,7 @@ describe('buildPlanCheckVariables', () => {
     it('gives a re-plan the analysis and the last ten story messages', () => {
         const messages = Array.from({ length: 12 }, (_, index) => ({ name: 'Narrator', content: `message ${index}` }));
 
-        const variables = buildPlanCheckVariables(makeReplannedAct(), 'Vera confessed on Floor 3.', { chatHistory: messages, earlierSecrets: EARLIER_LEASH });
+        const variables = buildPlanCheckVariables(makeReplannedAct(), 'Vera confessed on Floor 3.', { chatHistory: messages, earlierSecrets: EARLIER_LEASH }, KEPT_TO_ITSELF);
 
         const lastTen = ['message 2', 'message 3', 'message 4', 'message 5', 'message 6', 'message 7', 'message 8', 'message 9', 'message 10', 'message 11']
             .map(text => `Narrator: ${text}`)
@@ -383,14 +403,14 @@ describe('buildPlanCheckVariables', () => {
     });
 
     it('writes (none) under the secrets before the re-plan when the arc had none', () => {
-        const variables = buildPlanCheckVariables(makeReplannedAct(), 'A.', { chatHistory: [], earlierSecrets: [] });
+        const variables = buildPlanCheckVariables(makeReplannedAct(), 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF);
 
         assert.ok(variables.STORY_BLOCK.endsWith('step 1 judges these.\n(none)\n\n'), variables.STORY_BLOCK);
     });
 
     it('gives an act and a saga the process-milestone rule, an episode or an unknown tier none', () => {
         for (const tier of ['act', 'saga']) {
-            const rule = buildPlanCheckVariables({ ...makeReplannedAct(), tier }, null).PROCESS_MILESTONE_RULE;
+            const rule = buildPlanCheckVariables({ ...makeReplannedAct(), tier }, null, null, KEPT_TO_ITSELF).PROCESS_MILESTONE_RULE;
             assert.ok(rule.includes('a process the story lives through over many scenes'), tier);
             assert.ok(rule.includes('rewrite it as the moment that shows the process has taken hold, in what a character does'), tier);
             assert.ok(rule.includes('or which something a character only says would meet'), tier);
@@ -398,15 +418,15 @@ describe('buildPlanCheckVariables', () => {
             assert.ok(rule.includes('replaces "The guild has done her a favour."'), tier);
             assert.ok(rule.endsWith('keeps the event. '), tier);
         }
-        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'episode' }, null).PROCESS_MILESTONE_RULE, '');
-        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'chapter' }, null).PROCESS_MILESTONE_RULE, '');
+        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'episode' }, null, null, KEPT_TO_ITSELF).PROCESS_MILESTONE_RULE, '');
+        assert.equal(buildPlanCheckVariables({ ...makeReplannedAct(), tier: 'chapter' }, null, null, KEPT_TO_ITSELF).PROCESS_MILESTONE_RULE, '');
     });
 
     it('gives a new plan\'s analysis a heading of its own, no story block, and keeps its disclosure marks', () => {
         const arc = makeReplannedAct();
         arc.secrets[1].disclosed = true;
 
-        const variables = buildPlanCheckVariables(arc, 'Vera confessed on Floor 3.', null);
+        const variables = buildPlanCheckVariables(arc, 'Vera confessed on Floor 3.', null, KEPT_TO_ITSELF);
 
         assert.equal(variables.STORY_BLOCK, '');
         assert.equal(variables.ANALYSIS_BLOCK, '== STORY ANALYSIS ==\nVera confessed on Floor 3.\n\n');
@@ -416,7 +436,7 @@ describe('buildPlanCheckVariables', () => {
     it('writes (none) for an empty list', () => {
         const arc = { ...makeReplannedAct(), secrets: [], triggers: [], beats: [] };
 
-        const variables = buildPlanCheckVariables(arc, null);
+        const variables = buildPlanCheckVariables(arc, null, null, KEPT_TO_ITSELF);
 
         assert.deepEqual([variables.SECRETS, variables.TRIGGERS, variables.PRESSURES, variables.FULFILLMENTS], ['(none)', '(none)', '(none)', '(none)']);
     });

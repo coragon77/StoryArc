@@ -112,7 +112,7 @@ describe('generateArc: a re-plan\'s revealed secrets', () => {
         extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
         const storedArc = storedEpisode();
         chat_metadata.story_arc = { version: 1, arcs: [storedArc], settings: {}, knowledge: ledgerWithReveal() };
-        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'secret', id: 'forged_ledger', text: 'Somebody forged the ledger.' }], links: [] });
+        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'secret', id: 'forged_ledger', text: 'Somebody forged the ledger.' }], gates: [] });
         // The planner never restates an established secret: it rewrites the
         // hidden one and adds one.
         const replan = JSON.stringify({

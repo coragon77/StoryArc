@@ -116,7 +116,7 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         secrets: [],
         triggers: [],
     });
-    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
     /** A stored episode being re-planned. */
     function storedEpisode() {
@@ -215,6 +215,17 @@ describe('the planning calls leave their filled prompts as the last sent', () =>
         for (const template of ['analyze-context.txt', 'ask-questions.txt', 'generate-arc.txt', 'check-plan.txt']) {
             assert.equal(readLastSentPrompt(template).purpose, 're-planning The Quiet Debt', template);
         }
+    });
+
+    it('a re-plan of an arc without a title: the plan check is still re-planning, as the outline is', async () => {
+        installBackend(['She owes more than money.', generatedPlan, planCheckAnswer]);
+        const reviseArc = { ...storedEpisode(), title: '' };
+
+        const result = await generateArc({ ...context, existingArcs: [reviseArc] }, 'Tighten the screws.', {}, { reviseArc });
+
+        assert.equal(result.error, null);
+        assert.match(readLastSentPrompt('generate-arc.txt').purpose, /^re-planning/);
+        assert.match(readLastSentPrompt('check-plan.txt').purpose, /^re-planning/);
     });
 });
 

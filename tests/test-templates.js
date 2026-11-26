@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildPlanCheckVariables, fillTemplate, loadTemplate } from '../lib/planning/generator.js';
 
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
+
 describe('loadTemplate', () => {
     it('refuses a name outside its allow-list', async () => {
         await assert.rejects(loadTemplate('unknown-pass.txt'), /Invalid template: unknown-pass\.txt/);
@@ -81,8 +84,8 @@ describe('every fulfillment is one on-screen moment', () => {
     it('the plan check states the process-milestone rule for an act, before the leave-alone clause, and not for an episode', () => {
         const template = read('check-plan.txt');
         const arc = { premise: 'A debt.', secrets: [], triggers: [], beats: [] };
-        const actPrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'act' }, null));
-        const episodePrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'episode' }, null));
+        const actPrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'act' }, null, null, KEPT_TO_ITSELF));
+        const episodePrompt = fillTemplate(template, buildPlanCheckVariables({ ...arc, tier: 'episode' }, null, null, KEPT_TO_ITSELF));
 
         const ruleAt = actPrompt.indexOf('rewrite it as the moment that shows the process has taken hold');
         const leaveAloneAt = actPrompt.indexOf('Leave any other fulfillment that is already one moment and needs no particular incident alone.');

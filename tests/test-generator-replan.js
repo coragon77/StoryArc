@@ -76,7 +76,7 @@ const generatedPlan = JSON.stringify({
 const planCheckAnswer = JSON.stringify({
     revealed: [],
     rewrites: [{ kind: 'trigger', id: 'flees', text: 'the guard follows at a distance' }],
-    links: [],
+    gates: [],
 });
 
 describe('generateArc: a re-plan proposes the premise', () => {

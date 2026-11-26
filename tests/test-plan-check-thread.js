@@ -91,7 +91,7 @@ const generatedPlan = JSON.stringify({
     secrets: [],
     triggers: [],
 });
-const emptyCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+const emptyCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
 
 describe('generateArc: what the plan check is given to judge the plot thread', () => {
     beforeEach(() => {
@@ -194,7 +194,7 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
     it('a new plan with a direction: the foreign pressure and the premise are rewritten, the input arc is not mutated', () => {
         const arc = plannedEpisode();
 
-        const checked = applyPlanCheck(arc, threadAnswer, []);
+        const checked = applyPlanCheck(arc, threadAnswer, [], false);
 
         assert.equal(checked.beats[0].pressure, 'The moneylender\'s men watch the door of her room.');
         assert.equal(checked.beats[1].pressure, 'The moneylender wants his coin by dawn.');
@@ -205,7 +205,7 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
 
     it('a blank direction: the premise defines the plot thread and is not rewritten, the pressure still is', () => {
         for (const direction of ['', '   ', undefined]) {
-            const checked = applyPlanCheck(plannedEpisode({ direction }), threadAnswer, []);
+            const checked = applyPlanCheck(plannedEpisode({ direction }), threadAnswer, [], false);
 
             assert.equal(checked.premise, 'Will Mira pay her debt, and will Lena\'s fame survive the press?');
             assert.equal(checked.beats[0].pressure, 'The moneylender\'s men watch the door of her room.');
@@ -214,9 +214,9 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
 
     it('a re-plan: neither the premise the wizard passed in nor the proposed premise is rewritten', () => {
         const arc = plannedEpisode({ premise: 'A debt comes due, and Mira must pay it alone.', proposedPremise: 'Will Mira pay, and will Lena shine?' });
-        const names = { cast: [], isReplan: true, replanPremise: 'A debt comes due, and Mira must pay it alone.', replanTitle: 'The Quiet Debt' };
+        const names = { cast: [], replanPremise: 'A debt comes due, and Mira must pay it alone.', replanTitle: 'The Quiet Debt' };
 
-        const checked = applyPlanCheck(arc, threadAnswer, [], names);
+        const checked = applyPlanCheck(arc, threadAnswer, [], true, names);
 
         assert.equal(checked.premise, 'A debt comes due, and Mira must pay it alone.');
         assert.equal(checked.proposedPremise, 'Will Mira pay, and will Lena shine?');
@@ -225,16 +225,16 @@ describe('applyPlanCheck: the plot thread rewrites', () => {
 
     it('a re-plan whose premise and title are empty strings: the premise is still not rewritten', () => {
         const arc = plannedEpisode({ premise: '', proposedPremise: 'Will Mira pay, and will Lena shine?' });
-        const names = { cast: [], replanPremise: '', replanTitle: '', isReplan: true };
+        const names = { cast: [], replanPremise: '', replanTitle: '' };
 
-        const checked = applyPlanCheck(arc, threadAnswer, [], names);
+        const checked = applyPlanCheck(arc, threadAnswer, [], true, names);
 
         assert.equal(checked.premise, '');
         assert.equal(checked.proposedPremise, 'Will Mira pay, and will Lena shine?');
     });
 
     it('an empty premise text is ignored', () => {
-        const checked = applyPlanCheck(plannedEpisode(), { rewrites: [{ kind: 'premise', id: 'premise', text: '  ' }] }, []);
+        const checked = applyPlanCheck(plannedEpisode(), { rewrites: [{ kind: 'premise', id: 'premise', text: '  ' }] }, [], false);
 
         assert.equal(checked.premise, 'Will Mira pay her debt, and will Lena\'s fame survive the press?');
     });
@@ -254,7 +254,7 @@ describe('generateArc: the check\'s answer on the stored plan, and a check that 
     });
 
     it('a readable answer: the premise and the foreign pressure are rewritten in the planned arc', async () => {
-        installBackend([ANALYSIS, generatedPlan, JSON.stringify({ revealed: [], ...threadAnswer, links: [] })]);
+        installBackend([ANALYSIS, generatedPlan, JSON.stringify({ revealed: [], ...threadAnswer, gates: [] })]);
 
         const result = await generateArc(harvestedContext(), 'Mira pays her debt.');
 
@@ -345,7 +345,7 @@ describe('Prompts popup: an edited plan check prompt without the thread block', 
         assert.deepEqual([...check.missing].sort(), ['ANALYSIS_BLOCK', 'EXISTING_ARCS', 'THREAD_BLOCK']);
         const html = buildPromptChecks(check, { text: check.text, missing: check.missing, unknown: check.unknown });
         assert.ok(html.includes('<code>{{ANALYSIS_BLOCK}}</code> is missing: on a new plan the story analysis never reaches the check, so it cannot see a plot thread that has no arc yet.'), html);
-        assert.ok(html.includes('<code>{{EXISTING_ARCS}}</code> is missing: the running arcs never reach the model, so it cannot tell this arc\'s plot thread from theirs.'), html);
+        assert.ok(html.includes('<code>{{EXISTING_ARCS}}</code> is missing: the running arcs never reach the model, so it works as if no other arc were running.'), html);
         assert.equal(html.includes('what Story Arc fills in there never reaches the model'), false, html);
     });
 });

@@ -220,7 +220,7 @@ describe('generateArc: the genre reaches both phases, the themes only the outlin
         triggers: [],
         themeSeeds: 'model echo',
     });
-    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [] });
+    const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [], gates: [] });
     const context = {
         character: null,
         persona: { name: '', description: '' },

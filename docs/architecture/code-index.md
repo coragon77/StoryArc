@@ -269,7 +269,8 @@ StoryArc/
 │   │                           #   records, history frozen: withoutCompletionRecord), planted
 │   │                           #   foreshadowing, fired triggers; an episode growing
 │   │                           #   into an act or saga moves its closed scene beats to
-│   │                           #   episodeBeats (#90);
+│   │                           #   episodeBeats (#90; growsFromEpisode(arc, targetTier),
+│   │                           #   which buildArcSoFar shares);
 │   │                           #   replaces the rest, the unrevealed secrets too (one
 │   │                           #   under an old id keeps its clues and triggers);
 │   │                           #   withUniqueIds() suffixes
@@ -1028,6 +1029,7 @@ lib/planning/
 │                   /scripts/preset-manager.js, /scripts/utils.js)
 └── generator.js   (imports: validation.js, arc-preset.js, replan.js, core/settings.js,
                     core/constants.js, knowledge/names.js printTakenNames,
+                    injection/pacing.js selectNonOptionalBeats,
                     /script.js, /scripts/utils.js;
                     dynamic imports: /scripts/openai.js, /scripts/extensions/shared.js,
                     /scripts/sse-stream.js; templates are fetched from prompts/)

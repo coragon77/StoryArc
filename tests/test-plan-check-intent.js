@@ -5,6 +5,9 @@ import { extension_settings } from '/scripts/extensions.js';
 import { ConnectionManagerRequestService } from '/scripts/extensions/shared.js';
 import { buildPlanCheckVariables, generateArc, clearTemplateCache } from '../lib/planning/generator.js';
 
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
+
 // The plan check holds a plan to the story and to the author's intent
 // (ADR-0009 amendment, 2026-11-09): the cast's details, no sweeping claims,
 // the register the author's direction and answers ask for.
@@ -25,14 +28,14 @@ describe('buildPlanCheckVariables: the author\'s answers', () => {
             ],
         });
 
-        assert.equal(buildPlanCheckVariables(arc, null).AUTHOR_ANSWERS,
+        assert.equal(buildPlanCheckVariables(arc, null, null, KEPT_TO_ITSELF).AUTHOR_ANSWERS,
             '- Q: How does the pressure work?\n  A: Through deniable hints nobody admits.\n'
             + '- Q: Can anyone rescue her?\n  A: No.');
     });
 
     it('is (none) for an empty list and for an arc without one', () => {
-        assert.equal(buildPlanCheckVariables(makeArc({ authorAnswers: [] }), null).AUTHOR_ANSWERS, '(none)');
-        assert.equal(buildPlanCheckVariables(makeArc(), null).AUTHOR_ANSWERS, '(none)');
+        assert.equal(buildPlanCheckVariables(makeArc({ authorAnswers: [] }), null, null, KEPT_TO_ITSELF).AUTHOR_ANSWERS, '(none)');
+        assert.equal(buildPlanCheckVariables(makeArc(), null, null, KEPT_TO_ITSELF).AUTHOR_ANSWERS, '(none)');
     });
 
     it('leaves out an entry without a question or an answer as text, and a list that is not one', () => {
@@ -45,8 +48,8 @@ describe('buildPlanCheckVariables: the author\'s answers', () => {
             ],
         });
 
-        assert.equal(buildPlanCheckVariables(arc, null).AUTHOR_ANSWERS, '- Q: How hard is the arc?\n  A: Hard.');
-        assert.equal(buildPlanCheckVariables(makeArc({ authorAnswers: 'Hard.' }), null).AUTHOR_ANSWERS, '(none)');
+        assert.equal(buildPlanCheckVariables(arc, null, null, KEPT_TO_ITSELF).AUTHOR_ANSWERS, '- Q: How hard is the arc?\n  A: Hard.');
+        assert.equal(buildPlanCheckVariables(makeArc({ authorAnswers: 'Hard.' }), null, null, KEPT_TO_ITSELF).AUTHOR_ANSWERS, '(none)');
     });
 
     it('check-plan.txt puts the answers under the public author input, after the rulings', () => {
@@ -155,7 +158,7 @@ describe('generateArc: a re-plan\'s kept world facts reach the plan check', () =
             triggers: [],
             worldFacts: [],
         });
-        const planCheckAnswer = JSON.stringify({ revealed: ['forged_ledger'], rewrites: [], links: [] });
+        const planCheckAnswer = JSON.stringify({ revealed: ['forged_ledger'], rewrites: [], gates: [] });
         const sentPrompts = installBackend(['The ledger came out in the square.', generatedPlan, planCheckAnswer]);
         const context = {
             character: null,
@@ -195,7 +198,7 @@ describe('generateArc: a re-plan\'s kept world facts reach the plan check', () =
             triggers: [],
             worldFacts: ['The creditor cannot touch her savings.', 'Everyone in town owes the creditor.'],
         });
-        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'worldFact', id: 1, text: 'The baker and the mayor owe the creditor.' }], links: [] });
+        const planCheckAnswer = JSON.stringify({ revealed: [], rewrites: [{ kind: 'worldFact', id: 1, text: 'The baker and the mayor owe the creditor.' }], gates: [] });
         const sentPrompts = installBackend(['The story stands still.', generatedPlan, planCheckAnswer]);
         const context = {
             character: null,
