@@ -169,11 +169,13 @@ StoryArc/
 │   │   │                       #   escalation, world facts,
 │   │   │                       #   fulfilled beats as "already happened", skipped
 │   │   │                       #   milestones as "passed over"; '' for null (plan-new);
-│   │   │                       #   loadTemplate(name) (the player's edit, else the
-│   │   │                       #   built-in text), loadBuiltInTemplate(name),
-│   │   │                       #   fillTemplate(template, vars); callLlm() exported for
-│   │   │                       #   the knowledge extraction; it records the last prompt
-│   │   │                       #   sent per template (readLastSentPrompt, with usedEdit)
+│   │   │                       #   loadTemplate(name) → { text, fromEdit } (the player's
+│   │   │                       #   edit through readPromptEdit, else the built-in text),
+│   │   │                       #   loadBuiltInTemplate(name), fillTemplate(template,
+│   │   │                       #   vars); callLlm() exported for the knowledge
+│   │   │                       #   extraction; it records the last prompt sent per
+│   │   │                       #   template (readLastSentPrompt; usedEdit is the call's
+│   │   │                       #   own fromEdit, passed with `template`)
 │   │   ├── prompt-edits.js     # The player's prompt edits (#92): PROMPT_CATALOG,
 │   │   │                       #   describePrompts(builtInTexts, storedEdits),
 │   │   │                       #   checkPromptPlaceholders(builtInText, text),
@@ -735,6 +737,9 @@ StoryArc/
 │   │                           #   warnings, one primary, expand icon, drawer note)
 │   ├── test-prompts-popup.js   # Tests: the Prompts popup session — Save, Reset, Undo,
 │   │                           #   Discard, Keep mine, Show built-in, Reveal off on open
+│   ├── test-prompts-popup-open.js # Tests: opening the Prompts popup — a failure while
+│   │                           #   it opens leaves the button working, the selected row
+│   │                           #   gets the focus
 │   ├── test-ui-sent-view.js    # Tests: maskSpoilerLines outcome on real builder text
 │   │                           #   (items with a line break, a blank line), planned
 │   │                           #   holders, the strip and reader, Next request marks
