@@ -11,6 +11,7 @@ import {
     updateKnowledgeAfterEdit,
 } from '../lib/knowledge/ledger.js';
 import { completeBeats } from '../lib/planning/beat-completion.js';
+import { clearTemplateCache } from '../lib/planning/generator.js';
 
 const originalFetch = globalThis.fetch;
 const originalSendRequest = ConnectionManagerRequestService.sendRequest;
@@ -107,7 +108,7 @@ describe('parseKnowledgeExtractionAnswer: fulfilled', () => {
 
     it('reads a missing list as empty, so an answer of the old shape stays valid', () => {
         const answer = parseKnowledgeExtractionAnswer(`{ ${base} }`);
-        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], rewrites: [], details: [] });
+        assert.deepEqual(answer, { present: ['Noor'], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], rewrites: [], plantedClues: [], details: [] });
     });
 
     it('reads a list of the wrong type as empty and keeps the rest of the answer', () => {
@@ -277,7 +278,39 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
         assert.equal(beatOf('crane001-full-id', 'crane_moved').status, 'active');
     });
 
-    it('applies the queued marks when a beat completed', async () => {
+    it('applies the queued marks the answer confirmed when a beat completed, with their message', async () => {
+        const arc = craneAct();
+        arc.foreshadowing = [{ id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false }];
+        storeChat({ arcs: [arc], pendingMarks: [{ arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 }] });
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'], newCharacters: [], learned: [],
+            fulfilled: [{ developmentId: 'crane001:brody_refuses', at: 4 }], plantedClues: ['crane001:clue_rust'],
+        })]);
+
+        await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(chat_metadata.story_arc.arcs[0].foreshadowing[0], { id: 'clue_rust', clue: 'Rust on the crane bolts', planted: true, plantedAt: 3 });
+        assert.deepEqual(chat_metadata.story_arc.pendingMarks, []);
+    });
+
+    it('leaves a confirmed mark waiting when no beat completed', async () => {
+        const arc = craneAct();
+        arc.foreshadowing = [{ id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false }];
+        const mark = { arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 };
+        storeChat({ arcs: [arc], pendingMarks: [mark] });
+        installExtraction([JSON.stringify({
+            present: ['Noor', 'Ellie'], newCharacters: [], learned: [],
+            fulfilled: [{ developmentId: 'crane001:permit_shown', at: 4 }], plantedClues: ['crane001:clue_rust'],
+        })]);
+
+        const result = await updateKnowledgeAfterReply(4);
+
+        assert.deepEqual(result, { ledgerChanged: true, beatsChanged: false });
+        assert.equal(chat_metadata.story_arc.arcs[0].foreshadowing[0].planted, false);
+        assert.deepEqual(chat_metadata.story_arc.pendingMarks, [{ arcId: 'crane001-full-id', list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3, confirmed: true }]);
+    });
+
+    it('drops a claim the answer did not find, even when a beat completed (#87)', async () => {
         const arc = craneAct();
         arc.foreshadowing = [{ id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false }];
         storeChat({ arcs: [arc], pendingMarks: [{ arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 }] });
@@ -285,22 +318,40 @@ describe('updateKnowledgeAfterReply: beat recognition', () => {
 
         await updateKnowledgeAfterReply(4);
 
-        assert.equal(chat_metadata.story_arc.arcs[0].foreshadowing[0].planted, true);
+        assert.equal(beatOf('crane001-full-id', 'brody_refuses').status, 'completed');
+        assert.equal(chat_metadata.story_arc.arcs[0].foreshadowing[0].planted, false);
         assert.deepEqual(chat_metadata.story_arc.pendingMarks, []);
     });
 
-    it('leaves the queued marks waiting when no beat completed', async () => {
+    it('keeps a claim queued and unapplied when the extraction answers nothing (#87)', async () => {
         const arc = craneAct();
         arc.foreshadowing = [{ id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false }];
-        const mark = { arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 };
-        storeChat({ arcs: [arc], pendingMarks: [mark] });
-        installExtraction([answerFulfilling({ developmentId: 'crane001:permit_shown', at: 4 })]);
+        storeChat({ arcs: [arc], pendingMarks: [{ arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 }] });
+        installExtraction(['not json']);
 
-        const result = await updateKnowledgeAfterReply(4);
+        await updateKnowledgeAfterReply(4);
 
-        assert.deepEqual(result, { ledgerChanged: true, beatsChanged: false });
         assert.equal(chat_metadata.story_arc.arcs[0].foreshadowing[0].planted, false);
         assert.deepEqual(chat_metadata.story_arc.pendingMarks, [{ arcId: 'crane001-full-id', list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 }]);
+    });
+
+    it('shows the extraction the claims of the messages it reads, each with its message and clue (#87)', async () => {
+        const arc = craneAct();
+        arc.foreshadowing = [
+            { id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false },
+            { id: 'clue_old', clue: 'A torn permit in the gutter', planted: false },
+        ];
+        storeChat({ arcs: [arc], pendingMarks: [{ arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 3 }] });
+        const sentPrompts = installExtraction([answerFulfilling()]);
+        globalThis.fetch = async () => new Response('CLAIMED:\n{{CLAIMED_CLUES}}');
+        clearTemplateCache();
+        try {
+            await updateKnowledgeAfterReply(4);
+        } finally {
+            clearTemplateCache();
+        }
+
+        assert.equal(sentPrompts[0], 'CLAIMED:\n- [crane001:clue_rust] (claimed in message 3) Rust on the crane bolts');
     });
 
     it('completes nothing when the reply changed during the call', async () => {
@@ -396,6 +447,18 @@ describe('updateKnowledgeAfterSwipe and updateKnowledgeAfterEdit: beat recogniti
         // The swipe lost its old id; the re-extraction gave it a new one.
         assert.notEqual(completion.messageId, 'm4');
         assert.equal(completion.messageId, chat[4].extra.story_arc_message_id);
+    });
+
+    it('an edit re-checks a confirmed claim of the message against its new text and drops it when not found (#87)', async () => {
+        const arc = craneAct();
+        arc.foreshadowing = [{ id: 'clue_rust', clue: 'Rust on the crane bolts', planted: false }];
+        storeChat({ arcs: [arc], lastUpdatedAt: 4, pendingMarks: [{ arcId: arc.id, list: 'foreshadowing', flag: 'planted', id: 'clue_rust', at: 4, confirmed: true }] });
+        installExtraction([answerFulfilling()]);
+
+        await updateKnowledgeAfterEdit(4);
+
+        assert.deepEqual(chat_metadata.story_arc.pendingMarks, []);
+        assert.equal(chat_metadata.story_arc.arcs[0].foreshadowing[0].planted, false);
     });
 
     it('an edit reopens the beat completed at the message, and the re-extraction completes it again', async () => {

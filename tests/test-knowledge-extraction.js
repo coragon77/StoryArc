@@ -67,6 +67,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            CLAIMED_CLUES: '(none)',
             APPEARANCE_SECTION: '',
             STATE_SECTION: '',
             CONTEXT_MESSAGE: '[2063] Gabriel Marin: Lock it on with titanium latches.',
@@ -94,6 +95,7 @@ describe('buildKnowledgeExtractionVariables', () => {
             SECRETS: '(none)',
             DEVELOPMENTS: '(none)',
             PLANS: '(none)',
+            CLAIMED_CLUES: '(none)',
             APPEARANCE_SECTION: '',
             STATE_SECTION: '',
             // 2065 is hidden: the context message is the one before it.
@@ -235,6 +237,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
             fulfilled: [],
             rulings: [],
             rewrites: [],
+            plantedClues: [],
             details: [],
         });
     });
@@ -254,7 +257,7 @@ describe('parseKnowledgeExtractionAnswer', () => {
     it('accepts empty lists', () => {
         const answer = parseKnowledgeExtractionAnswer('{"present": [], "newCharacters": [], "learned": []}');
 
-        assert.deepEqual(answer, { present: [], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], rewrites: [], details: [] });
+        assert.deepEqual(answer, { present: [], newCharacters: [], newNames: [], learned: [], revealedSecrets: [], retracted: [], fulfilled: [], rulings: [], rewrites: [], plantedClues: [], details: [] });
     });
 
     it('gives nothing for malformed JSON, an empty answer or a non-object', () => {

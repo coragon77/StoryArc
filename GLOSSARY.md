@@ -94,7 +94,7 @@ A milestone the story moved past: a later milestone of the same arc was fulfille
 _Avoid_: failed, missed, dropped, cancelled
 
 **Mark**:
-The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
+The model's note that a foreshadowing clue was planted or a trigger fired. Queued, and applied when the prompt changes anyway, so the clue then leaves the plan. With the knowledge tracker on, a clue's mark is applied only after the extraction found the clue in its message; one it did not find is dropped. The Arc Manager calls a queued mark a **report** ("2 reports waiting", "Drop report"): the player's word for it.
 _Avoid_: tick, flag
 
 **Pressure**:

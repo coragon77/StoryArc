@@ -363,7 +363,12 @@ StoryArc/
 │   │   │                       #   chat indices by content suffix, not position
 │   │   └── signals.js          # parseSignals(text) — extracts [ARC_SIGNAL:…:COMPLETE|PLANTED|FIRED] tokens;
 │   │                           #   PLANTED/FIRED are queued in pendingMarks and applied by
-│   │                           #   flushPendingMarks(messageIndex, promptChangesAnyway);
+│   │                           #   flushPendingMarks(messageIndex, promptChangesAnyway),
+│   │                           #   tracker on: only confirmed clue marks, each applied
+│   │                           #   mark records plantedAt/firedAt;
+│   │                           #   listClaimedClues(from, to), settleClaimedClues(checked,
+│   │                           #   confirmedRefs, readFrom?) — the extraction's clue
+│   │                           #   check (#87);
 │   │                           #   dropPendingMark() for the Arc Manager's hand toggle
 │   │                           #   (bare or HTML-comment-wrapped);
 │   │                           #   processSignalResults(signals, arcs, messageIndex) —
@@ -882,6 +887,12 @@ StoryArc/
 │   ├── test-marks.js           # Tests: PLANTED/FIRED parsing, PLANT CHECK lines per
 │   │                           #   tier/focus, queue keeps the prompt byte-identical
 │   │                           #   until flush, flush rules, togglePlanItem
+│   ├── test-clue-check.js      # Tests: the extraction's clue check (#87): flush with
+│   │                           #   the tracker on/off, plantedAt/firedAt,
+│   │                           #   listClaimedClues, settleClaimedClues, a repeated
+│   │                           #   marker moving an unconfirmed claim,
+│   │                           #   resolvePlantedClues, plantedClues parsing, the Arc
+│   │                           #   Manager's waiting line
 │   ├── test-sequential-milestones.js # Tests: milestones run in order (ADR-0010):
 │   │                           #   only the current pressure (normal, spotlight), a
 │   │                           #   stored all-active act, skipping and its record,
@@ -978,7 +989,7 @@ lib/knowledge/
 │                listNameWordCarriers + withoutTaggedElements)
 ├── names.js    (imports: none)
 └── ledger.js   (imports: message-ids.js, names.js, core/constants.js, core/settings.js,
-                 injection/pacing.js, injection/signals.js flushPendingMarks,
+                 injection/pacing.js, injection/signals.js flushPendingMarks listClaimedClues settleClaimedClues,
                  planning/beat-completion.js completeBeats + reopenCompletionsAt,
                  planning/storage.js, planning/generator.js callLlm + templates,
                  planning/validation.js parseLlmJson, /script.js,

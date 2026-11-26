@@ -41,6 +41,8 @@ Retract only a fact the correction is about, not facts that merely touch the sam
 - "at": the index in square brackets of the message it happens in, one of the new messages.
 Only what happens on screen in the new messages counts, not what is planned, hinted at or likely. A development listed under "done" has already happened and is never reported. When in doubt, leave it out. Out-of-character lines fulfil nothing. Write at most one item per development.
 
+PLANTED CLUES. This is a check of its own, not a development: the rules of FULFILLED do not apply to it. The narrator claims to have planted each clue in the claimed clues list, in the message named with it. Check each claim against the new messages. Under "plantedClues", write the id in square brackets of every claimed clue whose detail the new messages actually show on screen, in any words. A claim does not count when the messages only touch the subject, show a different detail, or leave the detail to be guessed. A clue that starts with "If" or "When" counts only when the messages show its situation and its detail both. When in doubt, leave it out: a clue left out stays in the plan and can be planted again.
+
 7. OVERRULED. For every out-of-character line of the player in the new messages that says the story must differ from a premise or a pressure in the plans list, write one item:
 - "arcs": the ids in square brackets of the arcs in the plans list whose premise or pressure it contradicts.
 - "quote": the player's words that state the ruling, copied exactly from the message, the shortest span that states it whole.
@@ -73,6 +75,7 @@ The player may ask with "rewrite", "redo" or "try again", may agree to a new ver
   "fulfilled": [
     { "developmentId": "id of a development in the developments list", "at": <index of the message> }
   ],
+  "plantedClues": ["id of a clue in the claimed clues list"],
   "rulings": [
     { "arcs": ["id of an arc in the plans list"], "quote": "the player's words, copied exactly", "chose": "only for a bare pick: the option it picks, copied exactly", "at": <index of the player's message> }
   ],
@@ -101,6 +104,10 @@ Each with its id. These are developments the story may reach; most will not happ
 == PLANS OF THE STORY ARCS ==
 Each arc with its id, its premise and its pressures: where the story arc is headed. They are listed only so you can tell when the player overrules them; they are never reported as anything else.
 {{PLANS}}
+
+== CLAIMED CLUES ==
+Each with its id in square brackets, the index of the message the narrator claims to have planted it in, and the clue. Only these are checked under PLANTED CLUES.
+{{CLAIMED_CLUES}}
 {{APPEARANCE_SECTION}}{{STATE_SECTION}}
 == MESSAGE BEFORE THE NEW MESSAGES ==
 Already read, with its index in square brackets. Report nothing from it: it is here only for the options a ruling picks from, when a new message of the player answers options offered in it.
