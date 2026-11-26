@@ -657,7 +657,7 @@ describe('buildArcSoFar', () => {
             'Secrets already revealed (established, do not restate):\n'
             + '- The creditor is her brother.\n'
             + '\n'
-            + 'Secrets not yet revealed (re-plan them freely: keep, rewrite or drop each, keeping its id when you keep or rewrite it; a secret with planted clues or fired triggers listed under it must be kept or rewritten so it still explains them):\n'
+            + 'Secrets not yet revealed (re-plan them freely: keep, rewrite or drop each, keeping its id when you keep or rewrite it; a secret with planted clues or fired triggers listed under it must be kept or rewritten so it still explains them, except a secret about another plot thread\'s people, which you may drop even then):\n'
             + '- [secret_2] The ledger is forged.\n'
             + '\n'
             + 'Escalation so far: old escalation\n',
@@ -688,7 +688,7 @@ describe('buildArcSoFar', () => {
         const text = buildArcSoFar(arc);
 
         assert.ok(text.includes(
-            'so it still explains them):\n'
+            'which you may drop even then):\n'
             + '- [forged_ledger] The ledger is forged.\n'
             + '  Known to: Tomas, the clerk\n'
             + '  Planted clue: Ink that smells of almonds\n'
@@ -696,6 +696,22 @@ describe('buildArcSoFar', () => {
             + '\n'
             + 'Escalation so far:',
         ), text);
+    });
+
+    it('builds for an arc whose planted clue and fired trigger point at a secret the plan check removed', () => {
+        // The check removed the other plot thread's secret; its played clue
+        // and fired trigger stay stored as history (2026-11-26).
+        const arc = {
+            ...storedEpisode(),
+            secrets: [{ id: 'forged_ledger', content: 'The ledger is forged.', revealPhase: 'any', disclosed: false }],
+            foreshadowing: [{ id: 'torn_contract', clue: 'A torn contract in Lena\'s bin', target: 'secret:lena_label', planted: true }],
+            triggers: [{ id: 'label_call', condition: 'Lena takes the call', action: 'She hangs up pale.', secret: 'lena_label', fired: true }],
+        };
+
+        const text = buildArcSoFar(arc);
+
+        assert.ok(text.includes('which you may drop even then):\n- [forged_ledger] The ledger is forged.\n\nEscalation so far:'), text);
+        assert.doesNotMatch(text, /torn contract|hangs up pale/);
     });
 
     it('lists skipped milestones as passed over after what already happened', () => {
@@ -750,7 +766,7 @@ describe('buildArcSoFar', () => {
         const text = buildArcSoFar({ ...storedEpisode(), secrets: [], escalation: '' });
 
         assert.ok(text.includes('do not restate):\n(none)\n\nSecrets not yet revealed'), text);
-        assert.ok(text.includes('so it still explains them):\n(none)\n\nEscalation so far: (none recorded)\n'), text);
+        assert.ok(text.includes('which you may drop even then):\n(none)\n\nEscalation so far: (none recorded)\n'), text);
     });
 
     it('opens with the header, the re-planning instruction and the premise', () => {
