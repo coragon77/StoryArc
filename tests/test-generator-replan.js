@@ -105,7 +105,9 @@ describe('generateArc: a re-plan proposes the premise', () => {
         assert.ok(!phase2Prompt.includes('Keep the premise as given'));
         assert.ok(phase2Prompt.includes('Write a premise for the arc as it stands now, keeping what the current premise says that is still true.'));
         assert.ok(phase2Prompt.includes('Current premise: A debt comes due, and Mira must pay it alone.'));
-        assert.doesNotMatch(phase2Prompt, /ruling/i);
+        // The thread block names rulings as a rule; no ruling and no rulings block is sent.
+        assert.ok(!phase2Prompt.includes('The player\'s rulings (binding'));
+        assert.ok(!phase2Prompt.includes('follows every one of the player\'s rulings'));
 
         assert.equal(result.arc.premise, 'A debt comes due, and Mira must pay it alone.');
         assert.equal(result.arc.proposedPremise, 'Mira no longer pays alone: her sister stands with her against the debt.');
@@ -225,6 +227,7 @@ describe('generateArc: a re-plan follows the stored rulings', () => {
         await generateArc(harvestedContext, '');
 
         assert.ok(sentPrompts[2].includes('Rulings:\n(none)\n'));
-        assert.ok(!sentPrompts[1].includes('rulings'));
+        assert.ok(!sentPrompts[1].includes('The player\'s rulings (binding'));
+        assert.ok(!sentPrompts[1].includes('== ARC SO FAR =='));
     });
 });

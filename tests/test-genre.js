@@ -101,7 +101,7 @@ describe('prompt templates carry the genre slot', () => {
 
     it('outline: the themes right after the creative direction and the author\'s answers, before the tier', () => {
         const text = read('generate-arc.txt');
-        assert.ok(text.includes('{{USER_DIRECTION}}\n\n{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{TIER_BLOCK}}'));
+        assert.ok(text.includes('{{USER_DIRECTION}}\n\n{{AUTHOR_ANSWERS_BLOCK}}{{THEMES_BLOCK}}{{THREAD_BLOCK}}{{TIER_BLOCK}}'));
         assert.equal(text.split('{{THEMES_BLOCK}}').length - 1, 1);
     });
 
