@@ -162,6 +162,8 @@ StoryArc/
 │   │   │                       #   "secret:") is the secret's (clueTargetsSecret,
 │   │   │                       #   planted or not); listed under each
 │   │   │                       #   secret in {{SECRETS}} and in {{ARC_SO_FAR}};
+│   │   │                       #   clueSecretId(clue) — that leading id, for
+│   │   │                       #   mergeReplan's restored and orphaned secret ids;
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
 │   │   │                       #   marks the re-planned arc (its rulings under it as
 │   │   │                       #   "Overruled by the player:") in phase 1,
@@ -288,7 +290,10 @@ StoryArc/
 │   │                           #   which buildArcSoFar shares; an unknown target tier
 │   │                           #   is an episode, as validation stores it);
 │   │                           #   replaces the rest, the unrevealed secrets too (one
-│   │                           #   under an old id keeps its clues and triggers);
+│   │                           #   under an old id keeps its clues and triggers; one the
+│   │                           #   plan dropped comes back when a kept planted clue or
+│   │                           #   fired trigger points at it, and an orphaned clue or
+│   │                           #   trigger target id stays taken for new secrets);
 │   │                           #   withUniqueIds() suffixes
 │   │                           #   colliding ids _2, _3, … and renames unlockAfter refs;
 │   │                           #   replanTiers(tier) — the tiers a re-plan may pick:
