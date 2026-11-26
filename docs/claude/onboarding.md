@@ -57,6 +57,7 @@ Before exploring code, you **MUST** read the relevant documentation (blocking):
 | Finding files, module dependencies, "where does X live" | `docs/architecture/code-index.md` |
 | Naming a domain concept (tier, focus, milestone, pressure, re-plan, stall), or a change that touches a recorded decision | `GLOSSARY.md` (glossary) and `docs/adr/` |
 | Knowledge tracker — the knowledge ledger, holders, the extraction call, the knowledge block, rollback on swipe / regeneration / edit / delete / branch load, the Knowledge popup | `docs/architecture/architecture.md` ("Knowledge Tracker" section) |
+| The plot thread rule — an arc's plan staying inside its own plot thread, backdrop, links and the "Keep this arc to itself" setting, the plan check removing foreign parts (beats, secrets, triggers of another plot thread) and its guards, trigger gates | `docs/architecture/architecture.md` ("Plot Thread" section), ADR-0011 |
 | The prompt templates and their edits — the Prompts popup, `loadTemplate` serving a saved edit, the placeholder check, the last-sent record (`readLastSentPrompt`, `usedEdit`) | `docs/architecture/architecture.md` ("Prompts" section) |
 | SillyTavern API integration — `setExtensionPrompt`, `generateRaw`, events, popups, world info, `chat_metadata`, connection profiles, extension loading | `docs/architecture/st-extension-patterns.md` |
 | Writing or strengthening unit tests, hollow tests, mutation testing (Stryker), the test-suite audit | `docs/goals/2026-10-26-test-suite-worklist.md` |
