@@ -266,6 +266,24 @@ describe('mergeReplan', () => {
         ]);
     });
 
+    it('restores by id only: a plan that rewrites the secret under a new id has both', () => {
+        // The planner is told to keep the id; a rewrite under another id
+        // cannot be told from a drop, so the stored secret comes back too.
+        const existing = {
+            ...storedEpisode(),
+            foreshadowing: [{ id: 'almond_ink', clue: 'Ink that smells of almonds', target: 'secret:secret_2', planted: true }],
+        };
+        const generated = generatedPlan({ secrets: [{ content: 'The brother forged the ledger.' }] });
+
+        const merged = mergeReplan(existing, generated);
+
+        assert.deepEqual(merged.secrets.map(secret => [secret.id, secret.content]), [
+            ['secret_1', 'The creditor is her brother.'],
+            ['secret_1_2', 'The brother forged the ledger.'],
+            ['secret_2', 'The ledger is forged.'],
+        ]);
+    });
+
     it('a restored secret reaches the plan check, which can remove it as foreign; the planted clue stays', () => {
         const existing = {
             ...storedEpisode(),
