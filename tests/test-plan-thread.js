@@ -107,6 +107,8 @@ describe('generateArc: the outline carries the thread block', () => {
         assert.equal(result.error, null);
         const outlinePrompt = sentPrompts[1];
         assertThreadBlock(outlinePrompt);
+        assert.equal(outlinePrompt.includes('intersect'), false);
+        assert.equal(outlinePrompt.includes('multi-thread'), false);
         assert.ok(outlinePrompt.indexOf('Mira pays her debt.') < outlinePrompt.indexOf('== PLOT THREAD (binding) =='));
         assert.ok(outlinePrompt.indexOf('== PLOT THREAD (binding) ==') < outlinePrompt.indexOf('== TIER: EPISODE =='));
     });
