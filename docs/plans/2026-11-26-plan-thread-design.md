@@ -101,15 +101,14 @@ The check's earlier step 4 tied a trigger to one of the arc's own secrets and wa
   - it is not disclosed;
   - it is not among the revealed ids or the ids the knowledge ledger saw come out;
   - it is not an earlier secret stored as disclosed (marked revealed by hand), whatever the revealed list says;
-  - it is not an earlier secret of a re-plan whose answer has no revealed list;
-  - no planted clue and no fired trigger points at it.
+  - it is not an earlier secret of a re-plan whose answer has no revealed list.
 
-  It takes its unfired triggers and unplanted clues with it.
+  A planted clue or a fired trigger pointing at it does not keep it (decided 2026-11-26 under the owner's delegation, open to the owner's veto, after the live check's run 4). The planted clue and the fired trigger stay stored. It takes its unfired triggers and unplanted clues with it. On a re-plan the planner may drop such a secret too: the ARC SO FAR block's rule that a secret with planted clues or fired triggers must be kept or rewritten excepts a secret about another plot thread's people.
 - **A trigger** is removed only while unfired.
 - **Ignored:** unknown ids, kinds and wrong shapes. A plan may end below its tier's minimum beat count.
 - **On failure:** a failed or unreadable check keeps the plan as generated.
 
-**What the player sees.** The wizard's step log closes the plan check's line with a count: "Plan checked, N parts of other plot threads removed". The parts are never shown. The count covers beats, secrets and triggers, so a removed secret's triggers count and clues do not. The console logs each removed part by kind and id, never with the plan's text.
+**What the player sees.** The wizard's step log closes the plan check's line with a count: "Plan checked, N parts of other plot threads removed". The parts are never shown. The count covers beats, secrets and triggers, so a removed secret's triggers count and clues do not. The console logs each removed part by kind and id, never with the plan's text, and each part named foreign that a guard kept, with the guard's reason.
 
 ## Episode re-plan count
 
@@ -148,4 +147,5 @@ The spec made these decisions itself:
 - the step log shows a count;
 - there is no Arc Manager control;
 - the check gets the analysis on a new plan;
-- the guards on removal, in part. The owner ruled on two of them on 2026-11-26 (recorded in the ADR-0006 amendment): no beat is removed when the removal would leave no open non-optional beat, and a secret stored as disclosed is never removed, whatever the revealed list says. He ruled the gate rename the same day (TRIGGER GATES, `gates`, a legacy `links` still read). The rest stays open: open beats only, planted clues and fired triggers protect a secret, and a fired trigger is never removed.
+- the guards on removal, in part. The owner ruled on two of them on 2026-11-26 (recorded in the ADR-0006 amendment): no beat is removed when the removal would leave no open non-optional beat, and a secret stored as disclosed is never removed, whatever the revealed list says. He ruled the gate rename the same day (TRIGGER GATES, `gates`, a legacy `links` still read). The rest stays open: open beats only, and a fired trigger is never removed.
+- that a planted clue or a fired trigger no longer protects a secret of another plot thread, at the check and in the planner's re-plan block (2026-11-26, after the live check's run 4; ADR-0003 and ADR-0006 amendments).

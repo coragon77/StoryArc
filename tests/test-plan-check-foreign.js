@@ -234,19 +234,34 @@ describe('applyPlanCheck: foreign secrets', () => {
         assert.deepEqual(ids(checked.triggers), ['coin_counted', 'label_call', 'press_flash']);
     });
 
-    it('keeps a secret a planted clue points at, and its unfired trigger', () => {
+    // A played clue or a fired trigger no longer shields a secret of another
+    // plot thread (2026-11-26): the clue and the trigger stay as history.
+    it('removes a secret a planted clue points at, with its unfired trigger; the planted clue stays', () => {
         const arc = plannedAct();
         arc.foreshadowing[0].planted = true;
 
         const checked = applyPlanCheck(arc, { foreign: [{ kind: 'secret', id: 'lena_label' }] }, [], false);
 
-        assert.deepEqual(ids(checked.secrets), ['lender_brother', 'lena_label']);
-        assert.deepEqual(ids(checked.triggers), ['coin_counted', 'label_call', 'press_flash']);
+        assert.deepEqual(ids(checked.secrets), ['lender_brother']);
+        assert.deepEqual(ids(checked.triggers), ['coin_counted', 'press_flash']);
+        assert.deepEqual(ids(checked.foreshadowing), ['torn_contract', 'brother_ring']);
     });
 
-    it('keeps a secret a fired trigger points at', () => {
+    it('removes a secret a fired trigger points at, with its unplanted clue; the fired trigger stays', () => {
         const arc = plannedAct();
         arc.triggers[1].fired = true;
+
+        const checked = applyPlanCheck(arc, { foreign: [{ kind: 'secret', id: 'lena_label' }] }, [], false);
+
+        assert.deepEqual(ids(checked.secrets), ['lender_brother']);
+        assert.deepEqual(ids(checked.triggers), ['coin_counted', 'label_call', 'press_flash']);
+        assert.deepEqual(ids(checked.foreshadowing), ['brother_ring']);
+    });
+
+    it('keeps a disclosed secret with a planted clue', () => {
+        const arc = plannedAct();
+        arc.secrets[1].disclosed = true;
+        arc.foreshadowing[0].planted = true;
 
         const checked = applyPlanCheck(arc, { foreign: [{ kind: 'secret', id: 'lena_label' }] }, [], false);
 
@@ -310,13 +325,36 @@ describe('applyPlanCheck: the removal is logged by kind and id', () => {
         assert.deepEqual(logs, ['[Story Arc] Plan check removed parts of other plot threads: beat premiere, secret lena_label, trigger label_call, trigger press_flash, clue torn_contract']);
     });
 
-    it('nothing removed: no line', () => {
-        const arc = plannedAct();
-        arc.beats[1].status = 'completed';
-
-        applyPlanCheck(arc, { foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'beat', id: 'no_such_beat' }] }, [], false);
+    it('nothing removed and nothing kept: no line', () => {
+        applyPlanCheck(plannedAct(), { foreign: [{ kind: 'beat', id: 'no_such_beat' }, { kind: 'secret', id: 'no_such_secret' }] }, [], false);
 
         assert.deepEqual(logs, []);
+    });
+
+    it('one line per part a guard keeps, with its kind, id and the guard\'s reason', () => {
+        const arc = plannedAct();
+        arc.beats[1].status = 'completed';
+        arc.secrets[1].disclosed = true;
+        arc.triggers[2].fired = true;
+
+        applyPlanCheck(arc, {
+            foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'secret', id: 'lena_label' }, { kind: 'trigger', id: 'press_flash' }],
+        }, [], false);
+
+        assert.deepEqual(logs, [
+            '[Story Arc] Plan check kept beat premiere, named foreign: it is closed',
+            '[Story Arc] Plan check kept secret lena_label, named foreign: it came out or may have',
+            '[Story Arc] Plan check kept trigger press_flash, named foreign: it has fired',
+        ]);
+    });
+
+    it('a re-plan logs a secret kept because it came out or may have', () => {
+        const arc = plannedAct();
+        const earlierSecrets = [{ ...arc.secrets[1] }];
+
+        applyPlanCheck(arc, { revealed: ['lena_label'], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, true, REPLAN);
+
+        assert.deepEqual(logs, ['[Story Arc] Plan check kept secret lena_label, named foreign: it came out or may have']);
     });
 });
 
@@ -338,7 +376,7 @@ describe('check-plan.txt: foreign parts', () => {
     const checkPlan = readFileSync(new URL('../prompts/check-plan.txt', import.meta.url), 'utf8');
 
     it('lists foreign beats, secrets and triggers for removal, never as a fulfillment rewrite', () => {
-        assert.ok(checkPlan.includes('- A beat, a secret or a trigger that is foreign: list it in "foreign" with its kind and id. Never rewrite it instead, not even its fulfillment.'));
+        assert.ok(checkPlan.includes('- A beat, a secret or a trigger that is foreign: list it in "foreign" with its kind and id, a foreign secret even when clues of it are planted or a trigger of it has fired. Never rewrite it instead, not even its fulfillment.'));
         assert.ok(checkPlan.includes('"foreign": [{ "kind": "beat | secret | trigger", "id": "the item\'s id" }]'));
     });
 
