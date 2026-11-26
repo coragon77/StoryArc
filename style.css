@@ -22,3 +22,6 @@
 
 /* Take out rejected messages (dialog) */
 @import url('./lib/css/rejection.css');
+
+/* Prompts popup and the drawer's Prompts entry */
+@import url('./lib/css/prompts.css');
