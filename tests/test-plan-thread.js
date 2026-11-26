@@ -84,6 +84,7 @@ function assertThreadBlock(outlinePrompt) {
     assert.ok(outlinePrompt.includes('pick ONE plot thread from the story and name it in the premise'));
     assert.ok(outlinePrompt.includes('- No link: no secret ties this arc\'s people or things to another plot thread.'));
     assert.ok(outlinePrompt.includes('The test: take the other plot thread out of the story. Every beat must still be fulfillable, and every secret must still be about this arc\'s own people.'));
+    assert.ok(outlinePrompt.includes('People are shared: a character who also belongs to another plot thread may appear in this arc\'s beats. A part belongs to a plot thread by what happens in it, never by who is in it.'));
 }
 
 describe('generateArc: the outline carries the thread block', () => {

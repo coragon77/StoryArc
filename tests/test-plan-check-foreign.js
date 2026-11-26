@@ -41,6 +41,9 @@ function plannedAct(overrides = {}) {
 
 const ids = items => items.map(item => item.id);
 
+/** What generateArc passes the check on a re-plan: the one re-plan signal. */
+const REPLAN = { cast: [], isReplan: true };
+
 describe('applyPlanCheck: foreign beats', () => {
     it('removes an open beat and takes its id out of every prerequisite list', () => {
         const checked = applyPlanCheck(plannedAct(), { foreign: [{ kind: 'beat', id: 'premiere' }] }, []);
@@ -92,6 +95,32 @@ describe('applyPlanCheck: foreign beats', () => {
 
         assert.deepEqual(ids(checked.beats), ['ledger', 'payment']);
     });
+
+    it('a removed beat takes its unplanted clue with it; a planted one stays', () => {
+        const arc = plannedAct({
+            foreshadowing: [
+                { id: 'poster', clue: 'A premiere poster on the wall', target: 'beat:premiere', planted: false },
+                { id: 'ticket', clue: 'A torn premiere ticket', target: 'Beat:premiere (the opening night)', planted: false },
+                { id: 'flyer', clue: 'A flyer for the premiere', target: 'beat:premiere', planted: true },
+                { id: 'ledger_page', clue: 'A ledger page', target: 'beat:ledger', planted: false },
+            ],
+        });
+
+        const checked = applyPlanCheck(arc, { foreign: [{ kind: 'beat', id: 'premiere' }] }, []);
+
+        assert.deepEqual(ids(checked.foreshadowing), ['flyer', 'ledger_page']);
+    });
+
+    it('a beat kept by a guard keeps its clue', () => {
+        const arc = plannedAct({
+            foreshadowing: [{ id: 'poster', clue: 'A premiere poster on the wall', target: 'beat:premiere', planted: false }],
+        });
+        arc.beats[1].status = 'completed';
+
+        const checked = applyPlanCheck(arc, { foreign: [{ kind: 'beat', id: 'premiere' }] }, []);
+
+        assert.deepEqual(ids(checked.foreshadowing), ['poster']);
+    });
 });
 
 describe('applyPlanCheck: foreign secrets', () => {
@@ -117,7 +146,7 @@ describe('applyPlanCheck: foreign secrets', () => {
         const arc = plannedAct();
         const earlierSecrets = [{ ...arc.secrets[1] }];
 
-        const checked = applyPlanCheck(arc, { revealed: ['lena_label'], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets);
+        const checked = applyPlanCheck(arc, { revealed: ['lena_label'], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, REPLAN);
 
         assert.deepEqual(checked.secrets.map(secret => [secret.id, secret.disclosed]), [['lender_brother', false], ['lena_label', true]]);
     });
@@ -126,7 +155,7 @@ describe('applyPlanCheck: foreign secrets', () => {
         const arc = plannedAct();
         const earlierSecrets = [{ ...arc.secrets[1] }];
 
-        const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, {}, ['lena_label']);
+        const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, REPLAN, ['lena_label']);
 
         assert.deepEqual(ids(checked.secrets), ['lender_brother', 'lena_label']);
     });
@@ -136,7 +165,7 @@ describe('applyPlanCheck: foreign secrets', () => {
         const earlierSecrets = [{ ...arc.secrets[1] }];
         const foreign = [{ kind: 'secret', id: 'lena_label' }, { kind: 'secret', id: 'lender_brother' }];
 
-        const checked = applyPlanCheck(arc, { foreign }, earlierSecrets);
+        const checked = applyPlanCheck(arc, { foreign }, earlierSecrets, REPLAN);
 
         assert.deepEqual(ids(checked.secrets), ['lena_label']);
     });
@@ -145,7 +174,7 @@ describe('applyPlanCheck: foreign secrets', () => {
         const arc = plannedAct();
         const earlierSecrets = [{ ...arc.secrets[1] }];
 
-        const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets);
+        const checked = applyPlanCheck(arc, { revealed: [], foreign: [{ kind: 'secret', id: 'lena_label' }] }, earlierSecrets, REPLAN);
 
         assert.deepEqual(ids(checked.secrets), ['lender_brother']);
     });
@@ -205,6 +234,34 @@ describe('applyPlanCheck: foreign triggers, and what is ignored', () => {
         }, []);
 
         assert.deepEqual(arc, plannedAct());
+    });
+});
+
+describe('applyPlanCheck: the removal is logged by kind and id', () => {
+    let logs;
+    let originalLog;
+    beforeEach(() => {
+        logs = [];
+        originalLog = console.log;
+        console.log = (...parts) => logs.push(parts.join(' '));
+    });
+    afterEach(() => { console.log = originalLog; });
+
+    it('one line lists each removed part and clue, ids only, never the plan text', () => {
+        applyPlanCheck(plannedAct(), {
+            foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'secret', id: 'lena_label' }, { kind: 'trigger', id: 'press_flash' }],
+        }, []);
+
+        assert.deepEqual(logs, ['[Story Arc] Plan check removed parts of other plot threads: beat premiere, secret lena_label, trigger label_call, trigger press_flash, clue torn_contract']);
+    });
+
+    it('nothing removed: no line', () => {
+        const arc = plannedAct();
+        arc.beats[1].status = 'completed';
+
+        applyPlanCheck(arc, { foreign: [{ kind: 'beat', id: 'premiere' }, { kind: 'beat', id: 'no_such_beat' }] }, []);
+
+        assert.deepEqual(logs, []);
     });
 });
 
