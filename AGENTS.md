@@ -63,7 +63,8 @@ StoryArc/
 │   │   ├── replan.js           # mergeReplan: keep the situation, replace the road
 │   │   ├── arc-edit.js         # applyArcEdit, checkBeatEdit, removeBeat: hand edits in the Arc Manager
 │   │   ├── beat-completion.js  # completeBeats for both recognition paths; reopen on delete, swipe, edit, branch
-│   │   └── arc-preset.js       # The arc generation preset and connection profile
+│   │   ├── arc-preset.js       # The arc generation preset and connection profile
+│   │   └── prompt-edits.js     # The seven prompts: catalog, saved edits, placeholder check, describePrompts
 │   ├── injection/
 │   │   ├── builder.js          # Every prompt section per arc by (tier, focus), budget trim, beat check
 │   │   ├── narrator-prompts.js # What goes to the narrator, in one list; the record of the last send
@@ -86,6 +87,7 @@ StoryArc/
 │   │   ├── knowledge-popup.js  # Knowledge popup: view and edit the knowledge ledger
 │   │   ├── knowledge-status.js # The tracker's status line in the drawer (popup, panel, index.js)
 │   │   ├── sent-view.js        # What the narrator gets: the request as a strip, each part as sent
+│   │   ├── prompts.js          # The Prompts popup: read, edit and reset the prompts, the last one sent
 │   │   ├── rejection-popup.js  # The rewrite notice, the take-out dialog, "Reject from here…"
 │   │   ├── beat-strip.js       # The beat squares and tier words (Arc Manager, progress rows)
 │   │   ├── undo-stack.js       # A popup session's undo (Knowledge popup, Arc Manager)
@@ -97,6 +99,7 @@ StoryArc/
 │       ├── knowledge.css       # Knowledge popup styles
 │       ├── progress.css        # Progress row layout
 │       ├── sent-view.css       # What the narrator gets: strip and reader
+│       ├── prompts.css         # The Prompts popup and the drawer's Prompts entry
 │       └── rejection.css       # The take-out dialog
 ├── scripts/
 │   ├── rebuild-knowledge-block.mjs # The knowledge block the narrator got at one message
