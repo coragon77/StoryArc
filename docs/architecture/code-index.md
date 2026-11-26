@@ -116,6 +116,9 @@ StoryArc/
 │   │   │                       #   in both phases (ADR-0004);
 │   │   │                       #   formatThemesBlock(themeSeeds) fills {{THEMES_BLOCK}}
 │   │   │                       #   in Phase 2 only: colour, never obligations;
+│   │   │                       #   formatThreadBlock(allowLinks, prompt) fills
+│   │   │                       #   {{THREAD_BLOCK}} in Phase 2 (#97): the arc's plot
+│   │   │                       #   thread, backdrop, the take-it-out test, no link;
 │   │   │                       #   formatCastBlock(cast, 'outline'|'checklist') fills
 │   │   │                       #   {{CAST_BLOCK}} and {{CAST_CHECKLIST}} in Phase 2
 │   │   │                       #   (#44): cast, taken names, two rules; '' for no cast;
@@ -879,6 +882,10 @@ StoryArc/
 │   │                           #   the same objects, absent stores stay absent; a failing
 │   │                           #   text kept as written; chat, excluded entries and
 │   │                           #   fetchLorebookEntries never evaluated
+│   ├── test-plan-thread.js     # Tests: the thread block in the outline over the real
+│   │                           #   templates (new plan, re-plan), "intersect" and
+│   │                           #   "multi-thread" gone, the episode's "one plot thread",
+│   │                           #   the {{THREAD_BLOCK}} missing-placeholder warning (#101)
 │   ├── test-planner-cast.js    # Tests: formatCastBlock literal text, the cast slots in
 │   │                           #   generate-arc.txt, generateArc over a scripted profile:
 │   │                           #   outline prompt with and without a cast, three calls;
