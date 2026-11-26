@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArcEdit, applyTitleAndPremiseEdit, checkBeatEdit, completeBeat, removeBeat } from '../lib/planning/arc-edit.js';
+import { applyArcEdit, applyTitleAndPremiseEdit, checkBeatEdit, completeBeat, removeBeat, activateFirstPendingBeat } from '../lib/planning/arc-edit.js';
 import { getArcById, updateArc } from '../lib/planning/storage.js';
 import { chat_metadata } from './mocks/st-mocks.js';
 
@@ -399,6 +399,54 @@ describe('removeBeat', () => {
         assert.equal(beats.length, 2);
         assert.equal(beats[1].status, 'locked');
         assert.deepEqual(beats[1].unlockAfter, ['beat_1']);
+    });
+});
+
+describe('activateFirstPendingBeat', () => {
+    it('makes the first pending beat of an episode with no active beat active', () => {
+        const arc = {
+            tier: 'episode',
+            beats: [
+                { id: 'b1', status: 'completed' },
+                { id: 'b2', status: 'locked' },
+                { id: 'b3', status: 'pending' },
+                { id: 'b4', status: 'pending' },
+            ],
+        };
+
+        const promotedArc = activateFirstPendingBeat(arc);
+
+        assert.deepEqual(promotedArc.beats.map(beat => beat.status), ['completed', 'locked', 'active', 'pending']);
+        assert.deepEqual(arc.beats.map(beat => beat.status), ['completed', 'locked', 'pending', 'pending']);
+    });
+
+    it('treats an arc without a tier as an episode', () => {
+        const arc = { beats: [{ id: 'b1', status: 'pending' }] };
+
+        assert.equal(activateFirstPendingBeat(arc).beats[0].status, 'active');
+    });
+
+    it('leaves an episode that has an active beat as it is', () => {
+        const arc = { tier: 'episode', beats: [{ id: 'b1', status: 'pending' }, { id: 'b2', status: 'active' }] };
+
+        assert.equal(activateFirstPendingBeat(arc), arc);
+        assert.deepEqual(arc.beats.map(beat => beat.status), ['pending', 'active']);
+    });
+
+    it('leaves an episode with no pending beat as it is', () => {
+        const arc = { tier: 'episode', beats: [{ id: 'b1', status: 'completed' }, { id: 'b2', status: 'locked' }] };
+
+        assert.equal(activateFirstPendingBeat(arc), arc);
+        assert.deepEqual(arc.beats.map(beat => beat.status), ['completed', 'locked']);
+    });
+
+    it('leaves the milestones of an act or a saga untouched', () => {
+        for (const tier of ['act', 'saga']) {
+            const arc = { tier, beats: [{ id: 'm1', status: 'completed' }, { id: 'm2', status: 'pending' }] };
+
+            assert.equal(activateFirstPendingBeat(arc), arc, tier);
+            assert.deepEqual(arc.beats.map(beat => beat.status), ['completed', 'pending'], tier);
+        }
     });
 });
 

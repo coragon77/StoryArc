@@ -139,7 +139,8 @@ StoryArc/
 │   │   │                       #   re-plan too);
 │   │   │                       #   plantedCluesOfSecret(arc, secretId) — planted clues
 │   │   │                       #   whose target's leading id (after an optional
-│   │   │                       #   "secret:") is the secret's; listed under each
+│   │   │                       #   "secret:") is the secret's (clueTargetsSecret,
+│   │   │                       #   planted or not); listed under each
 │   │   │                       #   secret in {{SECRETS}} and in {{ARC_SO_FAR}};
 │   │   │                       #   formatExistingArcs(arcs, reviseArcId, reviseRulings)
 │   │   │                       #   marks the re-planned arc (its rulings under it as
@@ -220,6 +221,9 @@ StoryArc/
 │   │   │                       #   checkBeatEdit(tier, edit) — validator's rules for a
 │   │   │                       #   hand edit; removeBeat(beats, id) — drops the id from
 │   │   │                       #   unlockAfter and unlocks beats with nothing left open;
+│   │   │                       #   activateFirstPendingBeat(arc) — an episode with no
+│   │   │                       #   active beat gets its first pending one active
+│   │   │                       #   (milestones untouched; used by promoteNextBeats);
 │   │   │                       #   applyArcEdit takes an absent worldFacts key (older
 │   │   │                       #   arcs) and refuses a non-list or a non-text item;
 │   │   │                       #   completeBeat(beats, id) — completes and unlocks,
@@ -388,7 +392,7 @@ StoryArc/
 │   │                           #   completeBeats (planning/beat-completion.js) with
 │   │                           #   at = messageIndex; does NOT promote;
 │   │                           #   promoteNextBeats(arcs) — episode: activates the next
-│   │                           #   pending beat; act/saga: activates every pending
+│   │                           #   pending beat (activateFirstPendingBeat); act/saga: activates every pending
 │   │                           #   milestone; called on USER_MESSAGE_RENDERED (one
 │   │                           #   user turn later);
 │   │                           #   stripSignalsFromMessage() — removes tokens + blank-line residue;
@@ -685,7 +689,8 @@ StoryArc/
 │   │                           #   applyTitleAndPremiseEdit (trim, blank refused,
 │   │                           #   no other field stored) +
 │   │                           #   checkBeatEdit (empty intention, milestone
-│   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock)
+│   │                           #   pressure) + removeBeat (unlockAfter cleanup, unlock) +
+│   │                           #   activateFirstPendingBeat (episode, milestones)
 │   ├── test-background.js      # Tests: background focus — section text, no premise or
 │   │                           #   pressures, beat check kept, no plant check, never the
 │   │                           #   clock, resume shift, migration untouched, re-plan
@@ -990,7 +995,7 @@ lib/context/
 lib/planning/
 ├── validation.js  (imports: core/constants.js)
 ├── storage.js     (imports: core/settings.js, /script.js)
-├── arc-edit.js    (imports: core/constants.js)
+├── arc-edit.js    (imports: core/constants.js, core/settings.js arcTier)
 ├── beat-completion.js (imports: arc-edit.js completeBeat, storage.js,
 │                   core/settings.js, injection/pacing.js selectNonOptionalBeats,
 │                   knowledge/message-ids.js messageIdOf, /script.js)
@@ -1010,6 +1015,7 @@ lib/injection/
 ├── clock.js    (imports: planning/storage.js, core/settings.js, /script.js)
 ├── stamping.js (imports: clock.js, core/constants.js, core/settings.js, /script.js)
 ├── signals.js  (imports: planning/storage.js, planning/beat-completion.js completeBeats,
+│                planning/arc-edit.js activateFirstPendingBeat,
 │                core/settings.js, /script.js)
 ├── builder.js  (imports: pacing.js, clock.js, core/settings.js,
 │                core/constants.js, context/chat-history.js)

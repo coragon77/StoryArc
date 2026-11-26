@@ -276,3 +276,48 @@ describe('generateArc: a re-plan counts what already happened toward the tier\'s
         ));
     });
 });
+
+describe('generateArc: the plan check reads the story only on a re-plan', () => {
+    beforeEach(() => {
+        clearTemplateCache();
+        extension_settings.story_arc = { enabled: true, defaultConnectionProfile: 'profile-1' };
+    });
+
+    afterEach(() => {
+        globalThis.fetch = originalFetch;
+        ConnectionManagerRequestService.sendRequest = originalSendRequest;
+        delete extension_settings.story_arc;
+        clearTemplateCache();
+    });
+
+    it('sends a new plan\'s check no story block and no analysis', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+
+        const result = await generateArc(harvestedContext, '');
+
+        assert.equal(result.error, null);
+        const planCheckPrompt = sentPrompts[2];
+        assert.ok(planCheckPrompt.includes('Author\'s answers:\n(none)\n\n== SECRETS ==\n(none)\n'));
+        assert.ok(!planCheckPrompt.includes('== STORY SO FAR =='));
+        assert.ok(!planCheckPrompt.includes('== SECRETS BEFORE THIS RE-PLAN =='));
+        assert.ok(!planCheckPrompt.includes('The story stands at a crossroads.'));
+    });
+
+    it('sends a re-plan\'s check the analysis, the recent messages and the secrets before the re-plan', async () => {
+        const sentPrompts = installBackend(['The story stands at a crossroads.', generatedPlan, planCheckAnswer]);
+        const storedArc = storedEpisode();
+        storedArc.secrets[0].disclosed = true;
+
+        const result = await generateArc(harvestedContext, '', {}, { reviseArc: storedArc });
+
+        assert.equal(result.error, null);
+        const planCheckPrompt = sentPrompts[2];
+        assert.ok(planCheckPrompt.includes('Author\'s answers:\n(none)\n\n'
+            + '== STORY SO FAR ==\nAnalysis: The story stands at a crossroads.\n\nMost recent messages:\n(No chat history)\n\n'
+            + '== SECRETS BEFORE THIS RE-PLAN ==\n'
+            + 'The arc\'s secrets as they were worded while the story above was played. The plan below may have rewritten or dropped some of them; step 1 judges these.\n'
+            + '- [brother] The creditor is her brother.\n\n'
+            + '== SECRETS ==\n'
+            + '- [brother] (climax) The creditor is her brother.\n'));
+    });
+});

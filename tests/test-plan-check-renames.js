@@ -341,7 +341,7 @@ describe('buildPlanCheckVariables: the names block', () => {
     }
 
     it('lists the cast, the taken names, the plan\'s characters and the task for a cast of two', () => {
-        const variables = buildPlanCheckVariables(makeArc(['Julian Hale', 'Priya']), null, CAST_OF_TWO);
+        const variables = buildPlanCheckVariables(makeArc(['Julian Hale', 'Priya']), null, null, CAST_OF_TWO);
 
         assert.equal(variables.NAMES_BLOCK, `== NAMES ==
 The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
@@ -377,7 +377,7 @@ Answer the renames as one more key of the JSON object below: "renames": [{ "from
             { name: 'Mara Masters', aliases: [], details: {} },
         ];
 
-        const variables = buildPlanCheckVariables(makeArc([]), null, castWithDetails);
+        const variables = buildPlanCheckVariables(makeArc([]), null, null, castWithDetails);
 
         assert.ok(variables.NAMES_BLOCK.startsWith(`== NAMES ==
 The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
@@ -390,13 +390,13 @@ Names already taken: Dice, Ellie, Mara, Masters
     });
 
     it('writes (none) when the plan lists no characters', () => {
-        const variables = buildPlanCheckVariables(makeArc([]), null, CAST_OF_TWO);
+        const variables = buildPlanCheckVariables(makeArc([]), null, null, CAST_OF_TWO);
 
         assert.ok(variables.NAMES_BLOCK.includes('The plan\'s own list of characters. It can be incomplete: the secrets, triggers, pressures and fulfillments above name characters too.\n\n(none)\n\nRENAMES.'));
     });
 
     it('is empty for an empty cast, and without one', () => {
-        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null, []).NAMES_BLOCK, '');
+        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null, null, []).NAMES_BLOCK, '');
         assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null).NAMES_BLOCK, '');
     });
 });

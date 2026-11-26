@@ -117,7 +117,7 @@ describe('buildArcSoFar: reached milestones count toward the tier\'s milestone c
 
 describe('buildPlanCheckVariables with rulings', () => {
     it('passes the rulings as RULINGS, in message order', () => {
-        const variables = buildPlanCheckVariables(storedAct(), { analysis: 'A.', chatHistory: [] });
+        const variables = buildPlanCheckVariables(storedAct(), 'A.', { chatHistory: [], earlierSecrets: [] });
 
         assert.equal(variables.RULINGS,
             '- "Option one" (the option picked: "Sundown trains her as a mentor, never as a partner.")\n'
