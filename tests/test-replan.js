@@ -624,6 +624,15 @@ describe('buildArcSoFar', () => {
         assert.match(text, /the milestones below under Already happened and Passed over count together/);
     });
 
+    it('lists an episode re-planned to an unknown tier under Already happened, as the merge stores it', () => {
+        const text = buildArcSoFar(storedEpisode(), 'novella');
+
+        assert.ok(text.endsWith('Already happened (fulfilled beats — do not plan these again):\n'
+            + '- She has received the summons.\n'
+            + '- She has confronted the messenger.\n\n'), text);
+        assert.doesNotMatch(text, /Scenes played while it was an episode/);
+    });
+
     it('says "no milestone yet" for a grown act with none reached', () => {
         const grown = mergeReplan(storedEpisode(), generatedPlan({ tier: 'act' }));
 

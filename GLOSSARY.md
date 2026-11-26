@@ -54,7 +54,7 @@ Everything going on in the story outside one arc's plot thread, seen from that a
 _Avoid_: context, background (a focus value), subplot
 
 **Link**:
-A secret that ties an arc's own people or things to another plot thread ("the robbers secretly work for the big bad"). Planned only when the player switched off "Keep this arc to itself" in the wizard, and never announced. Lives in a secret and its clues and triggers, never in a beat. A secret about another thread's people with nothing of this arc in it is not a link and is never planned (ADR-0011). Not a trigger's tie to a secret, and not joining two character records (merge).
+A secret that ties an arc's own people or things to another plot thread ("the robbers secretly work for the big bad"). Planned only when the player switched off "Keep this arc to itself" in the wizard, and never announced. Lives in a secret and its clues and triggers, never in a beat. A secret about another thread's people with nothing of this arc in it is not a link and is never planned (ADR-0011). Not a trigger's tie to a secret (that is a gate), and not joining two character records (merge).
 _Avoid_: crossover, tie-in, connection, intersection
 
 **Foreign part**:
@@ -127,8 +127,12 @@ _Avoid_: signal, tracking, advancement
 A hidden truth of the arc with a complete answer, known to the model and withheld from the player. Once revealed it never changes. One not yet revealed is planned again on a re-plan: kept, rewritten or dropped, keeping its id when kept or rewritten, and always still explaining the planted clues and fired triggers that point at it.
 
 **Trigger**:
-A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied.
+A condition the model watches for, and the visible reaction it causes when the story meets it. The reaction never states a secret's content or a payoff. A trigger that belongs to the moment a secret comes out is tied to that secret and stays out of the prompt until the secret is shown; a trigger that only shows a reaction to suspicion is not tied. That tie is the trigger's gate.
 _Avoid_: event, hook
+
+**Gate**:
+A trigger's tie to the secret it waits for: the trigger is shown only once that secret is shown or disclosed. The plan check's TRIGGER GATES step sets it, through the `gates` list of its answer. A gate ties one trigger to one of the arc's own secrets; it never ties the arc to another plot thread.
+_Avoid_: link (the word for a secret that ties an arc to another plot thread), dependency
 
 **Clue**:
 What the UI calls one of an arc's foreshadowing entries: a detail planted early that points to a secret or a later development. Code and the stored arc keep `foreshadowing` (with `clue` and `target`); the wizard and the Arc Manager say "Clues".
