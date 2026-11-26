@@ -47,11 +47,9 @@ StoryArc/
 │   │                           #   character's gender, age, role and looks from the
 │   │                           #   definitions and passages, one value per kind with
 │   │                           #   every source it uses; answers JSON
-│   ├── seed-state.txt          # Standing state seed prompt (2026-11-17): one character's
-│   │                           #   style, manner and stances now, from their details,
-│   │                           #   facts and always-on lorebook entries; answers JSON
-│   └── detail-pass.txt         # Old detail-pass draft (not loaded); carries the
-│                               #   one-moment fulfillment rule too
+│   └── seed-state.txt          # Standing state seed prompt (2026-11-17): one character's
+│                               #   style, manner and stances now, from their details,
+│                               #   facts and always-on lorebook entries; answers JSON
 ├── lib/
 │   ├── core/
 │   │   ├── constants.js        # MODULE_NAME, INJECTION_HEADER, defaultSettings,
@@ -1073,8 +1071,8 @@ index.js  (imports: core/settings.js, planning/storage.js,
 | Phase/pacing | `lib/injection/pacing.js` | `lib/core/constants.js` |
 | Signal tracking | `lib/injection/signals.js` | `lib/planning/beat-completion.js`, `lib/planning/storage.js` |
 | Beat completion + rollback (ADR-0008) | `lib/planning/beat-completion.js` | `lib/injection/signals.js` (marker path), `lib/knowledge/ledger.js` (extraction path, `reopenCompletionsAt` on edit), `index.js` (`reopenCompletionsFrom` on delete, swipe, chat change), `lib/injection/builder.js` (`buildSignalDirective`: BEAT CHECK only with the tracker off), `prompts/extract-knowledge.txt` (DEVELOPMENTS, task 6), `lib/knowledge/message-ids.js`, `lib/planning/replan.js` (`withoutCompletionRecord`) |
-| One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS), `prompts/detail-pass.txt` |
-| World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS), `prompts/detail-pass.txt` |
+| One-moment fulfillments | `prompts/generate-arc.txt` | `lib/planning/generator.js` (`buildTierBlock`, `applyPlanCheck`), `prompts/check-plan.txt` (FULFILLMENTS) |
+| World facts (ADR-0009) | `prompts/generate-arc.txt` | `lib/core/settings.js` (`arcWorldFacts`), `lib/injection/builder.js` (`pushWorldFacts`), `lib/planning/generator.js` (`applyWorldFactRewrites`), `lib/planning/replan.js` (`mergeReplan`), `lib/ui/arc-manager.js` (`buildStyleFieldsNotice`), `prompts/check-plan.txt` (WORLD FACTS) |
 | Secret rewrites and re-planned secrets (ADR-0003 amendments) | `lib/planning/generator.js` (`applyPlanCheck`, `plantedCluesOfSecret`, `buildArcSoFar`) | `prompts/check-plan.txt` (step 2, SECRETS), `prompts/generate-arc.txt` (secret guidelines), `lib/planning/replan.js` (`mergeReplan`) |
 | Plan check holds the plan to the story and the author (ADR-0009 amendment) | `prompts/check-plan.txt` (step 2: contradictions, sweeping claims, register; `{{AUTHOR_ANSWERS}}`) | `lib/context/harvester.js` (`harvestCast`: details), `lib/knowledge/ledger.js` (`currentDetailText`), `lib/planning/generator.js` (`formatCastLines`, `formatAuthorAnswers`, `buildPlanCheckVariables`), `prompts/generate-arc.txt` (pressure and world-fact lines) |
 | Beat promotion / pacing brake | `lib/injection/signals.js` (`promoteNextBeats`) | `index.js` (`USER_MESSAGE_RENDERED`), `builder.js` |

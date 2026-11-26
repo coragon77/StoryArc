@@ -74,7 +74,7 @@ User reviews harvested context summary:
 Multi-phase LLM generation:
   Phase 1: Analyze story state, identify threads and tensions
   Phase 2: Generate arc outline (premise, secrets, beats, foreshadowing)
-  Phase 3: Detail pass (expand beats, add specificity)
+  Phase 3: Plan check (give-aways, one-moment fulfillments, names)
     |
     v
 User reviews the plan (spoiler-gated):

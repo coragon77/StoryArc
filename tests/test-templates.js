@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { buildPlanCheckVariables, fillTemplate, loadTemplate } from '../lib/planning/generator.js';
 
 describe('loadTemplate', () => {
-    it('refuses the unbuilt detail-pass prompt like any unknown name', async () => {
-        await assert.rejects(loadTemplate('detail-pass.txt'), /Invalid template: detail-pass\.txt/);
+    it('refuses a name outside its allow-list', async () => {
+        await assert.rejects(loadTemplate('unknown-pass.txt'), /Invalid template: unknown-pass\.txt/);
     });
 
     it('accepts the standing state seed prompt', async () => {
@@ -71,10 +71,6 @@ describe('every fulfillment is one on-screen moment', () => {
         assert.equal(text.includes('flexible about exact events'), false);
     });
 
-    it('the detail pass keeps a sharpened intention one moment', () => {
-        assert.ok(read('detail-pass.txt').includes('sharpening it never turns it into a tally of many scenes or a chain of separate events joined by "and".'));
-    });
-
     it('the plan check gets the open fulfillments and may rewrite them by beat id', () => {
         const text = read('check-plan.txt');
         assert.ok(text.includes('== FULFILLMENTS ==\n{{FULFILLMENTS}}\n'));
@@ -114,11 +110,5 @@ describe('a plan states world facts, never how to narrate (ADR-0009)', () => {
         const text = read('generate-arc.txt');
         assert.ok(text.includes('"The guild cannot compel a volunteer: it can only ask, reward or withhold favours" is a world fact; "Keep the tone light" is not.'));
         assert.ok(text.includes('- [ ] No world fact says how to narrate (tone, pacing, emphasis, how a character comes across, what to show or leave out)\n'));
-    });
-
-    it('the detail pass keeps the same rule', () => {
-        const text = read('detail-pass.txt');
-        assert.ok(text.includes('"The guild cannot compel a volunteer: it can only ask, reward or withhold favours" is a world fact; "Keep the tone light" is not.'));
-        assert.equal(/anti-pattern/i.test(text), false);
     });
 });
