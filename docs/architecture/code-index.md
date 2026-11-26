@@ -1045,12 +1045,13 @@ lib/planning/
 │                   core/settings.js, injection/pacing.js selectNonOptionalBeats,
 │                   knowledge/message-ids.js messageIdOf, /script.js)
 ├── replan.js      (imports: core/constants.js, core/settings.js arcTier +
-│                   isBeatOpen, arc-edit.js checkTitleAndPremise)
+│                   isBeatOpen, arc-edit.js checkTitleAndPremise,
+│                   validation.js normalizeTier)
 ├── prompt-edits.js (imports: core/constants.js, /script.js saveSettingsDebounced,
 │                   /scripts/utils.js getStringHash, /scripts/extensions.js)
 ├── arc-preset.js  (imports: core/settings.js, /script.js, /scripts/extensions.js,
 │                   /scripts/preset-manager.js, /scripts/utils.js)
-└── generator.js   (imports: validation.js, arc-preset.js, replan.js mergeReplan +
+└── generator.js   (imports: validation.js (normalizeTier too), arc-preset.js, replan.js mergeReplan +
                     growsFromEpisode, prompt-edits.js readPromptEdit,
                     arc-edit.js removeBeat + activateFirstPendingBeat,
                     core/settings.js, core/constants.js,
