@@ -1077,6 +1077,7 @@ index.js  (imports: core/settings.js, planning/storage.js,
                     planning/beat-completion.js reopenCompletionsFrom, injection/narrator-prompts.js,
                     injection/stamping.js, injection/signals.js,
                     knowledge/ledger.js, ui/settings-panel.js, ui/knowledge-status.js,
+                    ui/prompts.js describeStoredPrompts + refreshPromptsDrawer,
                     ui/wand-menu.js, ui/wizard.js closeWizard,
                     ui/progress.js, /script.js)
 ```
