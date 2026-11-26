@@ -351,6 +351,52 @@ describe('wizard: generation', () => {
         assert.match(review, /A torn sack behind the guild hall/);
         assert.doesNotMatch(review, /Foreshadowing/i);
     });
+
+    it('the plan check\'s line counts the parts removed as another plot thread\'s, without their text', async () => {
+        const planWithForeignParts = JSON.stringify({
+            title: 'The Granary',
+            premise: 'The valley is starving.',
+            beats: [
+                { id: 'empty_carts', pressure: 'Carts leave at night.', intention: 'The tally was found short.' },
+                { id: 'harvest_fair', pressure: 'The fair draws the crowds.', intention: 'Lena has sung at the harvest fair.' },
+            ],
+            secrets: [{ id: 'lena_debut', content: 'Lena\'s debut is bought.', revealPhase: 'climax' }],
+            triggers: [],
+        });
+        const checkAnswer = JSON.stringify({ revealed: [], rewrites: [], links: [], foreign: [{ kind: 'beat', id: 'harvest_fair' }, { kind: 'secret', id: 'lena_debut' }] });
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, planWithForeignParts, checkAnswer]);
+        await openWizard();
+
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+
+        const logText = fake.htmlById['story-arc-step-log'];
+        assert.match(logText, /Plan checked, 2 parts of other plot threads removed/);
+        assert.doesNotMatch(logText, /harvest|Lena/);
+        assert.doesNotMatch(fake.htmlById['story-arc-wizard-content'], /Lena/);
+    });
+
+    it('the plan check\'s line says one part in the singular, and nothing when none was removed', async () => {
+        const planWithForeignBeat = JSON.stringify({
+            title: 'The Granary',
+            premise: 'The valley is starving.',
+            beats: [
+                { id: 'empty_carts', pressure: 'Carts leave at night.', intention: 'The tally was found short.' },
+                { id: 'harvest_fair', pressure: 'The fair draws the crowds.', intention: 'Lena has sung at the harvest fair.' },
+            ],
+        });
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, planWithForeignBeat, JSON.stringify({ foreign: [{ kind: 'beat', id: 'harvest_fair' }] })]);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        assert.match(fake.htmlById['story-arc-step-log'], /Plan checked, 1 part of another plot thread removed/);
+
+        installAnswers(['The story stands at a crossroads.', NO_QUESTIONS, granaryPlan, JSON.stringify({ revealed: [] })]);
+        await openWizard();
+        typeDirectionAndGenerate('Count the sacks.');
+        await settle();
+        assert.match(fake.htmlById['story-arc-step-log'], /Plan checked</);
+    });
 });
 
 describe('wizard: Back from Review', () => {

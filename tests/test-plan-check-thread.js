@@ -283,7 +283,7 @@ describe('check-plan.txt: the plot thread task', () => {
     });
 
     it('says what is foreign, what is not, and that a doubtful part stays', () => {
-        assert.ok(checkPlan.includes('This arc\'s plot thread is what the Direction, the author\'s answers and the rulings state; when the Direction is (none), the premise states it.'));
+        assert.ok(checkPlan.includes('This arc\'s plot thread is what the Direction, the author\'s answers and the rulings state; when the Direction is (none), the premise states it, and on a re-plan the Author\'s premise does.'));
         assert.ok(checkPlan.includes('A part is foreign when it is an event of another plot thread, or about another plot thread\'s people, with nothing of this arc\'s subject in it.'));
         assert.ok(checkPlan.includes('A breather or a scene of colour with this arc\'s own people is not foreign. When in doubt, the part stays.'));
     });
