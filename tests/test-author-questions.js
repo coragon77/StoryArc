@@ -275,6 +275,8 @@ describe('the question prompt and the outline slot', () => {
         assert.ok(text.includes('2. Never propose plot, twists or secrets, and never hint at one. The author must not be spoiled'));
         assert.ok(text.includes('4. Give each question 2 to 4 short suggested answers. They are distinct positions the author could take, not one right answer plus filler.\n'));
         assert.ok(text.includes('6. Zero questions is right when the direction is already specific. Then answer with an empty list.\n'));
+        assert.ok(text.includes('7. Never ask whether or how the events of another plot thread should be part of this arc, and never offer them as a suggested answer.'));
+        assert.ok(text.includes('Where or when the arc plays may still be asked when the direction leaves it open.\n'));
         assert.ok(text.includes('"questions": [\n    { "question": "A short question about the author\'s intent", "suggestions": ["A short position", "Another position"] }\n  ]'));
     });
 
