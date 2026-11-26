@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { applyReplan, mergeReplan } from '../lib/planning/replan.js';
 import { buildArcSoFar, buildPlanCheckVariables, formatExistingArcs } from '../lib/planning/generator.js';
 
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
+
 // A re-plan follows the arc's stored rulings (ADR-0003): the block texts the
 // three calls read, the merge and the apply step.
 
@@ -117,7 +120,7 @@ describe('buildArcSoFar: reached milestones count toward the tier\'s milestone c
 
 describe('buildPlanCheckVariables with rulings', () => {
     it('passes the rulings as RULINGS, in message order', () => {
-        const variables = buildPlanCheckVariables(storedAct(), 'A.', { chatHistory: [], earlierSecrets: [] });
+        const variables = buildPlanCheckVariables(storedAct(), 'A.', { chatHistory: [], earlierSecrets: [] }, KEPT_TO_ITSELF);
 
         assert.equal(variables.RULINGS,
             '- "Option one" (the option picked: "Sundown trains her as a mentor, never as a partner.")\n'
@@ -125,7 +128,7 @@ describe('buildPlanCheckVariables with rulings', () => {
     });
 
     it('passes (none) for an arc without rulings', () => {
-        const variables = buildPlanCheckVariables({ ...storedAct(), rulings: undefined }, null);
+        const variables = buildPlanCheckVariables({ ...storedAct(), rulings: undefined }, null, null, KEPT_TO_ITSELF);
         assert.equal(variables.RULINGS, '(none)');
     });
 });

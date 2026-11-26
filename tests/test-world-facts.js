@@ -7,6 +7,9 @@ import { applyPlanCheck, buildPlanCheckVariables } from '../lib/planning/generat
 import { arcWorldFacts } from '../lib/core/settings.js';
 import { createDefaultArc } from '../lib/core/constants.js';
 
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
+
 // World facts: what is true in an arc's world, in place of directives and
 // anti-patterns (ADR-0009, docs/plans/2026-11-09-plans-state-the-situation.md).
 
@@ -103,7 +106,7 @@ function makeActWithFacts() {
 
 describe('world facts: the plan check', () => {
     it('lists each world fact with its index for the check', () => {
-        const variables = buildPlanCheckVariables(makeActWithFacts(), null);
+        const variables = buildPlanCheckVariables(makeActWithFacts(), null, null, KEPT_TO_ITSELF);
         assert.equal(variables.WORLD_FACTS, [
             '- [0] Keep the scenes with Mara tense.',
             '- [1] Mara distrusts the agency nurses, so play her cold.',
@@ -112,9 +115,9 @@ describe('world facts: the plan check', () => {
     });
 
     it('passes (none) for an arc without world facts, stored or new', () => {
-        assert.equal(buildPlanCheckVariables({ ...makeActWithFacts(), worldFacts: [] }, null).WORLD_FACTS, '(none)');
+        assert.equal(buildPlanCheckVariables({ ...makeActWithFacts(), worldFacts: [] }, null, null, KEPT_TO_ITSELF).WORLD_FACTS, '(none)');
         const { worldFacts, ...oldArc } = makeActWithFacts();
-        assert.equal(buildPlanCheckVariables(oldArc, null).WORLD_FACTS, '(none)');
+        assert.equal(buildPlanCheckVariables(oldArc, null, null, KEPT_TO_ITSELF).WORLD_FACTS, '(none)');
     });
 
     it('the prompt has the block and the rule', () => {
@@ -136,7 +139,7 @@ describe('world facts: the plan check', () => {
                 { kind: 'worldFact', id: '', text: 'No id.' },
                 { kind: 'pressure', id: '2', text: 'A pressure rewrite with a fact index.' },
             ],
-        }, []);
+        }, [], false);
         assert.deepEqual(checked.worldFacts, [
             'Mara distrusts the agency nurses.',
             'The clinic cannot make Amy work outside her shifts.',
@@ -150,7 +153,7 @@ describe('world facts: the plan check', () => {
                 { kind: 'worldFact', id: '[1]', text: 'Mara distrusts the agency nurses.' },
                 { kind: 'worldFact', id: ' 0 ', text: 'Mara is in charge of the night rota.' },
             ],
-        }, []);
+        }, [], false);
         assert.deepEqual(checked.worldFacts, [
             'Mara is in charge of the night rota.',
             'Mara distrusts the agency nurses.',
@@ -165,7 +168,7 @@ describe('world facts: the plan check', () => {
                 { kind: 'worldFact', id: 1, text: null },
                 { kind: 'worldFact', id: 2, text: '   ' },
             ],
-        }, []);
+        }, [], false);
         assert.deepEqual(checked.worldFacts, [
             'Keep the scenes with Mara tense.',
             'Mara distrusts the agency nurses, so play her cold.',
@@ -178,15 +181,15 @@ describe('world facts: the plan check', () => {
     });
 
     it('leaves the facts alone without world-fact rewrites, and adds no list to an old arc', () => {
-        assert.deepEqual(applyPlanCheck(makeActWithFacts(), { rewrites: [] }, []).worldFacts, makeActWithFacts().worldFacts);
+        assert.deepEqual(applyPlanCheck(makeActWithFacts(), { rewrites: [] }, [], false).worldFacts, makeActWithFacts().worldFacts);
         const { worldFacts, ...oldArc } = makeActWithFacts();
-        assert.equal('worldFacts' in applyPlanCheck(oldArc, { rewrites: [{ kind: 'worldFact', id: 0, text: 'Nowhere to go.' }] }, []), false);
+        assert.equal('worldFacts' in applyPlanCheck(oldArc, { rewrites: [{ kind: 'worldFact', id: 0, text: 'Nowhere to go.' }] }, [], false), false);
     });
 
     it('renames a character inside a world fact', () => {
         const arc = { ...makeActWithFacts(), worldFacts: ['Julian Hale owns the night agency.'], characters: ['Julian Hale'] };
         const cast = [{ name: 'Julian Sterling', aliases: [] }];
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }] }, [], { cast });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }] }, [], false, { cast });
         assert.deepEqual(checked.worldFacts, ['Owen Marsh owns the night agency.']);
     });
 });

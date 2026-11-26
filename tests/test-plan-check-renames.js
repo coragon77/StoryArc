@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { applyPlanCheck, buildPlanCheckVariables } from '../lib/planning/generator.js';
 
+/** The plan check's thread for an arc kept to itself, with no other running arc. */
+const KEPT_TO_ITSELF = { allowLinks: false, otherRunningArcs: [] };
+
 // The plan check renames a new character who got a taken name, everywhere
 // in the plan (issue #49).
 
@@ -68,7 +71,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Hale', to: 'Marsh' }, { from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST });
+        }, [], false, { cast: CAST });
 
         assert.equal(checked.title, 'Marsh Street');
         assert.equal(checked.premise, 'Owen Marsh runs the docks.');
@@ -99,7 +102,7 @@ describe('applyPlanCheck: renames', () => {
     it('does not mutate the arc given', () => {
         const arc = makePlannedAct();
 
-        applyPlanCheck(arc, { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }, { from: 'Hale', to: 'Marsh' }] }, [], { cast: CAST });
+        applyPlanCheck(arc, { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }, { from: 'Hale', to: 'Marsh' }] }, [], false, { cast: CAST });
 
         assert.deepEqual(arc, makePlannedAct());
     });
@@ -109,7 +112,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Hale', to: 'Marsh' }, { from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST });
+        }, [], false, { cast: CAST });
 
         assert.equal(checked.escalation, 'Owen Marsh and Marsh are one man.');
     });
@@ -123,7 +126,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Vance', to: 'Rook' }, { from: 'Hale', to: 'Marsh' }],
-        }, [], { cast: CAST });
+        }, [], false, { cast: CAST });
 
         assert.equal(checked.escalation, 'Rook met Vance-Chen and Vancester at the pier.');
         assert.equal(checked.tone, 'Marsh\'s coat, Marsh’s hat, O\'Hale and Hale\'n stay.');
@@ -132,7 +135,7 @@ describe('applyPlanCheck: renames', () => {
     it('is case-sensitive', () => {
         const arc = { ...makePlannedAct(), escalation: 'Hale walks past the hale old men.' };
 
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Hale', to: 'Marsh' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Hale', to: 'Marsh' }] }, [], false, { cast: CAST });
 
         assert.equal(checked.escalation, 'Marsh walks past the hale old men.');
     });
@@ -142,14 +145,14 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.' });
 
         assert.equal(checked.premise, 'The docks change hands.');
         assert.equal(checked.proposedPremise, 'Owen Marsh takes the docks.');
     });
 
     it('logs the kept renames as name pairs only', () => {
-        applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }] }, [], { cast: CAST });
+        applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }] }, [], false, { cast: CAST });
 
         assert.deepEqual(recorded.logs, ['[Story Arc] Plan check renamed: "Julian Hale" → "Owen Marsh"']);
         assert.deepEqual(recorded.warnings, []);
@@ -158,14 +161,14 @@ describe('applyPlanCheck: renames', () => {
     it('drops a rename of a cast alias', () => {
         const arc = { ...makePlannedAct(), escalation: 'Sundown keeps watch.' };
 
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Sundown', to: 'Dusk' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Sundown', to: 'Dusk' }] }, [], false, { cast: CAST });
 
         assert.equal(checked.escalation, 'Sundown keeps watch.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Sundown" → "Dusk" ignored: it is a cast name or alias']);
     });
 
     it('drops a rename of a name in the direction', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Brody Kane', to: 'Brody Lund' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Brody Kane', to: 'Brody Lund' }] }, [], false, { cast: CAST });
 
         assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Brody Kane" → "Brody Lund" ignored: the author\'s direction or premise names it']);
@@ -176,7 +179,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST, replanPremise: 'Julian Hale runs the docks.' });
+        }, [], false, { cast: CAST, replanPremise: 'Julian Hale runs the docks.' });
 
         assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
         assert.equal(checked.proposedPremise, 'Julian Hale takes the docks.');
@@ -192,7 +195,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
 
         assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Hale" ignored: a ruling of the player names it']);
@@ -207,7 +210,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Hale', to: 'Marsh' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
 
         assert.equal(checked.escalation, 'Hale tightens his grip.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Hale" → "Marsh" ignored: a ruling of the player names it']);
@@ -222,7 +225,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
 
         assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
         assert.deepEqual(checked.authorAnswers, [{ question: 'Who may step in?', answer: 'Julian Hale never helps her.' }]);
@@ -238,7 +241,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Julian Hale', to: 'Owen Hale' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Dock Street' });
 
         assert.equal(checked.secrets[0].content, 'Owen Hale owes Brody Kane.');
         assert.deepEqual(recorded.warnings, []);
@@ -249,7 +252,7 @@ describe('applyPlanCheck: renames', () => {
 
         const checked = applyPlanCheck(arc, {
             renames: [{ from: 'Hale', to: 'Marsh' }],
-        }, [], { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Hale Street' });
+        }, [], false, { cast: CAST, replanPremise: 'The docks change hands.', replanTitle: 'Hale Street' });
 
         assert.equal(checked.title, 'Hale Street');
         assert.equal(checked.escalation, 'Hale tightens his grip.');
@@ -257,7 +260,7 @@ describe('applyPlanCheck: renames', () => {
     });
 
     it('drops a rename to a name with a taken name', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Julian Hale', to: 'Owen Sterling' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Julian Hale', to: 'Owen Sterling' }] }, [], false, { cast: CAST });
 
         assert.equal(checked.secrets[0].content, 'Julian Hale owes Brody Kane.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Hale" → "Owen Sterling" ignored: the new name uses a taken name']);
@@ -266,7 +269,7 @@ describe('applyPlanCheck: renames', () => {
     it('keeps a rename to a cast name', () => {
         const arc = { ...makePlannedAct(), escalation: 'Julian Starling tightens his grip.' };
 
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Starling', to: 'Julian Sterling' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Starling', to: 'Julian Sterling' }] }, [], false, { cast: CAST });
 
         assert.equal(checked.escalation, 'Julian Sterling tightens his grip.');
         assert.deepEqual(recorded.warnings, []);
@@ -275,7 +278,7 @@ describe('applyPlanCheck: renames', () => {
     it('drops a rename that turns a fuller form of a single-word record into a new person', () => {
         const arc = { ...makePlannedAct(), escalation: 'Julian Vance tightens his grip.' };
 
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Vance', to: 'Julian Marsh' }] }, [], { cast: [{ name: 'Vance', aliases: [] }] });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Julian Vance', to: 'Julian Marsh' }] }, [], false, { cast: [{ name: 'Vance', aliases: [] }] });
 
         assert.equal(checked.escalation, 'Julian Vance tightens his grip.');
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Julian Vance" → "Julian Marsh" ignored: it may be the cast\'s "Vance"']);
@@ -284,21 +287,21 @@ describe('applyPlanCheck: renames', () => {
     it('keeps a rename that brings a fuller form back to the single-word record\'s name', () => {
         const arc = { ...makePlannedAct(), escalation: 'Priya Patel tightens her grip.' };
 
-        const checked = applyPlanCheck(arc, { renames: [{ from: 'Priya Patel', to: 'Priya' }] }, [], { cast: [{ name: 'Priya', aliases: [] }] });
+        const checked = applyPlanCheck(arc, { renames: [{ from: 'Priya Patel', to: 'Priya' }] }, [], false, { cast: [{ name: 'Priya', aliases: [] }] });
 
         assert.equal(checked.escalation, 'Priya tightens her grip.');
         assert.deepEqual(recorded.warnings, []);
     });
 
     it('drops a rename of a name the plan does not use', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Toby Marsh', to: 'Toby Reed' }] }, [], { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { renames: [{ from: 'Toby Marsh', to: 'Toby Reed' }] }, [], false, { cast: CAST });
 
         assert.deepEqual(checked, makePlannedAct());
         assert.deepEqual(recorded.warnings, ['[Story Arc] Plan check rename "Toby Marsh" → "Toby Reed" ignored: the plan does not use it']);
     });
 
     it('changes nothing without a renames list', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { revealed: [], rewrites: [], links: [] }, [], { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { revealed: [], rewrites: [], links: [] }, [], false, { cast: CAST });
 
         assert.deepEqual(checked, makePlannedAct());
         assert.deepEqual(recorded.warnings, []);
@@ -307,7 +310,7 @@ describe('applyPlanCheck: renames', () => {
     it('ignores a malformed item with a warning and applies the others', () => {
         const checked = applyPlanCheck(makePlannedAct(), {
             renames: ['Julian Hale', { from: 'Julian Hale' }, { from: 'Hale', to: '' }, { from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST });
+        }, [], false, { cast: CAST });
 
         assert.equal(checked.secrets[0].content, 'Owen Marsh owes Brody Kane.');
         assert.equal(recorded.warnings.length, 3);
@@ -315,7 +318,7 @@ describe('applyPlanCheck: renames', () => {
     });
 
     it('ignores a renames list of the wrong shape', () => {
-        const checked = applyPlanCheck(makePlannedAct(), { renames: { from: 'Julian Hale', to: 'Owen Marsh' } }, [], { cast: CAST });
+        const checked = applyPlanCheck(makePlannedAct(), { renames: { from: 'Julian Hale', to: 'Owen Marsh' } }, [], false, { cast: CAST });
 
         assert.deepEqual(checked, makePlannedAct());
     });
@@ -324,7 +327,7 @@ describe('applyPlanCheck: renames', () => {
         const checked = applyPlanCheck(makePlannedAct(), {
             rewrites: [{ kind: 'trigger', id: 'pressed', text: 'Julian Hale goes quiet.' }],
             renames: [{ from: 'Julian Hale', to: 'Owen Marsh' }],
-        }, [], { cast: CAST });
+        }, [], false, { cast: CAST });
 
         assert.equal(checked.triggers[1].action, 'Owen Marsh goes quiet.');
     });
@@ -341,7 +344,7 @@ describe('buildPlanCheckVariables: the names block', () => {
     }
 
     it('lists the cast, the taken names, the plan\'s characters and the task for a cast of two', () => {
-        const variables = buildPlanCheckVariables(makeArc(['Julian Hale', 'Priya']), null, null, CAST_OF_TWO);
+        const variables = buildPlanCheckVariables(makeArc(['Julian Hale', 'Priya']), null, null, KEPT_TO_ITSELF, CAST_OF_TWO);
 
         assert.equal(variables.NAMES_BLOCK, `== NAMES ==
 The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
@@ -377,7 +380,7 @@ Answer the renames as one more key of the JSON object below: "renames": [{ "from
             { name: 'Mara Masters', aliases: [], details: {} },
         ];
 
-        const variables = buildPlanCheckVariables(makeArc([]), null, null, castWithDetails);
+        const variables = buildPlanCheckVariables(makeArc([]), null, null, KEPT_TO_ITSELF, castWithDetails);
 
         assert.ok(variables.NAMES_BLOCK.startsWith(`== NAMES ==
 The cast, the characters already in the story. Each line gives the name, then the aliases, then after a dash what the story has established about them:
@@ -390,14 +393,14 @@ Names already taken: Dice, Ellie, Mara, Masters
     });
 
     it('writes (none) when the plan lists no characters', () => {
-        const variables = buildPlanCheckVariables(makeArc([]), null, null, CAST_OF_TWO);
+        const variables = buildPlanCheckVariables(makeArc([]), null, null, KEPT_TO_ITSELF, CAST_OF_TWO);
 
         assert.ok(variables.NAMES_BLOCK.includes('The plan\'s own list of characters. It can be incomplete: the secrets, triggers, pressures and fulfillments above name characters too.\n\n(none)\n\nRENAMES.'));
     });
 
     it('is empty for an empty cast, and without one', () => {
-        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null, null, []).NAMES_BLOCK, '');
-        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null).NAMES_BLOCK, '');
+        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null, null, KEPT_TO_ITSELF, []).NAMES_BLOCK, '');
+        assert.equal(buildPlanCheckVariables(makeArc(['Julian Hale']), null, null, KEPT_TO_ITSELF).NAMES_BLOCK, '');
     });
 });
 
