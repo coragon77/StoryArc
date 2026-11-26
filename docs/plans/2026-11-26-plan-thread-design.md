@@ -148,4 +148,4 @@ The spec made these decisions itself:
 - the step log shows a count;
 - there is no Arc Manager control;
 - the check gets the analysis on a new plan;
-- the guards on removal.
+- the guards on removal, in part. The owner ruled on two of them on 2026-11-26 (recorded in the ADR-0006 amendment): no beat is removed when the removal would leave no open non-optional beat, and a secret stored as disclosed is never removed, whatever the revealed list says. He ruled the gate rename the same day (TRIGGER GATES, `gates`, a legacy `links` still read). The rest stays open: open beats only, planted clues and fired triggers protect a secret, and a fired trigger is never removed.
